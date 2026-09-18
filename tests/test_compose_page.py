@@ -33,6 +33,16 @@ def test_an_array_index_resolves():
     assert resolve_path(data, "line_items[1].name") == (True, "Mực in")
 
 
+def test_a_bare_digit_segment_resolves_as_an_index_too():
+    """`[N]` không còn là hình DUY NHẤT hợp lệ cho chỉ số -- `synthgen/
+    llm_page.py::_PATH` giờ chấp nhận `clause.1.body` (Phase 8, đo trên
+    pilot16: 16 đường bị cổng cũ loại một tờ đúng mọi luật khác chỉ vì thiếu
+    ngoặc vuông). `resolve_path` phải đọc được hình này để không âm thầm bỏ
+    qua đoạn số, trỏ nhầm sang trường khác."""
+    data = {"clause": [{"body": "Điều khoản một"}, {"body": "Điều khoản hai"}]}
+    assert resolve_path(data, "clause.1.body") == (True, "Điều khoản hai")
+
+
 def test_a_missing_key_fails_cleanly():
     data = {"issuer": {"tax_code": "x"}}
     assert resolve_path(data, "issuer.address") == (False, None)

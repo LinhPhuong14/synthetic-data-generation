@@ -186,11 +186,23 @@ def test_a_malformed_data_path_is_refused():
 @pytest.mark.parametrize("path", [
     "issuer.tax_code", "line_items[0].name", "items[].print_qty",
     "recipient.address", "invoice.total",
+    "clause.1.body", "section.4", "conclusion.1.head",
 ])
 def test_well_formed_data_paths_pass(path):
     good = (f'<div class="sheet"><span data-kind="invoice.field" '
            f'data-path="{path}">x</span></div>')
     assert not any("data-path" in line for line in problems(good))
+
+
+def test_bare_digit_segments_are_accepted_not_just_bracket_indices():
+    """Phase 8: đo trên pilot16, một tờ khai 16 đường dạng `clause.1.body`/
+    `section.4` bị cổng cũ loại nguyên trang -- đúng cấu trúc, đúng nội
+    dung, chỉ khác hình thức chỉ số. `resolve_path()` (`agent/
+    compose_page.py`) đọc được cả `[N]` lẫn `.N.`, nên cổng không cần đòi
+    một hình duy nhất."""
+    bad_before = ('<div class="sheet"><span data-kind="invoice.field" '
+                 'data-path="clause.1.body">Điều khoản một</span></div>')
+    assert problems(bad_before) == []
 
 
 def test_the_same_path_printing_two_different_values_is_refused():

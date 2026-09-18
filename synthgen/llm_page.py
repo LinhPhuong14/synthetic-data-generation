@@ -332,7 +332,19 @@ _SHEET_OPEN = re.compile(r'<div\b[^>]*\bclass="[^"]*\bsheet\b', re.IGNORECASE)
 # `docs/kie-cau-hoi-kiem-schema.md`. Không đòi biết TRƯỚC cây `data` có hình
 # gì -- chỉ đòi cái tên tự nó đọc được, cùng lý do `_rooted` không hỏi model
 # xem hai kind có cùng nghĩa: cổng là thứ duy nhất phải ổn định.
-_PATH = re.compile(r"^[a-z][a-z0-9_]*(\[\d*\])?(\.[a-z][a-z0-9_]*(\[\d*\])?)*$")
+#
+# ĐOẠN THUẦN SỐ cũng hợp lệ (`clause.1.body`, `section.4`) -- không chỉ
+# `[N]`. Đo trên pilot16 (Phase 8): một tờ khai `clause.1.head`, `clause.2.
+# body`, `section.1`...`section.4`, `conclusion.1.head`... -- MƯỜI SÁU
+# đường bị cổng cũ loại nguyên một tờ đạt mọi luật khác, vì cổng đòi ngoặc
+# vuông cho chỉ số lặp mà lời dặn (mục 22 `page.md`) chỉ cho MỘT ví dụ
+# (`clauses[0].number`) giữa một tài liệu rất dài. Phạt một tờ đúng cấu trúc,
+# đúng nội dung, chỉ vì chọn `.1.` thay vì `[0].` là phạt nhầm hình thức --
+# `resolve_path()` (`agent/compose_page.py`) đọc được cả hai hình, nên cổng
+# không cần đòi một hình duy nhất nữa.
+_PATH = re.compile(
+    r"^[a-z][a-z0-9_]*(\[\d*\])?"
+    r"(\.([a-z][a-z0-9_]*(\[\d*\])?|\d+))*$")
 
 
 def outside_sheet(html: str) -> int:

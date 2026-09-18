@@ -54,6 +54,7 @@ from render import (  # noqa: E402
 
 from pipeline import record as R  # noqa: E402
 from synthgen import overlay as O  # noqa: E402
+from synthgen.kie_full import complete as kie_complete  # noqa: E402
 from synthgen.llm_page import problems  # noqa: E402
 
 JPEG_QUALITY = 92
@@ -597,7 +598,7 @@ class Drawer:
         self.rows: list[dict] = []
         self._play = self._browser = self._page = None
         for name in ("images", "layout_boxes", "word_boxes", "records",
-                     "rejected_boxes"):
+                     "rejected_boxes", "visualize_kie"):
             (root / name).mkdir(parents=True, exist_ok=True)
 
     def __enter__(self) -> "Drawer":
@@ -641,9 +642,19 @@ class Drawer:
             declared.get("archetype") or declared.get("loai_tai_lieu") or "llm")
         total = len(got["images"])
         for folder in ("images", "records", "layout_boxes", "word_boxes",
-                       "html", "rejected_boxes"):
+                       "html", "rejected_boxes", "visualize_kie"):
             (root / folder / kind).mkdir(parents=True, exist_ok=True)
         source = path.read_text(encoding="utf-8")
+        # KIE ĐẦY ĐỦ NGAY LÚC VẼ, không đợi `finish()` chạy `derive` ở cuối cả
+        # lượt. Người xem cần thấy mũi tên khoá->giá trị của MỘT tờ ngay khi
+        # tờ ấy vừa xong -- đợi hết lượt (có thể hàng chục phút) mới có ảnh
+        # đầu tiên là đúng cái giá `Artist` (lớp gọi hàm này) sinh ra để né.
+        # Bản rút gọn: không đổi giọng mô tả, không dựng schema -- những việc
+        # đó là việc của `finish()`/`derive.py` chạy một lần cho cả lô.
+        try:
+            full_pairs, _counts = kie_complete(record, source)
+        except Exception:                                    # noqa: BLE001
+            full_pairs = []
         for num, img in enumerate(got["images"], start=1):
             name = stem if num == 1 else f"{stem}_p{num}"
             cv2.imwrite(str(root / "images" / kind / f"{name}.jpg"), img,
@@ -665,7 +676,10 @@ class Drawer:
                 "html": f"html/{kind}/{name}.html",
                 "layout_boxes_image": f"layout_boxes/{kind}/{name}.jpg",
                 "word_boxes_image": f"word_boxes/{kind}/{name}.jpg",
-                "fill": 1.0, "kie_pairs": 0,
+                "visualize_kie_image": f"visualize_kie/{kind}/{name}.jpg",
+                "fill": 1.0,
+                "kie_pairs": sum(1 for p in full_pairs
+                                if int(p.get("page_number", 1) or 1) == num),
                 "llm_passed_gate": passed,
             })
 
@@ -689,6 +703,11 @@ class Drawer:
                         [w for w in words
                          if int(w.get("page_number", 1) or 1) == num]),
                 [cv2.IMWRITE_JPEG_QUALITY, 88])
+            cv2.imwrite(
+                str(root / "visualize_kie" / kind / f"{name}.jpg"),
+                O.kie(img.copy(), full_pairs, num),
+                [cv2.IMWRITE_JPEG_QUALITY, 88])
+        kie_total = len(full_pairs)
         why = declared.get("why") or []
         asked = int(declared.get("sheets_asked") or 0)
         # "xin 4 -> cắt ra 2" là dấu hiệu model viết THIẾU: trang qua mọi cổng,
@@ -699,7 +718,7 @@ class Drawer:
         if asked and asked != total:
             note = f", xin {asked} -> cắt ra {total} tờ"
         return (f"  {'✓' if passed else '✗'} {stem:34s} {len(layout):3d} vùng, "
-                f"{len(words):4d} hộp từ{note}"
+                f"{len(words):4d} hộp từ, {kie_total:3d} cặp KIE{note}"
                 + (f"  — {why[0][:48]}" if why else ""), True)
 
 

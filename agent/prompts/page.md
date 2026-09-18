@@ -929,6 +929,48 @@ Same rule as every other diversity dimension in this document: vary across
 the corpus, stay plausible within one document. A single page should still
 look coherent -- two or three colors used with intent, not a rainbow.
 
+## 27.2 Concrete CSS for the other dimensions in section 27's list
+
+A bullet list of dimension NAMES ("spacing", "border density", "heading
+scale") is easy to read and easy to still satisfy the same way every time
+-- section 27.1 exists because that happened with color, measured directly.
+Do not let it happen again with everything else on that list. Concrete
+knobs, not exhaustive, pick a plausible few per document:
+
+- **line-height**: vary between roughly `1.15` (dense, compact) and `1.6`
+  (airy, generous) depending on document density -- do not default to the
+  browser's `normal` on every page.
+- **letter-spacing**: a small positive value (`0.02em`-`0.06em`) on
+  headings/labels for a more official or printed feel; `normal` elsewhere.
+  Do not apply it everywhere at once -- it reads as a mistake, not a style.
+- **border style, not just presence**: `solid` is not the only option --
+  `double` for a formal seal/certificate border, a `dashed` cut line, a
+  thicker bottom border on a table header row instead of a full grid. Vary
+  `border-width` (`1px` for a quiet table, `2px`-`3px` for an emphasized
+  frame) instead of using the same `1px solid #000` everywhere.
+- **heading scale**: the ratio between title and body size should differ by
+  document formality -- a stark, large all-caps title for a certificate; a
+  modest, close-to-body-size heading for an internal memo. Do not reuse one
+  `font-size` scale for every family.
+- **table rule style**: full grid lines are one option, not the default --
+  horizontal rules only (no vertical lines), zebra-striped rows via a subtle
+  `background-color` on alternating `<tr>`, or a header row set apart only
+  by a heavier bottom border with no lines elsewhere.
+- **corner and depth cues, used sparingly**: a small `border-radius`
+  (`2px`-`4px`) on a stamp or info box; a very subtle `box-shadow` on a
+  boxed section for a printed-form look. These should be the exception, not
+  present on every block of the page -- most real Vietnamese paperwork is
+  flat.
+- **section separation**: a full-width rule, a shaded band, extra vertical
+  margin alone, or a change of background tint for one section -- do not
+  make every section boundary look identical to every other boundary on the
+  same page.
+
+Same governing rule as 27.1: choose deliberately per document, vary across
+the corpus, and never let variety break plausibility for the document
+family -- a tax authority form does not get a `border-radius` and a pastel
+background just to be different.
+
 ---
 
 # 28. LETTERHEAD

@@ -706,13 +706,18 @@ def arithmetic(rows: list[dict]) -> tuple[int, int]:
     return bad, len(rows)
 
 
-_PATH_STEP = re.compile(r"([a-zA-Z_][a-zA-Z0-9_]*)|\[(\d+)\]")
+# Ngoặc vuông TUỲ CHỌN quanh chỉ số: `[0]` VÀ `0` trần (`clause.1.body`) đều
+# là chỉ số -- `synthgen/llm_page.py::_PATH` giờ chấp nhận cả hai hình (Phase
+# 8, đo trên pilot16), nên đường đọc cây `data` ở đây phải hiểu cả hai, không
+# chỉ hình có ngoặc.
+_PATH_STEP = re.compile(r"([a-zA-Z_][a-zA-Z0-9_]*)|\[?(\d+)\]?")
 
 
 def resolve_path(data: dict, path: str) -> tuple[bool, object]:
-    """Đi theo một `data-path` (`issuer.tax_code`, `line_items[0].name`) vào
-    cây `data`. `(True, giá trị)` nếu đi hết đường; `(False, None)` nếu gãy
-    ở đâu đó -- đường dẫn có đoạn không khớp khoá/chỉ số nào trong cây."""
+    """Đi theo một `data-path` (`issuer.tax_code`, `line_items[0].name`,
+    `clause.1.body`) vào cây `data`. `(True, giá trị)` nếu đi hết đường;
+    `(False, None)` nếu gãy ở đâu đó -- đường dẫn có đoạn không khớp
+    khoá/chỉ số nào trong cây."""
     node: object = data
     for match in _PATH_STEP.finditer(path):
         name, index = match.group(1), match.group(2)
