@@ -1401,51 +1401,27 @@ Do not blindly transfer fields from one document family into another.
 
 # 34. LEGALLY PRESCRIBED DOCUMENTS
 
-The following layouts are structurally constrained:
-
-- `form_activity`
-- `form_dense`
-- `form_symmetric`
-- `hospital_bill`
-- `insurance_auto_certificate`
-- `insurance_health_id_card`
-- `insurance_moto_certificate`
-- `vat_invoice_form`
+Some document families (official forms, certificates, government-issued paper) have a structural organization fixed by regulation, not by convention. If the document you invent is one of these, do not freely reconstruct its layout the way you would an ordinary internal memo.
 
 For these:
 
 - preserve the required structural organization;
 - do not freely reconstruct the document;
-- variation should primarily come from permitted visual, content, and physical characteristics;
-- use `variant = none` or `variant = locked` when required by the selector configuration.
+- variation should come from content, wording, and physical/visual characteristics, not from re-architecting the form itself.
 
-Do not introduce arbitrary structural changes that make the document no longer recognizable as the intended prescribed form.
+Do not introduce structural changes that make the document no longer recognizable as the prescribed form it claims to be.
 
 ---
 
 # 35. INDUSTRY-IDENTITY DOCUMENTS
 
-The following document families have strong industry-specific structural identities:
-
-- `authorisation_letter`
-- `export_invoice`
-- `form_roster`
-- `insurance_cargo_policy`
-- `insurance_fire_certificate`
-- `insurance_health_certificate`
-- `insurance_life_schedule`
-- `insurance_travel_certificate`
-- `tax_invoice_en`
-- `utility_power`
-- `utility_water`
+Some document families (invoices, utility bills, insurance certificates, export paperwork) carry a strong industry-specific structural identity even without being legally mandated — a reader familiar with the industry expects a recognizable shape.
 
 For these:
 
 - preserve the core industry-specific structure;
 - allow visual and content variation;
-- do not arbitrarily replace the defining information architecture;
-- do not exceed the permitted variant level;
-- use `variant = livery` or a stricter permitted value when required.
+- do not arbitrarily replace the defining information architecture.
 
 Variation should occur within the document's plausible industry identity.
 
@@ -1589,47 +1565,20 @@ Avoid combinations that destroy readability unless explicitly requested.
 
 ---
 
-# 42. ATTRIBUTE SELECTION INTERFACE
+# 42. COHERENCE ACROSS DECISIONS
 
-When the outer generation interface requests parameter selection, return exactly these attributes in this order:
-
-1. `document`
-2. `layout`
-3. `variant`
-4. `content`
-5. `visual`
-6. `color`
-7. `ornament`
-8. `handwriting`
-9. `augmentation`
-10. `toner`
-11. `drum`
-12. `rollers`
-
-Every value must be selected from the IDs supplied by the caller.
-
-Never invent an ID.
-
-Never modify an ID.
-
-Never return a natural-language description where an ID is expected.
-
----
-
-# 43. ATTRIBUTE COHERENCE
-
-The selected attributes must form a coherent combination.
+Every decision you make about this document — document type, density, table morphology, layout, typography, signatures, degradation — must form one coherent combination, not a set of independently-rolled dice.
 
 Examples:
 
 - a formal certificate should not receive an unrelated decorative style;
 - a dense accounting document should not receive an extremely sparse layout;
-- a legally constrained form should not receive a free reconstruction variant;
+- a legally constrained form should not receive a freely-reconstructed structure;
 - handwriting should be plausible for the document type;
 - stamps should be plausible for the organization and document context;
 - physical degradation should remain compatible with the selected visual style.
 
-Avoid known problematic combinations when the supplied critic statistics indicate elevated failure rates.
+Avoid known problematic combinations when the caller's brief flags elevated failure rates for a specific choice.
 
 ---
 
@@ -2228,33 +2177,4 @@ The final population must be diverse without becoming unrealistic.
 
 # 61. OUTPUT FORMAT
 
-When the outer generation interface requests attribute selection, return raw JSON only.
-
-The JSON must contain exactly these 12 keys and no additional keys:
-
-```json
-{
-  "document": "...",
-  "layout": "...",
-  "variant": "...",
-  "content": "...",
-  "visual": "...",
-  "color": "...",
-  "ornament": "...",
-  "handwriting": "...",
-  "augmentation": "...",
-  "toner": "...",
-  "drum": "...",
-  "rollers": "..."
-}
-```
-
-Every value must be an ID from the corresponding user-provided list.
-
-Do not wrap the JSON in Markdown.
-
-Do not add explanations.
-
-Do not add comments.
-
-Do not add additional fields.
+Return output in the exact shape the caller's structured-output schema requires for this call — no more keys, no fewer, no prose before or after the JSON. The schema, not this document, is authoritative on field names and nesting for a given call: different calls in this pipeline ask for different shapes (a full document realization vs. a narrower parameter choice), and the schema you were given for this specific request is the one to satisfy.

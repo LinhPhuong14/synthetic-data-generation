@@ -20,13 +20,27 @@ from memory**:
   with the measured rates, so the model is told what actually goes wrong here
   rather than what somebody guessed might.
 
-Three files, because they are read at three different times. `SYSTEM_PROMPT.md`
-goes in the system turn every request. `KNOWLEDGE.md` is the reference a person
-reads once and a long-context model can be given whole. `CHECKLIST.md` is what
-the model runs its own answer past before returning it.
+Three files, because they are read at three different times. `PARAM_SYSTEM_PROMPT.md`
+goes in the system turn every request the attribute-picking planner
+(`agent/planner.py`) makes. `KNOWLEDGE.md` is the reference a person reads once
+and a long-context model can be given whole. `CHECKLIST.md` is what the model
+runs its own answer past before returning it.
 
 Regenerated, never hand-edited: a guideline that drifts from the rules it
 describes is worse than none, because it is believed.
+
+## `SYSTEM_PROMPT.md` (no leading `PARAM_`) is NOT one of these three
+
+That filename is now the hand-authored base-rules layer for the *other*
+track -- the one where the model writes the whole page itself
+(`agent/compose_page.py::system_prompt()`, sent alongside
+`agent/prompts/page.md`). It used to be this module's first output, back
+when there was only one track calling itself "the planner"; the name
+collision is history, not a hint that this module should write there again.
+Do not add `SYSTEM_PROMPT.md` back to `FILES` -- doing so silently discards
+the hand-authored file on the next `--guideline` run, and the two tracks
+expect incompatible things from their system turn (this one picks IDs from
+closed lists; the other one writes HTML).
 """
 
 from __future__ import annotations
@@ -40,7 +54,7 @@ from agent import policy as policy_module
 
 DEFAULT_DIR = Path(__file__).resolve().parent / "guideline"
 
-FILES = ("SYSTEM_PROMPT.md", "KNOWLEDGE.md", "CHECKLIST.md")
+FILES = ("PARAM_SYSTEM_PROMPT.md", "KNOWLEDGE.md", "CHECKLIST.md")
 
 
 def _stamp(dataset: str) -> str:
@@ -332,7 +346,7 @@ def write(directory: Path | str, rules: dict, pol,
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
     pages = {
-        "SYSTEM_PROMPT.md": system_prompt(rules, pol, review),
+        "PARAM_SYSTEM_PROMPT.md": system_prompt(rules, pol, review),
         "KNOWLEDGE.md": knowledge(rules, pol, review),
         "CHECKLIST.md": checklist(review),
     }

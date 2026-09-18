@@ -67,6 +67,42 @@ from synthgen.adorn import hands, seals
 from synthgen.repair import repair
 
 PROMPT = "page"
+GUIDELINE_DIR = Path(__file__).resolve().parent / "guideline"
+
+
+def base_rules() -> str:
+    """The base-rules layer that used to sit unused in `agent/guideline/`.
+
+    `agent/guideline.py::write()` composes `SYSTEM_PROMPT.md` from
+    `agent/policy.yaml` for a DIFFERENT track (the one that picks rulebase
+    attribute IDs, `agent/planner.py`) and nobody ever sent it here -- this
+    call went straight to `prompt("page")` and nothing else. The role,
+    diversity/balancing philosophy, and known-failure-pattern sections of
+    that file apply just as much to a model that writes the whole page
+    itself, so it belongs in this track's system turn too.
+
+    Read fresh on every call, same as `prompt()` above: a hand edit or a
+    `tools/critic_review.py --guideline` regeneration takes effect on the
+    next request, no restart. Missing file is not fatal -- an empty string
+    just leaves `system_prompt()` to fall back to `page.md` alone."""
+    path = GUIDELINE_DIR / "SYSTEM_PROMPT.md"
+    return path.read_text(encoding="utf-8") if path.exists() else ""
+
+
+def system_prompt() -> str:
+    """What actually goes in the system turn.
+
+    Two files answer two different questions, so both go in, base rules
+    first: `SYSTEM_PROMPT.md` says WHY the corpus should end up varied and
+    realistic (role, diversity, balancing, failure patterns); `page.md` says
+    HOW to draw one sheet (data tree, data-kind/data-path, tables, KIE,
+    hard negatives, HTML mechanics). Concatenating roughly doubles the
+    system-prompt token cost of every call -- worth watching against
+    `budget()`/`patience()` if per-page latency regresses once this runs at
+    scale."""
+    base = base_rules()
+    page = prompt(PROMPT)
+    return f"{base}\n\n---\n\n{page}" if base else page
 
 
 def schema() -> dict:
@@ -744,7 +780,7 @@ def one(client, index: int, made: list[str], seed: int,
     brief = ask_for(index, made, sheets, table, lang)
     try:
         answer, usage = client.decide_with_usage(
-            prompt("page"),
+            system_prompt(),
             brief, schema(),
             max_tokens=budget(sheets), timeout=patience(sheets, client.timeout))
     except LLMError as error:
@@ -858,7 +894,8 @@ def _write_performance(out: Path, report: dict, made: list[dict]) -> None:
         "",
         f"* **Model** `{report['model']}` tại `{report['url']}`",
         f"* **Lời dặn** bằng `{report.get('lang')}`"
-        f" (`agent/prompts/{PROMPT_OF.get(report.get('lang'), 'page')}.md`)",
+        f" (`agent/guideline/SYSTEM_PROMPT.md` +"
+        f" `agent/prompts/{PROMPT_OF.get(report.get('lang'), 'page')}.md`)",
         f"* **Song song** {report['concurrency']} request",
         "",
         "## Kết quả",
