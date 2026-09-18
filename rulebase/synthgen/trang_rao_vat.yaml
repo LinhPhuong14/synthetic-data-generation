@@ -1,0 +1,46 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: trang_rao_vat
+profile: market
+org_kind: company
+national: 0.0
+titles:
+- RAO VẶT - MUA BÁN
+- THÔNG TIN RAO VẶT
+- CHỢ TỐT - TRANG RAO VẶT
+subtitles:
+- Phát hành hằng tuần
+- ''
+- Liên hệ đăng tin
+fields:
+- period
+- phone_home
+field_span:
+- 1
+- 2
+columns:
+- - stt
+  - name
+  - unit_price
+  - note
+- - name
+  - unit_price
+  - note
+totals: none
+words: false
+sign_sets: []
+notes:
+- Toà soạn không chịu trách nhiệm về nội dung tin đăng.
+- Tin đăng có hiệu lực trong 07 ngày kể từ ngày phát hành.
+rows:
+- 6
+- 60
+always:
+- letterhead
+- doctitle
+- table
+optional:
+- meta
+- footer
+- footnote
+- notes
+en_ok: false

@@ -1,0 +1,50 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: lenh_dieu_xe
+profile: admin
+org_kind: company
+national: 0.3
+titles:
+- LỆNH ĐIỀU XE
+- LỆNH VẬN CHUYỂN
+- PHIẾU ĐIỀU ĐỘNG PHƯƠNG TIỆN
+subtitles:
+- ''
+- 'Số: ..../LĐX'
+fields:
+- full_name
+- record_no
+- period
+- object
+- address_home
+field_span:
+- 4
+- 5
+columns:
+- - stt
+  - date
+  - name
+  - qty
+  - note
+totals: none
+words: false
+sign_sets:
+- - LÁI XE
+  - PHỤ TRÁCH ĐỘI XE
+  - GIÁM ĐỐC
+notes:
+- Lái xe mang theo lệnh khi vận hành phương tiện.
+rows:
+- 1
+- 14
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- signatures
+optional:
+- meta
+- footer
+- notes
+- checks
+en_ok: false

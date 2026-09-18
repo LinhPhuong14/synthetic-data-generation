@@ -1,0 +1,27 @@
+# bản có danh mục giấy tờ người được cử phải mang: khối ghi chú biến thành danh sách ô đánh dấu, và nó đứng TRƯỚC khối các bên
+id: form_dispatch_checklist
+name: Introduction letter — errand paragraph then a ticked document list
+source: 'soạn tay theo agent/prompts/anatomy.md §4 — bản có danh mục giấy tờ người được cử phải mang: khối ghi chú biến thành danh sách ô đánh dấu, và nó đứng TRƯỚC khối các bên'
+family: form
+width:
+- 78
+- 88
+gutter: 2
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- header
+- notes
+- parties
+- signatures
+- footer
+header:
+  title: true
+fields:
+  columns: two
+checklist:
+  checked_rate: 0.45
+signatures:
+  name_gap: 5
+  stamp_width: 26

@@ -1,0 +1,58 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: giay_bao_nhap_hoc
+profile: admin
+org_kind: state
+national: 0.95
+titles:
+- GIẤY BÁO NHẬP HỌC
+- GIẤY BÁO TRÚNG TUYỂN
+- THÔNG BÁO NHẬP HỌC
+subtitles:
+- ''
+- Năm học ....
+- ''
+fields:
+- full_name
+- dob
+- id_no
+- address_home
+- record_no
+- period
+field_span:
+- 5
+- 6
+columns:
+- - stt
+  - name
+  - amount
+  - note
+- - stt
+  - name
+  - date
+  - note
+totals: money
+words: false
+sign_sets:
+- - HIỆU TRƯỞNG
+- - TRƯỞNG PHÒNG ĐÀO TẠO
+  - HIỆU TRƯỞNG
+notes:
+- Thí sinh có mặt đúng ngày để làm thủ tục nhập học.
+- Mang theo học bạ, bằng tốt nghiệp và giấy khai sinh (bản sao).
+rows:
+- 1
+- 14
+always:
+- letterhead
+- doctitle
+- fields
+- clauses
+- signatures
+optional:
+- meta
+- footer
+- notes
+- table
+- totals
+- legal_basis
+en_ok: false

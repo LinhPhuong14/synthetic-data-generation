@@ -1,0 +1,87 @@
+# Hoá đơn dàn theo lối "dải định danh bên trái".
+#
+# Quyết định (§4 anatomy) tờ này khác các phôi khác:
+#   (1) tầng định danh KHÔNG nằm trên đầu mà chạy DỌC một dải hẹp bên trái —
+#       tên nhà in, mã số thuế, số hoá đơn, ngày. Dáng của tờ in từ phần mềm
+#       bán hàng, nơi phần thân phải giữ trọn bề ngang cho bảng.
+#   (4) tiêu đề bảng hai tầng: `Số lượng` và `Đơn giá` là hai con số cùng trả
+#       lời "một đơn vị bao nhiêu, mấy đơn vị", nên chúng gộp; `Thành tiền`
+#       đứng riêng vì nó là kết quả, không phải một vế của câu hỏi ấy.
+#   (7) MỘT ô ký, không phải hai: tờ in từ phần mềm chỉ có bên bán ký.
+id: invoice_rail_ledger
+name: Sales invoice — identity rail down the left, quantity/price grouped
+source: "soạn mới theo agent/prompts/anatomy.md §1 và §4 — không đo từ ảnh nào"
+family: modern
+
+width: [84, 96]
+gutter: 2
+rule_char: "-"
+sheet: a4
+rules: marks
+
+sections: [header, strip, parties, table, totals, words, signatures, footer]
+
+page:
+  style: sidebar
+  sidebar_sections: [header, strip]
+
+header:
+  name_scale: [1.15, 1.30]
+  name_bold: true
+  title: false
+  tax_code: true
+  address: true
+
+strip:
+  rule_after: false
+
+parties:
+  style: two_column
+  split: 0.5
+  gap: 2
+
+column_header: true
+columns:
+  - {key: stt,        title: "STT",                  width: 4,  align: center, title_align: center}
+  - {key: name,       title: "Tên hàng hoá, dịch vụ", width: 0,  align: left,   title_align: left}
+  - {key: unit,       title: "ĐVT",                  width: 8,  align: center, title_align: center}
+  - {key: qty,        title: "Số lượng",             width: 8,  align: right,  title_align: center}
+  - {key: unit_price, title: "Đơn giá",              width: 13, align: right,  title_align: center}
+  - {key: amount,     title: "Thành tiền",           width: 15, align: right,  title_align: center}
+
+item:
+  wrap_name: true
+  rows:
+    - - {col: stt, from: stt}
+      - {col: name, from: name}
+      - {col: unit, from: unit}
+      - {col: qty, from: qty}
+      - {col: unit_price, from: unit_price}
+      - {col: amount, from: amount}
+
+table:
+  # Bảng phải nói nó là bảng gì.
+  caption: "BẢNG KÊ HÀNG HOÁ BÁN RA"
+  frame: false
+  row_rules: true
+  header_rules: true
+  shade: 0.0
+  header_groups:
+    - {title: "Số lượng và đơn giá", from: qty, to: unit_price}
+
+totals:
+  frame: true
+  indent: 0.46
+  emphasise_grand: true
+  grand_two_lines: true
+
+words:
+  frame: false
+
+signatures:
+  name_gap: 4
+  stamp_gap: 3
+  stamp_width: 30
+
+footer:
+  rule_before: false

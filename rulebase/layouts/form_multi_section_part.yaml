@@ -1,0 +1,66 @@
+# soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (parties_below), giữ nguyên cột và dây nối dữ liệu của form_multi_section
+id: form_multi_section_part
+name: form_multi_section — parties_below
+source: 'soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (parties_below), giữ nguyên cột và dây nối dữ liệu của form_multi_section'
+family: form
+width:
+- 85
+- 95
+gutter: 2
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- header
+- table
+- parties
+- totals
+- signatures
+- footer
+header:
+  title: true
+sectioned:
+  titles:
+  - Thông tin dự án
+  - Số liệu
+columns:
+- key: stt
+  title: STT
+  width: 5
+  align: center
+  title_align: center
+- key: name
+  title: Chỉ tiêu
+  width: 0
+  align: left
+  title_align: left
+- key: qty
+  title: Số lượng
+  width: 10
+  align: right
+  title_align: right
+- key: unit
+  title: Đơn vị
+  width: 10
+  align: center
+  title_align: center
+- key: amount
+  title: Giá trị
+  width: 14
+  align: right
+  title_align: right
+item:
+  wrap_name: true
+  rows:
+  - - col: stt
+      from: stt
+    - col: name
+      from: name
+    - col: qty
+      from: qty
+    - col: unit
+      from: unit
+    - col: amount
+      from: amount
+table:
+  caption: BẢNG KÊ CHI TIẾT

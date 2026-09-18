@@ -1,0 +1,76 @@
+# soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (totals_first), giữ nguyên cột và dây nối dữ liệu của form_activity_signature
+id: form_activity_signature_tota
+name: form_activity_signature — totals_first
+source: 'soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (totals_first), giữ nguyên cột và dây nối dữ liệu của form_activity_signature'
+family: form
+width:
+- 85
+- 95
+gutter: 2
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- header
+- table
+- totals
+- signatures
+- notes
+- footer
+header:
+  title: true
+columns:
+- key: stt
+  title: STT
+  width: 5
+  align: center
+  title_align: center
+- key: date
+  title: Thời gian
+  width: 15
+  align: center
+  title_align: center
+- key: name
+  title: Nội dung hoạt động
+  width: 0
+  align: left
+  title_align: left
+- key: qty
+  title: Số lần
+  width: 8
+  align: center
+  title_align: center
+- key: unit
+  title: ĐVT
+  width: 8
+  align: center
+  title_align: center
+- key: note
+  title: Ghi chú
+  width: 12
+  align: left
+  title_align: left
+- key: amount
+  title: Phụ cấp
+  width: 16
+  align: right
+  title_align: right
+item:
+  wrap_name: true
+  rows:
+  - - col: stt
+      from: stt
+    - col: date
+      from: date
+    - col: name
+      from: name
+    - col: qty
+      from: qty
+    - col: unit
+      from: unit
+    - col: note
+      from: note
+    - col: amount
+      from: amount
+table:
+  caption: BẢNG KÊ CHI TIẾT

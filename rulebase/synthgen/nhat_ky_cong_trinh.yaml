@@ -1,0 +1,54 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: nhat_ky_cong_trinh
+profile: invoice
+org_kind: company
+national: 0.2
+titles:
+- NHẬT KÝ THI CÔNG XÂY DỰNG
+- NHẬT KÝ CÔNG TRÌNH
+subtitles:
+- Tháng ....
+- ''
+- 'Công trình: ....'
+fields:
+- contract_no
+- object
+- period
+- full_name
+field_span:
+- 3
+- 4
+columns:
+- - stt
+  - date
+  - name
+  - qty
+  - note
+- - stt
+  - date
+  - name
+  - note
+totals: none
+words: false
+sign_sets:
+- - CÁN BỘ KỸ THUẬT
+  - CHỈ HUY TRƯỞNG
+  - TƯ VẤN GIÁM SÁT
+notes:
+- Nhật ký ghi chép hằng ngày, không tẩy xoá.
+rows:
+- 6
+- 80
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- signatures
+optional:
+- meta
+- footer
+- notes
+- footnote
+- figure
+en_ok: false

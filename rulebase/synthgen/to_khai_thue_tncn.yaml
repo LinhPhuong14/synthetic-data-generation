@@ -1,0 +1,56 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: to_khai_thue_tncn
+profile: invoice
+org_kind: state
+national: 1.0
+titles:
+- TỜ KHAI QUYẾT TOÁN THUẾ THU NHẬP CÁ NHÂN
+- TỜ KHAI THUẾ TNCN
+subtitles:
+- Mẫu số 02/QTT-TNCN
+- '(Kỳ tính thuế: Năm ....)'
+fields:
+- full_name
+- id_no
+- address_home
+- seller_tax
+- period
+field_span:
+- 4
+- 5
+columns:
+- - stt
+  - name
+  - amount
+  - note
+- - stt
+  - ref
+  - name
+  - amount
+  - vat_amount
+totals: money
+words: false
+sign_sets:
+- - NGƯỜI NỘP THUẾ
+- - NGƯỜI NỘP THUẾ
+  - CƠ QUAN THUẾ
+notes:
+- Cá nhân tự chịu trách nhiệm về tính chính xác của số liệu đã khai.
+rows:
+- 3
+- 30
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- totals
+- signatures
+optional:
+- meta
+- footer
+- notes
+- words
+- legal_basis
+- summary
+en_ok: false

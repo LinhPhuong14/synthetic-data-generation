@@ -1,0 +1,55 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: giay_chung_nhan_qsdd
+profile: admin
+org_kind: state
+national: 1.0
+titles:
+- GIẤY CHỨNG NHẬN QUYỀN SỬ DỤNG ĐẤT
+- GIẤY CHỨNG NHẬN QUYỀN SỬ DỤNG ĐẤT, QUYỀN SỞ HỮU NHÀ Ở
+subtitles:
+- ''
+- 'Số phát hành: ....'
+- (Bản trích lục)
+fields:
+- full_name
+- dob
+- id_no
+- address_home
+- object
+- value
+- record_no
+field_span:
+- 5
+- 7
+columns:
+- - stt
+  - name
+  - unit
+  - qty
+  - note
+totals: none
+words: false
+sign_sets:
+- - GIÁM ĐỐC SỞ TÀI NGUYÊN VÀ MÔI TRƯỜNG
+- - NGƯỜI SỬ DỤNG ĐẤT
+  - CƠ QUAN CẤP GIẤY
+notes:
+- Giấy chứng nhận là chứng thư pháp lý xác nhận quyền sử dụng đất.
+- Mọi biến động phải đăng ký tại Văn phòng đăng ký đất đai.
+rows:
+- 0
+- 10
+always:
+- letterhead
+- doctitle
+- fields
+- clauses
+- signatures
+optional:
+- meta
+- footer
+- notes
+- legal_basis
+- table
+- figure
+en_ok: false

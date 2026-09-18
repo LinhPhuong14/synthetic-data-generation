@@ -1,0 +1,52 @@
+# soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (parties_below), giữ nguyên cột và dây nối dữ liệu của insurance_fire_certificate
+id: insurance_fire_certificate_part
+name: insurance_fire_certificate — parties_below
+source: 'soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (parties_below), giữ nguyên cột và dây nối dữ liệu của insurance_fire_certificate'
+family: insurance
+composition: fire_cert
+width:
+- 92
+- 104
+gutter: 2
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- letterhead
+- doctitle
+- table
+- parties
+- totals
+- notes
+- signatures
+- footer
+letterhead:
+  frame: false
+  labels:
+    address: ''
+    tax_code: ''
+    phone: ''
+    account: ''
+    branch: ''
+    form_no: ''
+    serial: ''
+    number: 'Số:'
+parties:
+  style: stacked
+columns:
+- key: name
+  label: Hạng mục tài sản
+  width: 0
+  align: left
+- key: amount
+  label: Số tiền bảo hiểm (đồng)
+  width: 26
+  align: right
+item:
+  rows:
+  - - col: name
+      from: name
+    - col: amount
+      from: amount
+table:
+  caption: CHI TIẾT QUYỀN LỢI BẢO HIỂM

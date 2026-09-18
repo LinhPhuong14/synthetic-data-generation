@@ -1,0 +1,51 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: don_xin_thoi_viec
+profile: admin
+org_kind: company
+national: 0.4
+titles:
+- ĐƠN XIN THÔI VIỆC
+- ĐƠN XIN NGHỈ VIỆC
+- ĐƠN CHẤM DỨT HỢP ĐỒNG LAO ĐỘNG
+subtitles:
+- ''
+- 'Kính gửi: Ban Giám đốc'
+fields:
+- full_name
+- dob
+- position
+- record_no
+- period
+field_span:
+- 4
+- 5
+columns:
+- - stt
+  - name
+  - date
+  - note
+totals: none
+words: false
+sign_sets:
+- - NGƯỜI LÀM ĐƠN
+- - NGƯỜI LÀM ĐƠN
+  - TRƯỞNG BỘ PHẬN
+  - PHÒNG NHÂN SỰ
+notes:
+- Tôi cam kết bàn giao đầy đủ công việc và tài sản trước ngày nghỉ.
+- Kính mong Ban Giám đốc xem xét, chấp thuận.
+rows:
+- 0
+- 8
+always:
+- letterhead
+- doctitle
+- fields
+- notes
+- signatures
+optional:
+- meta
+- footer
+- clauses
+- table
+en_ok: false

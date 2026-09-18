@@ -1,0 +1,25 @@
+# soạn tay theo agent/prompts/anatomy.md §4
+# — phiếu khảo sát phát tại chỗ: các ô đánh dấu in TRƯỚC, người trả lời ghi tên ở cuối, trường một cột
+id: form_questionnaire_checklist
+name: Questionnaire — ticked answers first, respondent named at the foot
+source: 'soạn tay theo agent/prompts/anatomy.md §4 — phiếu khảo sát phát tại chỗ: các ô đánh dấu in TRƯỚC, người trả lời ghi tên ở cuối, trường một cột'
+family: form
+width:
+- 86
+- 96
+gutter: 2
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- header
+- notes
+- parties
+- signatures
+- footer
+header:
+  title: true
+fields:
+  columns: one
+checklist:
+  checked_rate: 0.35

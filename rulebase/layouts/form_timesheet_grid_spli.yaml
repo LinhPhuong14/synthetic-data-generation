@@ -1,0 +1,78 @@
+# soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (split_pages), giữ nguyên cột và dây nối dữ liệu của form_timesheet_grid
+id: form_timesheet_grid_spli
+name: form_timesheet_grid — split_pages
+source: 'soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (split_pages), giữ nguyên cột và dây nối dữ liệu của form_timesheet_grid'
+family: form
+width:
+- 90
+- 100
+gutter: 1
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- header
+- table
+- totals
+- signatures
+- footer
+header:
+  title: true
+grid:
+  days:
+  - T2
+  - T3
+  - T4
+  - T5
+  - T6
+  - T7
+  - CN
+columns:
+- key: stt
+  title: STT
+  width: 5
+  align: center
+  title_align: center
+- key: name
+  title: Họ và tên
+  width: 15
+  align: left
+  title_align: left
+- key: unit
+  title: ĐVT
+  width: 6
+  align: center
+  title_align: center
+- key: qty
+  title: Tổng công
+  width: 7
+  align: center
+  title_align: center
+- key: amount
+  title: Phụ cấp
+  width: 10
+  align: right
+  title_align: right
+item:
+  wrap_name: true
+  rows:
+  - - col: stt
+      from: stt
+    - col: name
+      from: name
+    - col: unit
+      from: unit
+    - col: qty
+      from: qty
+    - col: amount
+      from: amount
+page_order:
+- - header
+  - table
+- - table
+  - totals
+  - signatures
+  - footer
+table:
+  rows_first: 8
+  caption: BẢNG KÊ CHI TIẾT

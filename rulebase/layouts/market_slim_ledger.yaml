@@ -1,0 +1,82 @@
+# soạn tay theo agent/prompts/anatomy.md §2
+# — băng hẹp của cửa hàng tiện lợi, ĐẢO thứ tự hai dòng: dòng trên là các con số (số lượng, đơn giá, thành tiền), dòng dưới mới là tên hàng trải hết bề ngang
+# — người cầm băng dò số trước, đọc tên sau. Bản trước chỉ in `name` và `amount`: `menu.cnt` nằm trong nhãn mà không có cột nào in nó, và `pipeline/invariants.py` từ chối đúng như phải thế
+# — bỏ một cột là bỏ một dây nối vào dữ liệu, không phải một lựa chọn thẩm mỹ
+# — BA dòng một mặt hàng
+# — tên, rồi số liệu, rồi mã vạch. Bản trước bỏ mã vạch, thuế suất và dòng khuyến mãi: ba trường nằm trong nhãn mà giấy không in. thêm `item.discount_row` như phôi gốc: dòng khuyến mãi là chỗ `menu.discountprice` được in ra
+id: market_slim_ledger
+name: Convenience roll — figures on the first line, item name beneath
+source: 'soạn tay theo agent/prompts/anatomy.md §2 — băng hẹp của cửa hàng tiện lợi, ĐẢO thứ tự hai dòng: dòng trên là các con số (số lượng, đơn giá, thành tiền), dòng dưới mới là tên hàng trải hết bề ngang
+  — người cầm băng dò số trước, đọc tên sau. Bản trước chỉ in `name` và `amount`: `menu.cnt` nằm trong nhãn mà không có cột nào in nó, và `pipeline/invariants.py` từ chối đúng như phải thế — bỏ một cột
+  là bỏ một dây nối vào dữ liệu, không phải một lựa chọn thẩm mỹ — BA dòng một mặt hàng — tên, rồi số liệu, rồi mã vạch. Bản trước bỏ mã vạch, thuế suất và dòng khuyến mãi: ba trường nằm trong nhãn mà giấy
+  không in. thêm `item.discount_row` như phôi gốc: dòng khuyến mãi là chỗ `menu.discountprice` được in ra'
+family: till
+width:
+- 38
+- 46
+rule_char: '-'
+header:
+  name_scale:
+  - 1.15
+  - 1.45
+  name_bold: true
+  title: true
+  title_scale:
+  - 1.15
+  - 1.4
+meta:
+  style: pipes
+  rule_after: false
+column_header: true
+column_header_bold: false
+columns:
+- key: qty
+  title: SL
+  width: 4
+  align: right
+  title_align: right
+- key: vat_rate
+  title: TS
+  width: 4
+  align: center
+  title_align: center
+- key: unit_price
+  title: Đơn giá
+  width: 10
+  align: right
+  title_align: right
+- key: amount
+  title: Tiền
+  width: 11
+  align: right
+  title_align: right
+item:
+  wrap_name: true
+  rows:
+  - - from: name
+      span:
+      - qty
+      - amount
+      align: left
+  - - col: qty
+      from: qty
+    - col: vat_rate
+      from: vat_rate
+    - col: unit_price
+      from: unit_price
+    - col: amount
+      from: amount
+  - - from: barcode
+      span:
+      - qty
+      - amount
+      align: left
+  discount_row:
+    label: Khuyến mãi
+totals:
+  emphasise_grand: true
+  grand_scale:
+  - 1.15
+  - 1.45
+footer:
+  rule_before: false

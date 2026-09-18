@@ -1,0 +1,58 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: the_kho
+profile: invoice
+org_kind: company
+national: 0.2
+titles:
+- THẺ KHO
+- SỔ KHO
+- THẺ THEO DÕI VẬT TƯ
+subtitles:
+- Mẫu số S12-DN
+- Tháng ....
+- ''
+fields:
+- seller_name
+- record_no
+- unit
+- period
+field_span:
+- 3
+- 4
+columns:
+- - stt
+  - date
+  - ref
+  - name
+  - qty
+  - note
+- - stt
+  - date
+  - name
+  - qty
+  - unit
+  - note
+totals: count
+words: false
+sign_sets:
+- - THỦ KHO
+  - KẾ TOÁN TRƯỞNG
+  - GIÁM ĐỐC
+notes:
+- Thẻ kho được lập cho từng danh điểm vật tư.
+rows:
+- 8
+- 120
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- signatures
+optional:
+- meta
+- footer
+- notes
+- totals
+- footnote
+en_ok: false

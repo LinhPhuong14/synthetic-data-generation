@@ -1,0 +1,48 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: so_lien_lac
+profile: admin
+org_kind: state
+national: 0.5
+titles:
+- SỔ LIÊN LẠC
+- PHIẾU LIÊN LẠC GIA ĐÌNH
+- SỔ LIÊN LẠC ĐIỆN TỬ
+subtitles:
+- Tháng ....
+- ''
+- ''
+fields:
+- full_name
+- record_no
+- period
+field_span:
+- 2
+- 3
+columns:
+- - stt
+  - name
+  - qty
+  - note
+totals: count
+words: false
+sign_sets:
+- - GIÁO VIÊN CHỦ NHIỆM
+  - PHỤ HUYNH
+notes:
+- Đề nghị phụ huynh xem và ký xác nhận, gửi lại nhà trường.
+rows:
+- 3
+- 24
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- signatures
+optional:
+- meta
+- footer
+- notes
+- totals
+- checks
+en_ok: false

@@ -1,0 +1,120 @@
+# soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (title_first), giữ nguyên cột và dây nối dữ liệu của invoice_vat_form
+id: invoice_vat_form_titl
+name: invoice_vat_form — title_first
+source: 'soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (title_first), giữ nguyên cột và dây nối dữ liệu của invoice_vat_form'
+family: statutory
+width:
+- 104
+- 118
+gutter: 3
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- doctitle
+- letterhead
+- parties
+- table
+- totals
+- words
+- signatures
+- footer
+letterhead:
+  name_scale:
+  - 1.0
+  - 1.15
+  name_bold: true
+  serial_width: 26
+  labels:
+    address: 'Địa chỉ:'
+    tax_code: 'Mã số thuế:'
+    phone: 'Điện thoại:'
+    account: 'Số tài khoản:'
+    branch: ''
+    form_no: 'Mẫu số:'
+    serial: 'Ký hiệu:'
+    number: 'Số:'
+doctitle:
+  scale:
+  - 1.3
+  - 1.55
+parties:
+  style: stacked
+  leader: .
+column_header: true
+column_header_bold: true
+columns:
+- key: stt
+  title: STT
+  width: 6
+  align: center
+  title_align: center
+- key: name
+  title: Tên hàng hoá, dịch vụ
+  width: 0
+  align: left
+  title_align: center
+- key: unit
+  title: Đơn vị tính
+  width: 11
+  align: center
+  title_align: center
+- key: qty
+  title: Số lượng
+  width: 10
+  align: right
+  title_align: center
+- key: unit_price
+  title: Đơn giá
+  width: 14
+  align: right
+  title_align: center
+- key: amount
+  title: Thành tiền chưa có thuế GTGT
+  width: 14
+  align: right
+  title_align: center
+- key: vat_rate
+  title: Thuế suất GTGT
+  width: 10
+  align: center
+  title_align: center
+- key: amount_with_vat
+  title: Thành tiền có thuế GTGT
+  width: 15
+  align: right
+  title_align: center
+table:
+  frame: true
+  row_rules: true
+  blank_rows: 5
+  caption: CHI TIẾT SỬ DỤNG
+item:
+  wrap_name: true
+  rows:
+  - - col: stt
+      from: stt
+    - col: name
+      from: name
+    - col: unit
+      from: unit
+    - col: qty
+      from: qty
+    - col: unit_price
+      from: unit_price
+    - col: amount
+      from: amount
+    - col: vat_rate
+      from: vat_rate
+    - col: amount_with_vat
+      from: amount_with_vat
+totals:
+  frame: true
+  emphasise_grand: true
+words:
+  frame: true
+signatures:
+  stamp_width: 46
+  stamp_gap: 2
+footer:
+  rule_before: false

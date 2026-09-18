@@ -1,0 +1,44 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: phieu_gui_xe
+profile: market
+org_kind: shop
+national: 0.0
+titles:
+- VÉ GỬI XE
+- PHIẾU GỬI XE
+- THẺ XE
+subtitles:
+- ''
+- Giữ vé cẩn thận
+- ''
+fields:
+- record_no
+- period
+- payment
+field_span:
+- 2
+- 3
+columns:
+- - stt
+  - name
+  - amount
+totals: money
+words: false
+sign_sets: []
+notes:
+- Mất vé phải xuất trình giấy tờ xe và chịu phí theo quy định.
+- Không nhận giữ tài sản để trong xe.
+rows:
+- 0
+- 4
+always:
+- doctitle
+- fields
+optional:
+- letterhead
+- meta
+- footer
+- notes
+- table
+- totals
+en_ok: false

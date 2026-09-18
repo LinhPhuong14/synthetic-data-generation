@@ -1,0 +1,58 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: hop_dong_tin_dung
+profile: invoice
+org_kind: company
+national: 0.6
+titles:
+- HỢP ĐỒNG TÍN DỤNG
+- HỢP ĐỒNG CHO VAY
+- KHẾ ƯỚC NHẬN NỢ
+subtitles:
+- 'Số: ..../HĐTD'
+- ''
+- ''
+fields:
+- party_a
+- party_b
+- full_name
+- id_no
+- seller_bank
+- term
+- value
+field_span:
+- 6
+- 7
+columns:
+- - stt
+  - date
+  - name
+  - amount
+  - note
+totals: money
+words: true
+sign_sets:
+- - BÊN VAY
+  - BÊN CHO VAY
+- - KHÁCH HÀNG
+  - GIÁM ĐỐC CHI NHÁNH
+notes:
+- Hợp đồng lập thành hai bản có giá trị pháp lý như nhau.
+- Lãi suất được điều chỉnh theo thông báo của ngân hàng.
+rows:
+- 0
+- 20
+always:
+- letterhead
+- doctitle
+- fields
+- clauses
+- signatures
+optional:
+- meta
+- footer
+- notes
+- legal_basis
+- table
+- totals
+- formula
+en_ok: false

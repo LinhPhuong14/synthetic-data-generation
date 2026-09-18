@@ -1,0 +1,60 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: so_kham_benh
+profile: medical
+org_kind: hospital
+national: 0.6
+titles:
+- SỔ KHÁM BỆNH
+- SỔ Y BẠ
+- PHIẾU KHÁM BỆNH
+subtitles:
+- ''
+- (Mang theo khi tái khám)
+- Khoa Khám bệnh
+fields:
+- patient
+- dob
+- gender
+- record_no
+- ward
+- diagnosis
+- admitted
+field_span:
+- 5
+- 7
+columns:
+- - stt
+  - date
+  - name
+  - note
+- - stt
+  - date
+  - name
+  - qty
+  - unit
+  - note
+totals: none
+words: false
+sign_sets:
+- - BÁC SĨ KHÁM BỆNH
+- - NGƯỜI BỆNH
+  - BÁC SĨ ĐIỀU TRỊ
+notes:
+- Người bệnh giữ sổ và mang theo mỗi lần khám.
+- Sổ có giá trị trong 12 tháng kể từ lần khám đầu.
+rows:
+- 2
+- 40
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- signatures
+optional:
+- meta
+- footer
+- notes
+- footnote
+- formula
+en_ok: false

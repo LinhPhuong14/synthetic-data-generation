@@ -1,0 +1,23 @@
+# Tờ khai y tế: khai báo dịch tễ khi nhập cảnh hoặc vào cơ sở khám chữa bệnh.
+# Không bảng, không tiền — cả tờ giấy là câu hỏi và ô tích.
+id: to_khai_y_te
+titles: [TỜ KHAI Y TẾ, TỜ KHAI BÁO Y TẾ, PHIẾU KHAI BÁO DỊCH TỄ]
+subtitles: ["", (Mẫu 02/KBYT), Áp dụng cho người đến khám và người nhà]
+profile: medical
+org_kind: hospital
+national: 0.85
+fields: [full_name, dob, gender, id_no, address_home, phone_home]
+field_span: [4, 6]
+columns: [[stt, name, date, note]]
+totals: none
+words: false
+sign_sets:
+  - [NGƯỜI KHAI, CÁN BỘ TIẾP NHẬN]
+  - [Người khai báo, Nhân viên y tế, Lãnh đạo khoa]
+notes:
+  - Người khai chịu trách nhiệm trước pháp luật về tính trung thực của nội dung đã khai.
+  - Tờ khai được lưu tại cơ sở y tế trong thời hạn theo quy định.
+rows: [0, 6]
+always: [letterhead, doctitle, fields, questions, signatures]
+optional: [meta, notes, footer, legal_basis]
+en_ok: false

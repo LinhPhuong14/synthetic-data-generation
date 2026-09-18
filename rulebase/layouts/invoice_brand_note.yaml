@@ -1,0 +1,100 @@
+# soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (notes_top), giữ nguyên cột và dây nối dữ liệu của invoice_brand
+id: invoice_brand_note
+name: invoice_brand — notes_top
+source: 'soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (notes_top), giữ nguyên cột và dây nối dữ liệu của invoice_brand'
+family: modern
+width:
+- 66
+- 78
+gutter: 2
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- header
+- strip
+- parties
+- notes
+- table
+- totals
+- footer
+header:
+  name_scale:
+  - 1.35
+  - 1.6
+  name_bold: true
+  title: true
+  title_scale:
+  - 1.3
+  - 1.55
+  address: false
+  address2: false
+  phone: false
+  website: false
+strip:
+  separator: '|'
+  rule_after: false
+parties:
+  style: two_column
+  split: 0.38
+  gap: 3
+  leader: ''
+column_header: true
+column_header_bold: false
+columns:
+- key: stt
+  title: Mục
+  width: 5
+  align: center
+  title_align: center
+- key: name
+  title: Sản phẩm
+  width: 0
+  align: left
+  title_align: left
+- key: qty
+  title: Số lượng
+  width: 10
+  align: right
+  title_align: right
+- key: unit_price
+  title: Đơn giá
+  width: 14
+  align: right
+  title_align: right
+- key: amount
+  title: Thành tiền
+  width: 15
+  align: right
+  title_align: right
+table:
+  frame: false
+  shade: 0.12
+  header_rules: true
+  caption: CHI TIẾT HÀNG HOÁ, DỊCH VỤ
+item:
+  wrap_name: true
+  rows:
+  - - col: stt
+      from: stt
+    - col: name
+      from: name
+    - col: qty
+      from: qty
+    - col: unit_price
+      from: unit_price
+    - col: amount
+      from: amount
+totals:
+  frame: false
+  indent: 0.4
+  emphasise_grand: true
+  grand_scale:
+  - 1.1
+  - 1.3
+  grand_two_lines: false
+notes:
+  style: two_column
+  split: 0.52
+footer:
+  rule_before: false

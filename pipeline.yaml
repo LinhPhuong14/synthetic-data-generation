@@ -1,0 +1,127 @@
+# One run, declared. `python pipeline/run.py` reads this file.
+#
+# Unknown keys are rejected rather than ignored: a config with `ouput:` in it
+# that runs anyway, on the default, is exactly the silent failure this
+# repository keeps getting bitten by.
+
+run:
+  out: data/run01
+  # Images per backend. A FLOOR rather than a free number: it must be at least
+  # the layout count, or the run refuses to start rather than quietly drawing
+  # only the front of the list (`pipeline/plan.py::uncovered`).
+  #
+  # `auto` is that floor, computed: **one image of every layout there is**, so
+  # this line does not go stale the day somebody adds a YAML file to
+  # `rulebase/layouts/`. It said `20` while the repository had 18 layouts; at 42
+  # the same number refuses to run. The resolved figure is written into
+  # `plan.json` and `manifest.json`, so a dataset still records the number it
+  # was built with rather than the word.
+  #
+  # A number is still the right answer for a fixed comparison, for the same
+  # reason `layouts:` should name its own: `auto` draws a different-sized set
+  # the day the layout count changes.
+  per_backend: auto
+  seed: 2026
+  workers: auto          # auto = CPUs - 1, so the machine stays usable
+
+  # paired       every backend draws the SAME receipts, so a difference between
+  #              two renderers is a difference in drawing and nothing else.
+  # independent  each backend gets its own seed block: three times the distinct
+  #              pages, and no basis at all for comparing the renderers.
+  #
+  # Before W1b this was `independent` and nothing said so, which is why the
+  # published proof numbers compared three different corpora. The mode is
+  # written into manifest.json for the same reason.
+  pairing: paired
+
+  # Which page model draws the pages: `grid` (the character grid) or `auto`
+  # (the CSS sheet for each layout, in generators/html/sheets/). Stated rather
+  # than defaulted, because it decides what the whole page looks like and a run
+  # built on the wrong one only shows up when someone puts it beside an older
+  # set.
+  #
+  # `auto`. It used to be the grid, for a reason that has since gone: the glyph
+  # backend could not draw a table rule, and while it was in `backends` a run
+  # asking for the sheets was refused. `backends` is now `[html]`, so nothing
+  # stands in the way of the model that actually draws an invoice -- 4.32% of
+  # pixels carrying colour against 0.24%, measured over the sixteen layouts.
+  # `dataset60` looks plainer than `invoices54` because it predates this line.
+  template: auto
+
+  # Which layouts to draw from, by name. Empty (the default) means **every file
+  # in `rulebase/layouts/`** -- so a layout added to that directory, by hand or
+  # by `agent/augment_layout.py`, is in the next run without anybody
+  # editing this file. That is what a dataset wants.
+  #
+  # A *fixed comparison* should name them instead: the quota walks the list in
+  # order, so a run that took the directory draws a different set the day
+  # someone adds a layout. That is how the golden baseline went red without
+  # being able to say why -- see `tools/baseline.py`, whose plans all name
+  # theirs. `plan.json` records which of the two this run was (`layout_source`),
+  # because the list alone cannot say.
+  #
+  # Every layout in the run gets at least one image or the run refuses to
+  # start: `per_backend` below the layout count does not spread thin, it drops
+  # the tail of the list and says nothing. See `pipeline/plan.py::uncovered`.
+  layouts: []
+
+  # Every shipped layout already has a real entry in
+  # generators/html/sheets/FAMILIES, so this draws through the CSS-sheet
+  # family each layout was actually designed against, not the character-grid
+  # fallback (`build_grid`) that only tests/test_layout.py's geometry suite
+  # and pipeline/preflight.py's page-overflow estimate still need directly.
+  template: auto
+
+# `html` is the renderer, and the only one. `genalog` and `synthdog` are
+# deleted; naming either here is an error with the reason attached, because a
+# typo'd backend must not read as "draw nothing" -- see pipeline/config.py and
+# docs/renderers.md.
+backends: [html]
+
+shard:
+  # Images per shard. Too small and subprocess and browser startup dominate;
+  # too large and a kill loses more work and the load spreads unevenly.
+  #
+  # At the cost of a page measured by `tools/profile_pipeline.py` -- html 1.4s
+  # under the conditions that file records -- 100 to 250 puts a shard in the
+  # two-to-ten-minute band resume is designed for. (The band was originally
+  # chosen against three renderers, the other two measured at 3.1s and 0.9s.
+  # They are deleted; the band is not re-derived, because html sits inside it
+  # on its own.) The numbers here were re-measured from scratch rather than carried
+  # forward: the previous ones predated the `sample_recipe` fix, and comparing
+  # a new measurement with an old one taken over a different layout and ageing
+  # mix credits whatever changed in between with the difference.
+  #
+  # The fixed cost a shard pays ONCE -- interpreter plus backend start-up -- is
+  # 0.7s for html, most of it launching Chromium. Once, since W3b: a shard is one renderer process whatever its
+  # layout count. It used to be one process per layout, so a 20-image shard
+  # over 14 layouts paid that cost 14 times and drew 1.43 images per process.
+  # Fixing it cut the same plan from 140s to 98s, a third of the run, without
+  # changing a pixel on any renderer then present.
+  size: 100
+
+# Re-weight a value for this run only, without editing rules/. Every entry must
+# name something that exists; one that does not stops the run rather than
+# quietly leaving the weights alone.
+overrides: {}
+
+quality:
+  # How far a shard's mix may sit from the mix the plan asked for, measured as
+  # total variation distance. In words:
+  #
+  #   0.15 means at most 15% of a shard's draws would have to be moved from one
+  #   value to another to turn what was drawn into what was expected -- OVER AND
+  #   ABOVE what a sample that size scatters by anyway.
+  #
+  # The second clause is the load-bearing one. Forty draws over eleven
+  # augmentation values land about 0.19 from their own weights by chance, so a
+  # tolerance read as a flat ceiling warns on runs that have not drifted; the
+  # first real run it was tried on warned at 0.17 with nothing wrong. The
+  # scatter is computed per attribute and per shard and printed in the warning,
+  # so this number keeps one meaning whether a shard holds 40 draws or 4000.
+  #
+  # Raising it is a decision about what size of drift is acceptable, not a way
+  # to quieten a noisy run -- the noise is already accounted for.
+  drift_tolerance: 0.15
+  # Reserved for the OCR sampling wave; read and carried, not yet used.
+  sample_for_ocr: 500

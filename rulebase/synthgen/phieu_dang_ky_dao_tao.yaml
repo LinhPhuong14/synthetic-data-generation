@@ -1,0 +1,25 @@
+# Phiếu đăng ký khoá đào tạo: nửa trên là trường, nửa dưới là câu hỏi nguyện
+# vọng, kèm bảng liệt kê học phần đăng ký.
+id: phieu_dang_ky_dao_tao
+titles: [PHIẾU ĐĂNG KÝ ĐÀO TẠO, ĐƠN ĐĂNG KÝ KHOÁ HỌC, PHIẾU ĐĂNG KÝ BỒI DƯỠNG NGHIỆP VỤ]
+subtitles: ["", (Mẫu ĐK-02), Khoá: ...., năm ....]
+profile: admin
+org_kind: state
+national: 0.7
+fields: [full_name, dob, position, ward, phone_home, address_home]
+field_span: [4, 6]
+columns:
+  - [stt, ref, name, unit, qty]
+  - [stt, name, date, qty, note]
+totals: count
+words: false
+sign_sets:
+  - [NGƯỜI ĐĂNG KÝ, THỦ TRƯỞNG ĐƠN VỊ]
+  - [Học viên, Phụ trách đào tạo, Lãnh đạo đơn vị]
+notes:
+  - Phiếu đăng ký nộp về bộ phận đào tạo trước ngày khai giảng mười ngày.
+  - Học viên tự túc phương tiện đi lại nếu không có thông báo khác.
+rows: [0, 14]
+always: [letterhead, doctitle, fields, questions, signatures]
+optional: [meta, notes, footer, table, legal_basis]
+en_ok: false

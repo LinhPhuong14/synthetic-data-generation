@@ -1,0 +1,48 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: giay_chung_nhan_tot_nghiep
+profile: admin
+org_kind: state
+national: 0.95
+titles:
+- GIẤY CHỨNG NHẬN TỐT NGHIỆP TẠM THỜI
+- GIẤY CHỨNG NHẬN TỐT NGHIỆP
+subtitles:
+- ''
+- (Có giá trị đến khi được cấp bằng chính thức)
+fields:
+- full_name
+- dob
+- gender
+- id_no
+- record_no
+- period
+field_span:
+- 4
+- 6
+columns:
+- - stt
+  - name
+  - note
+totals: none
+words: false
+sign_sets:
+- - HIỆU TRƯỞNG
+- - NGƯỜI LẬP
+  - HIỆU TRƯỞNG
+notes:
+- Giấy chứng nhận có giá trị trong thời hạn 01 năm kể từ ngày ký.
+rows:
+- 0
+- 6
+always:
+- letterhead
+- doctitle
+- fields
+- signatures
+optional:
+- meta
+- footer
+- notes
+- legal_basis
+- photo
+en_ok: false

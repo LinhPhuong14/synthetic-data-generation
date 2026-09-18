@@ -1,0 +1,48 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: the_bhyt
+profile: insurance
+org_kind: state
+national: 0.9
+titles:
+- THẺ BẢO HIỂM Y TẾ
+- THẺ BHYT
+subtitles:
+- ''
+- 'Mã số: ....'
+fields:
+- full_name
+- dob
+- gender
+- card_no
+- address_home
+- cover_from
+- cover_to
+field_span:
+- 6
+- 7
+columns:
+- - stt
+  - name
+  - note
+totals: none
+words: false
+sign_sets:
+- - GIÁM ĐỐC BHXH TỈNH
+notes:
+- Thẻ chỉ có giá trị khi đi cùng giấy tờ tuỳ thân có ảnh.
+- Không cho người khác mượn thẻ.
+rows:
+- 0
+- 5
+always:
+- letterhead
+- doctitle
+- fields
+optional:
+- meta
+- footer
+- notes
+- photo
+- signatures
+- legal_basis
+en_ok: false

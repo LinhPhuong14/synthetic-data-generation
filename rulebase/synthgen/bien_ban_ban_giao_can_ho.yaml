@@ -1,0 +1,59 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: bien_ban_ban_giao_can_ho
+profile: invoice
+org_kind: company
+national: 0.3
+titles:
+- BIÊN BẢN BÀN GIAO CĂN HỘ
+- BIÊN BẢN BÀN GIAO NHÀ Ở
+subtitles:
+- ''
+- 'Số: ..../BBBG'
+fields:
+- party_a
+- party_b
+- address_home
+- contract_no
+- period
+field_span:
+- 4
+- 5
+columns:
+- - stt
+  - name
+  - unit
+  - qty
+  - note
+- - stt
+  - ref
+  - name
+  - qty
+  - note
+totals: count
+words: false
+sign_sets:
+- - BÊN GIAO
+  - BÊN NHẬN
+- - CHỦ ĐẦU TƯ
+  - KHÁCH HÀNG
+  - ĐƠN VỊ QUẢN LÝ
+notes:
+- Bên nhận đã kiểm tra và đồng ý với hiện trạng bàn giao.
+- Các tồn tại (nếu có) được ghi tại phụ lục kèm theo.
+rows:
+- 3
+- 50
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- signatures
+optional:
+- meta
+- footer
+- notes
+- clauses
+- totals
+- checks
+en_ok: false

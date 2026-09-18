@@ -1,0 +1,355 @@
+# THUỘC TÍNH 1/10 — LOẠI DOCUMENT
+#
+# Bốc trước tiên, nên đây là chỗ quyết định "tờ giấy này là cái gì". Mọi thuộc
+# tính sau đều nhìn thấy `tags` mà giá trị ở đây gắn vào, và dùng
+# requires/excludes để tự loại mình ra nếu không hợp.
+#
+# weight = tần suất tương đối. Muốn nhiều hoá đơn siêu thị hơn thì tăng weight
+# của mấy dòng doc_market, không phải sửa code.
+#
+# params đi thẳng vào `rulebase.content.build`.
+#
+# `id` và `tags` viết bằng TIẾNG ANH — chúng là định danh trong code. Chỉ chuỗi
+# thật sự ĐƯỢC IN LÊN hoá đơn (`titles`, `total_labels`) mới giữ tiếng Việt.
+
+groups:
+
+  # ------------------------------------------------------------------------
+  - id: till_receipt
+    label: "Giấy tính tiền tại quầy — in xong đưa tay khách"
+    options:
+
+    - id: pub_eatery
+      weight: 3
+      tags: [doc_eatery, has_table_no]
+
+    - id: street_eatery
+      weight: 3
+      tags: [doc_eatery]
+
+    - id: restaurant_menu_full
+      weight: 1
+      tags: [doc_eatery, has_groups]
+
+    - id: restaurant_vat
+      weight: 2
+      tags: [doc_eatery, has_vat]
+
+    - id: supermarket
+      weight: 3
+      tags: [doc_market, has_barcode, has_vat]
+
+    - id: convenience_store
+      weight: 2
+      tags: [doc_market, has_promo]
+
+    - id: supermarket_vat
+      weight: 2
+      tags: [doc_market, has_barcode, has_vat, has_vat_lines]
+
+  # ------------------------------------------------------------------------
+  - id: statutory_invoice
+    label: "Hoá đơn theo mẫu nhà nước — GTGT và tiền điện, tiền nước"
+    options:
+
+    # --------------------------------------------------------------------
+    # HOÁ ĐƠN GTGT — tờ A4, không phải giấy nhiệt.
+    #
+    # `invoice: true` là công tắc: `rulebase.content` thấy nó thì dựng thêm
+    # phần hoá đơn (hai bên mua/bán, ký hiệu + số, số tiền bằng chữ, chữ ký) và
+    # BỎ khối `meta` của máy tính tiền. `party_fields` liệt kê trường nào có mặt
+    # và nhãn của nó — nhãn là chữ IN LÊN GIẤY nên viết tiếng Việt.
+    - id: vat_invoice_form
+      weight: 2
+      tags: [doc_invoice, has_vat, invoice_form, corpus_en]
+
+    - id: utility_water
+      weight: 2
+      tags: [doc_invoice, doc_utility, has_vat, metered_water]
+
+    - id: utility_power
+      weight: 2
+      tags: [doc_invoice, doc_utility, has_vat, metered_power]
+
+  # ------------------------------------------------------------------------
+  - id: commercial_invoice
+    label: "Hoá đơn thương mại — bán buôn, xuất khẩu, song ngữ"
+    options:
+
+    # Hoá đơn tiếng Anh. Là loại document RIÊNG chứ không phải bản dịch: corpus
+    # của nó nằm ở `rulebase/corpus/en/`, và `lang: en` là chỗ nói điều đó.
+    - id: tax_invoice_en
+      weight: 1
+      tags: [doc_invoice, has_vat, lang_en, corpus_en]
+
+    # --------------------------------------------------------------------
+    # HOÁ ĐƠN GTGT CÓ BẢNG "TỔNG HỢP" — bản thể hiện của hoá đơn điện tử.
+    #
+    # Khác `vat_invoice_form` ở chỗ kết thúc: thay vì một dòng "Thuế GTGT 10%",
+    # tờ này có một bảng nhỏ tổng hợp theo TỪNG thuế suất, vì hai dòng trên cùng
+    # tờ hoá đơn có thể chịu hai mức thuế khác nhau. `summary: true` bật nó.
+    #
+    # `summary_rates` là các mức IN SẴN trên mẫu (0%, 5%, 10%) — hàng nào không
+    # bán ở mức đó thì để trống chứ không bỏ dòng; `vat_rates` mới là mức thực
+    # sự tính cho từng dòng hàng.
+    - id: retail_vat_invoice
+      weight: 2
+      tags: [doc_invoice, has_vat, invoice_summary, corpus_en]
+
+    # --------------------------------------------------------------------
+    # HOÁ ĐƠN XUẤT KHẨU — tờ mẫu SONG NGỮ.
+    #
+    # Nhãn trường viết hai thứ tiếng ngay trên giấy: "Số vận đơn (Bill of lading
+    # No.)". Đó là chuỗi IN LÊN GIẤY nên nằm ở đây, không phải ở code — và cũng
+    # là lý do document này không dùng `lang: en`: corpus vẫn là tiếng Việt, chỉ
+    # có nhãn là song ngữ.
+    #
+    # Hàng xuất khẩu chịu thuế suất 0%, nên tờ này KHÔNG có dòng thuế:
+    # `show_vat: false` phủ quyết giá trị của thuộc tính content.
+    - id: export_invoice
+      weight: 2
+      tags: [doc_invoice, doc_export]
+
+    # --------------------------------------------------------------------
+    # HAI TÀI LIỆU CHO HỌ "MODERN" — 10 bố cục root Invoice/Billing.
+    #
+    # `bare_fields` / `rich_fields` là chỗ nối với `rules/layout.yaml`: mười
+    # bố cục mới chia làm hai nhóm theo đúng những gì chúng liệt trong
+    # `sections:`, và mỗi tài liệu chỉ điền đúng phần mà nhóm layout của nó
+    # in ra — xem đầu `documents/invoice_plain.yaml` và
+    # `documents/invoice_detailed.yaml`.
+    - id: invoice_plain
+      weight: 2
+      tags: [doc_invoice, has_vat, bare_fields, corpus_en]
+
+    - id: invoice_detailed
+      weight: 2
+      tags: [doc_invoice, has_vat, rich_fields, corpus_en]
+
+  # ------------------------------------------------------------------------
+  - id: service_invoice
+    label: "Hoá đơn dịch vụ — lưu trú, ăn uống có thương hiệu"
+    options:
+
+    # --------------------------------------------------------------------
+    # HOÁ ĐƠN LƯU TRÚ — khách sạn, khu nghỉ dưỡng.
+    #
+    # `stay: true` đổi cách dựng dòng hàng: MỘT DÒNG MỘT ĐÊM, cùng một đơn giá,
+    # kèm ngày của đêm đó và số phòng. Nhờ vậy phép tính trên giấy kiểm được —
+    # bốn dòng giống hệt nhau và một tổng bằng bốn lần một dòng — và khối thông
+    # tin đặt phòng phía trên nói đúng số đêm mà bảng phía dưới có.
+    #
+    # Không có dòng thuế (giá phòng đã gồm thuế và phí phục vụ, nói ở chân
+    # trang), nhưng CÓ dòng đã thanh toán và dòng còn lại: khách trả tiền khi
+    # trả phòng, và tờ giấy phải nói còn nợ bao nhiêu.
+    - id: resort_stay
+      weight: 2
+      tags: [doc_invoice, doc_lodging, doc_service]
+
+    - id: hotel_stay
+      weight: 2
+      tags: [doc_invoice, doc_lodging, doc_service]
+
+    # --------------------------------------------------------------------
+    # HOÁ ĐƠN TIỆM BÁNH / QUÁN CÀ PHÊ — tờ tự thiết kế.
+    #
+    # Không phải hoá đơn GTGT: không mẫu số, không ký hiệu, không chữ ký, không
+    # số tiền bằng chữ. Có dòng thuế nhưng thường ở mức 0%, và kết thúc bằng hai
+    # khối chân trang cạnh nhau — thông tin chuyển khoản bên trái, cách liên hệ
+    # bên phải. `notes` là hai khối đó, ngăn nhau bằng một dòng trống.
+    - id: bakery_order
+      weight: 2
+      tags: [doc_invoice, doc_brand, doc_service, has_vat]
+
+  # ------------------------------------------------------------------------
+  - id: administrative_form
+    label: "Chứng từ hành chính — không ghi lại một lần mua bán"
+    options:
+
+    # ------------------------------------------------------------------------
+    # Hai loại chứng từ KHÔNG phải hoá đơn. Chúng ở đây vì `document` là chỗ nói
+    # "tờ giấy này là cái gì", và câu trả lời không nhất thiết phải là một lần
+    # mua bán. Xem `docs/phan-tich-2-mau-moi.html` cho ảnh mẫu gốc.
+    # Bảng kê chi phí khám chữa bệnh — Mẫu số 01/KBCB của Bộ Y tế.
+    #
+    # Đây là chứng từ nhiều cột nhất kho này có: mỗi dòng được định giá HAI lần,
+    # một theo giá bệnh viện và một theo giá bảo hiểm, rồi số tiền chia làm bốn
+    # nguồn. Bốn cột nguồn cộng lại đúng bằng tổng, và đó là phép tính người đọc
+    # kiểm — nên chúng được TÍNH TỪ các dòng chứ không bốc ra.
+    - id: hospital_bill
+      weight: 2
+      tags: [doc_invoice, doc_medical, doc_service, has_vat_lines]
+
+    # Giấy uỷ quyền nhận tiền — biểu mẫu của doanh nghiệp bảo hiểm nhân thọ.
+    #
+    # `no_items: true`: tờ này KHÔNG có bảng hàng. Nó nêu đúng một số tiền, và
+    # nêu ngay trong khối trường. Dựng nó với một dòng hàng giả sẽ đặt vào nhãn
+    # một tên hàng mà tờ giấy không có cột nào để in.
+    - id: authorisation_letter
+      weight: 2.3
+      tags: [doc_invoice, doc_authorisation, doc_service]
+
+    # ------------------------------------------------------------------------
+    # Root 3 (Form / Application) — tám tài liệu cho mười layout ở
+    # `rules/layout.yaml` (nhóm `form_document`). `bare_kv`/`symmetric`/
+    # `activity`/`checklist`/`checklist_table`/`sectioned`/`roster`/`dense`:
+    # mỗi tag khớp ĐÚNG MỘT layout hoặc một cặp layout cùng hình dạng nội
+    # dung — cùng cơ chế requires/excludes root 1 dùng cho invoice_plain/
+    # invoice_detailed. Xem `docs/root-document-taxonomy.md` § 3.3.
+    # TẮT cùng mười bố cục root 3. Một loại chứng từ mà mọi bố cục in được nó
+    # đều đã tắt thì không phải "hiếm gặp", nó là **không dựng được**: người
+    # bốc sẽ bốc trúng nó rồi không tìm ra bố cục nào, thử lại 6 000 lần rồi
+    # bỏ cuộc. `tools/rules_report.py --check` bắt đúng chuyện đó từ bây giờ.
+    #
+    # Tắt chứ không xoá, giống mọi chỗ khác: bật lại là xoá tám dòng
+    # `enabled: false` ở đây và mười dòng ở `rules/layout.yaml`.
+    - id: form_brief
+      weight: 4.6
+      tags: [doc_invoice, doc_form, bare_kv, corpus_en]
+
+    - id: form_symmetric
+      weight: 2.3
+      tags: [doc_invoice, doc_form, symmetric, corpus_en]
+
+    - id: form_activity
+      weight: 1
+      tags: [doc_invoice, doc_form, activity, corpus_en]
+
+    - id: form_checklist
+      weight: 2.3
+      tags: [doc_invoice, doc_form, checklist, corpus_en]
+
+    - id: form_checklist_table
+      weight: 1
+      tags: [doc_invoice, doc_form, checklist_table, corpus_en]
+
+    - id: form_sectioned
+      weight: 1
+      tags: [doc_invoice, doc_form, sectioned, corpus_en]
+
+    - id: form_roster
+      weight: 1
+      tags: [doc_invoice, doc_form, roster, corpus_en]
+
+    - id: form_dense
+      weight: 4.6
+      tags: [doc_invoice, doc_form, dense_registry, corpus_en]
+
+    # ------------------------------------------------------------------------
+    # GIẤY TỜ HÀNH CHÍNH DOANH NGHIỆP — năm tờ mà kho này chưa có, và chúng
+    # chiếm phần lớn cái được đưa đi scan ở một văn phòng Việt Nam: một tờ cử
+    # người đi liên hệ, một tờ đếm đồ khi bàn giao, một phiếu thu tiền mặt,
+    # một lá đơn xin nghỉ, một biên bản họp toàn chữ.
+    #
+    # Chúng KHÔNG phải biến thể của tám tài liệu root 3 phía trên: bốn tờ
+    # `no_items` nhưng mỗi tờ hỏi một bộ trường khác hẳn, còn `handover_record`
+    # có bảng hàng thật — hình dạng nội dung khác nhau thì tài liệu khác nhau,
+    # đúng lý do `form_checklist` và `form_checklist_table` phải tách đôi.
+    #
+    # Mỗi tag hình dạng (`dispatch_note`, `handover`, `cash_voucher`,
+    # `leave_request`, `meeting_record`) khớp đúng MỘT layout ở
+    # `rules/layout.yaml`, cùng cơ chế root 3 dùng.
+    - id: dispatch_letter
+      weight: 4.6
+      tags: [doc_invoice, doc_form, dispatch_note]
+
+    - id: handover_record
+      weight: 2
+      tags: [doc_invoice, doc_form, handover]
+
+    # `doc_service` để tờ phiếu thu với tới được hoa văn thương hiệu của
+    # `ornament` — nó là chứng từ của một doanh nghiệp, không phải của một
+    # cơ quan, và tờ thật hay có logo in sẵn ở góc.
+    - id: cash_receipt_voucher
+      weight: 4.6
+      tags: [doc_invoice, doc_form, doc_service, cash_voucher]
+
+    - id: leave_application
+      weight: 4.6
+      tags: [doc_invoice, doc_form, leave_request]
+
+    - id: meeting_minutes
+      weight: 4.6
+      tags: [doc_invoice, doc_form, meeting_record]
+
+  # ------------------------------------------------------------------------
+  - id: periodical
+    label: "Báo/tạp chí — trang biên tập"
+    # Root 4 (Newspaper/Magazine). Không giống mọi document phía trên, các
+    # option dưới đây KHÔNG mang tag `doc_invoice` -- một trang báo/tạp chí
+    # không ghi lại một lần mua bán, cùng lý do `till_receipt` ở đầu file này
+    # cũng không mang tag đó. `params:` của bốn document này (masthead, tên
+    # ấn phẩm, ...) không nằm ở đây mà ở `rulebase/documents/<id>.yaml`, như
+    # mọi document khác -- xem `rulebase/spec.py::PARAMS_DIRS`.
+    options:
+
+    - id: newspaper_front_broadsheet
+      weight: 4.6
+      tags: [doc_periodical, periodical_lead_sidebar]
+
+    # TẮT cùng bố cục cùng tên: chỉ document này bốc được bố cục ấy và
+    # ngược lại, nên bỏ một cái lẻ để lại một `unreachable` trong báo cáo
+    # mỗi lượt chạy. Xem `rulebase/rules/layout.yaml`.
+    - id: newspaper_classifieds
+      enabled: false
+      weight: 2
+      tags: [doc_periodical, periodical_classifieds]
+
+    - id: magazine_contents
+      weight: 4.6
+      tags: [doc_periodical, periodical_toc]
+
+    - id: magazine_qa_interview
+      weight: 4.6
+      tags: [doc_periodical, periodical_qa]
+
+  # ------------------------------------------------------------------------
+  - id: insurance
+    label: "Bảo hiểm — chứng nhận, hợp đồng, đơn từ, thẻ"
+    # Mười chứng từ bảo hiểm Việt Nam, tất cả vẫn dựng `Invoice` (không phải
+    # một mô hình nội dung mới như `periodical` ở trên): mỗi document đặt
+    # `invoice: true` trong `rulebase/documents/insurance_<id>.yaml` nên vẫn
+    # mang `doc_invoice` -- khác hẳn `periodical`, giống `authorisation_letter`
+    # ở nhóm `administrative_form` (`rules/layout.yaml`). `params:` của cả
+    # mười nằm ở `rulebase/documents/<id>.yaml`, như mọi document khác.
+    options:
+
+    - id: insurance_moto_certificate
+      weight: 4.6
+      tags: [doc_invoice, doc_insurance, insurance_moto_cert]
+
+    - id: insurance_auto_certificate
+      weight: 4.6
+      tags: [doc_invoice, doc_insurance, insurance_auto_cert]
+
+    - id: insurance_life_schedule
+      weight: 2
+      tags: [doc_invoice, doc_insurance, insurance_life_schedule]
+
+    - id: insurance_application_form
+      weight: 2
+      tags: [doc_invoice, doc_insurance, insurance_application_form]
+
+    - id: insurance_health_id_card
+      weight: 4.6
+      tags: [doc_invoice, doc_insurance, insurance_health_id_card]
+
+    - id: insurance_health_certificate
+      weight: 2
+      tags: [doc_invoice, doc_insurance, insurance_health_cert]
+
+    - id: insurance_cargo_policy
+      weight: 4.6
+      tags: [doc_invoice, doc_insurance, insurance_cargo_policy]
+
+    - id: insurance_fire_certificate
+      weight: 2
+      tags: [doc_invoice, doc_insurance, insurance_fire_cert]
+
+    - id: insurance_travel_certificate
+      weight: 2
+      tags: [doc_invoice, doc_insurance, insurance_travel_cert]
+
+    - id: insurance_property_contract
+      weight: 2
+      tags: [doc_invoice, doc_insurance, insurance_property_contract]

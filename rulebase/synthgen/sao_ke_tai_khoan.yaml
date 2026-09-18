@@ -1,0 +1,58 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: sao_ke_tai_khoan
+profile: invoice
+org_kind: company
+national: 0.1
+titles:
+- SAO KÊ TÀI KHOẢN
+- BẢNG SAO KÊ GIAO DỊCH
+- SAO KÊ TÀI KHOẢN THANH TOÁN
+subtitles:
+- Từ ngày .... đến ngày ....
+- ''
+- ACCOUNT STATEMENT
+fields:
+- full_name
+- seller_bank
+- address_home
+- period
+field_span:
+- 3
+- 4
+columns:
+- - stt
+  - date
+  - name
+  - amount
+  - note
+- - stt
+  - date
+  - ref
+  - name
+  - amount
+  - note
+totals: money
+words: false
+sign_sets:
+- - GIAO DỊCH VIÊN
+  - KIỂM SOÁT
+notes:
+- Sao kê chỉ có giá trị khi có dấu của ngân hàng.
+- Mọi khiếu nại xin gửi trong vòng 30 ngày.
+rows:
+- 10
+- 200
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- totals
+optional:
+- meta
+- footer
+- notes
+- summary
+- signatures
+- footnote
+en_ok: true

@@ -1,0 +1,82 @@
+# soạn tay theo agent/prompts/anatomy.md §2
+# — tờ ghi kèm yêu cầu của khách: một cột ghi chú rộng chạy dọc bên phải tên món, giá đứng sau cùng
+# — ba cột chứ không sáu
+# — in cả `unit_price` như phôi gốc; cột ghi chú hẹp lại nhường chỗ
+# — thêm cột số lượng: `menu.cnt` phải có chỗ in. thêm `item.discount_row` như phôi gốc: dòng khuyến mãi là chỗ `menu.discountprice` được in ra
+id: eatery_menu_note_rail
+name: Restaurant bill A4 — a wide note rail beside the price
+source: 'soạn tay theo agent/prompts/anatomy.md §2 — tờ ghi kèm yêu cầu của khách: một cột ghi chú rộng chạy dọc bên phải tên món, giá đứng sau cùng — ba cột chứ không sáu — in cả `unit_price` như phôi
+  gốc; cột ghi chú hẹp lại nhường chỗ — thêm cột số lượng: `menu.cnt` phải có chỗ in. thêm `item.discount_row` như phôi gốc: dòng khuyến mãi là chỗ `menu.discountprice` được in ra'
+family: till
+width:
+- 60
+- 70
+sheet: a4
+rule_char: '-'
+header:
+  name_scale:
+  - 1.15
+  - 1.45
+  name_bold: true
+  title: true
+  title_scale:
+  - 1.15
+  - 1.4
+meta:
+  style: two_column
+  rule_after: true
+column_header: true
+column_header_bold: false
+columns:
+- key: name
+  title: Món
+  width: 0
+  align: left
+  title_align: left
+- key: note
+  title: Ghi chú
+  width: 14
+  align: left
+  title_align: left
+- key: qty
+  title: SL
+  width: 4
+  align: right
+  title_align: right
+- key: unit_price
+  title: Đơn giá
+  width: 11
+  align: right
+  title_align: right
+- key: amount
+  title: Thành tiền
+  width: 12
+  align: right
+  title_align: right
+item:
+  wrap_name: true
+  rows:
+  - - col: name
+      from: name
+    - col: note
+      from: note
+    - col: qty
+      from: qty
+    - col: unit_price
+      from: unit_price
+    - col: amount
+      from: amount
+  discount_row:
+    label: Giảm giá
+table:
+  header_groups:
+  - title: Số tiền (đồng)
+    from: unit_price
+    to: amount
+totals:
+  emphasise_grand: true
+  grand_scale:
+  - 1.15
+  - 1.45
+footer:
+  rule_before: false

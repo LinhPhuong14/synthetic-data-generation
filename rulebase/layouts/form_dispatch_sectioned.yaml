@@ -1,0 +1,29 @@
+# giấy giới thiệu chia mục có chữ cái: mục A là việc phải làm, mục B là hai bên. Người đọc tờ này đọc VIỆC trước, người sau
+id: form_dispatch_sectioned
+name: Introduction letter — lettered A/B, errand read before the parties
+source: 'soạn tay theo agent/prompts/anatomy.md §4 — giấy giới thiệu chia mục có chữ cái: mục A là việc phải làm, mục B là hai bên. Người đọc tờ này đọc VIỆC trước, người sau'
+family: form
+width:
+- 86
+- 96
+gutter: 2
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- header
+- notes
+- parties
+- signatures
+- footer
+header:
+  title: true
+fields:
+  columns: one
+sectioned:
+  titles:
+  - Nội dung công việc
+  - Thông tin các bên
+signatures:
+  name_gap: 5
+  stamp_width: 28

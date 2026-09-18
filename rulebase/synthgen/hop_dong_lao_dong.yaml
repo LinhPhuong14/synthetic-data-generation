@@ -1,0 +1,57 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: hop_dong_lao_dong
+profile: admin
+org_kind: company
+national: 0.8
+titles:
+- HỢP ĐỒNG LAO ĐỘNG
+- HỢP ĐỒNG LÀM VIỆC
+- HỢP ĐỒNG THỬ VIỆC
+subtitles:
+- 'Số: ..../HĐLĐ'
+- ''
+- (Theo Bộ luật Lao động 2019)
+fields:
+- party_a
+- party_b
+- full_name
+- dob
+- id_no
+- address_home
+- position
+- term
+field_span:
+- 6
+- 8
+columns:
+- - stt
+  - name
+  - amount
+  - note
+totals: money
+words: false
+sign_sets:
+- - NGƯỜI LAO ĐỘNG
+  - NGƯỜI SỬ DỤNG LAO ĐỘNG
+- - BÊN A
+  - BÊN B
+notes:
+- Hợp đồng lập thành hai bản, mỗi bên giữ một bản có giá trị như nhau.
+- Hợp đồng có hiệu lực kể từ ngày ký.
+rows:
+- 0
+- 16
+always:
+- letterhead
+- doctitle
+- fields
+- clauses
+- signatures
+optional:
+- meta
+- footer
+- notes
+- legal_basis
+- table
+- totals
+en_ok: false

@@ -1,0 +1,45 @@
+# THAM SỐ NỘI DUNG — meeting_minutes
+#
+# BIÊN BẢN HỌP: thời gian, địa điểm, chủ trì, thư ký, thành phần, rồi nội dung
+# và kết luận. Hai chữ ký cuối. Không bảng — cấu trúc nằm hết trong đoạn văn,
+# và đó chính là hình dạng mà một mô hình OCR ít gặp nhất trong kho này.
+
+profile: admin
+invoice: true
+no_items: true
+form_fields: true
+show_vat: false
+show_subtotal: false
+show_payment: false
+show_amount_words: false
+show_number: false
+show_seller_tax_code: false
+show_seller_website: false
+titles: ["BIÊN BẢN HỌP", "BIÊN BẢN CUỘC HỌP GIAO BAN"]
+serial_format: "{n}/BB"
+professions:
+  - "Trưởng phòng Kinh doanh"
+  - "Trưởng phòng Kỹ thuật"
+  - "Phó Giám đốc"
+  - "Trưởng phòng Hành chính — Nhân sự"
+party_fields:
+  left:
+    - [date, "Thời gian"]
+    - [buyer_address, "Địa điểm"]
+    - [applicant_name, "Chủ trì"]
+    - [profession, "Chức vụ"]
+  right:
+    - [witness_name, "Thư ký cuộc họp"]
+    - [buyer_company, "Thành phần tham dự"]
+    - [buyer_code, "Số người có mặt"]
+    - [serial, "Số biên bản"]
+notes:
+  - "Nội dung cuộc họp:"
+  - "Chủ trì thông qua tình hình thực hiện kế hoạch của kỳ trước và các vướng mắc còn tồn đọng giữa các bộ phận."
+  - "Các thành viên tham dự lần lượt báo cáo tiến độ phần việc được giao và đề xuất phương án xử lý."
+  - "Kết luận:"
+  - "Thống nhất phương án đã trình bày; các bộ phận hoàn thiện nội dung và gửi lại trước kỳ họp kế tiếp."
+  - "Cuộc họp kết thúc cùng ngày. Biên bản đã được đọc lại cho toàn thể thành viên tham dự cùng nghe và nhất trí thông qua."
+signature_labels:
+  - ["Chủ trì cuộc họp", "(Ký, ghi rõ họ tên)"]
+  - ["Thư ký cuộc họp", "(Ký, ghi rõ họ tên)"]

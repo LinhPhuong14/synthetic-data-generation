@@ -1,0 +1,59 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: phieu_doi_tra_hang
+profile: market
+org_kind: shop
+national: 0.0
+titles:
+- PHIẾU ĐỔI TRẢ HÀNG
+- PHIẾU TIẾP NHẬN ĐỔI TRẢ
+- BIÊN BẢN TRẢ HÀNG
+subtitles:
+- ''
+- 'Liên 2: Giao khách hàng'
+fields:
+- buyer_name
+- phone_home
+- record_no
+- period
+- payment
+field_span:
+- 4
+- 5
+columns:
+- - stt
+  - barcode
+  - name
+  - qty
+  - unit_price
+  - amount
+  - note
+- - stt
+  - ref
+  - name
+  - qty
+  - amount
+  - note
+totals: money
+words: false
+sign_sets:
+- - KHÁCH HÀNG
+  - NHÂN VIÊN TIẾP NHẬN
+notes:
+- Hàng đổi trả phải còn nguyên tem, nhãn và hoá đơn mua hàng.
+- Thời hạn đổi trả trong 07 ngày kể từ ngày mua.
+rows:
+- 1
+- 20
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- totals
+- signatures
+optional:
+- meta
+- footer
+- notes
+- checks
+en_ok: false

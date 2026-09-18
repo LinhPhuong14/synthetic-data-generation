@@ -1,0 +1,1727 @@
+"""Build the contents of one receipt from a recipe.
+
+The output is a `Receipt`: field values and nothing about pixels. A backend
+turns it into a grid (`rulebase.layout`) and then into an image. This is why
+the glyph render and the HTML render carry identical text -- there is exactly
+one place that decides what a line says.
+
+The ground truth is produced here too, from the same objects the render uses,
+so a label cannot describe something the image does not show.
+"""
+
+from __future__ import annotations
+
+import functools
+import json
+import os
+import random
+import re
+from dataclasses import asdict, dataclass, field
+from datetime import date as _date
+from datetime import timedelta
+from pathlib import Path
+from typing import Any
+
+from . import corpus
+from .text import apply_case, ascii_fold, money, quantity, words_vi
+
+# Where `agent/compose.py` announces LLM-written field values, one JSON file
+# for the whole run: `{"<seed>": {"store.name": "...", ...}, ...}`. Same
+# pattern as `rulebase.spec.RULES_ROOT`/`VLM_RULES_ROOT` -- a renderer
+# subprocess needing more than an id string reads a file, not a bigger CLI
+# string, and this repository already has exactly one way to do that. Unset
+# means every field comes from corpus/params exactly as before this existed.
+CONTENT_OVERRIDES_ENV = "VLM_CONTENT_OVERRIDES"
+
+
+@functools.lru_cache(maxsize=1)
+def _all_overrides() -> dict[str, dict[str, str]]:
+    """The whole overrides file, read once per process and cached.
+
+    Cached rather than re-read per page: a run composes thousands of pages in
+    one renderer process, and the file does not change under it -- `agent/
+    compose.py` writes it once, before any render subprocess starts.
+    """
+    path = os.environ.get(CONTENT_OVERRIDES_ENV, "").strip()
+    if not path:
+        return {}
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        # A run must not fail because the ledger it wrote a moment ago is
+        # unreadable -- that is a bug to see in a log, not a reason to lose
+        # every page a shard was about to draw. Corpus/params still answer
+        # every field, exactly as when no override file was ever given.
+        return {}
+
+
+def _overrides_for(seed: int) -> dict[str, str]:
+    return _all_overrides().get(str(seed), {})
+
+
+_ITEM_KEY = re.compile(r"^(?:menu|item)\[(\d+)\]\.name$")
+
+
+def apply_content_overrides(store: Store, items: list[Item],
+                            admission: dict[str, Any] | None,
+                            document: dict[str, Any],
+                            overrides: dict[str, str], case=lambda text: text) -> None:
+    """Apply LLM-written field values in place, after corpus/params drew every
+    field as usual -- an overlay, not a replacement path.
+
+    Deliberately NOT a generic dotted-path/JSON-path walker: the whole
+    override surface this repository has a use for today is `store.<field>`,
+    `menu[i].name`/`item[i].name`, and (medical only) `admission.diagnosis`/
+    `admission.comorbid` -- five kinds of key, enumerated here, not derived.
+    A key this function does not recognise, or a value that does not fit
+    where it is going, is silently skipped: a run must not fail a page over
+    one bad key from a model that had an off day, and `agent/compose.py`
+    already validated every value before writing this file -- what lands
+    here has already passed `corpus_rules.check_name` and the diacritic gate.
+
+    Numbers are never in `overrides` at all -- `agent/compose.py`'s schema
+    never offers a numeric field, so there is nothing here to guard against
+    on that front; the arithmetic in the rest of this module is the only
+    thing that ever computes `amount`/`total`/etc.
+    """
+    for key, value in overrides.items():
+        value = str(value)
+        if key.startswith("store."):
+            field_name = key[len("store."):]
+            if hasattr(store, field_name) and not callable(getattr(store, field_name)):
+                # `case()` here, not left to a later pass: every OTHER field on
+                # `store` already went through it once at construction, and
+                # this is the one write after that a reader could still see
+                # the page's own uppercase/ascii-fold style skip.
+                setattr(store, field_name, case(value))
+            continue
+        match = _ITEM_KEY.match(key)
+        if match:
+            index = int(match.group(1))
+            if 0 <= index < len(items):
+                items[index].name = case(value)
+            continue
+        # `admission.*` stays UNcased here on purpose: `_build_invoice` reads
+        # `admission["diagnosis"]`/`["comorbid"]` itself and applies `case()`
+        # there, exactly like every other admission field -- casing it twice
+        # would be the wrong kind of upper-cased.
+        if key == "admission.diagnosis" and admission is not None:
+            pair = next((p for p in document.get("diagnoses") or [] if p[0] == value), None)
+            if pair:
+                admission["diagnosis"] = f"{pair[0]}-{pair[1]}"
+                admission["icd"] = pair[0]
+            continue
+        if key == "admission.comorbid" and admission is not None:
+            pair = next((p for p in document.get("comorbidities") or [] if p[0] == value), None)
+            if pair:
+                admission["comorbid"] = f"({pair[0]}) {pair[1]}"
+                admission["comorbid_icd"] = pair[0]
+            continue
+
+# What the title line says, by document kind. Taken from the sample photos.
+TITLES = {
+    "eatery": ["PHIẾU THANH TOÁN", "HOÁ ĐƠN THANH TOÁN", "PHIẾU TÍNH TIỀN", "HOÁ ĐƠN"],
+    "market": ["HOÁ ĐƠN BÁN HÀNG", "PHIẾU TÍNH TIỀN", "HOÁ ĐƠN GTGT", "PHIẾU THANH TOÁN"],
+    "invoice": ["HOÁ ĐƠN GIÁ TRỊ GIA TĂNG"],
+    "utility_water": ["HOÁ ĐƠN GIÁ TRỊ GIA TĂNG (TIỀN NƯỚC)"],
+    "utility_power": ["HOÁ ĐƠN GIÁ TRỊ GIA TĂNG (TIỀN ĐIỆN)"],
+    "hotel": ["HOÁ ĐƠN"],
+    "export": ["HOÁ ĐƠN XUẤT KHẨU (EXPORT INVOICE)"],
+    "bakery": ["HOÁ ĐƠN"],
+    "medical": ["BẢNG KÊ CHI PHÍ ĐIỀU TRỊ NỘI TRÚ"],
+    "insurance": ["GIẤY ỦY QUYỀN NHẬN TIỀN"],
+}
+SHOP_PREFIXES = [
+    "Quán Ăn", "Nhà Hàng", "Cửa Hàng", "Quán", "Cafe", "Quán Nhậu",
+    "Bếp", "Tiệm Ăn", "Nhà Hàng - Karaoke", "Siêu Thị Mini",
+]
+UNITS = ["KG", "kg", "gói", "hộp", "chai", "lon", "cái", "phần"]
+
+
+@dataclass
+class Item:
+    """One line of the bill.
+
+    `note` is the second line a supermarket prints under the barcode -- the
+    product name with its per-kilo price -- and `discount` the `KM` line that
+    follows a promoted product.
+    """
+
+    stt: int
+    name: str
+    qty: float
+    unit_price: int
+    amount: int
+    barcode: str = ""
+    unit: str = ""
+    note: str = ""
+    discount: int = 0
+    original_price: int = 0
+    vat_rate: int = 0
+    # A utility bill charges a meter reading rather than a basket: the quantity
+    # is the difference between two numbers the reader can check, and `quota`
+    # is the subsidised allowance the tariff is measured against.
+    meter_now: int = 0
+    meter_prev: int = 0
+    quota: int = 0
+    tier: str = ""
+    # A stay invoice bills one line per night, so the line carries the night it
+    # covers and the room it was slept in -- two columns of their own on the
+    # page, and two facts a reader can check against the dates in the party
+    # block. `ref` is deliberately not called `room`: the same column holds a
+    # contract line number on other documents.
+    date: str = ""
+    ref: str = ""
+    # Priced by weight: the till multiplied before printing, so the quantity
+    # column shows 1 and the real weight goes on the name line.
+    #
+    # A flag and not `unit == "KG"`, which is what this used to be. An invoice
+    # lists "Kg" among its units, `rules/content.yaml` upper-cases the page
+    # four times in five, and the two together turned an ordinary invoice line
+    # into a weighed one -- which put a weight and a per-kilo price in the
+    # label that no invoice layout has a column for.
+    weighed: bool = False
+    # An insurance product's sum insured (`unit_price`) and its premium
+    # (`amount`) are two independent facts about the same row, not a unit
+    # price the till multiplied by a quantity -- `qty` stays 1 for these,
+    # honestly, rather than being contorted to make the usual
+    # `amount == unit_price * qty` hold. See `_build_insurance_items`.
+    independent_price: bool = False
+    # ---- bảng kê chi phí khám chữa bệnh (Mẫu số 01/KBCB)
+    #
+    # A hospital bill does not price a line once. It prices it twice -- what the
+    # hospital charges (`price_bv`) and what the insurance schedule allows
+    # (`price_bh`) -- and then splits the money four ways between the fund, the
+    # patient's share of a covered service, whatever was waived, and what the
+    # patient pays outright. A line is one of the two: a covered service has a
+    # BH price and no BV price, a top-up line has a BV price and no BH price.
+    # That is why the totals of the two columns do not add up to anything on
+    # their own, and why the four source columns are what a reader checks.
+    price_bv: int = 0
+    price_bh: int = 0
+    rate_service: int = 0              # tỷ lệ thanh toán theo dịch vụ (%)
+    rate_bhyt: int = 0                 # tỷ lệ thanh toán BHYT (%)
+    waived: bool = False               # miễn giảm: the money goes to "Khác"
+    # Which numbered block of the form the line sits in ("3. Xét nghiệm"), and
+    # whether this line IS that block's heading. A heading is a row of the
+    # table carrying the block's subtotals, not a caption floating above it --
+    # which is what the form prints, and what lets both renderers draw it
+    # without either of them learning a new kind of section.
+    group: str = ""
+    is_group: bool = False
+    # The card's benefit level, carried on the line because the split between
+    # the fund and the patient is a property of the card and the line together,
+    # and `_item_values` has only the line.
+    benefit: int = 0
+
+    # A heading's six money columns, in the order the form rules them:
+    # (BV, BH, quỹ BHYT, cùng chi trả, khác, tự chi trả). A heading has no
+    # quantity and no unit price, so its numbers cannot be derived the way a
+    # line's are -- they are its block's sums, and a block mixes waived lines
+    # with charged ones, which no single flag on the heading could express.
+    sums: tuple[int, ...] = ()
+
+    def amount_bv(self) -> int:
+        return self.sums[0] if self.is_group else int(round(self.qty * self.price_bv))
+
+    def amount_bh(self) -> int:
+        return self.sums[1] if self.is_group else int(round(self.qty * self.price_bh))
+
+    def fund_bhyt(self, benefit: int) -> int:
+        """What the insurance fund pays: the allowed amount at the card's rate."""
+        if self.is_group:
+            return self.sums[2]
+        return int(round(self.amount_bh() * benefit / 100.0))
+
+    def copay(self, benefit: int) -> int:
+        """The patient's share of a covered service."""
+        if self.is_group:
+            return self.sums[3]
+        return self.amount_bh() - self.fund_bhyt(benefit)
+
+    def other_pay(self) -> int:
+        """Waived: charged to nobody, and reported as "được miễn giảm"."""
+        if self.is_group:
+            return self.sums[4]
+        return self.amount_bv() if self.waived else 0
+
+    def self_pay(self, benefit: int) -> int:
+        """Out of pocket: the copay, plus any top-up that was not waived."""
+        if self.is_group:
+            return self.sums[5]
+        return self.copay(benefit) + (0 if self.waived else self.amount_bv())
+
+    def display_qty(self) -> float:
+        """What goes in the SL column.
+
+        A weighed item prints SL 1: the till has already multiplied, and the
+        real weight belongs on the name line ("157.500/KG 0,950 KG"). Printing
+        0,950 in a four-character column is what produced "0.40".
+        """
+        return 1 if self.weighed else self.qty
+
+    def display_unit_price(self) -> int:
+        """And the price column then shows what that one weighed unit cost."""
+        return self.amount if self.weighed else self.unit_price
+
+
+@dataclass
+class Store:
+    """Who issued the paper. On an invoice this is the seller's letterhead.
+
+    `tax_code` and `account` are blank on a till receipt and filled on a VAT
+    invoice, which is the one document that has to identify its issuer well
+    enough for the tax office to find them.
+    """
+
+    name: str
+    branch: str = ""
+    address: str = ""
+    address2: str = ""
+    phone: str = ""
+    website: str = ""
+    tax_code: str = ""
+    account: str = ""
+
+
+@dataclass
+class Party:
+    """The other side of an invoice: who is billed, and who takes delivery."""
+
+    name: str = ""
+    tax_code: str = ""
+    address: str = ""
+    locality: str = ""
+    phone: str = ""
+    account: str = ""
+    code: str = ""                     # mã số khách hàng / customer number
+
+
+@dataclass
+class Invoice:
+    """Everything a VAT invoice carries and a till receipt does not.
+
+    A thermal receipt identifies nobody: it prints what was bought and what
+    was paid. An invoice is a legal instrument, so it names both parties, is
+    serially numbered, states the period it covers, writes the amount out in
+    words, and ends in signatures. All of that lives here rather than growing
+    `Receipt`, so a till receipt stays exactly the object it was.
+
+    `left` and `right` are the party block as (label, value) pairs, in print
+    order. Which fields appear is a property of the document kind and comes
+    from `rules/document.yaml`; how they are arranged on the page is the
+    layout's business.
+    """
+
+    serial: str = ""                   # Ký hiệu
+    number: str = ""                   # Số
+    form_no: str = ""                  # Mẫu số
+    subtitle: str = ""                 # (Bản thể hiện của hoá đơn điện tử)
+    period: str = ""                   # Tháng 01 năm 2025
+    buyer: Party = field(default_factory=Party)
+    consignee: Party = field(default_factory=Party)
+    left_title: str = ""
+    right_title: str = ""
+    left: list[tuple[str, str]] = field(default_factory=list)
+    right: list[tuple[str, str]] = field(default_factory=list)
+    words_label: str = ""              # "Số tiền bằng chữ:"
+    words: str = ""
+    signatures: list[tuple[str, str]] = field(default_factory=list)
+    signed_by: str = ""                # "Được ký bởi: ..."
+    signed_at: str = ""                # "Ngày ký : 09/01/2025"
+    notes: list[str] = field(default_factory=list)
+    # The one-line strip of keys across the top of a modern invoice -- "Số hoá
+    # đơn: INV001421 | Ngày: 30/09/2024 | Mã đặt phòng: 001421". Same (label,
+    # value) shape as `left`/`right`, drawn as one run rather than a column,
+    # and kept apart from them so the layout decides which of the two it wants.
+    strip: list[tuple[str, str]] = field(default_factory=list)
+    # "Tổng hợp": the money regrouped by tax rate, which is how a VAT form ends
+    # instead of with a single tax line. Each row is already formatted, because
+    # money spelling belongs to the receipt and not to the layout.
+    summary: list[dict[str, str]] = field(default_factory=list)
+    # The names printed under the signature titles -- a hotel bill is signed by
+    # the receptionist and the guest, both named on the page.
+    signature_names: list[str] = field(default_factory=list)
+    # A fixed question answered "Có"/"Không" per draw, plus an optional detail
+    # string when the answer is "Có" -- a health-declaration table's rows. The
+    # question is corpus text, the answer and detail are what varies, and
+    # unlike `form.py::_checklist`'s decorative mark, both are real ground
+    # truth here: nothing else models "yes, and here is the specific fact".
+    checks: list[tuple[str, str, str]] = field(default_factory=list)
+
+
+@dataclass
+class Receipt:
+    profile: str                       # 'eatery' | 'market' | 'invoice' | 'utility_*'
+    title: str
+    store: Store
+    meta: list[tuple[str, str]]
+    items: list[Item]
+    totals: list[tuple[str, str]]      # (label, formatted amount), in print order
+    footer: list[str]
+    money_style: str
+    upper: bool
+    folded: bool
+    # How every amount on this page is spelled. Held here rather than passed
+    # around because `layout.py` formats item money too, and a suffix that
+    # reached the totals but not the lines above them is exactly the kind of
+    # split that made `rulebase.style` necessary.
+    money_prefix: str = ""
+    money_suffix: str = ""
+    # Which entry of `totals` is the amount actually owed. Not the last one:
+    # the cash tendered and the change come after it.
+    grand_index: int = 0
+    numbers: dict[str, Any] = field(default_factory=dict)
+    # Set only for the document kinds that are invoices. `None` is the signal
+    # every invoice-only section of a layout checks before drawing anything.
+    invoice: Invoice | None = None
+
+    def cash(self, value: float) -> str:
+        """One amount, spelled the way this page spells them."""
+        return money(value, self.money_style, self.money_suffix, self.money_prefix)
+
+    def ground_truth(self) -> dict[str, Any]:
+        """CORD-style nested label, built from the same objects as the render."""
+        store: dict[str, str] = {"name": self.store.name}
+        for key in ("branch", "address", "address2", "phone", "website",
+                    "tax_code", "account"):
+            value = getattr(self.store, key)
+            if value:
+                store[key] = value
+        menu = []
+        for item in self.items:
+            # The label describes what the image shows, so it uses the same
+            # display values the grid does; the true weight rides along
+            # separately rather than replacing the printed quantity.
+            shown_qty = item.display_qty()
+            if item.is_group:
+                # A block heading is furniture of the table, like a column
+                # title: it names a group and repeats that group's sums, all of
+                # which the label already carries line by line. It is drawn, and
+                # it gets a box, but it is not a line of the bill -- and `menu`
+                # is the list of lines. Putting it there would also break the
+                # entry shape every reader of this label expects, which is
+                # `nm` and `price` on every element.
+                continue
+            entry: dict[str, str] = {
+                "nm": item.name,
+                "cnt": quantity(shown_qty, self.money_style, 3 if shown_qty % 1 else 0),
+                "price": self.cash(item.amount),
+            }
+            if item.weighed:
+                entry["weight"] = f"{quantity(item.qty, 'dot', 3)} {item.unit}"
+                entry["unitprice_per_unit"] = self.cash(item.unit_price)
+            if item.independent_price:
+                # `unitprice` is `_check_arithmetic`'s cue to redo `cnt *
+                # unitprice == price`; a life-policy line's sum insured is
+                # not a factor of its premium, so it is printed (the box is
+                # still real, still labelled -- just under a name that check
+                # does not know to multiply), the same way the `weighed`
+                # branch above keeps its own true rate out of that key.
+                entry["insured"] = self.cash(item.unit_price)
+            elif item.display_unit_price():
+                entry["unitprice"] = self.cash(item.display_unit_price())
+            if item.barcode:
+                entry["barcode"] = item.barcode
+            if item.discount:
+                entry["discountprice"] = self.cash(-abs(item.discount))
+            if item.vat_rate:
+                entry["vatrate"] = f"{item.vat_rate}%"
+            if item.meter_now or item.meter_prev:
+                entry["meter_now"] = str(item.meter_now)
+                entry["meter_prev"] = str(item.meter_prev)
+            if item.date:
+                entry["date"] = item.date
+            if item.ref:
+                entry["ref"] = item.ref
+            # Only an invoice has an "Đơn vị tính" column. A till knows the unit
+            # too, and prints it nowhere; recording it here would put a field in
+            # the label that no reader of the image can check.
+            if item.unit and self.invoice:
+                entry["unit"] = item.unit
+            menu.append(entry)
+        parse: dict[str, Any] = {
+            "doc_type": f"receipt_{self.profile}",
+            "title": self.title,
+            "store": store,
+            "menu": menu,
+            "total": {label: value for label, value in self.totals},
+            "footer": list(self.footer),
+        }
+        if self.invoice:
+            parse["invoice"] = self._invoice_label()
+        return parse
+
+    def _invoice_label(self) -> dict[str, Any]:
+        """The invoice half of the label.
+
+        Every entry here is something a layout prints. That is not a style
+        rule: `tests/test_content.py` measures how much of the label the page
+        never shows, and a field recorded but not drawn teaches a model to
+        hallucinate it.
+        """
+        invoice = self.invoice
+        assert invoice is not None
+        data: dict[str, Any] = {}
+        for key in ("serial", "number", "form_no", "subtitle", "period", "words"):
+            value = getattr(invoice, key)
+            if value:
+                data[key] = value
+        for name, entries in (
+            ("left", invoice.left), ("right", invoice.right), ("strip", invoice.strip)
+        ):
+            fields = {label: value for label, value in entries if value}
+            if fields:
+                data[name] = fields
+        if invoice.summary:
+            data["summary"] = [
+                {key: value for key, value in row.items() if value}
+                for row in invoice.summary
+            ]
+        if invoice.signature_names:
+            data["signed_names"] = list(invoice.signature_names)
+        if invoice.signed_by:
+            data["signed_by"] = invoice.signed_by
+        if invoice.signed_at:
+            data["signed_at"] = invoice.signed_at
+        if invoice.checks:
+            data["checks"] = [
+                {"question": q, "answer": a, **({"detail": d} if d else {})}
+                for q, a, d in invoice.checks
+            ]
+        return data
+
+    def text_sequence(self) -> str:
+        """Flat reading order, for text-only pre-training and for OCR scoring."""
+        parts = [self.store.name]
+        for value in (self.store.branch, self.store.address, self.store.address2,
+                      self.store.phone, self.store.website, self.store.tax_code,
+                      self.store.account, self.title):
+            if value:
+                parts.append(value)
+        invoice = self.invoice
+        if invoice:
+            for value in (invoice.serial, invoice.number, invoice.form_no,
+                          invoice.subtitle, invoice.period):
+                if value:
+                    parts.append(value)
+            for label, value in (
+                list(invoice.strip) + list(invoice.left) + list(invoice.right)
+            ):
+                parts.append(f"{label} {value}".strip())
+        for label, value in self.meta:
+            parts.append(f"{label} {value}".strip())
+        for item in self.items:
+            parts.append(item.name)
+            parts.append(self.cash(item.amount))
+        for label, value in self.totals:
+            parts.append(f"{label} {value}".strip())
+        if invoice and invoice.words:
+            parts.append(f"{invoice.words_label} {invoice.words}".strip())
+        if invoice:
+            for row in invoice.summary:
+                parts.append(" ".join(value for value in row.values() if value))
+            for title, instruction in invoice.signatures:
+                parts.append(f"{title} {instruction}".strip())
+            parts.extend(invoice.signature_names)
+            for value in (invoice.signed_by, invoice.signed_at):
+                if value:
+                    parts.append(value)
+            for question, answer, detail in invoice.checks:
+                parts.append(f"{question} {answer} {detail}".strip())
+        parts.extend(self.footer)
+        return " ".join(part for part in parts if part)
+
+    def to_dict(self) -> dict[str, Any]:
+        data = asdict(self)
+        data["store"] = asdict(self.store)
+        data["items"] = [asdict(item) for item in self.items]
+        data["invoice"] = asdict(self.invoice) if self.invoice else None
+        return data
+
+
+def _round_to(value: float, step: int) -> int:
+    return int(round(value / step)) * step
+
+
+def _barcode(rng: random.Random) -> str:
+    """13 digits, the way EAN-13 looks on a Vietnamese product."""
+    return "".join(str(rng.randrange(10)) for _ in range(13))
+
+
+def _build_store(profile: str, rng: random.Random, case) -> Store:
+    if profile == "market":
+        brand, branch = rng.choice(corpus.shops("market"))
+        ward, district, _city = rng.choice(corpus.wards())
+        street = rng.choice(corpus.streets())
+        number = rng.randrange(1, 400)
+        store = Store(
+            name=case(brand),
+            branch=case(branch),
+            address=case(f"Số {number}A đường {street}"),
+            # "Q.1" for a numbered district, "Q.Thanh Xuân" for a named one --
+            # the same shape either way, which is how tills print it.
+            address2=case(f"P.{ward}, Q.{district}"),
+            phone=case(f"ĐT: 0{rng.randrange(24, 29)}.7{rng.randrange(1000000, 9999999)}"),
+        )
+        if rng.random() < 0.35:
+            store.website = case(f"Website: www.{brand.lower().replace(' ', '').replace('.', '')}.com.vn")
+        return store
+
+    name = f"{rng.choice(SHOP_PREFIXES)} {rng.choice(corpus.shops('eatery'))[0]}"
+    if rng.random() < 0.25:
+        name = f"{name} {rng.randrange(1, 300)}"
+    ward, district, city = rng.choice(corpus.wards())
+    street = rng.choice(corpus.streets())
+    number = (
+        str(rng.randrange(1, 300))
+        if rng.random() < 0.7
+        else f"{rng.randrange(1, 60)}-{rng.randrange(61, 200)}"
+    )
+    store = Store(name=case(name))
+    if rng.random() < 0.92:
+        store.address = case(f"{number} {street} - {district} - {city}")
+    if rng.random() < 0.85:
+        phone = f"0{rng.randrange(2, 10)}{rng.randrange(10000000, 99999999)}"[:11]
+        store.phone = case(phone if rng.random() < 0.5 else f"ĐT: {phone}")
+    return store
+
+
+def _build_items(profile: str, rng: random.Random, case, params: dict) -> list[Item]:
+    lo, hi = params.get("num_items", [3, 12])
+    count = rng.randint(int(lo), int(hi))
+    lang = params.get("lang", corpus.DEFAULT_LANG)
+    catalogue = corpus.items(profile, lang)
+    prob_discount = float(params.get("prob_item_discount", 0.0))
+    prob_weighed = float(params.get("prob_weighed", 0.0))
+    vat_rates = params.get("vat_rates") or []
+    # A till rounds a price to the nearest 500 or 1000 because that is what the
+    # shelf label says. A tariff does not: `price_step: 1` is what lets an
+    # invoice carry a unit price of 1.678 without it rounding away to 2.000.
+    step = int(params.get("price_step", 500 if profile == "market" else 1000))
+    units = list(params.get("units") or [])
+    # A basket holds one or two of a thing; an export lot holds four hundred.
+    # Without this the quantity column of an export invoice reads like a
+    # corner shop's, and the amounts stop being export amounts.
+    qty_range = params.get("qty_range")
+
+    items: list[Item] = []
+    for index in range(count):
+        name, price_lo, price_hi = rng.choice(catalogue)
+        unit_price = _round_to(rng.uniform(price_lo, price_hi), step)
+        by_weight = rng.random() < prob_weighed
+        if by_weight:
+            qty: float = round(rng.uniform(0.1, 2.0), 3)
+            amount = _round_to(unit_price * qty, 5)
+            unit = "KG"
+        elif qty_range:
+            qty = rng.randrange(int(qty_range[0]), int(qty_range[1]))
+            amount = int(unit_price * qty)
+            unit = case(rng.choice(units)) if units else ""
+        else:
+            qty = rng.randrange(1, 13) if rng.random() < 0.2 else rng.randrange(1, 4)
+            amount = int(unit_price * qty)
+            if profile == "market":
+                unit = rng.choice(UNITS[2:]) if rng.random() < 0.3 else ""
+            else:
+                # An invoice always fills its "Đơn vị tính" column; the words
+                # that go in it are printed, so they come from the rules.
+                unit = case(rng.choice(units)) if units else ""
+        item = Item(
+            stt=index + 1,
+            name=case(name),
+            qty=qty,
+            unit_price=unit_price,
+            amount=amount,
+            unit=unit,
+            weighed=by_weight,
+        )
+        if profile == "market":
+            item.barcode = _barcode(rng)
+            # A supermarket till prints the barcode and the money on one line
+            # and the product name, indented, on the next. Weighed goods add
+            # the per-kilo price and the weight to that second line.
+            item.note = (
+                case(f"{name} {money(unit_price, 'dot')}/KG {quantity(qty, 'dot', 3)} KG")
+                if by_weight
+                else item.name
+            )
+            if vat_rates:
+                item.vat_rate = int(rng.choice(vat_rates))
+            if rng.random() < 0.2:
+                item.original_price = _round_to(unit_price * rng.uniform(1.05, 1.4), 500)
+        elif vat_rates and params.get("item_vat"):
+            # A VAT invoice states the rate on every line, because two lines of
+            # the same invoice may be taxed differently.
+            item.vat_rate = int(rng.choice(vat_rates))
+        if rng.random() < prob_discount:
+            item.discount = _round_to(amount * rng.uniform(0.05, 0.45), 100)
+        items.append(item)
+    return items
+
+
+def _build_meta(profile: str, rng: random.Random, case, params: dict) -> list[tuple[str, str]]:
+    day, month, year = rng.randrange(1, 29), rng.randrange(1, 13), rng.randrange(2017, 2027)
+    hour, minute = rng.randrange(6, 24), rng.randrange(0, 60)
+    date = (
+        f"{day:02d}/{month:02d}/{year}"
+        if rng.random() < 0.6
+        else f"{day:02d}-{month:02d}-{year}"
+    )
+    stamp = f"{date} {hour:02d}:{minute:02d}"
+
+    if profile == "market":
+        meta = [
+            (case("Ngày bán:"), f"{stamp}"),
+            (case("HD:"), f"{rng.randrange(1, 999999):08d}"),
+            (case("Quầy:"), f"{rng.randrange(1, 40):03d}"),
+            (case("NVBH:"), f"{rng.randrange(1, 99999999):08d}"),
+        ]
+        if params.get("show_tax_code") and rng.random() < 0.7:
+            code = f"M{rng.randrange(1, 9)}-{year % 100}-{rng.randrange(100000, 999999)}"
+            meta.append((case("Mã CQT:"), code))
+        return meta
+
+    meta = [(case("Số phiếu:"), f"{rng.randrange(100, 99999)}")]
+    if rng.random() < float(params.get("prob_table", 0.6)):
+        meta.append((case("Bàn"), f"{rng.randrange(1, 40)}"))
+    meta.append((case("Thời gian:"), stamp))
+    if rng.random() < 0.35:
+        meta.append((case("Thu ngân:"), f"{rng.randrange(1000, 99999)}"))
+    return meta
+
+
+# ------------------------------------------------------------ VAT invoices
+#
+# A till receipt records a transaction; an invoice is a legal instrument, and
+# the difference is visible on the paper. It names both parties, carries a
+# serial the tax office can look up, states the period it covers, writes the
+# total out in words so the figure cannot be altered, and ends in signatures.
+# What follows builds that half. `profile` decides which of the three kinds it
+# is -- a general VAT invoice, a water bill or an electricity bill -- and the
+# labels, being printed on the page, come from `rules/document.yaml`.
+
+
+def _tax_code(rng: random.Random) -> str:
+    """Mã số thuế: ten digits, sometimes with the three-digit branch suffix."""
+    body = f"{rng.randrange(10 ** 9, 10 ** 10)}"
+    return f"{body}-{rng.randrange(1, 40):03d}" if rng.random() < 0.25 else body
+
+
+def _bank_account(rng: random.Random) -> str:
+    return f"{rng.randrange(10 ** 11, 10 ** 12)}"
+
+
+def _fill(template: str, values: dict[str, str]) -> str:
+    """Substitute `{key}` in a rules-owned string. Not `str.format`.
+
+    The strings are Vietnamese sentences typed into YAML by hand; one stray
+    brace would make `format` raise in the middle of a long run, and a
+    `KeyError` on a footer line is a poor reason to lose an hour of rendering.
+    """
+    for key, value in values.items():
+        template = template.replace("{" + key + "}", value)
+    return template
+
+
+# Ký hiệu, as Decree 123 spells it: 1K25TAE -- kind, K, the year, three
+# letters. An English invoice numbers itself differently, so the shape is a
+# template rather than a format string in the code.
+SERIAL_FORMAT = "{k}K{yy}{letters}"
+
+
+def _serial(rng: random.Random, year: int, template: str = SERIAL_FORMAT) -> str:
+    return _fill(template or SERIAL_FORMAT, {
+        "k": str(rng.randrange(1, 7)),
+        "yy": f"{year % 100:02d}",
+        "year": str(year),
+        "letters": "".join(rng.choice("ABCDEGHKLMNPQRSTUVXY") for _ in range(3)),
+        "n": f"{rng.randrange(1, 9999):04d}",
+    })
+
+
+def _build_issuer(profile: str, rng: random.Random, case, params: dict) -> Store:
+    """The letterhead: who issued the invoice, well enough to be found again."""
+    lang = params.get("lang", corpus.DEFAULT_LANG)
+    name, unit = (rng.choice(corpus.shops(profile, lang)) + ("",))[:2]
+    ward, district, city = rng.choice(corpus.wards(lang))
+    street = rng.choice(corpus.streets(lang))
+    number = rng.randrange(1, 400)
+
+    address = params.get("address_format", "Số {number} {street}, {ward}, {district}, {city}")
+    address = (
+        address.replace("{number}", str(number)).replace("{street}", street)
+        .replace("{ward}", ward).replace("{district}", district).replace("{city}", city)
+    )
+    store = Store(
+        name=case(name),
+        branch=case(unit) if unit and params.get("show_issuer_unit", True) else "",
+        # A VAT invoice must identify its issuer to the tax office; a hotel
+        # bill and a bakery order need not, and printing an address or a tax
+        # code no layout of theirs has a line for would put a field in the
+        # label that no reader of the image can check.
+        address=case(address) if params.get("show_seller_address", True) else "",
+        tax_code=_tax_code(rng) if params.get("show_seller_tax_code", True) else "",
+    )
+    if params.get("show_seller_website"):
+        slug = "".join(c for c in ascii_fold(name).lower() if c.isalnum())[:18]
+        store.website = f"www.{slug or 'shop'}.vn"
+    if params.get("show_seller_phone", True):
+        # The bare number. A till embeds its own "ĐT:" because it prints one
+        # centred line; a letterhead sets the label in its own cell so the
+        # label can quote the value exactly -- see `_put_field`.
+        store.phone = f"0{rng.randrange(2, 10)}{rng.randrange(10000000, 99999999)}"[:11]
+    if params.get("show_seller_account"):
+        store.account = _bank_account(rng)
+    return store
+
+
+def _build_insurance_items(rng: random.Random, case, params: dict) -> list[Item]:
+    """A schedule of insurance products or coverage lines.
+
+    Not a basket a till multiplied: a life-policy product's sum insured and
+    its premium are two independent facts about the same row, not a unit
+    price times a quantity, and a travel certificate's benefit cap is one
+    fact with no premium at all. Both shapes reuse `Item.unit_price`/`amount`
+    as-is for rendering -- the column each prints (`item_values()`'s own
+    `unit_price`/`amount` keys, unrelated to `ground_truth()`'s) does not
+    change. `independent_price=True` marks the dual case for the two callers
+    that do need to know the multiplication was skipped: the exemption in
+    `tests/test_content.py`'s `amount == unit_price * qty` check, and
+    `ground_truth()`, which prints the sum insured under `insured` rather
+    than `unitprice` so `pipeline/invariants.py::_check_arithmetic` -- which
+    reads the plain `menu` dict, not this `Item`, and has no such exemption
+    -- does not redo a multiplication that was never done. `unit` carries the
+    term ("25 năm"), reusing the same column an ordinary invoice's "Đơn vị
+    tính" already prints.
+
+    `params["catalogue"]` names a `corpus.catalogue()` pool of (name, low,
+    high) rows. `premium_rate: [lo, hi]` present means two money columns
+    (sum insured drawn from the pool, premium a rate of it); absent means
+    one (the pool's own range IS the printed amount, e.g. a benefit cap).
+    """
+    lang = params.get("lang", corpus.DEFAULT_LANG)
+    pool = corpus.catalogue(params["catalogue"], lang)
+    lo, hi = params.get("num_items", [len(pool), len(pool)])
+    count = min(rng.randint(int(lo), int(hi)), len(pool))
+    chosen = rng.sample(pool, count)
+    step = int(params.get("price_step", 100000))
+    rate = params.get("premium_rate")
+    terms = params.get("terms") or []
+    items: list[Item] = []
+    for index, (name, low, high) in enumerate(chosen):
+        value = _round_to(rng.uniform(float(low), float(high)), step)
+        term = case(str(rng.choice(terms))) if terms else ""
+        if rate:
+            premium = _round_to(value * rng.uniform(float(rate[0]), float(rate[1])), 1000)
+            unit_price, amount, independent = int(value), int(premium), True
+        else:
+            # One value, not two: `unit_price = amount` (with `qty` already
+            # 1) keeps `amount == unit_price * qty` true by construction,
+            # rather than carrying a `unit_price` of 0 that would fail it.
+            unit_price = amount = int(value)
+            independent = False
+        items.append(Item(stt=index + 1, name=case(name), qty=1, unit=term,
+                          unit_price=unit_price, amount=amount,
+                          independent_price=independent))
+    return items
+
+
+def _build_grouped_items(rng: random.Random, case, params: dict) -> list[Item]:
+    """A benefit table split into named categories, each a heading row over a
+    handful of lines drawn from that category's own catalogue.
+
+    The same `Item.is_group` shape `_build_medical_items` already prints a
+    hospital bill's numbered-block cost table with, generalized off one
+    document's fixed blocks onto any document's own `groups:` param: each
+    entry is `{title, catalogue, num_lines: [lo, hi]}`. A heading's `name` is
+    all `_group_row` reads when the layout's `table.group_span` spans every
+    column (this root's own layouts do); it is excluded from
+    `ground_truth()["menu"]` the same way medical's block headings already
+    are, since it repeats what the lines under it already say individually.
+    """
+    lang = params.get("lang", corpus.DEFAULT_LANG)
+    step = int(params.get("price_step", 100000))
+    items: list[Item] = []
+    stt = 1
+    for group in params.get("groups") or []:
+        # `sums`, six zeros: `Item.amount_bv()`/`amount_bh()`/etc. index into
+        # it unconditionally for any `is_group` item -- the legacy grid path
+        # (`rulebase/layout.py::item_values`) calls them on every item
+        # regardless of family, so an empty tuple here is an `IndexError` on
+        # a layout the real renderer never even reaches.
+        items.append(Item(stt=0, name=case(str(group["title"])), qty=0,
+                          unit_price=0, amount=0, is_group=True, sums=(0,) * 6))
+        pool = corpus.catalogue(group["catalogue"], lang)
+        lo, hi = group.get("num_lines", [2, 3])
+        count = min(rng.randint(int(lo), int(hi)), len(pool))
+        for name, low, high in rng.sample(pool, count):
+            # `unit_price = amount` (see the same choice in
+            # `_build_insurance_items`) keeps `amount == unit_price * qty`
+            # true for these lines too.
+            value = int(_round_to(rng.uniform(float(low), float(high)), step))
+            items.append(Item(stt=stt, name=case(name), qty=1,
+                              unit_price=value, amount=value))
+            stt += 1
+    return items
+
+
+def _build_utility_items(profile: str, rng: random.Random, case, params: dict) -> list[Item]:
+    """Tariff bands off one meter.
+
+    The quantity is not a basket count but the difference between two readings
+    printed beside it, which is the whole point of a utility bill: the reader
+    can redo the subtraction. Only the first band carries the readings -- the
+    bands below it are the same meter, split by price -- and a row whose fields
+    are all empty is skipped by the layout, so one item template serves both.
+    """
+    lo, hi = params.get("num_items", [1, 3])
+    catalogue = corpus.items(profile, params.get("lang", corpus.DEFAULT_LANG))
+    count = min(rng.randint(int(lo), int(hi)), len(catalogue))
+    step = int(params.get("price_step", 1))
+    tiers = list(params.get("tier_codes") or [])
+    vat_rates = params.get("vat_rates") or []
+
+    # Bands are consecutive and start at the first: a bill charging band 3
+    # without band 1 would not survive being read. A one-line bill is the
+    # exception -- that is a flat tariff, and any of them may be the one.
+    start = rng.randrange(0, max(len(catalogue) - count, 0) + 1) if count == 1 else 0
+    previous = rng.randrange(60, 9800)
+    items: list[Item] = []
+    for index in range(count):
+        name, price_lo, price_hi = catalogue[start + index]
+        unit_price = _round_to(rng.uniform(price_lo, price_hi), step)
+        qty = rng.randrange(*params.get("qty_range", [3, 90]))
+        item = Item(
+            stt=index + 1,
+            name=case(name),
+            qty=qty,
+            unit_price=unit_price,
+            amount=int(unit_price * qty),
+            # A water bill puts "(m3)" in the column heading, not on the row,
+            # so there is no unit to record unless the layout has a column for
+            # one -- and a label field the page never shows is the defect
+            # `pipeline/invariants.py` exists to catch.
+            unit=case(params.get("unit", "")),
+            quota=qty,
+            tier=case(rng.choice(tiers)) if tiers else "",
+        )
+        if vat_rates and params.get("item_vat"):
+            item.vat_rate = int(rng.choice(vat_rates))
+        items.append(item)
+
+    consumed = sum(int(item.qty) for item in items)
+    items[0].meter_prev = previous
+    items[0].meter_now = previous + consumed
+    return items
+
+
+def _build_admission(rng: random.Random, params: dict) -> dict[str, Any]:
+    """One episode of treatment: when it started, how long, what was wrong.
+
+    Drawn before the cost lines for the same reason a booking is (see
+    `_build_stay`): both halves of the form describe one episode. The bed lines
+    charge one night per day of stay, and the administrative block above the
+    table states that number again -- two draws would let the block say four
+    days over a table that charges three nights.
+    """
+    lo, hi = params.get("days", [2, 7])
+    days = max(int(rng.randint(int(lo), int(hi))), 1)
+    start = _date(rng.randrange(2022, 2026), rng.randrange(1, 13), rng.randrange(1, 26))
+    code, name = rng.choice(params.get("diagnoses") or [["J35.2", "Phì đại VA"]])
+    other_code, other_name = rng.choice(
+        params.get("comorbidities") or [["J30.3", "Viêm mũi dị ứng khác"]])
+    born = _date(rng.randrange(1950, 2021), rng.randrange(1, 13), rng.randrange(1, 27))
+    return {
+        "days": days,
+        "admitted": start,
+        "discharged": start + timedelta(days=days),
+        "born": born,
+        # The card number is printed in four boxes because it is four fields:
+        # the entitlement group, the benefit level, the province, and the
+        # holder's number. A form that ruled one box would be a different form.
+        "card": (
+            rng.choice(params.get("card_groups") or ["CN", "DN", "HS", "TE", "HT"]),
+            str(rng.randint(1, 5)),
+            f"{rng.randrange(1, 99):02d}",
+            f"{rng.randrange(10 ** 9, 10 ** 10)}",
+        ),
+        "benefit": int(rng.choice(params.get("benefit_levels") or [80, 95, 100])),
+        "diagnosis": f"{code}-{name}",
+        "icd": code,
+        "comorbid": f"({other_code}) {other_name}",
+        "comorbid_icd": other_code,
+        "arrive": f"{rng.randrange(6, 20):02d} giờ {rng.randrange(0, 60):02d} phút",
+        "depart": f"{rng.randrange(6, 20):02d} giờ {rng.randrange(0, 60):02d} phút",
+    }
+
+
+def _build_medical_items(rng: random.Random, case, params: dict,
+                         admission: dict) -> list[Item]:
+    """The cost lines of a hospital bill, grouped, with a heading row per group.
+
+    A group heading is emitted as an `Item` with `is_group` set rather than as a
+    new kind of section, because on the form it *is* a row of the table: it
+    carries the group's subtotals in the money columns. Both renderers then draw
+    the table they already know how to draw.
+
+    Two lines can come out of one service. A hospital that charges more than the
+    insurance schedule allows bills the difference on its own line, marked
+    `[Thu tiền chênh lệch giá]`, priced in the BV column with no BH price -- and
+    that line is either waived or charged to the patient. That is where the
+    "Khác" and "Người bệnh tự chi trả" columns of a real bill come from, and
+    inventing the two numbers any other way would not survive a reader adding
+    the column up.
+    """
+    lang = params.get("lang", corpus.DEFAULT_LANG)
+    benefit = admission["benefit"]
+    step = int(params.get("price_step", 100))
+    top_up = float(params.get("top_up_probability", 0.35))
+    waive = float(params.get("waive_probability", 0.5))
+    groups = params.get("cost_groups") or []
+    out: list[Item] = []
+    stt = 0
+
+    for entry in groups:
+        code, name, profile, units, count = (list(entry) + [None] * 5)[:5]
+        catalogue = corpus.catalogue(str(profile), lang)
+        if not catalogue:
+            continue
+        wanted = int(count or 3)
+        if str(code).startswith("2"):
+            wanted = 1                # ngày giường: one bed, charged per night
+        picked = rng.sample(catalogue, min(wanted, len(catalogue)))
+        lines: list[Item] = []
+        for item_name, price_lo, price_hi in picked:
+            unit = case(rng.choice(list(units) or ["Lần"]))
+            qty = admission["days"] if str(code).startswith("2") else rng.randint(1, 5)
+            allowed = _round_to(rng.uniform(price_lo, price_hi), step)
+            stt += 1
+            lines.append(Item(
+                stt=stt, name=case(item_name), qty=qty, unit=unit,
+                unit_price=allowed, amount=int(qty * allowed),
+                price_bh=allowed, rate_service=100, rate_bhyt=100,
+                benefit=benefit, group=case(f"{code}. {name}"),
+            ))
+            if rng.random() < top_up:
+                extra = _round_to(rng.uniform(price_lo, price_hi) * 0.5, step)
+                stt += 1
+                lines.append(Item(
+                    stt=stt, name=case(f"[Thu tiền chênh lệch giá] {item_name}"),
+                    qty=qty, unit=unit, unit_price=extra, amount=int(qty * extra),
+                    price_bv=extra, rate_service=0, rate_bhyt=0,
+                    waived=rng.random() < waive, benefit=benefit,
+                    group=case(f"{code}. {name}"),
+                ))
+        if not lines:
+            continue
+        heading = Item(
+            stt=0, name=case(f"{code}. {name}"), qty=0, unit_price=0,
+            amount=sum(line.amount for line in lines),
+            benefit=benefit, group=case(f"{code}. {name}"), is_group=True,
+            sums=(
+                sum(line.amount_bv() for line in lines),
+                sum(line.amount_bh() for line in lines),
+                sum(line.fund_bhyt(benefit) for line in lines),
+                sum(line.copay(benefit) for line in lines),
+                sum(line.other_pay() for line in lines),
+                sum(line.self_pay(benefit) for line in lines),
+            ),
+        )
+        out.append(heading)
+        out.extend(lines)
+    return out
+
+
+def _build_stay(rng: random.Random, params: dict) -> dict[str, Any]:
+    """One booking: when it starts, how many nights, which room.
+
+    Drawn before the lines because both halves of the page describe the same
+    stay -- the row dates are the nights between check-in and check-out, and
+    the party block states them again as a date range. Two draws would let the
+    block say three nights over a table with four rows in it, which is the one
+    error a reader of a hotel bill notices immediately.
+    """
+    lo, hi = params.get("nights", [1, 4])
+    nights = max(int(rng.randint(int(lo), int(hi))), 1)
+    start = _date(rng.randrange(2019, 2027), rng.randrange(1, 13), rng.randrange(1, 26))
+    return {
+        "nights": nights,
+        "dates": [start + timedelta(days=offset) for offset in range(nights)],
+        "checkin": start,
+        "checkout": start + timedelta(days=nights),
+        # Floor and door, the way a room is numbered: 3rd floor, room 04.
+        "room": f"{rng.randrange(1, 13)}{rng.randrange(1, 21):02d}",
+        "code": f"{rng.randrange(1, 999999):06d}",
+    }
+
+
+def _build_stay_items(profile: str, rng: random.Random, case, params: dict,
+                      stay: dict) -> list[Item]:
+    """One line per night at one nightly rate, then whatever else was used.
+
+    The nightly rate is drawn once and repeated, because that is what a hotel
+    charges and what makes the arithmetic on the page checkable: four identical
+    rows and a total that is four times one of them. The room charges are the
+    first `room_items` entries of the corpus -- order carries meaning in
+    `items_hotel.txt`, the same way it does in the utility corpora -- and the
+    rest of the file is the extras that may be added underneath.
+    """
+    catalogue = corpus.items(profile, params.get("lang", corpus.DEFAULT_LANG))
+    room_count = max(min(int(params.get("room_items", 5)), len(catalogue)), 1)
+    step = int(params.get("price_step", 1000))
+
+    name, price_lo, price_hi = catalogue[rng.randrange(room_count)]
+    nightly = _round_to(rng.uniform(price_lo, price_hi), step)
+    notes = list(params.get("item_notes") or [])
+    # One note for the whole stay, not one per night: the line under the room
+    # charge says what the rate includes, and it includes the same thing every
+    # night of the same booking.
+    note = case(rng.choice(notes)) if notes and rng.random() < 0.7 else ""
+
+    items = [
+        Item(
+            stt=index + 1,
+            name=case(name),
+            qty=1,
+            unit_price=nightly,
+            amount=nightly,
+            note=note,
+            date=night.strftime("%d/%m/%Y"),
+            ref=stay["room"],
+        )
+        for index, night in enumerate(stay["dates"])
+    ]
+    for _ in range(rng.randint(0, int(params.get("extra_items", 2)))):
+        if len(catalogue) <= room_count:
+            break
+        extra, price_lo, price_hi = catalogue[rng.randrange(room_count, len(catalogue))]
+        price = _round_to(rng.uniform(price_lo, price_hi), step)
+        quantity_used = rng.randint(1, 3)
+        items.append(Item(
+            stt=len(items) + 1,
+            name=case(extra),
+            qty=quantity_used,
+            unit_price=price,
+            amount=price * quantity_used,
+            date=rng.choice(stay["dates"]).strftime("%d/%m/%Y"),
+            ref=stay["room"],
+        ))
+    # A folio is printed in date order and numbered down the page: an extra
+    # billed on the second night belongs between the second and third nights,
+    # not under them. Sorting is stable, so a drink and the room it was drunk
+    # in keep the order they were built in.
+    items.sort(key=lambda item: tuple(reversed(item.date.split("/"))))
+    for index, item in enumerate(items):
+        item.stt = index + 1
+    return items
+
+
+def _tax_by_rate(items: list[Item]) -> dict[int, tuple[int, int]]:
+    """{rate: (net, tax)} -- the grouping a VAT form's summary is built from.
+
+    Rounded per RATE rather than per line, and used by both the summary block
+    and the amount owed. Rounding each line and adding those up differs from
+    rounding the group by a đồng often enough to matter, and the two halves of
+    the same page would then disagree about the tax.
+    """
+    groups: dict[int, int] = {}
+    for item in items:
+        if item.vat_rate:
+            groups[item.vat_rate] = groups.get(item.vat_rate, 0) + item.amount
+    return {rate: (net, _round_to(net * rate / 100.0, 1)) for rate, net in groups.items()}
+
+
+def _vat_summary(items: list[Item], params: dict, case, cash, grand: int) -> list[dict[str, str]]:
+    """"Tổng hợp": the money regrouped by tax rate.
+
+    A VAT form does not end with one tax line, because two lines of the same
+    invoice may be taxed differently -- it ends with a small table saying how
+    much was sold at each rate and how much tax that came to. The rows printed
+    are the rates the FORM carries (`summary_rates`), not the rates this sale
+    happened to use: a blank 5% row is part of the paper, and leaving it out
+    would make every generated form a different shape.
+    """
+    labels = params.get("summary_labels") or {}
+    rows: list[dict[str, str]] = [{
+        "label": case(str(labels.get("exempt", "Hàng hoá không chịu thuế GTGT:"))),
+        "rate": "", "net": "", "vat": "", "gross": "",
+    }]
+    taxed = case(str(labels.get("taxed", "Hàng hoá chịu thuế suất:")))
+    charged = _tax_by_rate(items)
+    net_total = tax_total = 0
+    for rate in params.get("summary_rates") or params.get("vat_rates") or []:
+        rate = int(rate)
+        net, tax = charged.get(rate, (0, 0))
+        net_total += net
+        tax_total += tax
+        rows.append({
+            "label": taxed,
+            "rate": f"{rate}%",
+            # A rate nobody sold at prints its label and its rate and nothing
+            # else -- an empty cell, not a zero. The form is pre-printed; the
+            # money is not.
+            "net": cash(net) if net else "",
+            "vat": cash(tax) if net else "",
+            "gross": cash(net + tax) if net else "",
+        })
+    rows.append({
+        "label": case(str(labels.get("total", "Tổng cộng tiền thanh toán:"))),
+        "rate": "",
+        "net": cash(net_total),
+        "vat": cash(tax_total),
+        "gross": cash(grand),
+    })
+    return rows
+
+
+def _build_invoice(profile: str, store: Store, items: list[Item], rng: random.Random,
+                   case, cash, params: dict, grand: int,
+                   stay: dict | None = None,
+                   admission: dict | None = None) -> Invoice:
+    """The invoice half: the parties, the serial, the words, the signatures."""
+    lang = params.get("lang", corpus.DEFAULT_LANG)
+    day, month, year = rng.randrange(1, 29), rng.randrange(1, 13), rng.randrange(2019, 2027)
+    # A stay is invoiced when the guest leaves, so the date on the paper is the
+    # check-out date rather than a date of its own. Drawing a second one would
+    # put an invoice date outside the stay it bills.
+    if stay:
+        day, month, year = stay["checkout"].day, stay["checkout"].month, stay["checkout"].year
+    issued = f"{day:02d}/{month:02d}/{year}"
+
+    buyer = Party(
+        name=case(rng.choice(corpus.people(lang))),
+        tax_code=_tax_code(rng),
+        code=f"{rng.randrange(10 ** 8, 10 ** 9)}",
+        account=_bank_account(rng),
+        phone=f"0{rng.randrange(2, 10)}{rng.randrange(10000000, 99999999)}"[:11],
+    )
+    ward, district, city = rng.choice(corpus.wards(lang))
+    street = rng.choice(corpus.streets(lang))
+    buyer.address = case(f"{rng.randrange(1, 300)} {street}")
+    buyer.locality = case(f"{ward}, {district}, {city}")
+
+    consignee = Party(name=buyer.name, address=buyer.address, locality=buyer.locality)
+    if rng.random() < 0.45:            # delivered somewhere other than the billing address
+        ward2, district2, city2 = rng.choice(corpus.wards(lang))
+        consignee.name = case(rng.choice(corpus.people(lang)))
+        consignee.address = case(f"{rng.randrange(1, 300)} {rng.choice(corpus.streets(lang))}")
+        consignee.locality = case(f"{ward2}, {district2}, {city2}")
+
+    consumed = sum(int(item.qty) for item in items)
+    values = {
+        "seller_name": store.name,
+        "seller_unit": store.branch,
+        "seller_address": store.address,
+        "seller_tax_code": store.tax_code,
+        "seller_phone": store.phone,
+        "seller_account": store.account,
+        "buyer_name": buyer.name,
+        "buyer_address": buyer.address,
+        "buyer_locality": buyer.locality,
+        "buyer_tax_code": buyer.tax_code,
+        "buyer_account": buyer.account,
+        "buyer_code": buyer.code,
+        "buyer_phone": buyer.phone,
+        # "Tên đơn vị" / "Importer's name": the buyer of a business document is
+        # a legal person, named separately from whoever signs for it.
+        "buyer_company": case(rng.choice(corpus.shops("invoice", lang))[0]),
+        "ship_name": consignee.name,
+        "ship_address": consignee.address,
+        "ship_locality": consignee.locality,
+        "serial": _serial(rng, year, params.get("serial_format", SERIAL_FORMAT)),
+        "number": f"{rng.randrange(1, 999999):08d}",
+        "form_no": f"01GTKT{rng.randrange(0, 4)}/{rng.randrange(1, 999):03d}",
+        # Two keys an e-invoice rendition prints in its seller block, both of
+        # them a reader's way back to the record behind the paper.
+        "security_code": f"{rng.randrange(10 ** 6, 10 ** 7)}",
+        "transaction_no": f"{rng.randrange(10 ** 9, 10 ** 10)}",
+        "invoice_code": f"{rng.randrange(10 ** 11, 10 ** 12)}",
+        "date": issued,
+        "due_date": f"{day:02d}/{(month % 12) + 1:02d}/{year + (month // 12)}",
+        "households": str(rng.randrange(1, 9)),
+        "meter": f"{rng.choice('ABCDE')}{rng.randrange(1, 999):03d} - {rng.randrange(1000, 9999)}",
+        "usage_period": (
+            f"{day:02d}/{month:02d}/{year} - "
+            f"{day:02d}/{(month % 12) + 1:02d}/{year + (month // 12)}"
+        ),
+        "consumption": quantity(consumed, params.get("money_style", "dot")),
+        "currency": case(params.get("currency", "VND")),
+        "payment_form": case(rng.choice(params.get("payment_forms") or ["Chuyển khoản"])),
+        "grand": cash(grand),
+        "bank_name": case(rng.choice(params.get("banks") or ["Ngân hàng TMCP Ngoại thương"])),
+    }
+    # ---- lưu trú: the booking this bill closes.
+    if stay:
+        checkin, checkout = stay["checkin"], stay["checkout"]
+        values.update({
+            "room_no": stay["room"],
+            "room_type": case(rng.choice(params.get("room_types") or ["Phòng tiêu chuẩn"])),
+            "nights": str(stay["nights"]),
+            "checkin_date": checkin.strftime("%d/%m/%Y"),
+            "checkout_date": checkout.strftime("%d/%m/%Y"),
+            # Fixed hours, not random ones: a hotel has one check-in time and
+            # one check-out time, printed on the bill because they are policy.
+            "checkin_time": str(params.get("checkin_time", "14:00")),
+            "checkout_time": str(params.get("checkout_time", "12:00")),
+            "booking_code": stay["code"],
+            "channel_code": f"{rng.randrange(10 ** 9, 10 ** 10)}",
+            "booking_source": case(rng.choice(params.get("booking_sources") or ["Trực tiếp"])),
+            "guests": str(rng.randint(1, 4)),
+            "issued_at": f"{issued} {rng.randrange(6, 23):02d}:{rng.randrange(0, 60):02d}",
+        })
+    # ---- bảng kê KCB: the patient, the card, and the episode being billed.
+    if admission:
+        card = admission["card"]
+        values.update({
+            "patient_name": buyer.name,
+            "patient_code": f"BN{year % 100:02d}{month:02d}{rng.randrange(10 ** 8, 10 ** 9)}",
+            "born": admission["born"].strftime("%d/%m/%Y"),
+            "gender": str(rng.randint(1, 2)),
+            "patient_address": f"{buyer.address}, {buyer.locality}",
+            # Four fields in four boxes, joined for the layouts that rule one.
+            "card_no": " ".join(card),
+            "card_group": card[0], "card_level": card[1],
+            "card_province": card[2], "card_serial": card[3],
+            "card_from": f"01/01/{year}",
+            "card_to": f"31/12/{year}",
+            "benefit": f"{admission['benefit']}",
+            "first_place": case(f"Trạm y tế xã {rng.choice(corpus.wards(lang))[0]}"),
+            "first_code": f"{rng.randrange(10000, 99999)}",
+            "arrive_at": f"{admission['arrive']} ngày {admission['admitted']:%d/%m/%Y}",
+            "admit_at": f"{admission['arrive']} ngày {admission['admitted']:%d/%m/%Y}",
+            "discharge_at": f"{admission['depart']} ngày {admission['discharged']:%d/%m/%Y}",
+            "treatment_days": str(admission["days"]),
+            "discharge_state": str(rng.randint(1, 4)),
+            "diagnosis": case(admission["diagnosis"]),
+            "icd": admission["icd"],
+            "comorbid": case(admission["comorbid"]),
+            "comorbid_icd": admission["comorbid_icd"],
+            "five_year_date": admission["born"].replace(
+                year=min(admission["born"].year + 30, year)).strftime("%d/%m/%Y"),
+            "ward_code": f"K{rng.randrange(10, 99)}",
+            "form_code": str(params.get("form_code", "01/KBCB")),
+            "billing_period": (
+                f"từ {admission['arrive']} ngày {admission['admitted']:%d/%m/%Y} "
+                f"đến {admission['depart']} ngày {admission['discharged']:%d/%m/%Y}"),
+        })
+
+    # ---- giấy uỷ quyền: two named people and the one amount between them.
+    if params.get("no_items"):
+        lo, hi = params.get("fixed_amount", [500000, 4900000])
+        refund = _round_to(rng.uniform(float(lo), float(hi)), 1000)
+        agent = Party(name=case(rng.choice(corpus.people(lang))))
+        values.update({
+            "principal_name": buyer.name.upper(),
+            "principal_id": f"{rng.randrange(10 ** 8, 10 ** 9)}",
+            "principal_id_date": f"{rng.randrange(1, 29):02d}/{rng.randrange(1, 13):02d}/{year - rng.randint(3, 12)}",
+            "principal_id_place": case(rng.choice(corpus.wards(lang))[2]),
+            "policy_no": f"{rng.randrange(10 ** 7, 10 ** 8)}",
+            "agent_name": agent.name.upper(),
+            "agent_id": f"{rng.randrange(10 ** 8, 10 ** 9)}",
+            "agent_id_date": f"{rng.randrange(1, 29):02d}/{rng.randrange(1, 13):02d}/{year - rng.randint(1, 10)}",
+            "agent_id_place": case(rng.choice(corpus.wards(lang))[2]),
+            "agent_address": case(
+                " - ".join(rng.choice(corpus.wards(lang))[:3])),
+            "agent_code": f"{rng.randrange(10 ** 7, 10 ** 8)}",
+            "agent_phone": f"09{rng.randrange(10 ** 7, 10 ** 8)}",
+            "refund_amount": cash(refund),
+            "refund_words": case(words_vi(refund)),
+            "notified_on": f"{max(day - rng.randint(1, 20), 1):02d}/{month:02d}/{year}",
+        })
+
+    # ---- biểu mẫu/đơn từ: an applicant's own civil details, and the two
+    # yes/no lines a form asks for its own record. Nothing above covers these
+    # -- `buyer`/`ship` are commercial parties, `principal`/`agent` come with
+    # an authorisation, `admission` with a hospital stay -- so root 3's forms
+    # (`rulebase/documents/form_*.yaml`) get their own small block, gated
+    # behind a flag only they set. The categorical lists (`ethnicities`,
+    # `religions`, ...) are read from the document's own params first, the
+    # same `rng.choice(params.get(X) or [...])` shape `payment_forms`/`banks`/
+    # `room_types` already use above, so a document overrides them by adding
+    # one YAML key rather than by editing this file.
+    if params.get("form_fields"):
+        applicant_name = case(rng.choice(corpus.people(lang)))
+        values.update({
+            "applicant_name": applicant_name,
+            "applicant_dob": f"{rng.randrange(1, 29):02d}/{rng.randrange(1, 13):02d}/"
+                             f"{rng.randrange(1955, 2007)}",
+            "applicant_id": f"{rng.randrange(10 ** 11, 10 ** 12)}",
+            "applicant_id_date": f"{rng.randrange(1, 29):02d}/{rng.randrange(1, 13):02d}/"
+                                 f"{year - rng.randint(1, 8)}",
+            "applicant_id_place": case(params.get(
+                "id_issuer", "Cục Cảnh sát quản lý hành chính về trật tự xã hội")),
+            "applicant_phone": f"0{rng.randrange(2, 10)}{rng.randrange(10000000, 99999999)}"[:11],
+            "applicant_gender": case(rng.choice(["Nam", "Nữ"])),
+            "hometown": case(rng.choice(corpus.wards(lang))[2]),
+            "residence": case(f"{rng.randrange(1, 300)} {rng.choice(corpus.streets(lang))}, "
+                              f"{', '.join(rng.choice(corpus.wards(lang))[:3])}"),
+            "ethnicity": case(rng.choice(params.get("ethnicities") or ["Kinh"])),
+            "religion": case(rng.choice(params.get("religions") or ["Không"])),
+            "education_level": case(rng.choice(params.get("education_levels") or ["12/12"])),
+            "profession": case(rng.choice(params.get("professions") or ["Công nhân viên"])),
+            "health": case(rng.choice(params.get("health_states") or ["Bình thường"])),
+            "father_name": case(rng.choice(corpus.people(lang))),
+            "mother_name": case(rng.choice(corpus.people(lang))),
+            "witness_name": case(rng.choice(corpus.people(lang))),
+            "yn_1": rng.choice(["Có", "Không"]),
+            "yn_2": rng.choice(["Có", "Không"]),
+        })
+
+    # ---- xe cơ giới: the vehicle a compulsory-liability certificate names.
+    # `buyer_name`/`buyer_address`/`buyer_phone` above already cover the owner
+    # -- a plate, a chassis and an engine number are the only facts a vehicle
+    # certificate carries that nothing above does.
+    if params.get("vehicle_fields"):
+        kind = params.get("vehicle_kind", "car")
+        # `51K-999.99` (car) vs `29X1-123.45` (motorbike): both a province
+        # code, a registration letter, a dash, three digits, a dot, two
+        # digits -- a motorbike plate has one extra digit after the letter.
+        province = f"{rng.randrange(11, 99):02d}"
+        letter = rng.choice("ABCDEFGHKLMNPST")
+        series = f"{rng.randrange(1, 999):03d}.{rng.randrange(1, 99):02d}"
+        plate = (f"{province}{letter}{rng.randrange(1, 9)}-{series}" if kind == "motorbike"
+                else f"{province}{letter}-{series}")
+        chassis = "".join(rng.choice("ABCDEFGHJKLMNPRSTUVWXYZ0123456789") for _ in range(17))
+        engine = "".join(rng.choice("ABCDEFGHJKLMNPRSTUVWXYZ0123456789") for _ in range(11))
+        values.update({
+            "plate_number": plate,
+            "chassis_number": chassis,
+            "engine_number": engine,
+            "vehicle_type": case(rng.choice(params.get("vehicle_types")
+                                            or ["Ô tô con"])),
+        })
+
+    # ---- xuất khẩu: the shipment the invoice travels with.
+    values.update({
+        "contract_no": f"{rng.randrange(1, 999):03d}/{year % 100:02d}/HĐXK",
+        "contract_date": f"{day:02d}/{month:02d}/{year}",
+        "bill_of_lading": f"{''.join(rng.choice('ABCDEFGHJKLMNP') for _ in range(4))}"
+                          f"{rng.randrange(10 ** 7, 10 ** 8)}",
+        "container_no": f"{''.join(rng.choice('ABCDEFGHJKLMNP') for _ in range(4))}"
+                        f"U{rng.randrange(10 ** 6, 10 ** 7)}",
+        "place_of_delivery": case(rng.choice(params.get("delivery_places") or ["Cảng Hải Phòng"])),
+        "place_of_destination": case(rng.choice(params.get("destinations") or ["Busan, Korea"])),
+        "transporter": case(rng.choice(params.get("transporters") or ["Hãng tàu ONE"])),
+        "seller_account_usd": _bank_account(rng),
+        "exchange_rate": quantity(
+            rng.randrange(23000, 26500), params.get("money_style", "dot")
+        ),
+    })
+
+    def block(entries) -> list[tuple[str, str]]:
+        pairs = []
+        for entry in entries or []:
+            key, label = (list(entry) + [""])[:2]
+            value = values.get(str(key), "")
+            if value:
+                pairs.append((case(str(label)), value))
+        return pairs
+
+    fields = params.get("party_fields") or {}
+    invoice = Invoice(
+        serial=values["serial"] if params.get("show_serial", True) else "",
+        # "Số hoá đơn: INV001421" on a designed invoice is the serial, and
+        # there is no second number underneath it. Issuing one anyway would put
+        # a field in the label that no layout of that document prints.
+        number=values["number"] if params.get("show_number", True) else "",
+        form_no=values["form_no"] if params.get("show_form_no") else "",
+        subtitle=case(params.get("subtitle", "")),
+        # Substituted first, cased after: `case` may upper-case the template,
+        # and "{MONTH}" matches no key.
+        period=case(_fill(params.get("period_format", ""),
+                          {**values, "month": f"{month:02d}", "year": str(year)})),
+        buyer=buyer,
+        consignee=consignee,
+        left_title=case(fields.get("left_title", "")),
+        right_title=case(fields.get("right_title", "")),
+        left=block(fields.get("left")),
+        right=block(fields.get("right")),
+        strip=block(fields.get("strip")),
+        notes=[case(_fill(str(line), values)) for line in params.get("notes") or []],
+    )
+    if params.get("summary"):
+        invoice.summary = _vat_summary(items, params, case, cash, grand)
+    if params.get("show_amount_words", True):
+        invoice.words_label = case(params.get("words_label", "Số tiền bằng chữ:"))
+        invoice.words = case(words_vi(grand, params.get("words_unit", "đồng")))
+    invoice.signatures = [
+        (case(str(title)), case(str(instruction)))
+        for title, instruction in (params.get("signature_labels") or [])
+    ]
+    if params.get("signature_names"):
+        # A hotel bill is signed by two named people, and both names are
+        # printed under the titles rather than left to handwriting.
+        invoice.signature_names = [
+            case(rng.choice(corpus.people(lang))), buyer.name
+        ][:len(invoice.signatures) or 2]
+    if params.get("digital_signature"):
+        invoice.signed_by = case(f"{params.get('signed_by_label', 'Được ký bởi:')} {store.name}")
+        invoice.signed_at = case(f"{params.get('signed_at_label', 'Ngày ký:')} {issued}")
+    # A health-declaration table: `checks` in the document YAML is a fixed
+    # bank of {question, yes_rate, details} -- the question is corpus text,
+    # the answer is a coin toss at `yes_rate`, and the detail (drawn only on
+    # "Có") is one line from that question's own small pool. Absent for every
+    # document that doesn't set it, so this is a no-op everywhere else.
+    for entry in params.get("checks") or []:
+        yes = rng.random() < float(entry.get("yes_rate", 0.15))
+        pool = entry.get("details") or []
+        detail = case(str(rng.choice(pool))) if yes and pool else ""
+        invoice.checks.append((
+            case(str(entry["question"])),
+            case(str(entry.get("yes", "Có")) if yes else str(entry.get("no", "Không"))),
+            detail,
+        ))
+    return invoice
+
+
+def build(recipe, rng: random.Random | None = None) -> Receipt:
+    """Fill in one receipt for `recipe`."""
+    rng = rng or random.Random(recipe.seed)
+    document = recipe.choices["document"].params
+    content = recipe.choices["content"].params
+
+    profile = document.get("profile", "eatery")
+    money_style = content.get("money_style", "dot")
+    money_suffix = content.get("money_suffix", "")
+    money_prefix = content.get("money_prefix", "")
+    folded = rng.random() < float(content.get("prob_ascii_fold", 0.0))
+    upper = rng.random() < float(content.get("prob_uppercase", 0.5))
+    # An invoice is a different document, not a wider receipt: it has a
+    # letterhead instead of a shop name, a party block instead of a meta block,
+    # and an amount written out in words. `document.invoice` is what says so.
+    is_invoice = bool(document.get("invoice"))
+    params = {**document, **content}
+    params.setdefault("lang", corpus.DEFAULT_LANG)
+
+    def case(text: str) -> str:
+        return apply_case(text, upper=upper, fold=folded)
+
+    def switch(name: str, default: bool = False) -> bool:
+        """A yes/no the content value decides -- unless the document knows better.
+
+        `show_vat` and `show_payment` are written in `rules/content.yaml`
+        because they are largely a matter of how a page is typeset. They are
+        not only that: an export invoice carries no VAT line however the
+        content value is spelled, and a hotel bill always closes with what was
+        paid and what is still owed. Where the document states one of these it
+        wins, because it is a fact about the document and not about its style.
+        """
+        if name in document:
+            return bool(document[name])
+        return bool(content.get(name, default))
+
+    def cash(value: float) -> str:
+        return money(value, money_style, money_suffix, money_prefix)
+
+    if is_invoice:
+        store = _build_issuer(profile, rng, case, params)
+        # The stay is drawn before its lines because both describe it -- see
+        # `_build_stay`. `None` for every document that is not a bill for one.
+        stay = _build_stay(rng, params) if params.get("stay") else None
+        # An episode of treatment, for the hospital bill. Same idea as `stay`
+        # and drawn at the same point, because the same object describes the
+        # lines and the block of fields above them.
+        admission = _build_admission(rng, params) if params.get("admission") else None
+        if params.get("no_items"):
+            # A form that authorises a payment has no basket at all: what it
+            # states is one amount, and it states it in the field block. An
+            # empty line list is the honest model -- inventing a single row
+            # would put a name and a price in the label that the paper does not
+            # have a column for.
+            items = []
+        elif admission:
+            items = _build_medical_items(rng, case, params, admission)
+        elif params.get("metered"):
+            items = _build_utility_items(profile, rng, case, params)
+        elif stay:
+            items = _build_stay_items(profile, rng, case, params, stay)
+        elif params.get("catalogue"):
+            items = _build_insurance_items(rng, case, params)
+        elif params.get("groups"):
+            items = _build_grouped_items(rng, case, params)
+        else:
+            items = _build_items(profile, rng, case, params)
+        # The party block carries what a till prints as meta, and it is emitted
+        # by its own section; leaving `meta` filled as well would put the same
+        # facts into `text_sequence` twice, once for text nobody drew.
+        meta: list[tuple[str, str]] = []
+    else:
+        stay = admission = None
+        store = _build_store(profile, rng, case)
+        # Same `groups:` shape `_build_grouped_items` already reads for an
+        # invoice-side benefit table (insurance health cert) -- a till-side
+        # document (a restaurant menu's Khai vị/Món chính/Tráng miệng
+        # sections) is the same "named categories, each a heading row over a
+        # few catalogue lines" structure, just printed on a receipt rather
+        # than a letterhead. Reused rather than duplicated.
+        if params.get("groups"):
+            items = _build_grouped_items(rng, case, params)
+        else:
+            items = _build_items(profile, rng, case, params)
+        meta = _build_meta(profile, rng, case, params)
+
+    # An overlay, applied after every field has its normal corpus/params
+    # value -- see `apply_content_overrides`. Empty and a no-op on every run
+    # that never set `VLM_CONTENT_OVERRIDES`, which is every run before this
+    # existed.
+    overrides = _overrides_for(recipe.seed)
+    if overrides:
+        apply_content_overrides(store, items, admission, document, overrides, case)
+
+    # A group heading is a row of the table that carries its block's subtotal,
+    # so summing it with the lines would count that block twice.
+    subtotal = sum(item.amount for item in items if not item.is_group)
+    item_discount = sum(item.discount for item in items)
+    grand = subtotal - item_discount
+
+    totals: list[tuple[str, str]] = []
+    numbers: dict[str, Any] = {"subtotal": subtotal, "discount": item_discount}
+
+    labels = document.get("total_labels") or {}
+    if switch("show_subtotal", True):
+        totals.append((case(labels.get("subtotal", "Tiền hàng")), cash(subtotal)))
+    if item_discount:
+        totals.append((case(labels.get("discount", "Tổng tiền giảm")), cash(-item_discount)))
+
+    vat_rate = 0
+    # A form that summarises by rate carries no single VAT line: the tax is the
+    # sum over the rates actually charged, and the "Tổng hợp" block below the
+    # table is where it is printed. Computing it here anyway is what lets the
+    # amount in words spell the figure the summary adds up to.
+    summarised = bool(document.get("summary"))
+    if summarised:
+        vat = sum(tax for _net, tax in _tax_by_rate(items).values())
+        grand += vat
+        numbers["vat"] = vat
+    # A till prints the VAT line when it feels like it; a VAT invoice without
+    # one is not a VAT invoice, so the coin is only tossed for the till.
+    elif switch("show_vat") and (is_invoice or rng.random() < 0.8):
+        vat_rate = int(rng.choice(document.get("vat_rates") or [8, 10]))
+        vat = _round_to(grand * vat_rate / 100.0, 1)
+        totals.append((case(f"{labels.get('vat', 'Thuế GTGT')} {vat_rate}%"), cash(vat)))
+        grand += vat
+        numbers["vat_rate"] = vat_rate
+        numbers["vat"] = vat
+
+    # Charges the utility adds on top of the tax: the environment levy on a
+    # water bill is 10% of the goods line, printed as its own row and included
+    # in the amount owed. A value below 1 is read as a rate, one at or above it
+    # as a flat amount -- shipping on an English invoice is not a percentage.
+    for entry in document.get("surcharges") or []:
+        label, rate = (list(entry) + [0])[:2]
+        charge = _round_to(subtotal * float(rate), 1) if float(rate) < 1 else int(rate)
+        if charge:
+            totals.append((case(str(label)), cash(charge)))
+            grand += charge
+            numbers.setdefault("surcharges", []).append([str(label), charge])
+
+    # A summarising form prints what is owed in its "Tổng hợp" block rather
+    # than as a line of this list, so the index deliberately points past the
+    # end: there is nothing here to set in bold.
+    #
+    # `no_totals` is the third case: a schedule of coverage limits (each
+    # `Item` a distinct benefit and its cap) has no meaningful sum at all --
+    # summing "50,000 EUR medical" and "2,000 EUR baggage" is not a number
+    # the document claims. `numbers["grand"]` is still computed below, for
+    # this function's own arithmetic checks; it is simply never appended to
+    # `totals`, so it never reaches `ground_truth()` (built from `totals`
+    # alone) for a page with no total to print.
+    grand_index = len(totals)
+    if not summarised and not params.get("no_totals"):
+        totals.append((case(labels.get("grand", "Thanh toán")), cash(grand)))
+    numbers["grand"] = grand
+
+    # ---- how the total was met: the block a hospital bill ends with.
+    #
+    # Not a list of payments but a division of one amount: what the fund paid,
+    # what the patient paid, and which part of the patient's share was the copay
+    # on a covered service, which was billed outright, and which was waived. The
+    # four add back to the total, which is the arithmetic a reader checks and
+    # the reason these are computed from the lines rather than drawn.
+    if document.get("settlement") and admission:
+        benefit = admission["benefit"]
+        lines = [item for item in items if not item.is_group]
+        fund = sum(item.fund_bhyt(benefit) for item in lines)
+        copay = sum(item.copay(benefit) for item in lines)
+        waived = sum(item.other_pay() for item in lines)
+        outright = sum(0 if item.waived else item.amount_bv() for item in lines)
+        for key, default, amount in (
+            ("fund", "Quỹ BHYT thanh toán theo giá dịch vụ y tế:", fund),
+            ("patient", "Người bệnh trả, trong đó:", copay + outright),
+            ("copay", "+ Cùng trả trong phạm vi BHYT:", copay),
+            ("other_charges", "+ Các khoản phải trả khác:", outright),
+            ("waived", "+ Được miễn giảm:", waived),
+            ("other_source", "- Nguồn khác:", 0),
+        ):
+            totals.append((case(labels.get(key, default)), cash(amount)))
+        numbers.update({"fund": fund, "copay": copay, "waived": waived,
+                        "self_pay": outright, "benefit": benefit})
+
+    if switch("show_payment", True):
+        choices = corpus.payments(params["lang"])
+        wanted = params.get("payment_groups")
+        if wanted:
+            # A room booked through a channel is not settled in cash at the
+            # desk. Narrowing the group is how a document says so without a
+            # second payments corpus -- and it falls back rather than failing,
+            # since an empty shortlist is a typo, not a receipt with no total.
+            choices = [entry for entry in choices if entry[1] in wanted] or choices
+        label, group = rng.choice(choices)
+        # A payment row labelled the same as a row already above it does not
+        # survive `ground_truth`, whose `total` is a dict keyed by the drawn
+        # label: the page prints both rows and the label carries one. 1.3% of
+        # receipts drew such a pair -- "TIỀN KHÁCH TRẢ" over a grand total the
+        # document also calls "TIỀN KHÁCH TRẢ".
+        #
+        # Re-drawn from what is left rather than filtering before the choice,
+        # so the 98.7% that never collided keep the exact draw they had.
+        used = {existing for existing, _ in totals}
+        if case(label) in used:
+            free = [entry for entry in choices if case(entry[0]) not in used]
+            if free:
+                label, group = free[rng.randrange(len(free))]
+        paid = grand if group != "tienmat" else _round_to(grand + rng.uniform(0, 60000), 10000)
+        paid = max(paid, grand)
+        totals.append((case(label), cash(paid)))
+        totals.append((case(labels.get("change", "Tiền trả lại")), cash(paid - grand)))
+        numbers["paid"] = paid
+        numbers["change"] = paid - grand
+
+    if content.get("show_item_count"):
+        total_qty = sum(item.qty for item in items)
+        totals.append((case("Tổng số lượng hàng"), quantity(total_qty, money_style, 3)))
+
+    footer_lines = corpus.footers(profile, params["lang"])
+    lo, hi = content.get("num_footers", [1, 3])
+    count = rng.randint(int(lo), int(hi))
+    footer = [case(line) for line in rng.sample(footer_lines, min(count, len(footer_lines)))]
+
+    title = case(rng.choice(document.get("titles") or TITLES[profile]))
+    invoice = (
+        _build_invoice(profile, store, items, rng, case, cash, params, grand,
+                       stay, admission)
+        if is_invoice
+        else None
+    )
+
+    return Receipt(
+        profile=profile,
+        title=title,
+        store=store,
+        meta=meta,
+        items=items,
+        totals=totals,
+        footer=footer,
+        money_style=money_style,
+        money_prefix=money_prefix,
+        money_suffix=money_suffix,
+        upper=upper,
+        folded=folded,
+        grand_index=grand_index,
+        numbers=numbers,
+        invoice=invoice,
+    )
+
+
+__all__ = ["Invoice", "Item", "Party", "Receipt", "Store", "build"]

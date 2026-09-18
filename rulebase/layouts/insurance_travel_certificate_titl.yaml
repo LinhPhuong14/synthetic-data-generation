@@ -1,0 +1,60 @@
+# soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (title_first), giữ nguyên cột và dây nối dữ liệu của insurance_travel_certificate
+id: insurance_travel_certificate_titl
+name: insurance_travel_certificate — title_first
+source: 'soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (title_first), giữ nguyên cột và dây nối dữ liệu của insurance_travel_certificate'
+family: insurance
+composition: travel_cert
+width:
+- 92
+- 104
+gutter: 2
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- doctitle
+- letterhead
+- parties
+- table
+- notes
+- signatures
+- footer
+letterhead:
+  frame: false
+  labels:
+    address: ''
+    tax_code: ''
+    phone: ''
+    account: ''
+    branch: ''
+    form_no: ''
+    serial: ''
+    number: 'Certificate No.:'
+parties:
+  style: stacked
+bilingual_left:
+- - Full name
+  - Họ và tên
+- - Passport no.
+  - Số hộ chiếu
+- - Date of issue
+  - Ngày cấp
+- - Period of insurance ends
+  - Hiệu lực đến ngày
+columns:
+- key: name
+  label: Benefit · Quyền lợi
+  width: 0
+  align: left
+- key: amount
+  label: Số tiền bảo hiểm (EUR)
+  width: 22
+  align: right
+item:
+  rows:
+  - - col: name
+      from: name
+    - col: amount
+      from: amount
+table:
+  caption: CHI TIẾT QUYỀN LỢI BẢO HIỂM

@@ -1,0 +1,24 @@
+# ĐƠN XIN NGHỈ PHÉP — một cột trường (tờ đơn viết xuôi từ trên xuống, không
+# chia đôi trang như biên bản), một đoạn lý do có hai dòng Có/Không, ba chữ ký.
+#
+# KHÔNG đặt `fields.columns: two`: đây là tờ ĐƠN, người viết đọc và điền theo
+# thứ tự dọc, và hai cột sẽ cắt mạch ấy làm đôi.
+id: form_leave_application
+name: Leave application — single-column fields, a stated reason, three approvals
+source: "đơn xin nghỉ phép — mẫu công ty tự thiết kế, ba chỗ ký duyệt"
+family: form
+
+width: [74, 84]
+gutter: 2
+rule_char: "-"
+sheet: a4
+rules: marks
+
+sections: [header, parties, notes, signatures, footer]
+
+header:
+  title: true
+
+signatures:
+  name_gap: 5
+  stamp_width: 20

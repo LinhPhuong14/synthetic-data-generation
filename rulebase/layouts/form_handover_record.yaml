@@ -1,0 +1,44 @@
+# BIÊN BẢN BÀN GIAO — khối trường hai cột (bên giao / bên nhận), bảng kiểm kê
+# viền đủ, một đoạn cam kết, ba chữ ký.
+#
+# Năm cột: STT · tên tài sản (co giãn) · ĐVT · số lượng · giá trị còn lại.
+# `item.rows` là bản đọc RIÊNG của renderer lưới ký tự — thiếu nó thì chỉ cột
+# "name" được in trên lưới, dù đường CSS vẫn đủ năm cột.
+id: form_handover_record
+name: Handover record — two-party fields, a ruled inventory table, three signatures
+source: "biên bản bàn giao tài sản nội bộ doanh nghiệp — mẫu tự thiết kế"
+family: form
+
+width: [86, 96]
+gutter: 2
+rule_char: "-"
+sheet: a4
+rules: marks
+
+sections: [header, parties, table, totals, notes, signatures, footer]
+
+header:
+  title: true
+
+fields:
+  columns: two
+
+columns:
+  - {key: stt,    title: "STT",                  width: 5,  align: center, title_align: center}
+  - {key: name,   title: "Tên tài sản, công cụ", width: 0,  align: left,   title_align: left}
+  - {key: unit,   title: "ĐVT",                  width: 8,  align: center, title_align: center}
+  - {key: qty,    title: "Số lượng",             width: 10, align: right,  title_align: right}
+  - {key: amount, title: "Giá trị còn lại",      width: 16, align: right,  title_align: right}
+
+item:
+  wrap_name: true
+  rows:
+    - - {col: stt,    from: stt}
+      - {col: name,   from: name}
+      - {col: unit,   from: unit}
+      - {col: qty,    from: qty}
+      - {col: amount, from: amount}
+
+signatures:
+  name_gap: 4
+  stamp_width: 22

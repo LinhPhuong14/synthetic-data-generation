@@ -1,0 +1,1375 @@
+{
+ "Legal name of the selling organisation issuing this document.": [
+  "The selling company's name exactly as registered.",
+  "Trading name of the business that raised this document.",
+  "Who sold the goods, named in full.",
+  "Tên công ty bán hàng ghi theo giấy phép kinh doanh.",
+  "Đơn vị bán đứng tên phát hành chứng từ.",
+  "Bên bán là tổ chức nào, ghi đầy đủ tên."
+ ],
+ "Tax identification number of the seller.": [
+  "MST of the selling business.",
+  "The tax number the seller trades under.",
+  "Seller's tax registration number on this document.",
+  "Mã số thuế ghi ở phần bên bán.",
+  "Số đăng ký thuế của bên bán hàng.",
+  "MST mà đơn vị bán dùng để kê khai."
+ ],
+ "Registered address of the seller.": [
+  "Where the selling business is registered.",
+  "The seller's address as printed here.",
+  "Head office address of the seller.",
+  "Nơi đặt trụ sở của bên bán.",
+  "Địa chỉ bên bán in trên giấy.",
+  "Chỗ đăng ký kinh doanh của đơn vị bán."
+ ],
+ "Contact telephone of the seller.": [
+  "Telephone number printed for the seller.",
+  "How to ring the selling business.",
+  "Seller's phone line for enquiries.",
+  "Số máy liên lạc của bên bán.",
+  "Điện thoại để gọi cho đơn vị bán.",
+  "Số gọi bên bán ghi trên chứng từ."
+ ],
+ "Bank account the seller is paid into.": [
+  "Where to transfer the money owed.",
+  "The seller's bank details for settlement.",
+  "Account the payment goes to.",
+  "Số tài khoản để trả tiền cho bên bán.",
+  "Ngân hàng và số tài khoản nhận thanh toán.",
+  "Tài khoản bên bán dùng để nhận tiền."
+ ],
+ "Full name of the individual buyer.": [
+  "The buying person's full name.",
+  "Who bought, written out in full.",
+  "Name of the individual on the buying side.",
+  "Tên đầy đủ của người mua.",
+  "Người mua hàng tên gì, ghi cả họ.",
+  "Họ tên cá nhân đứng ra mua."
+ ],
+ "Legal name of the purchasing organisation.": [
+  "The buying company's registered name.",
+  "Organisation that bought, named in full.",
+  "Name of the business receiving the goods.",
+  "Tên tổ chức mua hàng theo đăng ký.",
+  "Đơn vị mua là công ty nào.",
+  "Tên doanh nghiệp bên mua ghi trên giấy."
+ ],
+ "Tax identification number of the buyer.": [
+  "MST of the buying party.",
+  "The buyer's tax number on this document.",
+  "Tax code printed beside the buyer's name.",
+  "Mã số thuế ghi ở phần bên mua.",
+  "MST của đơn vị nhận hàng.",
+  "Số thuế bên mua kê trên chứng từ."
+ ],
+ "Address of the buyer.": [
+  "Where the buying party is.",
+  "The buyer's address as printed.",
+  "Address given for the purchasing side.",
+  "Địa chỉ bên mua in trên giấy.",
+  "Nơi ở hoặc trụ sở của người mua.",
+  "Chỗ của đơn vị mua hàng."
+ ],
+ "How the amount was settled: cash, transfer, card or wallet.": [
+  "Which way the bill was paid.",
+  "Form of payment recorded on this document.",
+  "Whether this was cash, card or a transfer.",
+  "Trả bằng tiền mặt, chuyển khoản hay thẻ.",
+  "Cách thanh toán được ghi lại ở đây.",
+  "Phương thức trả tiền cho khoản này."
+ ],
+ "Registered or current residential address of the person named.": [
+  "Where this person lives.",
+  "Home address recorded for the individual.",
+  "The person's address of residence.",
+  "Chỗ ở hiện nay của người có tên.",
+  "Địa chỉ nhà của cá nhân này.",
+  "Nơi đăng ký hộ khẩu hoặc tạm trú."
+ ],
+ "Contact telephone of the person named.": [
+  "Phone number to reach this person.",
+  "The individual's own telephone number.",
+  "Personal contact number recorded here.",
+  "Số điện thoại cá nhân của người có tên.",
+  "Số máy để liên hệ với người này.",
+  "Điện thoại riêng ghi trong hồ sơ."
+ ],
+ "Reference number of the contract.": [
+  "The number this contract is filed under.",
+  "Contract number for looking this up.",
+  "Identifier printed on the agreement.",
+  "Số của bản hợp đồng này.",
+  "Ký số hợp đồng để tra cứu.",
+  "Mã hợp đồng ghi trên văn bản."
+ ],
+ "Department or unit the person belongs to.": [
+  "Which part of the organisation employs them.",
+  "The team this person works in.",
+  "Section of the body the person sits in.",
+  "Người này làm ở phòng ban nào.",
+  "Đơn vị công tác của cá nhân.",
+  "Tổ, đội hoặc phòng mà người này thuộc về."
+ ],
+ "Job title of the person named.": [
+  "What this person's role is called.",
+  "The post this individual holds.",
+  "Title printed beside the person's name.",
+  "Người này giữ chức vụ gì.",
+  "Chức danh ghi cạnh tên.",
+  "Vị trí đảm nhiệm của cá nhân."
+ ],
+ "First party to the contract.": [
+  "The side named first in this agreement.",
+  "Who Party A is on this contract.",
+  "First of the two contracting parties.",
+  "Bên đứng tên trước trong hợp đồng.",
+  "Ai là bên A của thoả thuận này.",
+  "Bên thứ nhất ký kết."
+ ],
+ "Second party to the contract.": [
+  "The side named second in this agreement.",
+  "Who Party B is on this contract.",
+  "Second of the two contracting parties.",
+  "Bên đứng tên sau trong hợp đồng.",
+  "Ai là bên B của thoả thuận này.",
+  "Bên thứ hai ký kết."
+ ],
+ "Person signing on behalf of the party.": [
+  "Who puts their name to this for the party.",
+  "The representative authorised to sign.",
+  "Individual signing for the organisation.",
+  "Người ký thay mặt cho bên tham gia.",
+  "Ai đại diện đặt bút ký.",
+  "Cá nhân được cử ra ký văn bản."
+ ],
+ "Total value of the contract.": [
+  "What the whole contract is worth.",
+  "Agreed value of the entire agreement.",
+  "Full sum the contract covers.",
+  "Giá trị toàn bộ của hợp đồng.",
+  "Số tiền cả hợp đồng cộng lại.",
+  "Tổng tiền hai bên thoả thuận."
+ ],
+ "Full name of the person this document concerns.": [
+  "Who the paperwork is about, named in full.",
+  "The individual this document is written for.",
+  "Name of the subject of this record.",
+  "Chứng từ này lập cho ai, ghi cả họ tên.",
+  "Người được nói tới trong hồ sơ.",
+  "Tên đầy đủ của đương sự."
+ ],
+ "Date of birth of the person named.": [
+  "When this person was born.",
+  "The individual's birth date on record.",
+  "Birthday printed for this person.",
+  "Người này sinh ngày nào.",
+  "Ngày sinh ghi trong hồ sơ.",
+  "Sinh nhật của cá nhân có tên."
+ ],
+ "Sex of the person named.": [
+  "Whether this person is male or female.",
+  "The individual's sex as recorded.",
+  "Gender entry for this person.",
+  "Người này là nam hay nữ.",
+  "Giới tính ghi trong hồ sơ.",
+  "Nam hoặc nữ, theo khai báo."
+ ],
+ "National identity card or passport number of the person named.": [
+  "The person's ID or passport number.",
+  "Number on their citizen card.",
+  "Identity document number recorded here.",
+  "Số căn cước hoặc hộ chiếu của người này.",
+  "Số giấy tờ tuỳ thân ghi trên hồ sơ.",
+  "CCCD hay CMND của cá nhân có tên."
+ ],
+ "Date the identity document was issued.": [
+  "When the ID card was granted.",
+  "Issue date on the identity document.",
+  "The day the card was handed out.",
+  "Giấy tờ tuỳ thân cấp ngày nào.",
+  "Ngày cấp ghi trên căn cước.",
+  "Thời điểm cấp giấy tờ cho người này."
+ ],
+ "Authority that issued the identity document.": [
+  "Which body granted the ID card.",
+  "Office that issued the identity document.",
+  "Where the card was issued from.",
+  "Chỗ đã cấp giấy tờ cho người này.",
+  "Cơ quan nào cấp căn cước này.",
+  "Đơn vị đứng ra cấp giấy."
+ ],
+ "Full name of the patient.": [
+  "Who is being treated, named in full.",
+  "The patient's name on this record.",
+  "Name of the person receiving care.",
+  "Bệnh nhân được ghi tên là gì.",
+  "Bệnh nhân tên gì, ghi cả họ.",
+  "Họ tên người đang được điều trị."
+ ],
+ "Hospital record number for this episode of care.": [
+  "The file number for this admission.",
+  "Case number the hospital filed this under.",
+  "Medical record reference for this stay.",
+  "Số hồ sơ bệnh án của lần khám này.",
+  "Mã bệnh án bệnh viện cấp cho đợt này.",
+  "Số lưu trữ hồ sơ điều trị."
+ ],
+ "Vietnamese health-insurance card number of the patient.": [
+  "Card number the patient claims BHYT under.",
+  "Health insurance card reference on file.",
+  "Number on the patient's insurance card.",
+  "Số thẻ bảo hiểm y tế của người bệnh.",
+  "Mã thẻ BHYT ghi trong hồ sơ.",
+  "Số trên thẻ bảo hiểm của bệnh nhân."
+ ],
+ "Hospital ward or department the patient was treated in.": [
+  "Which ward the patient stayed on.",
+  "Department that handled this admission.",
+  "Where in the hospital care was given.",
+  "Người bệnh nằm ở khoa nào.",
+  "Khoa phòng tiếp nhận điều trị.",
+  "Bộ phận của bệnh viện chăm sóc ca này."
+ ],
+ "Date and time the patient was admitted.": [
+  "When the patient came in.",
+  "Admission timestamp for this stay.",
+  "Hour and day care began.",
+  "Người bệnh vào viện lúc nào.",
+  "Thời điểm tiếp nhận bệnh nhân.",
+  "Giờ và ngày nhập viện."
+ ],
+ "Date and time the patient was discharged.": [
+  "When the patient left hospital.",
+  "Discharge timestamp for this stay.",
+  "Hour and day care ended.",
+  "Người bệnh ra viện lúc nào.",
+  "Thời điểm cho xuất viện.",
+  "Giờ và ngày kết thúc điều trị."
+ ],
+ "Clinical diagnosis recorded for this episode.": [
+  "What the doctor found.",
+  "The condition diagnosed on this admission.",
+  "Medical finding written up for this stay.",
+  "Bác sĩ chẩn đoán bệnh gì.",
+  "Kết luận bệnh của đợt điều trị này.",
+  "Chẩn đoán ghi trong hồ sơ bệnh án."
+ ],
+ "Treatment given to the patient.": [
+  "What was done for the patient.",
+  "Care and medication provided.",
+  "The course of treatment on this admission.",
+  "Người bệnh được điều trị thế nào.",
+  "Cách chữa và thuốc đã dùng.",
+  "Phương pháp điều trị áp dụng cho ca này."
+ ],
+ "Insurance policy or certificate number.": [
+  "The number this cover is filed under.",
+  "Policy reference printed on the certificate.",
+  "Identifier for this insurance contract.",
+  "Số của hợp đồng bảo hiểm này.",
+  "Mã đơn bảo hiểm ghi trên giấy chứng nhận.",
+  "Số giấy chứng nhận bảo hiểm."
+ ],
+ "Person covered by this policy.": [
+  "Who the insurance protects.",
+  "The insured named on this certificate.",
+  "Individual the cover applies to.",
+  "Người được bảo hiểm trong hợp đồng này.",
+  "Ai là đối tượng được bảo vệ.",
+  "Cá nhân đứng tên hưởng bảo hiểm."
+ ],
+ "Party that bought the policy.": [
+  "Who paid for this cover.",
+  "The policyholder on this contract.",
+  "Buyer of the insurance.",
+  "Bên bỏ tiền mua hợp đồng bảo hiểm.",
+  "Ai đứng ra ký và trả tiền hợp đồng.",
+  "Người mua đơn bảo hiểm này."
+ ],
+ "First day the cover is in force.": [
+  "When the insurance starts.",
+  "Date cover begins.",
+  "The policy's first effective day.",
+  "Bảo hiểm bắt đầu có hiệu lực từ ngày nào.",
+  "Ngày đầu tiên hợp đồng phát sinh hiệu lực.",
+  "Thời điểm khởi đầu của cover."
+ ],
+ "Last day the cover is in force.": [
+  "When the insurance runs out.",
+  "Date cover ends.",
+  "The policy's final effective day.",
+  "Bảo hiểm hết hiệu lực vào ngày nào.",
+  "Ngày cuối cùng hợp đồng còn giá trị.",
+  "Thời điểm kết thúc của cover."
+ ],
+ "Maximum amount the insurer will pay under this policy.": [
+  "The cap on any claim.",
+  "Most the insurer is liable for.",
+  "Ceiling on payouts under this cover.",
+  "Mức chi trả cao nhất của bên bảo hiểm.",
+  "Số tiền bảo hiểm tối đa được nhận.",
+  "Trần bồi thường của hợp đồng này."
+ ],
+ "Premium payable for the cover.": [
+  "What the policyholder pays for this insurance.",
+  "Cost of the cover.",
+  "Premium charged on this policy.",
+  "Số phí phải đóng cho hợp đồng.",
+  "Tiền mua bảo hiểm của kỳ này.",
+  "Khoản phí bảo hiểm người mua phải trả."
+ ],
+ "What the policy covers: the property, vehicle or risk.": [
+  "The thing being insured.",
+  "Subject matter of this cover.",
+  "What is protected under this policy.",
+  "Tài sản hoặc rủi ro được bảo hiểm.",
+  "Đối tượng mà hợp đồng này bảo vệ.",
+  "Cái gì được nhận bảo hiểm ở đây."
+ ],
+ "Utility customer account code.": [
+  "The customer's account number with the utility.",
+  "Code identifying this subscriber.",
+  "Supply account reference on the bill.",
+  "Mã khách hàng của đơn vị cung cấp.",
+  "Số hợp đồng dùng điện nước.",
+  "Mã số khách hàng in trên hoá đơn."
+ ],
+ "Serial number of the meter that was read.": [
+  "Which meter this reading came from.",
+  "The meter's own serial number.",
+  "Identifier stamped on the meter.",
+  "Số hiệu của công tơ đã đọc.",
+  "Mã công tơ ghi trên hoá đơn.",
+  "Serial của đồng hồ đo."
+ ],
+ "Billing period this invoice covers.": [
+  "The stretch of time being billed.",
+  "Which month or quarter this bill is for.",
+  "Period the charges run over.",
+  "Hoá đơn này tính cho kỳ nào.",
+  "Khoảng thời gian được tính tiền.",
+  "Kỳ thanh toán của tờ hoá đơn."
+ ],
+ "Meter reading at the start of the period.": [
+  "What the meter showed at the beginning.",
+  "Opening reading for this period.",
+  "The figure the meter began on.",
+  "Con số công tơ chỉ khi mở kỳ.",
+  "Số đo lúc bắt đầu kỳ tính tiền.",
+  "Chỉ số cũ ghi trên hoá đơn."
+ ],
+ "Meter reading at the end of the period.": [
+  "What the meter showed at the finish.",
+  "Closing reading for this period.",
+  "The figure the meter ended on.",
+  "Con số công tơ chỉ khi chốt kỳ.",
+  "Số đo lúc chốt kỳ tính tiền.",
+  "Chỉ số mới ghi trên hoá đơn."
+ ],
+ "Units consumed during the period.": [
+  "How much was used this period.",
+  "Difference between the two readings.",
+  "Consumption billed for this period.",
+  "Đã dùng hết bao nhiêu trong kỳ này.",
+  "Số đơn vị đã dùng, tính theo hai chỉ số.",
+  "Mức sử dụng của kỳ này."
+ ],
+ "Room number or room type occupied.": [
+  "Which room the guest had.",
+  "Room allocated on this stay.",
+  "Number or class of the room used.",
+  "Khách ở phòng số mấy hoặc loại phòng gì.",
+  "Phòng được xếp cho lần lưu trú này.",
+  "Số hiệu hoặc hạng phòng."
+ ],
+ "Name of the guest the folio belongs to.": [
+  "Who stayed, named on the bill.",
+  "The guest this account is for.",
+  "Name on the hotel folio.",
+  "Tên khách của phiếu thanh toán này.",
+  "Người lưu trú đứng tên hoá đơn.",
+  "Khách hàng ghi trên folio."
+ ],
+ "Date and time the guest checked in.": [
+  "When the guest arrived.",
+  "Check-in timestamp for this stay.",
+  "Hour and day the stay began.",
+  "Khách nhận phòng lúc nào.",
+  "Lúc khách bước vào nhận phòng.",
+  "Giờ và ngày check-in."
+ ],
+ "Date and time the guest checked out.": [
+  "When the guest left.",
+  "Check-out timestamp for this stay.",
+  "Hour and day the stay ended.",
+  "Khách trả phòng lúc nào.",
+  "Lúc khách rời đi và trả phòng.",
+  "Giờ và ngày check-out."
+ ],
+ "Number of nights stayed.": [
+  "How many nights the guest was in.",
+  "Length of the stay in nights.",
+  "Nights charged on this folio.",
+  "Khách ở bao nhiêu đêm.",
+  "Số đêm lưu trú được tính tiền.",
+  "Thời gian ở tính theo đêm."
+ ],
+ "How long the contract runs for.": [
+  "The term of this agreement.",
+  "How long the parties are bound.",
+  "Duration the contract stays in force.",
+  "Hợp đồng kéo dài bao lâu.",
+  "Thời hạn hiệu lực của thoả thuận.",
+  "Kỳ hạn hai bên đã ký."
+ ],
+ "Row ordinal within the item table, counted across the whole document.": [
+  "Which row this is, counting from the first.",
+  "Position of this line in the table.",
+  "Running number down the item list.",
+  "Dòng này là dòng thứ mấy của bảng.",
+  "Số đếm liên tục qua mọi tờ.",
+  "Thứ tự dòng trong danh sách hàng."
+ ],
+ "Name of the goods or service listed on this line.": [
+  "The item this row is about.",
+  "Description of what this line charges for.",
+  "Goods or service named on this row.",
+  "Dòng này ghi hàng hoá hay dịch vụ gì.",
+  "Tên khoản mục của dòng.",
+  "Mặt hàng được liệt kê ở dòng này."
+ ],
+ "Unit of measure for the quantity on this line.": [
+  "How this item is counted.",
+  "The measure the quantity is in.",
+  "Unit the amount on this row uses.",
+  "Hàng này tính theo đơn vị nào.",
+  "Cách đo lượng của dòng.",
+  "Đơn vị tính đi kèm số lượng."
+ ],
+ "Quantity of the item on this line.": [
+  "How many units this row covers.",
+  "Amount of the item charged here.",
+  "Count of goods on this line.",
+  "Dòng này bao nhiêu đơn vị.",
+  "Lượng hàng ghi ở dòng.",
+  "Số đơn vị được tính trên dòng này."
+ ],
+ "Price of one unit of this item, before tax.": [
+  "What a single unit costs, tax excluded.",
+  "Per-unit price used on this row.",
+  "Rate charged for one of these.",
+  "Một đơn vị hàng giá bao nhiêu, chưa thuế.",
+  "Đơn giá dùng để tính dòng này.",
+  "Giá cho mỗi đơn vị, trước thuế."
+ ],
+ "Line amount: quantity multiplied by unit price, before tax.": [
+  "What this row comes to, tax excluded.",
+  "Quantity times price for this line.",
+  "Net total for this item.",
+  "Thành tiền của dòng, chưa gồm thuế.",
+  "Lượng nhân đơn giá ra số này.",
+  "Tiền hàng của riêng dòng này."
+ ],
+ "Value-added tax rate applied to this line; KCT means not subject to tax.": [
+  "Which VAT band this row falls in.",
+  "Tax percentage used on this line.",
+  "VAT rate, or KCT when exempt.",
+  "Dòng này chịu thuế suất bao nhiêu.",
+  "Mức thuế GTGT áp cho dòng; KCT là không chịu thuế.",
+  "Suất thuế của dòng hàng."
+ ],
+ "Value-added tax charged on this line.": [
+  "VAT due on this row.",
+  "Tax added to this line's amount.",
+  "How much tax this item carries.",
+  "Phần thuế GTGT riêng của dòng.",
+  "Thuế tính trên thành tiền của dòng.",
+  "Khoản thuế cộng vào dòng hàng."
+ ],
+ "Free-text remark about this line.": [
+  "Anything written in the notes column.",
+  "Comment the clerk added to this row.",
+  "Remark printed beside this line.",
+  "Ghi chú viết thêm cho dòng này.",
+  "Lời chú ở cột ghi chú.",
+  "Chữ tự do kèm theo dòng hàng."
+ ],
+ "Item or material code identifying the goods on this line.": [
+  "The internal code for this item.",
+  "Stock or part number on this row.",
+  "Code the warehouse knows this by.",
+  "Mã hàng hoặc mã vật tư của dòng.",
+  "Ký hiệu kho dùng cho mặt hàng này.",
+  "Mã số nhận diện hàng ở dòng này."
+ ],
+ "Date this line item was issued or incurred.": [
+  "When this row's charge arose.",
+  "Date attached to this line.",
+  "Day the item was supplied.",
+  "Dòng này phát sinh ngày nào.",
+  "Ngày ghi cho khoản mục này.",
+  "Thời điểm của dòng hàng."
+ ],
+ "Discount deducted from this line.": [
+  "Money taken off this row.",
+  "Reduction applied to this item.",
+  "Discount given on this line.",
+  "Khoản giảm trừ của dòng này.",
+  "Tiền bớt cho mặt hàng ở dòng.",
+  "Chiết khấu trừ vào dòng hàng."
+ ],
+ "Portion of this line the patient pays out of pocket.": [
+  "The patient's own share of this charge.",
+  "What is not covered and must be paid.",
+  "Co-payment due on this line.",
+  "Phần người bệnh tự trả cho dòng này.",
+  "Tiền bệnh nhân phải bỏ ra.",
+  "Khoản đồng chi trả của dòng."
+ ],
+ "Portion of this line the health-insurance fund pays.": [
+  "What the insurance fund covers here.",
+  "Amount BHYT settles on this line.",
+  "The fund's share of this charge.",
+  "Phần quỹ bảo hiểm chi trả cho dòng này.",
+  "Tiền BHYT gánh của khoản mục.",
+  "Khoản bảo hiểm y tế thanh toán."
+ ],
+ "Registered address of the organisation that issued this document.": [
+  "Where the issuing body is based.",
+  "Address printed in the letterhead.",
+  "Registered seat of the issuer.",
+  "Trụ sở của đơn vị phát hành.",
+  "Địa chỉ ghi ở phần đầu trang.",
+  "Nơi đăng ký của cơ quan lập chứng từ."
+ ],
+ "Contact telephone number printed in the letterhead.": [
+  "Phone number at the top of the page.",
+  "How to ring the issuing body.",
+  "Contact line in the header.",
+  "Số điện thoại in ở phần đầu trang.",
+  "Máy liên hệ của đơn vị phát hành.",
+  "Điện thoại ghi trong tiêu đề thư."
+ ],
+ "Tax identification number of the organisation.": [
+  "MST of the issuing body.",
+  "Tax number this organisation trades under.",
+  "Tax code printed in the header.",
+  "Mã số thuế của đơn vị lập chứng từ.",
+  "MST ghi ở phần đầu trang.",
+  "Số thuế của cơ quan phát hành."
+ ],
+ "Serial number this document was issued under.": [
+  "The number given to this document.",
+  "Sequence number in the issuer's series.",
+  "Document number printed at the top.",
+  "Số hiệu cấp cho tờ giấy này.",
+  "Số thứ tự trong sổ phát hành.",
+  "Số văn bản in trên chứng từ."
+ ],
+ "Invoice symbol: the letter-and-digit code identifying the issued form.": [
+  "The symbol code beside the invoice number.",
+  "Letter-and-number tag for this invoice run.",
+  "Series symbol printed on the invoice.",
+  "Ký hiệu hoá đơn in cạnh số.",
+  "Mã chữ và số của lô hoá đơn.",
+  "Ký hiệu seri của tờ hoá đơn."
+ ],
+ "Form template code this document was printed from.": [
+  "Which official form this follows.",
+  "Template number of the printed form.",
+  "Form code at the top of the page.",
+  "Mẫu số của biểu mẫu đã in.",
+  "Chứng từ này theo mẫu nào.",
+  "Mã biểu mẫu ghi trên giấy."
+ ],
+ "Sum of the line amounts before tax and discount.": [
+  "All the line totals added up, before tax.",
+  "Gross goods value of the table.",
+  "Subtotal before discount and VAT.",
+  "Cộng tiền hàng, chưa thuế chưa giảm.",
+  "Tổng thành tiền của mọi dòng.",
+  "Số tiền hàng gộp lại trước khi trừ."
+ ],
+ "Trade discount deducted from the goods total.": [
+  "Money taken off the whole order.",
+  "Trade reduction on the goods value.",
+  "Discount applied to the subtotal.",
+  "Phần bớt theo thoả thuận thương mại.",
+  "Khoản bớt tính trên cả đơn.",
+  "Giảm giá áp cho tổng hàng hoá."
+ ],
+ "Discount deducted from the goods total.": [
+  "Reduction taken off the goods value.",
+  "Amount knocked off the subtotal.",
+  "Discount on the whole order.",
+  "Khoản giảm trừ vào tổng tiền hàng.",
+  "Tiền bớt của cả đơn hàng.",
+  "Giảm giá tính trên tiền hàng."
+ ],
+ "Value-added tax charged on the net amount.": [
+  "VAT due on the net goods value.",
+  "Tax on the amount after discount.",
+  "How much VAT the order carries.",
+  "Thuế GTGT tính trên tiền hàng sau giảm.",
+  "Tiền thuế của phần giá trị thuần.",
+  "Khoản thuế cộng vào tổng đơn."
+ ],
+ "Final amount payable, tax included.": [
+  "The bottom line, tax and all.",
+  "What is actually owed.",
+  "Total to pay including VAT.",
+  "Số tiền phải trả cuối cùng, đã gồm thuế.",
+  "Tổng cộng thanh toán của tờ giấy.",
+  "Khoản cuối cùng người mua phải trả."
+ ],
+ "Total of the rows listed above.": [
+  "The rows above, added up.",
+  "Sum of everything listed here.",
+  "Running total for this block.",
+  "Cộng lại các dòng bên trên.",
+  "Tổng của phần vừa liệt kê.",
+  "Số cộng cho khối dòng phía trên."
+ ],
+ "The payable amount spelled out in Vietnamese words.": [
+  "The total written in words, not figures.",
+  "Amount in words for the payable sum.",
+  "Vietnamese wording of the total.",
+  "Số tiền viết bằng chữ.",
+  "Tổng thanh toán đọc thành lời.",
+  "Phần ghi chữ của số tiền phải trả."
+ ],
+ "Net goods total before value-added tax.": [
+  "The goods value VAT is figured on.",
+  "Taxable base of this invoice.",
+  "Net amount before tax is added.",
+  "Tiền hàng chưa có thuế GTGT.",
+  "Giá trị thuần dùng để tính thuế.",
+  "Cơ sở tính thuế của hoá đơn."
+ ],
+ "Value-added tax rate applied to the net amount.": [
+  "Which VAT band the invoice falls in.",
+  "Tax percentage used on the net value.",
+  "Rate the invoice is taxed at.",
+  "Hoá đơn này chịu thuế suất bao nhiêu.",
+  "Mức thuế GTGT áp cho tiền hàng.",
+  "Suất thuế của cả tờ hoá đơn."
+ ],
+ "Value-added tax amount charged.": [
+  "The VAT figure on this invoice.",
+  "Tax money added to the bill.",
+  "Amount of value-added tax due.",
+  "Số tiền thuế GTGT của hoá đơn.",
+  "Khoản thuế đã tính vào tổng.",
+  "Tiền thuế ghi trên chứng từ."
+ ],
+ "Customer's rating of the service attitude; the ticked box is the answer.": [
+  "How the customer rated the staff.",
+  "Tick showing what they thought of the service.",
+  "Score the customer gave for staff attitude.",
+  "Khách đánh giá thái độ phục vụ ra sao.",
+  "Ô tick cho mức hài lòng về thái độ.",
+  "Mức chấm điểm thái độ nhân viên."
+ ],
+ "How quickly the paperwork was processed; the ticked box is the answer.": [
+  "How fast the customer found the handling.",
+  "Tick rating the speed of processing.",
+  "Score given for turnaround time.",
+  "Khách thấy thủ tục nhanh hay chậm.",
+  "Ô tick đánh giá tốc độ xử lý.",
+  "Mức chấm điểm thời gian giải quyết."
+ ],
+ "Whether the accompanying documents were received in full.": [
+  "Tick saying if everything was handed over.",
+  "Whether the file came complete.",
+  "Confirmation that nothing was missing.",
+  "Hồ sơ kèm theo có đủ hay không.",
+  "Ô tick xác nhận nhận đủ giấy tờ.",
+  "Đã nhận đầy đủ tài liệu chưa."
+ ],
+ "Whether the applicant is asking for the document to be re-issued.": [
+  "Tick saying if this is a re-issue request.",
+  "Whether a replacement copy is wanted.",
+  "Request for the paper to be issued again.",
+  "Người khai có xin cấp lại hay không.",
+  "Ô tick cho yêu cầu cấp lại giấy.",
+  "Có đề nghị làm lại chứng từ không."
+ ],
+ "How the applicant wants to receive the result: in person or by post.": [
+  "Whether they will collect it or have it sent.",
+  "Tick choosing delivery or counter pickup.",
+  "How the finished paper should reach them.",
+  "Người khai muốn nhận kết quả thế nào.",
+  "Ô tick chọn nhận trực tiếp hay qua bưu điện.",
+  "Cách trả kết quả cho người nộp."
+ ],
+ "Whether the copy was checked against the original.": [
+  "Tick saying the copy was verified.",
+  "Confirmation the original was sighted.",
+  "Whether someone compared it with the original.",
+  "Bản sao đã đối chiếu bản chính chưa.",
+  "Ô tick xác nhận đã kiểm với bản gốc.",
+  "Có so bản sao với bản chính không."
+ ],
+ "Whether the customer wants notifications by text message.": [
+  "Tick saying if SMS alerts are wanted.",
+  "Whether to notify this person by text.",
+  "Consent to receive messages by SMS.",
+  "Khách có muốn nhận tin nhắn báo không.",
+  "Ô tick đăng ký nhận thông báo qua SMS.",
+  "Có nhận tin báo bằng tin nhắn không."
+ ],
+ "How well the work requirements were met; the ticked box is the answer.": [
+  "Rating of whether the job met the brief.",
+  "Tick scoring how well requirements were met.",
+  "Assessment of the work against what was asked.",
+  "Công việc đáp ứng yêu cầu tới đâu.",
+  "Ô tick chấm mức hoàn thành yêu cầu.",
+  "Mức đánh giá kết quả so với đề ra."
+ ],
+ "Main title of the document.": [
+  "The big heading at the top.",
+  "What this piece of paper is called.",
+  "Title line printed across the page.",
+  "Tên gọi của tờ giấy này.",
+  "Dòng tiêu đề lớn in giữa trang.",
+  "Đầu đề chính của chứng từ."
+ ],
+ "Subtitle printed under the main title.": [
+  "The smaller line under the heading.",
+  "Second-line heading below the title.",
+  "Qualifier printed beneath the title.",
+  "Dòng chữ nhỏ dưới tiêu đề chính.",
+  "Tiêu đề phụ in ngay bên dưới.",
+  "Câu bổ nghĩa cho đầu đề."
+ ],
+ "Note or condition printed on the document.": [
+  "A condition set out on this page.",
+  "Note the issuer printed here.",
+  "Written remark or proviso on the paper.",
+  "Ghi chú hoặc điều kiện in trên giấy.",
+  "Lưu ý mà đơn vị phát hành đưa ra.",
+  "Dòng chú thích của chứng từ."
+ ],
+ "Footer line printed at the bottom of the page.": [
+  "The line running along the bottom.",
+  "Text printed in the page footer.",
+  "Closing line at the foot of the sheet.",
+  "Dòng chữ chạy dưới chân trang.",
+  "Phần cuối trang in sẵn.",
+  "Chữ ở chân tờ giấy."
+ ],
+ "Billing or reporting period this document covers.": [
+  "Which period this paper reports on.",
+  "The span of time covered here.",
+  "Month or quarter the document is for.",
+  "Chứng từ này lập cho kỳ nào.",
+  "Khoảng thời gian được báo cáo.",
+  "Kỳ mà tờ giấy này tổng hợp."
+ ],
+ "National heading printed above the title.": [
+  "The state motto line at the very top.",
+  "National header above the document title.",
+  "Republic heading printed first.",
+  "Dòng quốc hiệu in trên cùng.",
+  "Tiêu ngữ nhà nước ở đầu trang.",
+  "Câu quốc hiệu, tiêu ngữ của văn bản."
+ ],
+ "Legal name of the organisation that issued this document.": [
+  "Who issued this, named in full.",
+  "The issuing body's registered name.",
+  "Name of the organisation at the top.",
+  "Tên đơn vị đã phát hành tờ giấy này.",
+  "Cơ quan lập chứng từ tên gì.",
+  "Tên pháp nhân in ở đầu trang."
+ ],
+ "Branch or department of the issuing organisation.": [
+  "Which arm of the body issued this.",
+  "Sub-unit named under the organisation.",
+  "Department line below the main name.",
+  "Chi nhánh hoặc phòng ban phát hành.",
+  "Bộ phận trực thuộc ghi dưới tên đơn vị.",
+  "Đơn vị con đứng ra lập chứng từ."
+ ],
+ "Website of the issuing organisation.": [
+  "The issuer's web address.",
+  "Site printed in the letterhead.",
+  "Where to find them online.",
+  "Địa chỉ trang web của đơn vị.",
+  "Website in ở phần đầu trang.",
+  "Trang mạng của cơ quan phát hành."
+ ],
+ "Parent body the issuing organisation reports to.": [
+  "Who the issuing body answers to.",
+  "The higher authority above this unit.",
+  "Superior organisation named on top.",
+  "Cơ quan chủ quản của đơn vị này.",
+  "Đơn vị cấp trên ghi phía trên tên.",
+  "Bên quản lý đơn vị phát hành."
+ ],
+ "Printed name of the person who signs at this place.": [
+  "Who signs in this spot, name printed.",
+  "The signatory's typed name.",
+  "Name under the signature line.",
+  "Tên người ký ở chỗ này, in sẵn.",
+  "Họ tên đặt dưới dòng chữ ký.",
+  "Người đặt bút ký tại vị trí này."
+ ],
+ "Place and date the document was signed.": [
+  "Where and when this was signed.",
+  "Town and date on the signature line.",
+  "Signing place and day.",
+  "Ký ở đâu, ngày nào.",
+  "Địa danh và ngày tháng ký văn bản.",
+  "Nơi và thời điểm đặt bút ký."
+ ],
+ "Round stamp impressed on the document.": [
+  "The circular seal on this page.",
+  "Round chop pressed onto the paper.",
+  "Circle stamp the issuer applied.",
+  "Con dấu tròn đóng trên giấy.",
+  "Dấu hình tròn của đơn vị.",
+  "Mộc tròn in trên chứng từ."
+ ],
+ "Oval stamp impressed on the document.": [
+  "The oval seal on this page.",
+  "Egg-shaped chop on the paper.",
+  "Oval mark the issuer applied.",
+  "Con dấu bầu dục đóng trên giấy.",
+  "Dấu hình ô van của đơn vị.",
+  "Mộc bầu dục in trên chứng từ."
+ ],
+ "Rectangular stamp impressed on the document.": [
+  "The box-shaped seal on this page.",
+  "Rectangular chop on the paper.",
+  "Square mark the issuer applied.",
+  "Con dấu chữ nhật đóng trên giấy.",
+  "Dấu hình hộp của đơn vị.",
+  "Mộc vuông in trên chứng từ."
+ ],
+ "Column reference number printed under the table header.": [
+  "The numbering row beneath the headings.",
+  "Reference digits labelling each column.",
+  "Column numbers printed under the header.",
+  "Hàng số đánh cho từng cột.",
+  "Dãy số in ngay dưới tiêu đề bảng.",
+  "Số quy ước của các cột."
+ ],
+ "Barcode value printed on the document.": [
+  "The digits encoded in the barcode.",
+  "What the printed barcode reads.",
+  "Barcode number on this page.",
+  "Dãy số của mã vạch in trên giấy.",
+  "Giá trị mà mã vạch mang.",
+  "Số đọc được từ mã vạch."
+ ],
+ "Detail line nested inside this item's description cell.": [
+  "A sub-line written inside the item cell.",
+  "Extra detail tucked under the item name.",
+  "Nested line within the description box.",
+  "Dòng con nằm trong ô mô tả hàng.",
+  "Chi tiết phụ ghi dưới tên mặt hàng.",
+  "Dòng nhỏ lồng trong ô nội dung."
+ ],
+ "Box reserved for a photograph.": [
+  "The empty frame a photo goes in.",
+  "Space set aside for a picture.",
+  "Photo window on the form.",
+  "Ô trống dành để dán ảnh.",
+  "Khung chừa sẵn cho tấm hình.",
+  "Chỗ dán ảnh trên biểu mẫu."
+ ],
+ "Size printed inside the photograph box.": [
+  "The dimensions written in the photo frame.",
+  "Photo size the form asks for.",
+  "Measurement printed inside the picture box.",
+  "Kích thước ảnh ghi trong khung.",
+  "Cỡ hình mà biểu mẫu yêu cầu.",
+  "Số đo in bên trong ô dán ảnh."
+ ],
+ "Subtotal of the group of rows printed directly above this line.": [
+  "The block of rows above, added up.",
+  "Group total for the rows just listed.",
+  "Sum for this section of the table.",
+  "Cộng của cụm dòng ngay bên trên.",
+  "Tổng riêng cho nhóm vừa liệt kê.",
+  "Số cộng của phần mục này."
+ ],
+ "Answer ticked for the question printed beside it.": [
+  "Which option was marked for this question.",
+  "The box the respondent ticked.",
+  "Choice selected on this line.",
+  "Ô được tick cho câu hỏi bên cạnh.",
+  "Lựa chọn mà người khai đánh dấu.",
+  "Câu trả lời được chọn ở dòng này."
+ ],
+ "Heading of a table column.": [
+  "What this column is called.",
+  "Title at the top of the column.",
+  "Column name printed in the header row.",
+  "Tên của một cột trong bảng.",
+  "Chữ in ở đầu cột.",
+  "Tiêu đề đặt trên đầu cột."
+ ],
+ "Name of the group of rows printed below it.": [
+  "Heading for the rows that follow.",
+  "Label over this block of rows.",
+  "Section name above the group.",
+  "Tên cụm dòng nằm ngay dưới.",
+  "Nhãn đặt trên một nhóm dòng.",
+  "Tiêu đề phân mục của bảng."
+ ],
+ "Rows of the item table printed on this document.": [
+  "Every line of the table, one per entry.",
+  "The item rows this document lists.",
+  "List of the table's data rows.",
+  "Từng dòng của bảng chi tiết.",
+  "Danh sách các dòng hàng trên tờ giấy.",
+  "Toàn bộ dòng dữ liệu của bảng."
+ ],
+ "_provenance": [
+  {
+   "runs": [
+    {
+     "model": "claude-opus-5",
+     "digest": "in-session",
+     "date": "2026-09-11"
+    }
+   ],
+   "prompt": "agent/prompts/describe.md",
+   "kept": 696,
+   "gate": "agent/augment_descriptions.py (ngưỡng đo từ synthgen/phrasing.py)",
+   "note": "Sáu cách nói thêm cho mỗi câu gốc, ba tiếng Anh ba tiếng Việt. Cùng định dạng mà agent/augment_descriptions.py ghi, nên chạy bộ sinh ấy là CỘNG thêm vào đây chứ không ghi đè."
+  },
+  {
+   "runs": [
+    {
+     "model": "claude-opus-5",
+     "digest": "in-session",
+     "date": "2026-09-11"
+    }
+   ],
+   "kept": 313,
+   "note": "Bù những câu bộ dữ liệu dùng thật mà bảng chưa có: mô tả từ rulebase/kie_field_glossary.json, và những NHÃN in hoa đang bị dùng làm mô tả (fallback của pipeline/kie.py) — các nhãn ấy làm câu gốc, cách nói là mô tả thật."
+  }
+ ],
+ "Value-added tax charged at 10 percent.": [
+  "VAT at the ten percent band.",
+  "Tax due on the ten percent lines.",
+  "The 10% VAT total on this invoice.",
+  "Thuế GTGT tính theo thuế suất 10%.",
+  "Tiền thuế của phần chịu thuế 10%.",
+  "Khoản thuế mười phần trăm trên hoá đơn."
+ ],
+ "Value-added tax charged at 8 percent.": [
+  "VAT at the eight percent band.",
+  "Tax due on the eight percent lines.",
+  "The 8% VAT total on this invoice.",
+  "Thuế GTGT tính theo thuế suất 8%.",
+  "Tiền thuế của phần chịu thuế 8%.",
+  "Khoản thuế tám phần trăm trên hoá đơn."
+ ],
+ "Organisation the person named belongs to.": [
+  "Which body this person works for.",
+  "Employer of the individual named.",
+  "The organisation behind this person.",
+  "Đơn vị mà người có tên trực thuộc.",
+  "Người này thuộc cơ quan nào.",
+  "Tổ chức mà cá nhân đang công tác."
+ ],
+ "The director of the issuing organisation, who signs to approve the document.": [
+  "The head who signs this off.",
+  "Who signs for the organisation at the top.",
+  "Giám đốc ký duyệt chứng từ này.",
+  "Người đứng đầu đơn vị đặt bút phê duyệt.",
+  "Thủ trưởng ký chấp thuận tờ giấy."
+ ],
+ "The chief accountant, whose counter-signature Vietnamese accounting rules require on a payment document.": [
+  "The chief accountant who counter-signs.",
+  "Accounting head signing beside the director.",
+  "Who signs for the accounts on this voucher.",
+  "Kế toán trưởng ký xác nhận chứng từ chi.",
+  "Người phụ trách kế toán ký cùng giám đốc.",
+  "Chữ ký kế toán trưởng mà chế độ kế toán đòi."
+ ],
+ "Department the applicant works in.": [
+  "Which section the applicant is in.",
+  "The applicant's own department.",
+  "Team the person applying belongs to.",
+  "Người làm đơn công tác ở bộ phận nào.",
+  "Phòng ban của người nộp đơn.",
+  "Đơn vị mà người xin đang làm việc."
+ ],
+ "Insurance company underwriting the cover.": [
+  "Which insurer carries this risk.",
+  "The company standing behind the policy.",
+  "Underwriter named on the certificate.",
+  "Công ty bảo hiểm đứng ra nhận rủi ro.",
+  "Doanh nghiệp bảo hiểm cấp đơn này.",
+  "Bên bảo hiểm ghi trên giấy chứng nhận."
+ ],
+ "The person paying the money in.": [
+  "Who handed the cash over.",
+  "Payer named on this receipt.",
+  "The individual making the payment.",
+  "Người nộp tiền vào quỹ.",
+  "Ai là người đưa tiền.",
+  "Cá nhân thực hiện việc nộp tiền."
+ ],
+ "Cashier who took the payment.": [
+  "The teller who received the money.",
+  "Who counted the cash in.",
+  "Cashier named on this voucher.",
+  "Thủ quỹ đã nhận khoản tiền này.",
+  "Người thu tiền ghi trên phiếu.",
+  "Nhân viên quỹ tiếp nhận thanh toán."
+ ],
+ "The person keeping the attendance record.": [
+  "Who marks the timesheet.",
+  "Clerk maintaining this attendance book.",
+  "The person filling the roll in.",
+  "Người chấm công cho bảng này.",
+  "Ai ghi và giữ bảng chấm công.",
+  "Cán bộ theo dõi ngày công."
+ ],
+ "The receiving party -- the person or unit taking over the goods, assets or duties this record covers.": [
+  "The side receiving what is handed over.",
+  "Bên nhận bàn giao theo biên bản này.",
+  "Người hoặc đơn vị tiếp nhận tài sản.",
+  "Phía đứng ra nhận việc, nhận hàng."
+ ],
+ "The clerk who drew up the voucher.": [
+  "Who wrote this voucher out.",
+  "The person preparing this slip.",
+  "Clerk who made the document.",
+  "Người lập ra phiếu này.",
+  "Ai viết và lên chứng từ.",
+  "Cán bộ soạn phiếu."
+ ],
+ "The cashier who physically paid out or took in the money.": [
+  "The teller who moved the cash.",
+  "Who paid the money out at the counter.",
+  "Cashier handling the actual notes.",
+  "Thủ quỹ trực tiếp chi hoặc thu tiền.",
+  "Người đếm và giao nhận tiền mặt.",
+  "Nhân viên quỹ thực hiện việc chi trả."
+ ],
+ "The person receiving the goods.": [
+  "Who took the goods in.",
+  "Recipient named on this note.",
+  "The individual accepting delivery.",
+  "Người nhận hàng ghi trên phiếu.",
+  "Ai đứng ra nhận số hàng này.",
+  "Cá nhân tiếp nhận hàng hoá."
+ ],
+ "The person chairing the meeting this record minutes.": [
+  "Who ran the meeting.",
+  "Chair of the meeting minuted here.",
+  "The person leading proceedings.",
+  "Người chủ trì cuộc họp này.",
+  "Ai điều hành phiên họp được ghi biên bản.",
+  "Chủ toạ của buổi làm việc."
+ ],
+ "Person making the application.": [
+  "Who is applying.",
+  "The applicant named on this form.",
+  "Individual submitting the request.",
+  "Người đứng đơn xin.",
+  "Ai là người làm đơn này.",
+  "Cá nhân đề nghị trong đơn."
+ ],
+ "The person taking the minutes of the meeting.": [
+  "Who wrote the minutes down.",
+  "Secretary recording this meeting.",
+  "The note-taker for these proceedings.",
+  "Thư ký ghi biên bản cuộc họp.",
+  "Người chép lại nội dung phiên họp.",
+  "Ai giữ bút ghi biên bản."
+ ],
+ "Board of management, who give final approval.": [
+  "The board signing off at the end.",
+  "Management giving the final say.",
+  "Who approves this last.",
+  "Ban lãnh đạo duyệt lần cuối.",
+  "Hội đồng quản lý cho ý kiến chấp thuận.",
+  "Cấp trên đặt bút phê duyệt sau cùng."
+ ],
+ "Person representing party A.": [
+  "Who speaks for the first party.",
+  "Party A's named representative.",
+  "The individual acting for side A.",
+  "Người đại diện cho bên A.",
+  "Ai đứng tên thay bên thứ nhất.",
+  "Đại diện của bên A ký kết."
+ ],
+ "Person representing party B.": [
+  "Who speaks for the second party.",
+  "Party B's named representative.",
+  "The individual acting for side B.",
+  "Người đại diện cho bên B.",
+  "Ai đứng tên thay bên thứ hai.",
+  "Đại diện của bên B ký kết."
+ ],
+ "The handing-over party -- the person or unit releasing the goods, assets or duties this record covers.": [
+  "The side giving up the goods or duties.",
+  "Bên giao theo biên bản bàn giao này.",
+  "Người hoặc đơn vị trao lại tài sản.",
+  "Phía đứng ra giao việc, giao hàng."
+ ],
+ "Hospital department that provided the treatment.": [
+  "Which department gave the care.",
+  "Clinical unit that treated the patient.",
+  "The ward the treatment came from.",
+  "Khoa đã thực hiện việc điều trị.",
+  "Bộ phận chuyên môn chữa cho người bệnh.",
+  "Đơn vị lâm sàng cung cấp dịch vụ."
+ ],
+ "Seller -- the party issuing this document.": [
+  "The selling side, who raised this.",
+  "Who sold and issued the paper.",
+  "Vendor named as issuer.",
+  "Bên bán, cũng là bên phát hành chứng từ.",
+  "Người bán đứng tên lập tờ giấy này.",
+  "Phía bán hàng ghi trên chứng từ."
+ ],
+ "The shop or outlet the transaction took place at.": [
+  "Which branch rang this up.",
+  "The outlet where this was bought.",
+  "Store the sale happened in.",
+  "Cửa hàng nơi phát sinh giao dịch.",
+  "Điểm bán đã thực hiện lần mua này.",
+  "Chi nhánh ghi trên hoá đơn."
+ ],
+ "Person submitting the application.": [
+  "Who lodged this form.",
+  "The individual handing the request in.",
+  "Submitter named on the paper.",
+  "Người nộp đơn này.",
+  "Ai mang hồ sơ tới nộp.",
+  "Cá nhân gửi đề nghị đi."
+ ],
+ "NGƯỜI LẬP BẢNG": [
+  "The clerk who drew this sheet up.",
+  "Who prepared this statement.",
+  "Person compiling the sheet.",
+  "Người lập ra bảng này.",
+  "Cán bộ soạn bảng kê.",
+  "Ai đứng tên lập bảng."
+ ],
+ "NGƯỜI LẬP": [
+  "The person who drew up this document.",
+  "Who wrote the paper out.",
+  "Clerk preparing this document.",
+  "Người lập chứng từ này.",
+  "Ai soạn ra tờ giấy.",
+  "Cán bộ đứng tên lập."
+ ],
+ "NGƯỜI LẬP DANH SÁCH": [
+  "The clerk who compiled this list.",
+  "Who put the list together.",
+  "Person drawing up the roster.",
+  "Người lập ra danh sách này.",
+  "Cán bộ tổng hợp danh sách.",
+  "Ai đứng tên lập bản danh sách."
+ ],
+ "NGƯỜI LẬP BÁO GIÁ": [
+  "The person who prepared this quotation.",
+  "Who priced this quote up.",
+  "Clerk drawing up the quotation.",
+  "Người lập bản báo giá này.",
+  "Cán bộ tính và soạn báo giá.",
+  "Ai đứng tên lập báo giá."
+ ],
+ "NGƯỜI VIẾT ĐƠN": [
+  "The person who wrote this application.",
+  "Who filled the application in.",
+  "Applicant writing this request.",
+  "Người viết lá đơn này.",
+  "Cá nhân đứng tên làm đơn.",
+  "Ai soạn nội dung đơn."
+ ],
+ "THỦ KHO": [
+  "The storekeeper responsible for the warehouse.",
+  "Who keeps the store.",
+  "Warehouse keeper signing here.",
+  "Thủ kho phụ trách kho hàng.",
+  "Người trông coi kho ký tại đây.",
+  "Cán bộ quản kho."
+ ],
+ "NGƯỜI THU TIỀN": [
+  "The person who collected the money.",
+  "Who took the payment in.",
+  "Collector named on this slip.",
+  "Người đứng ra thu khoản tiền này.",
+  "Cán bộ nhận tiền ghi trên phiếu.",
+  "Ai thu tiền của khách."
+ ],
+ "NGƯỜI NHẬN TIỀN": [
+  "The person who received the money.",
+  "Who was paid.",
+  "Recipient of the cash.",
+  "Người nhận khoản tiền này.",
+  "Ai đứng ra nhận tiền.",
+  "Cá nhân được chi trả."
+ ],
+ "NGƯỜI GIAO HÀNG": [
+  "The person who delivered the goods.",
+  "Who handed the goods over.",
+  "Deliverer named on this note.",
+  "Người giao số hàng này.",
+  "Ai mang hàng tới giao.",
+  "Cá nhân thực hiện việc giao hàng."
+ ],
+ "BÁC SĨ ĐIỀU TRỊ": [
+  "The doctor treating the patient.",
+  "Who is in charge of this care.",
+  "Attending physician on this case.",
+  "Bác sĩ phụ trách điều trị ca này.",
+  "Người thầy thuốc trực tiếp chữa bệnh.",
+  "Bác sĩ theo dõi người bệnh."
+ ],
+ "BÁC SĨ KÊ ĐƠN": [
+  "The doctor who wrote the prescription.",
+  "Who prescribed this.",
+  "Prescribing physician named here.",
+  "Bác sĩ đã kê đơn thuốc này.",
+  "Người thầy thuốc ra chỉ định.",
+  "Bác sĩ ký vào đơn thuốc."
+ ],
+ "NƠI NHẬN": [
+  "Who this document is to be sent to.",
+  "Where a copy goes.",
+  "Recipients listed at the foot.",
+  "Những nơi được gửi bản này.",
+  "Danh sách đơn vị nhận công văn.",
+  "Chứng từ này gửi tới đâu."
+ ],
+ "CHỦ TOẠ": [
+  "The person chairing this meeting.",
+  "Who ran the session.",
+  "Chair named in these minutes.",
+  "Người chủ trì phiên họp.",
+  "Ai điều hành cuộc họp này.",
+  "Chủ toạ ký vào biên bản."
+ ],
+ "THƯ KÝ": [
+  "The secretary taking the minutes.",
+  "Who wrote this record down.",
+  "Note-taker for this meeting.",
+  "Thư ký ghi biên bản phiên họp.",
+  "Người chép lại nội dung cuộc họp.",
+  "Ai giữ bút trong buổi làm việc."
+ ],
+ "ĐẠI DIỆN CÁC BÊN": [
+  "Representatives of every party present.",
+  "Who signs for each side.",
+  "The parties' named representatives.",
+  "Đại diện của từng bên tham gia.",
+  "Người ký thay cho các bên.",
+  "Những ai đứng tên cho mỗi phía."
+ ],
+ "ĐẠI DIỆN CÔNG TY": [
+  "The person representing the company.",
+  "Who signs for the business.",
+  "Company representative named here.",
+  "Người đại diện cho công ty.",
+  "Ai ký thay mặt doanh nghiệp.",
+  "Cán bộ đứng tên cho công ty."
+ ],
+ "NGƯỜI UỶ QUYỀN": [
+  "The person granting the authority.",
+  "Who hands the power over.",
+  "Grantor named in this authorisation.",
+  "Người trao quyền trong giấy này.",
+  "Ai đứng ra uỷ quyền.",
+  "Cá nhân giao quyền cho người khác."
+ ],
+ "NGƯỜI ĐƯỢC UỶ QUYỀN": [
+  "The person the authority is granted to.",
+  "Who receives the power.",
+  "Grantee named in this authorisation.",
+  "Người được trao quyền trong giấy này.",
+  "Ai nhận sự uỷ quyền.",
+  "Cá nhân được phép thay mặt."
+ ],
+ "BÊN UỶ QUYỀN": [
+  "The party granting the authority.",
+  "Which side hands the power over.",
+  "Granting party on this authorisation.",
+  "Bên trao quyền trong văn bản này.",
+  "Phía đứng ra uỷ quyền.",
+  "Đơn vị giao quyền cho bên kia."
+ ],
+ "BÊN ĐƯỢC UỶ QUYỀN": [
+  "The party the authority is granted to.",
+  "Which side receives the power.",
+  "Receiving party on this authorisation.",
+  "Bên được trao quyền trong văn bản.",
+  "Phía nhận sự uỷ quyền.",
+  "Đơn vị được phép thay mặt bên kia."
+ ],
+ "NGƯỜI KHẢO SÁT": [
+  "The officer who carried out the survey.",
+  "Who did the survey work.",
+  "Surveyor named on this form.",
+  "Người thực hiện cuộc khảo sát.",
+  "Cán bộ đi khảo sát thực địa.",
+  "Ai tiến hành việc khảo sát."
+ ],
+ "Cán bộ khảo sát": [
+  "The officer conducting the survey.",
+  "Staff member running the survey.",
+  "Who collected these answers.",
+  "Cán bộ đứng ra khảo sát.",
+  "Người phụ trách việc thu thập ý kiến.",
+  "Nhân viên thực hiện khảo sát."
+ ],
+ "Người trả lời": [
+  "The person answering this questionnaire.",
+  "Who filled the answers in.",
+  "Respondent named on this form.",
+  "Người trả lời phiếu này.",
+  "Ai đưa ra các câu trả lời.",
+  "Cá nhân điền phiếu khảo sát."
+ ],
+ "NGƯỜI GIỚI THIỆU": [
+  "The person who made the referral.",
+  "Who introduced this case.",
+  "Referrer named on this paper.",
+  "Người đứng ra giới thiệu.",
+  "Ai giới thiệu trường hợp này.",
+  "Cá nhân làm cầu nối giới thiệu."
+ ],
+ "PHÒNG NHÂN SỰ": [
+  "The human-resources department signing off.",
+  "Who signs for personnel.",
+  "HR section named on this form.",
+  "Phòng nhân sự ký xác nhận.",
+  "Bộ phận tổ chức cán bộ duyệt.",
+  "Đơn vị phụ trách nhân sự."
+ ],
+ "Kỹ thuật viên": [
+  "The technician who did the work.",
+  "Who carried the job out.",
+  "Technician named on this slip.",
+  "Kỹ thuật viên thực hiện công việc.",
+  "Người làm kỹ thuật ký tại đây.",
+  "Nhân viên kỹ thuật phụ trách."
+ ],
+ "BÊN BÁO GIÁ": [
+  "The party issuing this quotation.",
+  "Which side quoted the price.",
+  "Quoting party named here.",
+  "Bên đưa ra bản báo giá này.",
+  "Phía chào giá cho khách.",
+  "Đơn vị lập và gửi báo giá."
+ ],
+ "XÁC NHẬN": [
+  "Confirmation signed at this place.",
+  "Who confirms what is written above.",
+  "Sign-off confirming the entry.",
+  "Chỗ ký xác nhận nội dung trên.",
+  "Người xác nhận đặt bút ở đây.",
+  "Phần xác nhận của chứng từ."
+ ]
+}

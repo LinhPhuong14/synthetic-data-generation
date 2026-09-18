@@ -1,0 +1,61 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: to_khai_thue_gtgt
+profile: invoice
+org_kind: company
+national: 0.95
+titles:
+- TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG
+- TỜ KHAI THUẾ GTGT
+subtitles:
+- Mẫu số 01/GTGT
+- '(Kỳ tính thuế: Tháng ....)'
+- ''
+fields:
+- seller_name
+- seller_tax
+- seller_addr
+- seller_phone
+- period
+- record_no
+field_span:
+- 4
+- 6
+columns:
+- - stt
+  - name
+  - amount
+  - vat_rate
+  - vat_amount
+- - stt
+  - ref
+  - name
+  - amount
+  - vat_amount
+totals: money
+words: false
+sign_sets:
+- - NGƯỜI NỘP THUẾ
+  - NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT
+- - NHÂN VIÊN ĐẠI LÝ THUẾ
+  - NGƯỜI NỘP THUẾ
+notes:
+- Tôi cam đoan số liệu khai trên là đúng và chịu trách nhiệm trước pháp luật.
+- Tờ khai nộp chậm nhất ngày 20 của tháng tiếp theo.
+rows:
+- 4
+- 40
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- totals
+- signatures
+optional:
+- meta
+- footer
+- notes
+- words
+- summary
+- legal_basis
+en_ok: false

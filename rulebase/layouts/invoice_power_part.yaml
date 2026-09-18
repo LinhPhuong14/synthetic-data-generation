@@ -1,0 +1,98 @@
+# soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (parties_below), giữ nguyên cột và dây nối dữ liệu của invoice_power
+id: invoice_power_part
+name: invoice_power — parties_below
+source: 'soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (parties_below), giữ nguyên cột và dây nối dữ liệu của invoice_power'
+family: statutory
+width:
+- 84
+- 92
+gutter: 3
+rule_char: '='
+sheet: a4
+rules: marks
+sections:
+- letterhead
+- doctitle
+- table
+- parties
+- totals
+- words
+- signatures
+- footer
+letterhead:
+  name_scale:
+  - 1.05
+  - 1.2
+  name_bold: true
+  serial_width: 26
+  labels:
+    address: 'Địa chỉ:'
+    tax_code: 'Mã số thuế:'
+    phone: 'Điện thoại:'
+    branch: ''
+    serial: 'Ký hiệu:'
+    number: 'Số:'
+doctitle:
+  scale:
+  - 1.15
+  - 1.35
+parties:
+  style: two_column
+  split: 0.58
+  gap: 2
+  leader: ''
+column_header: true
+column_header_bold: true
+columns:
+- key: name
+  title: Chỉ số cũ - Chỉ số mới - Bậc thang
+  width: 0
+  align: left
+- key: qty
+  title: Điện tiêu thụ (kWh)
+  width: 13
+  align: right
+  title_align: center
+- key: unit_price
+  title: Đơn giá (đ/kWh)
+  width: 14
+  align: right
+  title_align: center
+- key: amount
+  title: Thành tiền (đ)
+  width: 14
+  align: right
+  title_align: center
+table:
+  frame: true
+  row_rules: false
+  blank_rows: 1
+  shade: 0.08
+  caption: CHI TIẾT SỬ DỤNG
+item:
+  wrap_name: true
+  rows:
+  - - col: name
+      from: meter_prev
+    - col: qty
+      from: meter_now
+  - - col: name
+      from: name
+    - col: qty
+      from: qty
+    - col: unit_price
+      from: unit_price
+    - col: amount
+      from: amount
+totals:
+  frame: false
+  emphasise_grand: true
+  grand_scale:
+  - 1.15
+  - 1.35
+  grand_two_lines: false
+signatures:
+  stamp_width: 44
+  stamp_gap: 2
+footer:
+  rule_before: true

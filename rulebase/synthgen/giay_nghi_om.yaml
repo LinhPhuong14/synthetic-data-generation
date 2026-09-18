@@ -1,0 +1,51 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: giay_nghi_om
+profile: medical
+org_kind: hospital
+national: 1.0
+titles:
+- GIẤY CHỨNG NHẬN NGHỈ VIỆC HƯỞNG BHXH
+- GIẤY NGHỈ ỐM HƯỞNG BẢO HIỂM XÃ HỘI
+subtitles:
+- Mẫu số C65-HD
+- ''
+- ''
+fields:
+- patient
+- dob
+- gender
+- card_no
+- diagnosis
+- record_no
+field_span:
+- 5
+- 6
+columns:
+- - stt
+  - date
+  - name
+  - qty
+  - note
+totals: none
+words: false
+sign_sets:
+- - BÁC SĨ KHÁM BỆNH
+  - THỦ TRƯỞNG ĐƠN VỊ
+notes:
+- Giấy chứng nhận được cấp một lần cho mỗi đợt điều trị.
+- Người lao động nộp cho đơn vị trong vòng 45 ngày.
+rows:
+- 0
+- 6
+always:
+- letterhead
+- doctitle
+- fields
+- signatures
+optional:
+- meta
+- footer
+- notes
+- legal_basis
+- table
+en_ok: false

@@ -1,0 +1,55 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: ban_ve_ky_thuat
+profile: invoice
+org_kind: company
+national: 0.05
+titles:
+- BẢN VẼ KỸ THUẬT
+- BẢN VẼ THIẾT KẾ THI CÔNG
+- BẢN VẼ HOÀN CÔNG
+subtitles:
+- Tỷ lệ 1:100
+- ''
+- 'Giai đoạn: Thiết kế bản vẽ thi công'
+fields:
+- contract_no
+- object
+- record_no
+- period
+- full_name
+field_span:
+- 4
+- 5
+columns:
+- - stt
+  - ref
+  - name
+  - unit
+  - qty
+  - note
+totals: none
+words: false
+sign_sets:
+- - NGƯỜI VẼ
+  - CHỦ TRÌ THIẾT KẾ
+  - CHỦ NHIỆM DỰ ÁN
+notes:
+- Kích thước ghi trên bản vẽ tính bằng milimét.
+- Không đo trực tiếp trên bản vẽ.
+rows:
+- 0
+- 20
+always:
+- letterhead
+- doctitle
+- fields
+- figure
+- signatures
+optional:
+- meta
+- footer
+- notes
+- table
+- formula
+- footnote
+en_ok: true

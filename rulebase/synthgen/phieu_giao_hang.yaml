@@ -1,0 +1,59 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: phieu_giao_hang
+profile: invoice
+org_kind: company
+national: 0.05
+titles:
+- PHIẾU GIAO HÀNG
+- PHIẾU XUẤT HÀNG
+- DELIVERY NOTE
+subtitles:
+- ''
+- 'Liên 2: Giao khách hàng'
+- ''
+fields:
+- buyer_name
+- buyer_org
+- buyer_tax
+- buyer_addr
+- record_no
+- period
+field_span:
+- 4
+- 6
+columns:
+- - stt
+  - ref
+  - name
+  - unit
+  - qty
+  - note
+- - stt
+  - barcode
+  - name
+  - qty
+  - unit_price
+  - amount
+totals: money
+words: false
+sign_sets:
+- - NGƯỜI GIAO HÀNG
+  - NGƯỜI NHẬN HÀNG
+notes:
+- Khách hàng ký xác nhận đã nhận đủ số lượng và đúng chủng loại.
+rows:
+- 2
+- 45
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- signatures
+optional:
+- meta
+- footer
+- notes
+- totals
+- words
+en_ok: true

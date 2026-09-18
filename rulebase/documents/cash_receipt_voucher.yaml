@@ -1,0 +1,46 @@
+# THAM SỐ NỘI DUNG — cash_receipt_voucher
+#
+# PHIẾU THU: chứng từ kế toán tiền mặt. Mẫu số 01-TT do Bộ Tài chính ban hành
+# (Thông tư 200/2014 và 133/2016), nên đây là `livery` chứ không `free` —
+# khổ giấy, thứ tự khối và năm chỗ ký là quy định; mực, nền và nét kẻ thì mỗi
+# nhà in một khác. Không được dựng lại dáng, xem `agent/policy.yaml`.
+#
+# `no_items: true` mở khối `refund_amount`/`refund_words` — số tiền thu và số
+# tiền ấy viết bằng chữ, đúng hai dòng mà tờ phiếu thu nào cũng có.
+
+profile: admin
+invoice: true
+no_items: true
+form_fields: true
+show_vat: false
+show_subtotal: false
+show_payment: false
+show_amount_words: false
+show_number: false
+show_seller_tax_code: true
+show_seller_website: false
+titles: ["PHIẾU THU"]
+serial_format: "PT{n}"
+form_code: "01-TT"
+fixed_amount: [200000, 45000000]
+party_fields:
+  left:
+    - [applicant_name, "Họ và tên người nộp tiền"]
+    - [residence, "Địa chỉ"]
+    - [refund_amount, "Số tiền"]
+    - [refund_words, "Viết bằng chữ"]
+  right:
+    - [date, "Ngày"]
+    - [buyer_account, "Tài khoản Nợ"]
+    - [seller_account, "Tài khoản Có"]
+    - [yn_1, "Kèm theo chứng từ gốc"]
+notes:
+  - "Lý do nộp:"
+  - "Thu tiền hàng theo hợp đồng đã ký giữa hai bên."
+  - "Đã nhận đủ số tiền (viết bằng chữ) như ghi ở trên."
+signature_labels:
+  - ["Giám đốc", "(Ký, họ tên, đóng dấu)"]
+  - ["Kế toán trưởng", "(Ký, họ tên)"]
+  - ["Người nộp tiền", "(Ký, họ tên)"]
+  - ["Người lập phiếu", "(Ký, họ tên)"]
+  - ["Thủ quỹ", "(Ký, họ tên)"]

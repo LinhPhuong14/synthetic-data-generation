@@ -1,0 +1,27 @@
+# soạn tay theo agent/prompts/anatomy.md §4
+# — bản khổ nhỏ do cơ quan phát, và ĐIỀU KIỆN in trước khối trường: người điền phải đọc xong mới viết được
+id: form_two_column_govt_a5
+name: Two-column form — A5, national masthead, conditions read before the fields
+source: 'soạn tay theo agent/prompts/anatomy.md §4 — bản khổ nhỏ do cơ quan phát, và ĐIỀU KIỆN in trước khối trường: người điền phải đọc xong mới viết được'
+family: form
+width:
+- 80
+- 90
+gutter: 2
+rule_char: '-'
+sheet: a5
+rules: marks
+sections:
+- header
+- notes
+- parties
+- signatures
+- footer
+header:
+  masthead: govt
+  title: true
+fields:
+  columns: one
+signatures:
+  name_gap: 4
+  stamp_width: 20

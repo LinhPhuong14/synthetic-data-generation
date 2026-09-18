@@ -1,0 +1,102 @@
+# llm-generated offline@1b59 compose document=bakery_order seed=7001 by=coverage 2026-09-09
+# Mức 3 — soạn mới, không phải biến thể của một phôi. Cửa ải nó đã qua: agent/compose_layout.py.
+# Vì sao tờ này trông như thế (§7):
+#   printer   chế độ coverage: không có server, nên tờ này do một phép bốc có hạt giống 7001 quyết, không do ai suy luận về nhà in
+#   reader    không suy luận — thứ tự khối và thứ tự cột chép từ phôi `invoice_brand`, khối thêm vào đặt theo chỗ các phôi khác đặt nó
+#   first     header
+#   required  footer, header, notes, parties, strip, table, totals
+#   density   bề ngang 64..82 ký tự — đầu hẹp lấy từ 44 ký tự cột cố định của phôi cộng 12 tối thiểu cho cột tên, không phải từ một phán đoán về giấy
+id: gen_try_bakery_order
+name: Soạn mới cho bakery_order — 7 khối, 1 phôi tham khảo
+source: soạn mới bằng LLM từ 1 phôi tham khảo (invoice_brand) — không đo từ ảnh nào
+family: modern
+width:
+- 64
+- 82
+gutter: 2
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- header
+- strip
+- parties
+- table
+- totals
+- notes
+- footer
+columns:
+- key: stt
+  title: Mục
+  width: 5
+  align: center
+  title_align: center
+- key: name
+  title: Sản phẩm
+  width: 0
+  align: left
+  title_align: left
+- key: qty
+  title: Số lượng
+  width: 10
+  align: right
+  title_align: right
+- key: unit_price
+  title: Đơn giá
+  width: 14
+  align: right
+  title_align: right
+- key: amount
+  title: Thành tiền
+  width: 15
+  align: right
+  title_align: right
+item:
+  wrap_name: true
+  rows:
+  - - col: stt
+      from: stt
+    - col: name
+      from: name
+    - col: qty
+      from: qty
+    - col: unit_price
+      from: unit_price
+    - col: amount
+      from: amount
+header:
+  name_scale:
+  - 1.35
+  - 1.6
+  name_bold: true
+  title: true
+  address: false
+  phone: true
+  title_scale:
+  - 1.3
+  - 1.55
+  address2: false
+  website: true
+strip:
+  rule_after: false
+parties:
+  style: two_column
+  split: 0.38
+  gap: 3
+table:
+  frame: false
+  shade: 0.12
+  header_rules: true
+totals:
+  emphasise_grand: false
+  grand_scale:
+  - 1.1
+  - 1.3
+  grand_two_lines: false
+  frame: false
+  indent: 0.4
+notes:
+  style: two_column
+  split: 0.52
+footer:
+  rule_before: false

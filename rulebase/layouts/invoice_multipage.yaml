@@ -1,0 +1,71 @@
+# INV-09 — Hoá đơn dài, in ra HAI tờ A4 thật.
+#
+# Bố cục này từng là thứ gần nhất với nhiều trang mà khuôn khổ cũ cho phép:
+# một tờ giấy cao lên, `table.blank_rows` đẩy bảng xuống gần hết tờ A4, và
+# một dòng "còn tiếp" NGOÀI NHÃN đóng vai trang sau. Nay `page_order` nói
+# thẳng khối nào bắt đầu tờ thứ hai, và renderer cắt thật: hai ảnh, một bản
+# ghi, `pages[]` đánh số chúng. Xem `generators/html/sheets/base.py::
+# page_order`.
+#
+# Bảng chạy qua CẢ HAI tờ — tên `table` xuất hiện hai lần, cái tên duy nhất
+# được phép lặp — nên `<thead>` in lại ở tờ sau và số dòng chạy tiếp chứ
+# không quay về 1. `table.rows_first` là số dòng tờ đầu chứa: ít hơn tờ sau
+# vì phía trên nó còn khối tiêu đề.
+id: invoice_multipage
+name: Long invoice printed on two real A4 sheets
+source: "khảo sát mẫu hoá đơn PDF nhiều trang thật — trang 1 luôn có dòng 'còn tiếp' ở chân"
+family: modern
+
+width: [78, 92]
+gutter: 2
+rule_char: "-"
+sheet: a4
+rules: marks
+
+page:
+  marker: "Trang 1/2 — còn tiếp mặt sau"
+
+sections: [header, table, totals, footer]
+
+page_order:
+  - [header, table]
+  - [table, totals, footer]
+
+header:
+  name_scale: [1.30, 1.55]
+  name_bold: true
+  title: true
+  title_scale: [1.20, 1.40]
+
+columns:
+  - {key: stt,        title: "STT",                   width: 4,  align: center, title_align: center}
+  - {key: name,       title: "Tên hàng hoá, dịch vụ",  width: 0,  align: left,   title_align: left}
+  - {key: unit,       title: "ĐVT",                    width: 8,  align: center, title_align: center}
+  - {key: qty,        title: "Số lượng",               width: 8,  align: right,  title_align: right}
+  - {key: unit_price, title: "Đơn giá",                width: 13, align: right,  title_align: right}
+  - {key: amount,     title: "Thành tiền",             width: 15, align: right,  title_align: right}
+
+table:
+  frame: false
+  shade: 0.10
+  header_rules: true
+  # Tờ đầu ít dòng hơn vì khối tiêu đề nằm trên bảng; phần còn lại rơi sang
+  # tờ sau. Bỏ `blank_rows`: dòng trắng ở đây từng để độn cho đủ một tờ A4,
+  # và tờ A4 bây giờ là tờ A4 thật.
+  rows_first: 6
+
+item:
+  wrap_name: true
+  rows:
+    - - {col: stt, from: stt}
+      - {col: name, from: name}
+      - {col: unit, from: unit}
+      - {col: qty, from: qty}
+      - {col: unit_price, from: unit_price}
+      - {col: amount, from: amount}
+
+totals:
+  frame: false
+  indent: 0.42
+  emphasise_grand: true
+  grand_scale: [1.15, 1.35]

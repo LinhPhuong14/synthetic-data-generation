@@ -1,0 +1,29 @@
+# BIÊN BẢN HỌP — khối trường hai cột ở đầu (thời gian/địa điểm/chủ trì bên
+# trái, thư ký/thành phần bên phải), rồi PHẦN LỚN TRANG LÀ ĐOẠN VĂN, hai chữ
+# ký cuối.
+#
+# Bố cục duy nhất trong họ `form` mà chữ chạy dài thay vì nằm trong ô: nhãn ở
+# đây là những đoạn `notes`, không phải cặp nhãn-giá trị. Giữ `width` rộng để
+# dòng văn không bị bẻ vụn.
+id: form_meeting_minutes
+name: Meeting minutes — header fields, long prose body, two signatures
+source: "biên bản họp giao ban nội bộ — mẫu tự thiết kế"
+family: form
+
+width: [82, 92]
+gutter: 2
+rule_char: "-"
+sheet: a4
+rules: marks
+
+sections: [header, parties, notes, signatures, footer]
+
+header:
+  title: true
+
+fields:
+  columns: two
+
+signatures:
+  name_gap: 6
+  stamp_width: 0

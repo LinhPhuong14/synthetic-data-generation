@@ -1,0 +1,53 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: giay_xac_nhan_cu_tru
+profile: admin
+org_kind: state
+national: 1.0
+titles:
+- GIẤY XÁC NHẬN THÔNG TIN VỀ CƯ TRÚ
+- XÁC NHẬN THƯỜNG TRÚ
+subtitles:
+- Mẫu CT07
+- ''
+- (Theo Luật Cư trú 2020)
+fields:
+- full_name
+- dob
+- gender
+- id_no
+- address_home
+- phone_home
+- id_issue
+- id_place
+field_span:
+- 6
+- 8
+columns:
+- - stt
+  - name
+  - date
+  - note
+totals: none
+words: false
+sign_sets:
+- - TRƯỞNG CÔNG AN PHƯỜNG
+- - CÁN BỘ ĐĂNG KÝ
+  - TRƯỞNG CÔNG AN XÃ
+notes:
+- Giấy xác nhận có giá trị 06 tháng kể từ ngày cấp.
+- Thông tin trích xuất từ Cơ sở dữ liệu quốc gia về dân cư.
+rows:
+- 0
+- 8
+always:
+- letterhead
+- doctitle
+- fields
+- signatures
+optional:
+- meta
+- footer
+- notes
+- legal_basis
+- table
+en_ok: false

@@ -1,0 +1,91 @@
+# soạn tay theo agent/prompts/anatomy.md §2
+# — hoá đơn nhà hàng khổ A4 có thuế: sáu cột, và hai cột cuối nằm dưới MỘT ô tiêu đề mẹ 'Số tiền (đồng)'
+# — tiêu đề hai tầng
+# — in cả `note` như phôi gốc: bỏ một cột là để lại một trường trong nhãn mà giấy không có chỗ in
+id: eatery_menu_vat
+name: Restaurant bill A4 — six columns under a two-tier money header
+source: 'soạn tay theo agent/prompts/anatomy.md §2 — hoá đơn nhà hàng khổ A4 có thuế: sáu cột, và hai cột cuối nằm dưới MỘT ô tiêu đề mẹ ''Số tiền (đồng)'' — tiêu đề hai tầng — in cả `note` như phôi gốc:
+  bỏ một cột là để lại một trường trong nhãn mà giấy không có chỗ in'
+family: till
+width:
+- 62
+- 72
+sheet: a4
+rule_char: '-'
+header:
+  name_scale:
+  - 1.15
+  - 1.45
+  name_bold: true
+  title: true
+  title_scale:
+  - 1.15
+  - 1.4
+meta:
+  style: two_column
+  rule_after: true
+column_header: true
+column_header_bold: false
+columns:
+- key: stt
+  title: TT
+  width: 4
+  align: center
+  title_align: center
+- key: name
+  title: Tên món
+  width: 0
+  align: left
+  title_align: left
+- key: unit
+  title: ĐVT
+  width: 6
+  align: center
+  title_align: center
+- key: qty
+  title: SL
+  width: 5
+  align: right
+  title_align: right
+- key: unit_price
+  title: Đơn giá
+  width: 11
+  align: right
+  title_align: right
+- key: amount
+  title: Thành tiền
+  width: 12
+  align: right
+  title_align: right
+item:
+  wrap_name: true
+  rows:
+  - - col: stt
+      from: stt
+    - col: name
+      from: name
+    - col: unit
+      from: unit
+    - col: qty
+      from: qty
+    - col: unit_price
+      from: unit_price
+    - col: amount
+      from: amount
+  - - from: note
+      span:
+      - name
+      - amount
+      align: left
+table:
+  header_groups:
+  - title: Số tiền (đồng)
+    from: unit_price
+    to: amount
+totals:
+  emphasise_grand: true
+  grand_scale:
+  - 1.15
+  - 1.45
+footer:
+  rule_before: false

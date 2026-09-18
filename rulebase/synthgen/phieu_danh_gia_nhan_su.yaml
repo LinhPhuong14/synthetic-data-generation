@@ -1,0 +1,25 @@
+# Phiếu đánh giá nhân sự cuối kỳ: câu hỏi đánh giá xen ô tích và dòng nhận xét
+# viết tay, cộng một bảng nhỏ liệt kê nhiệm vụ.
+id: phieu_danh_gia_nhan_su
+titles: [PHIẾU ĐÁNH GIÁ NHÂN SỰ, PHIẾU ĐÁNH GIÁ CÁN BỘ, NHÂN VIÊN, PHIẾU NHẬN XÉT CUỐI KỲ]
+subtitles: ["", Kỳ đánh giá: ...., (Mẫu ĐG-01)]
+profile: admin
+org_kind: company
+national: 0.15
+fields: [full_name, dob, position, ward, record_no, period]
+field_span: [4, 6]
+columns:
+  - [stt, name, qty, note]
+  - [stt, name, date, qty, note]
+totals: count
+words: false
+sign_sets:
+  - [NGƯỜI ĐƯỢC ĐÁNH GIÁ, PHỤ TRÁCH BỘ PHẬN]
+  - [Người tự đánh giá, Trưởng phòng, Phòng Nhân sự, Giám đốc]
+notes:
+  - Phiếu này là căn cứ xét thi đua và nâng lương trong kỳ tiếp theo.
+  - Người được đánh giá có quyền ghi ý kiến bảo lưu vào phần nhận xét.
+rows: [0, 12]
+always: [letterhead, doctitle, fields, questions, signatures]
+optional: [meta, notes, footer, table]
+en_ok: false

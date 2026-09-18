@@ -1,0 +1,61 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: phieu_luong_ca_nhan
+profile: admin
+org_kind: company
+national: 0.0
+titles:
+- PHIẾU LƯƠNG
+- PHIẾU THANH TOÁN LƯƠNG
+- BẢNG KÊ THU NHẬP CÁ NHÂN
+subtitles:
+- Kỳ lương
+- ''
+- (Bản dành cho người lao động)
+fields:
+- full_name
+- position
+- record_no
+- period
+- seller_bank
+field_span:
+- 4
+- 5
+columns:
+- - stt
+  - name
+  - amount
+- - stt
+  - name
+  - qty
+  - unit_price
+  - amount
+- - name
+  - amount
+  - note
+totals: money
+words: true
+sign_sets:
+- - NGƯỜI LẬP
+  - KẾ TOÁN TRƯỞNG
+- - NGƯỜI LAO ĐỘNG
+  - PHÒNG NHÂN SỰ
+notes:
+- Mọi thắc mắc về phiếu lương đề nghị liên hệ Phòng Nhân sự trong 05 ngày.
+- Phiếu lương là tài liệu mật, không phổ biến ra ngoài.
+rows:
+- 4
+- 40
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- totals
+optional:
+- meta
+- footer
+- notes
+- words
+- signatures
+- summary
+en_ok: false

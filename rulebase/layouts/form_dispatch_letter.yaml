@@ -1,0 +1,27 @@
+# GIẤY GIỚI THIỆU — tiêu đề cơ quan, một khối trường, một đoạn về việc, một
+# chữ ký có dấu. Không bảng: cấu trúc nằm hết ở khối trường và đoạn văn.
+#
+# `fields.columns: two` vì tờ thật xếp hai cột — bên trái là nơi nhận, bên
+# phải là giấy tờ tuỳ thân của người được cử.
+id: form_dispatch_letter
+name: Letter of introduction — org header, two-column fields, one sealed signature
+source: "giấy giới thiệu doanh nghiệp — mẫu tự thiết kế, in sẵn nửa trên và điền tay nửa dưới"
+family: form
+
+width: [76, 88]
+gutter: 2
+rule_char: "-"
+sheet: a4
+rules: marks
+
+sections: [header, parties, notes, signatures, footer]
+
+header:
+  title: true
+
+fields:
+  columns: two
+
+signatures:
+  name_gap: 5
+  stamp_width: 26

@@ -1,0 +1,11 @@
+# Khai vị — thực đơn nhà hàng.
+# Định dạng: tên món<TAB>giá thấp<TAB>giá cao   (đơn vị VND)
+Gỏi cuốn tôm thịt	39000	55000
+Chả giò hải sản	49000	69000
+Gỏi ngó sen tôm thịt	59000	79000
+Súp cua trứng bắc thảo	45000	65000
+Nem nướng Nha Trang	65000	89000
+Bánh xèo miền Tây	55000	75000
+Salad trộn dầu giấm	45000	65000
+Đậu hũ chiên sả ớt	39000	49000
+Chả cá Lã Vọng	89000	129000

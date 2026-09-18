@@ -1,0 +1,57 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: hoc_ba
+profile: admin
+org_kind: state
+national: 0.9
+titles:
+- HỌC BẠ
+- HỌC BẠ TRUNG HỌC PHỔ THÔNG
+- HỌC BẠ TRUNG HỌC CƠ SỞ
+subtitles:
+- ''
+- Năm học ....
+- (Bản chính)
+fields:
+- full_name
+- dob
+- gender
+- address_home
+- record_no
+- period
+field_span:
+- 5
+- 6
+columns:
+- - stt
+  - name
+  - qty
+  - note
+- - stt
+  - name
+  - unit
+  - qty
+  - note
+totals: count
+words: false
+sign_sets:
+- - GIÁO VIÊN CHỦ NHIỆM
+  - HIỆU TRƯỞNG
+notes:
+- Học bạ phải được bảo quản, không tẩy xoá.
+- Mọi sửa chữa phải có xác nhận của Hiệu trưởng.
+rows:
+- 8
+- 60
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- signatures
+optional:
+- meta
+- footer
+- notes
+- totals
+- footnote
+en_ok: false

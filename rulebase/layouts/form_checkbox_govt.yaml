@@ -1,0 +1,26 @@
+# tờ khai một mặt do cơ quan phát: quốc hiệu, khổ A5, KHÔNG có khối các bên
+# -- người khai tự viết vào ô, không có hai bên đối nhau
+id: form_checkbox_govt
+name: Checklist form — national masthead, A5, no party block
+source: 'soạn tay theo agent/prompts/anatomy.md §4 — tờ khai một mặt do cơ quan phát: quốc hiệu, khổ A5, KHÔNG có khối các bên -- người khai tự viết vào ô, không có hai bên đối nhau'
+family: form
+width:
+- 76
+- 86
+gutter: 2
+rule_char: '-'
+sheet: a5
+rules: marks
+sections:
+- header
+- notes
+- signatures
+- footer
+header:
+  masthead: govt
+  title: true
+checklist:
+  checked_rate: 0.3
+signatures:
+  name_gap: 4
+  stamp_width: 20

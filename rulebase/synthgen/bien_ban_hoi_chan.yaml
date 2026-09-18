@@ -1,0 +1,54 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: bien_ban_hoi_chan
+profile: medical
+org_kind: hospital
+national: 0.7
+titles:
+- BIÊN BẢN HỘI CHẨN
+- BIÊN BẢN HỘI CHẨN CHUYÊN KHOA
+subtitles:
+- ''
+- Khoa ....
+- ''
+fields:
+- patient
+- dob
+- gender
+- record_no
+- ward
+- diagnosis
+- admitted
+- treatment
+field_span:
+- 5
+- 8
+columns:
+- - stt
+  - name
+  - note
+totals: none
+words: false
+sign_sets:
+- - CHỦ TOẠ
+  - THƯ KÝ
+- - BÁC SĨ ĐIỀU TRỊ
+  - TRƯỞNG KHOA
+  - GIÁM ĐỐC
+notes:
+- Kết luận hội chẩn là cơ sở để xây dựng phác đồ điều trị.
+rows:
+- 0
+- 14
+always:
+- letterhead
+- doctitle
+- fields
+- clauses
+- signatures
+optional:
+- meta
+- footer
+- notes
+- table
+- footnote
+en_ok: false

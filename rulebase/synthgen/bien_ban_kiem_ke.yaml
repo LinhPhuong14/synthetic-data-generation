@@ -1,0 +1,59 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: bien_ban_kiem_ke
+profile: invoice
+org_kind: company
+national: 0.4
+titles:
+- BIÊN BẢN KIỂM KÊ VẬT TƯ, HÀNG HOÁ
+- BIÊN BẢN KIỂM KÊ TÀI SẢN
+subtitles:
+- Mẫu số 05-VT
+- 'Thời điểm kiểm kê: ....'
+- ''
+fields:
+- seller_name
+- record_no
+- period
+field_span:
+- 2
+- 3
+columns:
+- - stt
+  - ref
+  - name
+  - unit
+  - qty
+  - unit_price
+  - amount
+  - note
+- - stt
+  - name
+  - unit
+  - qty
+  - note
+totals: money
+words: false
+sign_sets:
+- - THỦ KHO
+  - KẾ TOÁN
+  - TRƯỞNG BAN KIỂM KÊ
+notes:
+- Ban kiểm kê chịu trách nhiệm về số liệu đã ghi.
+- Chênh lệch thừa thiếu được xử lý theo quy định.
+rows:
+- 5
+- 90
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- signatures
+optional:
+- meta
+- footer
+- notes
+- totals
+- summary
+- footnote
+en_ok: false

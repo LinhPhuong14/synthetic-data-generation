@@ -1,0 +1,19 @@
+# THAM SỐ NỘI DUNG — restaurant_menu_full
+#
+# Thực đơn nhà hàng chia mục (Khai vị / Món chính / Tráng miệng), mỗi mục là
+# một dòng banner (`Item.is_group`) chạy hết bề rộng bảng, phía dưới là các
+# món rút từ catalogue riêng của mục đó — cùng cơ chế `groups:` mà
+# `insurance_health_certificate.yaml` đã dùng cho bảng quyền lợi theo nhóm,
+# xem `rulebase/content.py::_build_grouped_items`.
+profile: eatery
+titles: ["THỰC ĐƠN"]
+prob_table: 0.0
+groups:
+  - {title: "Khai vị", catalogue: menu_appetizer, num_lines: [2, 4]}
+  - {title: "Món chính", catalogue: menu_main, num_lines: [3, 6]}
+  - {title: "Tráng miệng", catalogue: menu_dessert, num_lines: [2, 3]}
+price_step: 1000
+total_labels:
+  subtotal: "Tạm tính"
+  grand: "Tổng cộng"
+  change: "Tiền thối lại"

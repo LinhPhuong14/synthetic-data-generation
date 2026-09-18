@@ -1,0 +1,97 @@
+# Hoá đơn bán hàng của một nhà in dàn theo lối "hai tầng tiền".
+#
+# Quyết định dàn trang, theo §4 của `agent/prompts/anatomy.md` — bảy chỗ hai
+# nhà in khác nhau, và tờ này khác sáu phôi kia ở bốn trong bảy:
+#
+#   (1) tầng định danh: Ô GÓC, không phải măng-sét. Số hoá đơn, ký hiệu, ngày
+#       dồn vào hộp góc phải (`header.align: corner`), nên `strip` biến mất —
+#       hộp góc đã in đúng những trường ấy rồi, in thêm là in hai lần.
+#   (2) các bên: MỘT CỘT xếp dọc, bên bán trên bên mua dưới. Sáu phôi kia đều
+#       hai cột song song; một cột là dáng của tờ in ra từ phần mềm kế toán,
+#       nơi bên bán là hằng số và bên mua thay đổi từng tờ.
+#   (4) tiêu đề bảng HAI TẦNG — lý do chính tờ này tồn tại. `Đơn giá` và
+#       `Thành tiền` là hai con số cùng trả lời một câu hỏi ("bao nhiêu tiền"),
+#       nên chúng gộp dưới một tiêu đề chung, còn bốn cột mô tả với xuống qua
+#       cả hai tầng. §2.2 của anatomy: nhiều cột trả lời chung một câu hỏi thì
+#       bảng một tầng là SAI, không phải là đơn giản hơn.
+#   (5) khối tổng NGOÀI bảng, thụt sâu về phải.
+#
+# `columns` và `item.rows` chép nguyên từ `invoice_two_column`: dữ liệu chảy
+# vào cột nào là chuyện của loại chứng từ, không phải của nhà in. Đổi chỗ ấy là
+# để lại một trường trong nhãn mà không có mực trên giấy.
+id: invoice_grouped_money
+name: Sales invoice — grouped money header, corner serial box, stacked parties
+source: "soạn mới theo agent/prompts/anatomy.md §2.2 và §4 — không đo từ ảnh nào"
+family: modern
+
+width: [80, 94]
+gutter: 2
+rule_char: "-"
+sheet: a4
+rules: marks
+
+sections: [header, parties, table, totals, words, signatures, footer]
+
+header:
+  # Ô góc: đây là quyết định (1), và nó là lý do `strip` vắng mặt.
+  align: corner
+  name_scale: [1.25, 1.45]
+  name_bold: true
+  title: true
+  logo: false
+
+parties:
+  style: stacked
+  boxed: true
+  gap: 1
+
+column_header: true
+column_header_bold: false
+columns:
+  - {key: stt,        title: "STT",                  width: 4,  align: center, title_align: center}
+  - {key: name,       title: "Tên hàng hoá, dịch vụ", width: 0,  align: left,   title_align: left}
+  - {key: unit,       title: "ĐVT",                  width: 8,  align: center, title_align: center}
+  - {key: qty,        title: "Số lượng",             width: 8,  align: right,  title_align: center}
+  - {key: unit_price, title: "Đơn giá",              width: 13, align: right,  title_align: center}
+  - {key: amount,     title: "Thành tiền",           width: 15, align: right,  title_align: center}
+
+table:
+  # Bảng phải nói nó là bảng gì.
+  caption: "CHI TIẾT HÀNG HOÁ, DỊCH VỤ"
+  frame: true
+  row_rules: true
+  header_rules: true
+  shade: 0.08
+  blank_rows: 2
+  # Quyết định (4). Hai cột tiền gộp dưới một tiêu đề; bốn cột trước với xuống
+  # qua cả hai tầng bằng rowspan mà `components/table.py` tự tính.
+  header_groups:
+    - {title: "Giá trị (đồng)", from: unit_price, to: amount}
+
+item:
+  wrap_name: true
+  rows:
+    - - {col: stt, from: stt}
+      - {col: name, from: name}
+      - {col: unit, from: unit}
+      - {col: qty, from: qty}
+      - {col: unit_price, from: unit_price}
+      - {col: amount, from: amount}
+
+totals:
+  frame: false
+  indent: 0.52
+  emphasise_grand: true
+  grand_scale: [1.15, 1.30]
+  grand_two_lines: false
+
+words:
+  frame: true
+
+signatures:
+  name_gap: 3
+  stamp_gap: 2
+  stamp_width: 26
+
+footer:
+  rule_before: true

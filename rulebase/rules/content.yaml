@@ -1,0 +1,248 @@
+# THUỘC TÍNH 3/10 — NỘI DUNG
+#
+# Chữ có dấu hay không, IN HOA hay không, tiền viết kiểu nào, có dòng thuế /
+# dòng thanh toán / dòng khuyến mãi hay không.
+#
+# Corpus luôn lưu tiếng Việt CÓ DẤU; `prob_ascii_fold` mới là chỗ quyết định
+# bỏ dấu lúc render. Bố cục `eatery_ascii` gắn thẻ `ascii_only`, nên mọi giá
+# trị còn dấu ở đây đều phải `excludes: [ascii_only]` — nếu không sẽ sinh ra
+# hoá đơn máy in 2011 mà lại có chữ "Phở".
+#
+# money_style: dot (56.000) | comma (20,200) | comma_2dp (33,600.00)
+
+options:
+  - id: diacritics_mixed
+    weight: 3
+    excludes: [ascii_only, doc_invoice]
+    tags: [diacritics]
+    params:
+      money_style: dot
+      prob_ascii_fold: 0.0
+      prob_uppercase: 0.15
+      show_subtotal: true
+      show_payment: true
+      num_footers: [1, 3]
+      prob_item_discount: 0.10
+
+  - id: diacritics_upper
+    weight: 3
+    excludes: [ascii_only, doc_invoice]
+    tags: [diacritics]
+    params:
+      money_style: dot
+      prob_ascii_fold: 0.0
+      prob_uppercase: 0.85
+      show_subtotal: true
+      show_payment: true
+      num_footers: [1, 3]
+      prob_item_discount: 0.10
+
+  # `prob_ascii_fold` HẠ VỀ 0. Máy in nhiệt đời cũ in tiếng Việt không dấu
+  # thật, nên giá trị này không sai về đời sống — nhưng bộ dữ liệu này dạy
+  # đọc chữ Việt, và một phần tư số trang không dấu là một phần tư số trang
+  # dạy sai chính tả. Giữ nguyên mọi thứ khác (in hoa, dấu phẩy ngăn nghìn,
+  # không dòng tạm tính) vì đó mới là dáng của tờ giấy; chỉ bỏ dấu là bỏ.
+  # Tắt hẳn giá trị này thì `eatery_ascii` không còn nội dung nào bốc được
+  # — `make check-rules` bắt đúng chỗ ấy.
+  - id: ascii_upper
+    weight: 2
+    excludes: [doc_invoice]
+    tags: [no_diacritics]
+    params:
+      money_style: comma
+      prob_ascii_fold: 0.0
+      prob_uppercase: 1.0
+      show_subtotal: false
+      show_payment: false
+      num_footers: [1, 2]
+      prob_item_discount: 0.0
+
+  - id: market_full
+    weight: 3
+    requires: [doc_market]
+    excludes: [ascii_only, doc_invoice]
+    tags: [diacritics]
+    params:
+      money_style: comma
+      prob_ascii_fold: 0.0
+      prob_uppercase: 0.55
+      show_subtotal: true
+      show_vat: true
+      show_payment: true
+      show_item_count: false
+      num_footers: [2, 4]
+      prob_item_discount: 0.30
+      prob_weighed: 0.25
+
+  - id: market_decimals
+    weight: 3
+    requires: [vat_rows]
+    excludes: [ascii_only, doc_invoice]
+    tags: [diacritics, two_decimals]
+    params:
+      money_style: comma_2dp
+      prob_ascii_fold: 0.0
+      prob_uppercase: 0.30
+      show_subtotal: true
+      show_vat: true
+      show_payment: true
+      show_item_count: true
+      num_footers: [1, 3]
+      prob_item_discount: 0.20
+      prob_weighed: 0.15
+
+  - id: dong_suffix
+    weight: 1
+    excludes: [ascii_only, two_decimals, doc_invoice]
+    tags: [diacritics, currency_suffix]
+    params:
+      money_style: dot
+      money_suffix: "đ"
+      prob_ascii_fold: 0.0
+      prob_uppercase: 0.4
+      show_subtotal: true
+      show_payment: true
+      num_footers: [0, 2]
+      prob_item_discount: 0.05
+
+  # Nội dung cho hoá đơn GTGT. Khác giấy tính tiền ở ba chỗ: KHÔNG có dòng
+  # "tiền khách trả / tiền trả lại" (hoá đơn ghi số phải trả, không ghi việc
+  # trả tiền), luôn có dòng thuế, và không bao giờ có dòng khuyến mãi.
+  - id: invoice_vi
+    weight: 3
+    requires: [doc_invoice]
+    excludes: [lang_en]
+    tags: [diacritics, invoice_text]
+    params:
+      money_style: dot
+      prob_ascii_fold: 0.0
+      prob_uppercase: 0.10
+      show_subtotal: true
+      show_vat: true
+      show_payment: false
+      num_footers: [1, 2]
+      prob_item_discount: 0.0
+
+  - id: invoice_vi_upper
+    weight: 1
+    requires: [doc_invoice]
+    excludes: [lang_en]
+    tags: [diacritics, invoice_text]
+    params:
+      money_style: dot
+      prob_ascii_fold: 0.0
+      prob_uppercase: 0.80
+      show_subtotal: true
+      show_vat: true
+      show_payment: false
+      num_footers: [1, 2]
+      prob_item_discount: 0.0
+
+  # Hoá đơn GTGT in kim những năm 2000: không dấu, in hoa, dấu phẩy ngăn nghìn.
+  # `prob_ascii_fold` về 0, cùng lý do `ascii_upper` ở trên.
+  - id: invoice_ascii
+    weight: 1
+    requires: [doc_invoice]
+    excludes: [lang_en]
+    tags: [no_diacritics, invoice_text]
+    params:
+      money_style: comma
+      prob_ascii_fold: 0.0
+      prob_uppercase: 1.0
+      show_subtotal: true
+      show_vat: true
+      show_payment: false
+      num_footers: [1, 2]
+      prob_item_discount: 0.0
+
+  # Hoá đơn tiếng Anh: corpus lưu giá theo cent nên `cents` chia lại cho 100
+  # lúc in, và ký hiệu tiền tệ đứng TRƯỚC con số chứ không đứng sau như "đ".
+  # `lang: en` là chỗ QUYẾT ĐỊNH corpus. `content.build` gộp `{**document,
+  # **content}`, nên khoá này của content đè lên document — thiếu nó thì trang
+  # in giá bằng đô-la mà tên hàng vẫn tiếng Việt, đúng thứ nó vẫn làm cho tới
+  # giờ vì `lang: en` chỉ nằm ở document `tax_invoice_en`.
+  #
+  # `requires: [corpus_en]` — THẺ RIÊNG, không dùng lại `lang_en`. `lang_en` đã
+  # có nghĩa khác: nó mở bố cục `invoice_tax_en`, và gắn nó thêm cho 12 chứng từ
+  # làm `check-rules` báo ngay "tags allow layout 'invoice_tax_en', blanks.yaml
+  # does not list a blank for it". Một thẻ hai nghĩa là một thẻ sai.
+  #
+  # `corpus_en` nghĩa là "corpus/en/ phủ được hồ sơ nội dung của chứng từ này".
+  # Trước đây chỉ `tax_invoice_en` mang `lang_en`, nên
+  # tiếng Anh bốc được 0 trang trên 200; mở thẳng ra `doc_invoice` thì 34 trong
+  # 47 chứng từ NỔ lúc vẽ — `corpus/en/` chỉ có `items_invoice.txt` và
+  # `shops_invoice.txt`, không có `items_eatery`, `catalogue_medical_*`, hay
+  # `shops_utility_water`. Đo được: `FileNotFoundError: rulebase/corpus/en/
+  # shops_utility_water.txt`. Thẻ này giờ nằm trên đúng 13 chứng từ có
+  # `profile: invoice`, và `tests/test_content.py` giữ nó khớp với những file
+  # THẬT SỰ có trên đĩa, nên thêm corpus tiếng Anh cho một hồ sơ mới là mở
+  # thêm chứng từ chứ không phải sửa danh sách ở đây.
+  # `has_vat` CÙNG với `corpus_en`, hai điều kiện độc lập: một cái là "có corpus
+  # tiếng Anh", cái kia là "tờ này có tiền để cộng". Tám chứng từ `form_*` mang
+  # `corpus_en` nhưng là PHIẾU ĐĂNG KÝ, không có tổng tiền — mà params của giá
+  # trị này hứa `show_subtotal` và `show_vat`, nên nhãn khai một khoản tổng mà
+  # trang không in. Đo được trên smoke: `form_dense_007.jpg: label total
+  # '$0.00' appears on no box`. Bản tiếng Việt lọt lưới vì tổng "0" tình cờ
+  # trùng một chữ số có sẵn đâu đó trên trang; "$0.00" thì không, nên tiếng Anh
+  # làm lộ một lỗ đã có sẵn chứ không tạo ra nó.
+  - id: invoice_en
+    weight: 6
+    requires: [corpus_en, has_vat]
+    tags: [no_diacritics, invoice_text, english]
+    params:
+      lang: en
+      # Hai khoá dưới đây sửa hai chỗ tiếng Việt lọt vào trang tiếng Anh, đo
+      # trên một tờ vẽ thật (`invoice_two_column`, seed 5):
+      #
+      # * `show_amount_words: false` — dòng "Số tiền bằng chữ" đọc số bằng
+      #   `text.words_vi`, nên tờ ghi `$934.50` in kèm "Chín mươi ba nghìn bốn
+      #   trăm năm mươi đồng": vừa sai ngôn ngữ vừa sai ĐƠN VỊ (nó đọc số cent
+      #   thành đồng). Hoá đơn tiếng Anh hiếm khi viết số tiền bằng chữ, nên bỏ
+      #   hẳn dòng ấy đúng hơn là dịch nó.
+      # * `address_format` — mặc định là "Số {number} {street}, ...", và "Số"
+      #   dán vào một địa chỉ Úc thành "Số 239 Peel St, Alexandria, NSW".
+      show_amount_words: false
+      address_format: "{number} {street}, {ward}, {district}"
+      money_style: cents
+      money_prefix: "$"
+      prob_ascii_fold: 0.0
+      prob_uppercase: 0.0
+      show_subtotal: true
+      show_vat: true
+      show_payment: false
+      num_footers: [1, 3]
+      prob_item_discount: 0.0
+
+  # Hoá đơn tự thiết kế (khách sạn, tiệm bánh) hay in ĐƠN VỊ TIỀN ngay sau con
+  # số — "800.000đ", "1.600.000 VND" — chứ không để trần như hoá đơn GTGT. Hai
+  # giá trị dưới đây là hai cách viết đó; `invoice_vi` vẫn bốc được cho cùng
+  # document, nên cùng một tờ vẫn có ba lối in tiền.
+  - id: invoice_service_dong
+    weight: 2
+    requires: [doc_service]
+    tags: [diacritics, invoice_text, currency_suffix]
+    params:
+      money_style: dot
+      money_suffix: "đ"
+      prob_ascii_fold: 0.0
+      prob_uppercase: 0.10
+      show_subtotal: true
+      show_vat: true
+      show_payment: false
+      num_footers: [1, 2]
+      prob_item_discount: 0.0
+
+  - id: invoice_service_vnd
+    weight: 2
+    requires: [doc_service]
+    tags: [diacritics, invoice_text, currency_suffix]
+    params:
+      money_style: dot
+      money_suffix: " VND"
+      prob_ascii_fold: 0.0
+      prob_uppercase: 0.15
+      show_subtotal: true
+      show_vat: true
+      show_payment: false
+      num_footers: [1, 2]
+      prob_item_discount: 0.0

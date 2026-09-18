@@ -1,0 +1,24 @@
+# tờ có dán ảnh: ô ảnh chèn vào khối đầu đẩy toàn bộ trường xuống và sang, và ghi chú đứng TRƯỚC khối trường
+id: form_two_column_photo
+name: Two-column form — 4x6 photo box, notes read before the fields
+source: 'soạn tay theo agent/prompts/anatomy.md §4 — tờ có dán ảnh: ô ảnh chèn vào khối đầu đẩy toàn bộ trường xuống và sang, và ghi chú đứng TRƯỚC khối trường'
+family: form
+width:
+- 84
+- 94
+gutter: 2
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- header
+- notes
+- parties
+- signatures
+- footer
+header:
+  title: true
+page:
+  photobox: true
+fields:
+  columns: two

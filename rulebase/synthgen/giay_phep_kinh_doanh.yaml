@@ -1,0 +1,53 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: giay_phep_kinh_doanh
+profile: admin
+org_kind: state
+national: 0.95
+titles:
+- GIẤY CHỨNG NHẬN ĐĂNG KÝ DOANH NGHIỆP
+- GIẤY PHÉP KINH DOANH
+- GIẤY CHỨNG NHẬN ĐĂNG KÝ HỘ KINH DOANH
+subtitles:
+- ''
+- (Cấp lần đầu)
+- Mã số doanh nghiệp
+fields:
+- seller_name
+- seller_tax
+- seller_addr
+- full_name
+- id_no
+- id_issue
+- record_no
+field_span:
+- 5
+- 7
+columns:
+- - stt
+  - name
+  - note
+totals: none
+words: false
+sign_sets:
+- - TRƯỞNG PHÒNG ĐĂNG KÝ KINH DOANH
+- - NGƯỜI ĐẠI DIỆN
+  - CƠ QUAN CẤP PHÉP
+notes:
+- Doanh nghiệp phải hoạt động đúng ngành nghề đã đăng ký.
+- Giấy chứng nhận này thay thế cho các bản đã cấp trước đây.
+rows:
+- 0
+- 12
+always:
+- letterhead
+- doctitle
+- fields
+- clauses
+- signatures
+optional:
+- meta
+- footer
+- notes
+- legal_basis
+- table
+en_ok: false

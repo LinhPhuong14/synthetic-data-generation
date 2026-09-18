@@ -1,0 +1,46 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: trang_bao
+profile: admin
+org_kind: company
+national: 0.0
+titles:
+- BÁO KINH TẾ ĐÔ THỊ
+- THỜI BÁO TÀI CHÍNH
+- BẢN TIN NỘI BỘ
+- TẠP CHÍ DOANH NGHIỆP VIỆT
+subtitles:
+- Số ra ngày
+- Chuyên trang Kinh tế
+- Ấn phẩm phát hành hằng tuần
+fields:
+- period
+- record_no
+field_span:
+- 1
+- 2
+columns:
+- - stt
+  - name
+  - note
+totals: none
+words: false
+sign_sets: []
+notes:
+- Bài viết thể hiện quan điểm riêng của tác giả.
+- Mọi hình thức sao chép phải ghi rõ nguồn.
+rows:
+- 0
+- 10
+always:
+- letterhead
+- doctitle
+- clauses
+optional:
+- meta
+- footer
+- footnote
+- figure
+- toc
+- table
+- notes
+en_ok: false

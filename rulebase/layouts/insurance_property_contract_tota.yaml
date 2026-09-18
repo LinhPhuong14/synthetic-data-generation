@@ -1,0 +1,52 @@
+# soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (totals_first), giữ nguyên cột và dây nối dữ liệu của insurance_property_contract
+id: insurance_property_contract_tota
+name: insurance_property_contract — totals_first
+source: 'soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (totals_first), giữ nguyên cột và dây nối dữ liệu của insurance_property_contract'
+family: insurance
+composition: property_contract
+width:
+- 92
+- 104
+gutter: 2
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- letterhead
+- doctitle
+- parties
+- table
+- totals
+- signatures
+- notes
+- footer
+letterhead:
+  frame: false
+  labels:
+    address: ''
+    tax_code: ''
+    phone: ''
+    account: ''
+    branch: ''
+    form_no: ''
+    serial: ''
+    number: 'Số:'
+parties:
+  style: stacked
+columns:
+- key: name
+  label: Hạng mục tài sản được bảo hiểm
+  width: 0
+  align: left
+- key: amount
+  label: Số tiền bảo hiểm (đồng)
+  width: 26
+  align: right
+item:
+  rows:
+  - - col: name
+      from: name
+    - col: amount
+      from: amount
+table:
+  caption: CHI TIẾT QUYỀN LỢI BẢO HIỂM

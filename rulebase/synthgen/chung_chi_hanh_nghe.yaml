@@ -1,0 +1,54 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: chung_chi_hanh_nghe
+profile: admin
+org_kind: state
+national: 0.9
+titles:
+- CHỨNG CHỈ HÀNH NGHỀ
+- GIẤY CHỨNG NHẬN ĐỦ ĐIỀU KIỆN HÀNH NGHỀ
+- CHỨNG CHỈ NĂNG LỰC CHUYÊN MÔN
+subtitles:
+- ''
+- (Có giá trị 05 năm)
+- Số hiệu chứng chỉ
+fields:
+- full_name
+- dob
+- gender
+- id_no
+- address_home
+- position
+- cover_from
+- cover_to
+field_span:
+- 5
+- 8
+columns:
+- - stt
+  - name
+  - date
+  - note
+totals: none
+words: false
+sign_sets:
+- - GIÁM ĐỐC SỞ
+- - NGƯỜI ĐƯỢC CẤP
+  - THỦ TRƯỞNG ĐƠN VỊ
+notes:
+- Chứng chỉ chỉ có giá trị khi người được cấp hành nghề đúng phạm vi ghi trên.
+- Nghiêm cấm cho mượn, cho thuê chứng chỉ dưới mọi hình thức.
+rows:
+- 0
+- 8
+always:
+- letterhead
+- doctitle
+- fields
+- signatures
+optional:
+- photo
+- meta
+- footer
+- notes
+- legal_basis
+en_ok: false

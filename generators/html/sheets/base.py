@@ -1,0 +1,1451 @@
+"""What every sheet is built from: the box contract, the page box, the tables.
+
+The five hand-drawn references in `samples/invoice-templates/` are the shape
+this package produces. They have one thing in common under the styling, and it
+is the thing the old single-template `a4.py` did not have: **ordinary flow with
+real tables**. A cell spans columns with `colspan`, a stub runs down rows with
+`rowspan`, and the engine works the column edges out. Nothing is positioned
+absolutely, so two tables on one page line up without anybody computing a
+boundary, and the same markup prints the same way in a browser and in
+WeasyPrint.
+
+What lives here is what is genuinely the same between the five: the labelled
+run, the table cell, the page skeleton, the item table, the totals, the party
+blocks. What does not live here is what makes a sheet recognisable -- the
+letterhead, the colours, the paper size. Each family module supplies those.
+
+Three contracts this module is responsible for keeping:
+
+* **Every labelled run is `<span data-kind="...">`** and nothing else is.
+  `CELL_RECTS_JS` reads quads off exactly those, and knows nothing about which
+  template drew them.
+* **Every `<td>` carries `data-cell`, `data-row`, `data-col`** and its spans.
+  `CELL_REGIONS_JS` reads the cell extents, which is the half of the label a
+  text box cannot carry: "Tổng tiền thanh toán" says nothing about the six
+  columns its cell covers.
+* **`data-row` is numbered across the whole page, not per table.** An invoice
+  has two tables -- the items and the tax summary -- and `structure_from_cells`
+  groups cells by that number. Restarting it at zero in the second table welds
+  the two together into one nonsense row.
+
+Values printed come from `receipt.ground_truth()`, so the label and the page
+are the same strings by construction. The furniture around them -- column
+titles, signature captions -- comes from the layout spec and the `Receipt`,
+because it is not in the label and never was.
+"""
+
+from __future__ import annotations
+
+import base64
+import html
+import io
+import random
+import re
+import sys
+import unicodedata
+from pathlib import Path
+from typing import Any, Sequence
+
+from components.table import Border, Cell, Column, Row, TableSpec, render_table
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+ORNAMENT_DIR = REPO_ROOT / "textures" / "ornament"
+
+# What a family sets its own `HAND_KINDS` to when a pen reaches the whole page
+# rather than the fields of a printed form. Only `notebook` does: a school
+# exercise book has no press run, so there is no printed furniture for the
+# writing to sit inside.
+#
+# It is the same string as `handwriting.ALL_KINDS`, and `tests/test_sheets.py`
+# asserts they are, because the two modules must not be made to import each
+# other -- `handwriting` is renderer machinery and knows nothing about which
+# families exist, and a family knows nothing about ink.
+EVERY_RUN = "*"
+
+# Paper, in the units a print engine thinks in. `@page` gets the name and the
+# sheet gets the millimetres, so the browser -- which has no `@page` -- lays out
+# the same box the PDF does.
+PAPERS: dict[str, tuple[str, str]] = {
+    "A4": ("210mm", "297mm"),
+    "A5": ("148mm", "210mm"),
+    "BROADSHEET": ("375mm", "597mm"),
+    "TABLOID": ("280mm", "430mm"),
+    # Landscape is not a flag anywhere in this file -- it is just the same
+    # two lengths, swapped. Added for the insurance root: a travel-insurance
+    # "ticket" page and a health-insurance ID card's two-faces-on-one-sheet
+    # stage (A4_LANDSCAPE), an auto-liability certificate table (A5_LANDSCAPE),
+    # and a motorcycle-liability certificate small enough to be its own class
+    # (A6_LANDSCAPE).
+    "A4_LANDSCAPE": ("297mm", "210mm"),
+    "A5_LANDSCAPE": ("210mm", "148mm"),
+    "A6_LANDSCAPE": ("148mm", "105mm"),
+}
+
+# Font families as `page.font_faces()` names them: the file stem, so a stack
+# asking for "Liberation Serif" with a space matches nothing and falls through
+# to whatever the container happens to have.
+SERIF = "'LiberationSerif','DejaVu Serif',serif"
+SANS = "'DejaVuSans','LiberationSans','DejaVu Sans',sans-serif"
+MONO = "'LiberationMono','Cousine',monospace"
+
+
+def rng_for(recipe, tag: int = 0x5A4D) -> random.Random:
+    """The family's own independent random stream, seeded off the recipe.
+
+    `tag` keeps one family's coin flips (a livery, a watermark, a checkbox
+    mark) from ever landing in step with another's, even when both draw from
+    the same `recipe.seed` for the same page. `0x5A4D` is not a magic
+    constant chosen here -- it is the one five families (`lodging`,
+    `medical`, `modern`, `statement`, `statutory`) already happened to XOR
+    with, unnamed, before this helper existed; keeping it as the default
+    reproduces every one of them bit-for-bit. A family with its own tag
+    (`form.py` uses `0x46524D`, "FRM") passes it explicitly.
+    """
+    return random.Random(recipe.seed ^ tag)
+
+
+def esc(value: Any) -> str:
+    return html.escape(str(value if value is not None else ""))
+
+
+def span(kind: str, text: Any, cls: str = "") -> str:
+    """One labelled run, or nothing at all.
+
+    Text-only on purpose: `CELL_RECTS_JS` measures `span.firstElementChild ||
+    span`, so a nested element would silently become the box and the quad would
+    describe a fragment of the run instead of the run.
+    """
+    text = "" if text is None else str(text)
+    if not text.strip():
+        return ""
+    attr = f' class="{cls}"' if cls else ""
+    return f'<span data-kind="{esc(kind)}"{attr}>{esc(text)}</span>'
+
+
+class Rows:
+    """Row numbers for `data-row`, handed out across the whole page.
+
+    Two tables on one sheet must not share them. `structure_from_cells` in
+    `render.py` groups measured cells by `data-row`, and a second table that
+    restarts at zero has its first row spliced onto the item table's first row
+    -- one row of eleven cells that exists nowhere on the paper.
+    """
+
+    def __init__(self) -> None:
+        self._next = 0
+
+    def take(self) -> int:
+        row = self._next
+        self._next += 1
+        return row
+
+
+def cell(tag: str, row: int, col: int, inner: str, *, cls: str = "",
+         kind: str = "", colspan: int = 1, rowspan: int = 1,
+         style: str = "") -> str:
+    """One table cell, carrying where it sits and how far it spans.
+
+    The convention is PaddleOCR's TableGeneration: label the `<td>`, not only
+    the text in it. For a merged cell that distinction is the whole point -- the
+    text box round "Tổng tiền thanh toán" cannot say that its cell covers six
+    columns, and a model asked to rebuild the table needs exactly that.
+    """
+    attrs = [f'data-cell="{esc(kind)}"', f'data-row="{row}"', f'data-col="{col}"']
+    if colspan > 1:
+        attrs.append(f'colspan="{colspan}"')
+    if rowspan > 1:
+        attrs.append(f'rowspan="{rowspan}"')
+    if cls:
+        attrs.append(f'class="{cls}"')
+    if style:
+        attrs.append(f'style="{style}"')
+    return f"<{tag} {' '.join(attrs)}>{inner}</{tag}>"
+
+
+def structure_tokens(rows: list[list[dict]]) -> list[str]:
+    """The table as PPStructure tokens: `<tr>`, `<td`, ` colspan="6"`, `>`, ...
+
+    Same format `tables.py` writes, so anything that already reads those reads
+    this. Splicing the cell text back between the tokens rebuilds the table,
+    which is the check that the structure half and the text half describe one
+    thing.
+    """
+    tokens: list[str] = []
+    for row in rows:
+        tokens.append("<tr>")
+        for item in row:
+            spans = []
+            if item.get("colspan", 1) > 1:
+                spans.append(f' colspan="{item["colspan"]}"')
+            if item.get("rowspan", 1) > 1:
+                spans.append(f' rowspan="{item["rowspan"]}"')
+            if spans:
+                tokens.append("<td")
+                tokens.extend(spans)
+                tokens.append(">")
+            else:
+                tokens.append("<td>")
+            tokens.append("</td>")
+        tokens.append("</tr>")
+    return tokens
+
+
+def initials(name: str) -> str:
+    """Two letters for a logo mark, from the words a Vietnamese name ends with.
+
+    "CÔNG TY CỔ PHẦN ĐIỆN MÁY VÀ GIA DỤNG HỒNG HÀ" -> "HH": the trailing words
+    are the trading name and the leading ones say only that it is a company.
+    """
+    skip = {"CONG", "TY", "CO", "PHAN", "TNHH", "MTV", "DOANH", "NGHIEP",
+            "TAP", "DOAN", "CHI", "NHANH", "VA", "-"}
+    words = []
+    for word in name.replace("-", " ").split():
+        plain = "".join(c for c in unicodedata.normalize("NFD", word)
+                        if not unicodedata.combining(c)).upper()
+        plain = plain.replace("Đ", "D").replace("đ", "d")
+        if plain and plain not in skip:
+            words.append(word)
+    picked = words[-2:] if len(words) >= 2 else (words or [name])
+    return "".join(word[0] for word in picked).upper()[:2] or "VN"
+
+
+def ornament_url(stem: str) -> str:
+    """A `file://` URL for one of `textures/ornament/`, or "" if it is missing.
+
+    Absolute rather than relative because the browser serves the markup from a
+    temporary directory (see `page.served`), so a relative URL resolves against
+    that directory and finds nothing. It was also the only form the WeasyPrint
+    path could resolve, which is why it is absolute rather than served-relative;
+    that path is gone, the reason above is not.
+    """
+    path = ORNAMENT_DIR / f"{stem}.png"
+    return path.as_uri() if path.exists() else ""
+
+
+def qr_svg(text: str, size_mm: float) -> str:
+    """A real QR code as inline SVG, or "" when `segno` is not installed.
+
+    Inline so the page needs no file and no network, and real rather than drawn
+    because a scanner that reads it is the cheapest possible check that the
+    serial on the page is the serial in the label.
+    """
+    try:
+        import segno
+    except ImportError:
+        return ""
+    if not text:
+        return ""
+    import io
+
+    code = segno.make(text, error="m")
+    modules = code.symbol_size(scale=1, border=0)[0] or 1
+    buffer = io.BytesIO()
+    # segno writes bytes; `unit="mm"` makes the SVG size a physical one, which
+    # is what both engines need -- a QR sized in pixels lands at a different
+    # size on a 210mm page than it does in a 794px viewport.
+    code.save(buffer, kind="svg", scale=size_mm / modules, border=0, unit="mm",
+              xmldecl=False, svgns=True, omitsize=False)
+    return buffer.getvalue().decode("utf-8")
+
+
+# --------------------------------------------------------------------------
+# the layout spec, read the same way the character grid reads it
+
+
+def columns_of(spec: dict, ncols: int) -> list[dict]:
+    """The layout's own columns, with the character widths turned into percent.
+
+    Read from the layout file rather than restated here, so the template path
+    and the character grid print the same columns in the same order. A width of
+    0 means "take what is left", exactly as it does on the grid.
+    """
+    columns = [dict(column) for column in spec.get("columns", [])]
+    if not columns:
+        return []
+    fixed = sum(int(column.get("width") or 0) for column in columns)
+    flexible = [column for column in columns if not int(column.get("width") or 0)]
+    spare = max(ncols - fixed, len(flexible) * 8)
+    for column in columns:
+        width = int(column.get("width") or 0)
+        if width:
+            column["pct"] = 100.0 * width / max(ncols, 1)
+        else:
+            column["pct"] = 100.0 * (spare / len(flexible)) / max(ncols, 1)
+        column.setdefault("align", "left")
+        column.setdefault("title_align", column["align"])
+    # The flexible column absorbs the rounding, so the widths sum to 100 and no
+    # engine has to invent the remainder.
+    drift = 100.0 - sum(column["pct"] for column in columns)
+    if flexible:
+        flexible[0]["pct"] += drift
+    return columns
+
+
+def ncols_of(spec: dict) -> int:
+    """The middle of the layout's declared width, in characters."""
+    width = spec.get("width") or [96, 96]
+    if isinstance(width, (int, float)):
+        return int(width)
+    return int((int(width[0]) + int(width[-1])) / 2)
+
+
+def item_rows(spec: dict) -> list[list[dict]]:
+    """`item.rows` from the layout file: which column each value goes in."""
+    rows = (spec.get("item") or {}).get("rows") or []
+    return [[dict(entry) for entry in row] for row in rows]
+
+
+def align_class(align: str) -> str:
+    return {"right": "r", "center": "c"}.get(align, "")
+
+
+def safe_align(align: str) -> str:
+    """A layout's `align:`/`title_align:`, normalised the way `align_class` already is.
+
+    A layout's align string only ever had to survive being *compared* --
+    `align_class` has always mapped anything unrecognised to plain left
+    rather than rejecting it. `components.table.Cell`/`Column` are stricter
+    on purpose (an unrecognised `align` raises, for a value a *caller of the
+    component* chose deliberately), so this is the seam: normalise once,
+    here, to the same three buckets `align_class` already sorts into, rather
+    than let a stray value from a layout file crash table rendering outright.
+    """
+    return {"right": "right", "center": "center"}.get(align, "left")
+
+
+# --------------------------------------------------------------------------
+# the blocks every family draws the same way
+
+
+def party_rows(pairs: dict[str, str] | Sequence[tuple[str, str]]) -> list[tuple[str, str]]:
+    return list(pairs.items()) if isinstance(pairs, dict) else [tuple(p) for p in pairs]
+
+
+def party_pairs(receipt, parse: dict, which: str) -> list[tuple[str, str]]:
+    """One party block as (label, value) pairs, in print order.
+
+    From `receipt.invoice`, not from the label, and this is the one place where
+    that is the *more* faithful source rather than the less. `_invoice_label`
+    turns each block into a **dict**, so two rows sharing a label collapse into
+    one -- and an export invoice really does carry two "Địa chỉ (Address):"
+    rows, the exporter's and the importer's. Printing from the dict drops the
+    first, and the address it drops is the one the label reports under
+    `store.address`. These are the very tuples the label is built from, so there
+    is nothing here for the page and the label to drift apart over.
+    """
+    invoice = getattr(receipt, "invoice", None)
+    entries = getattr(invoice, which, None) if invoice is not None else None
+    if entries:
+        return [(label, value) for label, value in entries if value]
+    return party_rows((parse.get("invoice") or {}).get(which) or {})
+
+
+def field_line(label: str, value: str, *, cls: str = "f", leader: bool = False) -> str:
+    """A label and its value on one line, optionally on a dotted rule.
+
+    Two labelled runs, not one: `invoice.field.label` and `invoice.field` are
+    what the character grid emits, and a reader that learns to find the value
+    should not have to split it off the label first.
+
+    The inner run carries **no class**. It used to be given `v`, the same one as
+    the table-cell wrapping it, and `.f.dot .v` then matched both: the form drew
+    its dotted leader across the whole cell *and* a second one hugging the value,
+    two rules under every field on `invoice_vat_form` and `invoice_export`. The
+    bold comes from the cell by inheritance, so nothing else needed changing.
+    """
+    body = span("invoice.field", value)
+    dots = " dot" if leader else ""
+    return (f'<div class="{cls}{dots}"><span class="k">'
+            f'{span("invoice.field.label", label)}</span>'
+            f'<span class="v">{body}</span></div>')
+
+
+def bilingual_field_line(label_en: str, label_vn: str, value: str, *, cls: str = "f") -> str:
+    """`field_line()`'s single-label contract, doubled: English stacked over
+    Vietnamese beside one value.
+
+    A bilingual insurance policy (a cargo policy, a travel certificate)
+    prints both languages as equally real fields on the paper, not one as a
+    gloss on the other -- so both label runs carry `data-kind`, the same as
+    the value, rather than only the Vietnamese one.
+    """
+    body = span("invoice.field", value)
+    return (f'<div class="{cls}"><span class="k">'
+            f'{span("invoice.field.label", label_en, "en")}'
+            f'{span("invoice.field.label", label_vn, "vn")}'
+            f'</span><span class="v">{body}</span></div>')
+
+
+def comb_box(kind: str, text: Any, *, groups: Sequence[int] | None = None) -> str:
+    """A per-character boxed grid -- the Vietnamese government-form input
+    where a citizen writes one glyph to a square (an application form's
+    name/date/ID-number fields), one bordered `<i>` per character.
+
+    Every labelled run in this package is `<span data-kind="...">TEXT</span>`
+    with **no nested element** (`tests/test_sheets.py::
+    test_every_labelled_run_is_a_span_with_a_kind` enforces this by regex,
+    repo-wide, with no per-layout exemption) -- so the boxes cannot be one
+    span wrapping a dozen `<i>` cells. Instead each *character* gets its own
+    trivial, unnested `data-kind` span, inside its own `<i>` cell; all of
+    them share the same `kind`, so `pipeline/invariants.py`'s box-rejoining
+    (already written to reassemble one value split across several same-kind
+    boxes, e.g. a line-wrapped run) reassembles the character run the same
+    way. A blank cell (a space in "Tạ Thị") carries no span at all --
+    `span()` already drops blank text -- which the same whitespace-
+    insensitive rejoin fallback tolerates.
+
+    `groups`, given, is how many characters each group holds before a
+    borderless gap cell -- `groups=(2, 2, 4)` for a date "12"+"05"+"1988".
+    Omit it for one unbroken run of boxes.
+    """
+    text = "" if text is None else str(text)
+    if not text.strip():
+        return ""
+    chunks = []
+    if groups:
+        pos = 0
+        for size in groups:
+            chunks.append(text[pos:pos + size])
+            pos += size
+        if pos < len(text):
+            chunks.append(text[pos:])
+    else:
+        chunks = [text]
+    cells = []
+    for index, chunk in enumerate(chunks):
+        if index:
+            cells.append('<i class="sp"></i>')
+        cells.extend(f"<i>{span(kind, ch)}</i>" for ch in chunk)
+    return f'<span class="comb">{"".join(cells)}</span>'
+
+
+def stamp(text: str, *, colour: str = "#c8102e", size_mm: float = 30,
+         rotate_deg: float = -13) -> str:
+    """A round, rotated, translucent ink stamp -- decorative furniture, never
+    ground truth (no `span()`, no `data-kind`): the org name it repeats is
+    already printed elsewhere on the page in a real labelled run, the same
+    way every existing family's own stamp already works.
+
+    Every family that wants a red circular seal today writes its own:
+    `statutory.py`'s is a green e-invoice tick box, `lodging.py`'s is a
+    background-image PNG -- neither is this shape, and neither is shared.
+    Since most of the insurance root's ten layouts want the same round
+    rotated seal, this is the one shared version. Inline-styled throughout
+    (two nested rings instead of one element plus a `::before`), so a family
+    that wants one needs no matching CSS of its own -- only a
+    `position:relative` ancestor, the same contract `signature_block(stamp=)`
+    already slots a stamp fragment into.
+    """
+    ring = round(size_mm * 0.08, 2)
+    border = round(size_mm * 0.022, 2)
+    inner_border = round(size_mm * 0.01, 2)
+    font = round(size_mm * 0.075, 2)
+    return (
+        f'<div style="position:absolute;left:50%;top:0;'
+        f'transform:translateX(-50%) rotate({rotate_deg}deg);'
+        f'width:{size_mm}mm;height:{size_mm}mm;box-sizing:border-box;'
+        f'border:{border}mm solid {colour};border-radius:50%;opacity:.65;'
+        f'display:flex;align-items:center;justify-content:center;text-align:center;">'
+        f'<div style="position:absolute;inset:{ring}mm;border:{inner_border}mm solid {colour};'
+        f'border-radius:50%;"></div>'
+        f'<span style="position:relative;color:{colour};'
+        f'font-family:Arial,Helvetica,sans-serif;font-weight:800;'
+        f'font-size:{font}mm;line-height:1.15;">{esc(text)}</span>'
+        f"</div>"
+    )
+
+
+# ------------------------------------------------------------- ornament seals
+#
+# `rulebase/rules/ornament.yaml`'s `seal` group samples a list of `marks`
+# ([kind, {anchor, scale, opacity, rotate}]) onto every recipe that allows
+# one -- and, until this pair of functions, nothing in this package ever
+# drew them: the seals a reader actually sees came from unrelated,
+# hand-written calls (`stamp()` above, `ornament_url()`'s static PNGs) that
+# know nothing about what was sampled. These two close that gap.
+
+# Two anchors a family plugs in itself, through the slot its own layout
+# already reserves (`signature_block(stamp=)`, `totals_block(stamp=)`);
+# everything else is page-level and goes through `document(overlay=)`
+# instead, because nothing else has a per-family DOM hook to plug into.
+_SLOT_ANCHORS = {"signature_seller", "signature_buyer", "totals"}
+
+# Page-relative placement for the anchors `document(overlay=)` draws.
+# Percentages of `#sheet`'s own box (already the containing block every
+# other absolutely-positioned thing here uses) -- `transform` re-centres on
+# that point rather than the box's own top-left corner, so `scale` growing
+# or shrinking the seal does not also drift its anchor point.
+_PAGE_ANCHOR_CSS = {
+    "header_band": "left:50%;top:2%;transform:translate(-50%,0)",
+    "letterhead": "left:8%;top:4%;transform:translate(0,0)",
+    "table_back": "left:50%;top:45%;transform:translate(-50%,-50%)",
+    "footer_band": "left:50%;top:94%;transform:translate(-50%,-100%)",
+    "corner_tl": "left:1%;top:1%;transform:translate(0,0)",
+    "corner_tr": "left:99%;top:1%;transform:translate(-100%,0)",
+    "corner_bl": "left:1%;top:99%;transform:translate(0,-100%)",
+    "corner_br": "left:99%;top:99%;transform:translate(-100%,-100%)",
+    "page_center": "left:50%;top:50%;transform:translate(-50%,-50%)",
+    # Half off the left edge -- `#sheet`'s own `overflow:hidden` (see
+    # `document()`) crops the other half, which IS the "giáp lai" look:
+    # a seal struck across where two sheets met, this page keeping one side.
+    "page_edge_left": "left:0%;top:50%;transform:translate(-50%,-50%)",
+    "page_full": "left:50%;top:50%;transform:translate(-50%,-50%)",
+}
+
+
+def seal_mark(kind: str, *, seed: int, lines: list[str], anchor: str,
+              scale: float = 0.26, opacity: tuple[float, float] = (0.70, 0.90),
+              rotate: tuple[float, float] = (-14, 14), bw: bool = False) -> str:
+    """One `ornament.yaml` seal `mark`, drawn fresh and boxed.
+
+    Drawn: `tools/make_ornaments.py::draw_seal()`, colour and shape chosen
+    from `seed` -- reproducible (same seed, same seal), not re-rolled per
+    render. `bw` additionally runs it through `ink_bleed()` for the pages a
+    document's own `color`/channel attribute already says are a
+    black-and-white scan or photocopy, not a fresh printout.
+
+    Boxed, but NOT the way `handwriting.py` wraps a model-written word
+    (`<span data-kind data-text><img></span>`) -- that shape is only ever
+    produced by a later FILL pass (`handwriting.fill`/`signature.fill` in
+    `render.py`, run on `build()`'s output), never by a family's `build()`
+    itself: `tests/test_sheets.py::test_every_labelled_run_is_a_span_with_a_
+    kind` asserts every `data-kind` span `build()` emits is text-only, and a
+    seal has no such later pass -- it is drawn right here, inside `build()`.
+
+    So the box and the picture are two SIBLING elements at the same CSS
+    position instead of one nested inside the other: a plain `<img>` (what a
+    reader sees) beside an invisible, identically-sized `<span data-kind
+    data-text>` holding the same text (what `CELL_RECTS_JS` measures --
+    `opacity:0` still lays out and still has a real `getBoundingClientRect()`,
+    unlike `display:none`). `data-text` is every line joined by " / ", the
+    seal's whole content in one string -- there is no per-line structure
+    worth a second box for a stamp, unlike a table.
+
+    Matching the SPAN's height to the `<img>`'s is the one fiddly part: the
+    image keeps its own aspect ratio from a `width:N%` alone, but a percentage
+    `height` resolves against the parent's height, not its width, so the same
+    `N%` would not give the span the same shape on a non-square page. The
+    classic fix -- `height:0` plus a `padding-bottom` percentage, which CSS
+    always resolves against the parent's WIDTH on every axis -- does, and
+    `box-sizing:content-box` (inline, so it overrides this file's global
+    `border-box`) is what makes that percentage land purely as height instead
+    of being eaten by itself.
+
+    `anchor` decides CSS placement only; whether the caller places this
+    fragment through a slot (`signature_block`/`totals_block`) or as a
+    page overlay (`document(overlay=)`) is `render_ornament_marks()`'s job,
+    keyed off the same anchor name -- see `_SLOT_ANCHORS`.
+    """
+    tools_dir = REPO_ROOT / "tools"
+    if str(tools_dir) not in sys.path:
+        sys.path.insert(0, str(tools_dir))
+    from make_ornaments import draw_seal, ink_bleed  # noqa: PLC0415
+
+    rng = random.Random(seed)
+    image, shape = draw_seal(kind, seed=seed, lines=lines)
+    if bw:
+        image = ink_bleed(image, seed=seed)
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    data = base64.b64encode(buffer.getvalue()).decode("ascii")
+
+    text = " / ".join(line for line in lines if line)
+    lo, hi = opacity
+    rot_lo, rot_hi = rotate
+    deg = rng.uniform(rot_lo, rot_hi)
+    op = rng.uniform(lo, hi)
+    size_pct = round(scale * 100, 2)
+
+    if anchor in _SLOT_ANCHORS:
+        position = "left:50%;top:0;transform:translateX(-50%)"
+    else:
+        position = _PAGE_ANCHOR_CSS.get(anchor, _PAGE_ANCHOR_CSS["page_center"])
+
+    placed = f'position:absolute;{position} rotate({deg:.1f}deg);width:{size_pct}%;'
+    img = (f'<img alt="{esc(text)}" style="{placed}opacity:{op:.2f};pointer-events:none;" '
+          f'src="data:image/png;base64,{data}">')
+    # `image.height / image.width` as a percentage of `size_pct`: see the
+    # docstring above for why `padding-bottom` (not `height`) carries it.
+    # Resolves against the CONTAINING block's width regardless of the box's
+    # own `width` below, so it is unaffected by the `page_edge_left` halving.
+    height_pct = round(size_pct * image.height / max(image.width, 1), 2)
+    # `page_edge_left` centres the `<img>` ON the page edge on purpose --
+    # `overflow:hidden` on `#sheet` crops the other half for the "giáp lai"
+    # look (see `_PAGE_ANCHOR_CSS`). `getBoundingClientRect()` does not know
+    # about that crop, though: the label span at the SAME position would
+    # measure the mark's full, half-off-page geometry, and `pipeline/
+    # invariants.py` is right to reject a box that claims pixels nothing
+    # painted. Left-aligned at the edge with half the width instead, the
+    # label describes exactly the surviving half rather than the whole mark.
+    box_style = (f'position:absolute;left:0%;top:50%;transform:translate(0,-50%) '
+                f'rotate({deg:.1f}deg);width:{size_pct / 2}%;'
+                if anchor == "page_edge_left" else placed)
+    # `data-ink="stamp"`: axis 3. A seal impression is not printed text and
+    # not handwriting, and `kind` alone cannot say so on a page whose default
+    # ink is thermal or dot-matrix -- see `pipeline/record.py::ink_for`.
+    box = (f'<span data-kind="seal.{esc(shape)}" data-ink="stamp" '
+           f'data-text="{esc(text)}" style="{box_style}'
+          f'height:0;padding-bottom:{height_pct}%;box-sizing:content-box;'
+          f'white-space:nowrap;overflow:hidden;opacity:0;pointer-events:none;">'
+          f'{esc(text)}</span>')
+    return img + box
+
+
+def render_ornament_marks(recipe, receipt, *, bw: bool = False) -> tuple[str, str, str]:
+    """Every `mark` the `ornament.yaml` `seal` group sampled onto `recipe`,
+    turned into markup and sorted into the three places a page can take one:
+    the signature slot, the totals slot, and everything else (a page-level
+    overlay). Empty strings all round when the sampled option is
+    `no_ornament` or the recipe has no `ornament` attribute at all.
+
+    `lines` for each mark comes from `receipt` here, not from
+    `SEAL_KINDS` -- that registry only says which drawing family a kind may
+    use, never what it says, so the same `seller_seal` mark reads a
+    different real company name on every document instead of the one
+    baked-in sample name the old static PNGs were stuck with.
+
+    A mark whose kind is not in `SEAL_KINDS` (`seal_name_block`, today: a
+    person's name-and-title stamp, not a company seal -- see that dict's own
+    comment) is skipped rather than raising: `seal_with_name_block` samples
+    it ALONGSIDE `seal_round_company`, and drawing the company half while
+    leaving the name-block half undrawn is the current state of the world,
+    not a new gap this function opens.
+    """
+    tools_dir = REPO_ROOT / "tools"
+    if str(tools_dir) not in sys.path:
+        sys.path.insert(0, str(tools_dir))
+    from make_ornaments import SEAL_KINDS  # noqa: PLC0415
+
+    marks = recipe.get("ornament", "marks", []) or []
+    store = getattr(receipt, "store", None)
+    lines_for = {
+        "seal_round_company": [store.name if store else "", store.tax_code if store else ""],
+        "seal_round_hotel": [store.name if store else "", store.branch if store else ""],
+        "seal_round_export": [store.name if store else "", store.tax_code if store else ""],
+        "seal_round_company_double": [store.name if store else "", store.tax_code if store else ""],
+        "seal_round_company_faint": [store.name if store else "", store.tax_code if store else ""],
+        "seal_edge_half": [store.name if store else ""],
+        "seal_name_block_chief": [store.name if store else ""],
+        "seal_square_paid": ["ĐÃ THU TIỀN", "PAID"],
+        "seal_square_copy": ["BẢN SAO", "COPY"],
+        "seal_accounting_posted": ["ĐÃ HẠCH TOÁN"],
+    }
+
+    slot, totals, overlay = "", "", ""
+    for index, (kind, params) in enumerate(marks):
+        if kind not in SEAL_KINDS:
+            continue
+        anchor = params.get("anchor", "page_center")
+        fragment = seal_mark(
+            kind, seed=recipe.seed ^ (index + 1) * 0x5EA1, lines=lines_for.get(kind, []),
+            anchor=anchor, scale=params.get("scale", 0.26),
+            opacity=tuple(params.get("opacity", (0.70, 0.90))),
+            rotate=tuple(params.get("rotate", (-14, 14))), bw=bw)
+        if anchor in ("signature_seller", "signature_buyer"):
+            slot += fragment
+        elif anchor == "totals":
+            totals += fragment
+        else:
+            overlay += fragment
+    return slot, totals, overlay
+
+
+def key_strip(strip, separator: str = "|") -> str:
+    """The one-line run of keys across the top of a modern invoice."""
+    pairs = party_rows(strip) if not isinstance(strip, list) else list(strip)
+    if not pairs:
+        return ""
+    parts = []
+    for index, (label, value) in enumerate(pairs):
+        if index:
+            parts.append(f'<span class="sep">{esc(separator)}</span>')
+        parts.append(span("invoice.field.label", label, "k"))
+        parts.append(span("invoice.field", value, "v"))
+    return f'<div class="strip">{" ".join(parts)}</div>'
+
+
+def items_table(spec: dict, receipt, parse: dict, rows: Rows, *,
+                cls: str = "items", column_numbers: bool | None = None,
+                blank_rows: int | None = None,
+                totals: list[dict] | None = None,
+                totals_label_span: int | None = None) -> str:
+    """The item table, with the totals folded in as merged rows when asked.
+
+    The merge is the reason this is one function and not two. A totals line is
+    one cell covering every column but the last, which is only expressible if
+    the totals are rows of the same table; drawn as a separate block underneath
+    they would be a second table whose column edges have to be made to agree
+    with the first by hand. That agreement is exactly what `colspan` is for.
+
+    `totals` entries are `{label, value, grand, lead}`; `lead` is an optional
+    `(kind, text, colspan)` cell placed to the left of the label in that row.
+
+    Built as a `components.table.TableSpec` and handed to `render_table` --
+    but `border=Border.none()`, deliberately: every family still styles
+    `.items`/`.grand`/`.tlabel`/etc. in its own `<style>` block exactly as
+    before, reached through `cls`/`Cell.cls` on every element this function
+    writes, and an inline border would silently outrank those rules rather
+    than cooperate with them (see `Cell.cls` in `components/table.py`). What
+    moved here is the geometry: column resolution, colspan/rowspan occupancy,
+    the `data-cell`/`data-row`/`data-col` labels and the `<thead>`/`<tbody>`
+    split now come from one tested primitive instead of being hand-rolled in
+    this function and four private ones beside it.
+    """
+    from rulebase.layout import item_values
+
+    settings = spec.get("table") or {}
+    if column_numbers is None:
+        column_numbers = bool(settings.get("column_numbers"))
+    if blank_rows is None:
+        blank_rows = int(settings.get("blank_rows") or 0)
+
+    columns = columns_of(spec, ncols_of(spec))
+    if not columns:
+        return ""
+    keys = [column["key"] for column in columns]
+    table_columns = [
+        Column(width=column["pct"], align=safe_align(column.get("align", "left")),
+              valign=None)                     # None: defer to `table.items td{...}`
+        for column in columns
+    ]
+
+    table_rows = _header_rows(columns, spec)
+    if column_numbers:
+        table_rows.append(Row([
+            Cell(span("colnum", column.get("number", "")), html=True,
+                kind="colnum", cls="c", align="center")
+            for column in columns
+        ], cls="colnum", in_thead=True))
+
+    plan = [_placements(row, keys) for row in item_rows(spec)]
+    first = plan[0] if plan else []
+    # A continuation row that names one column, and a column the first row
+    # already fills, is a second LINE of that cell rather than a row of its own:
+    # "Tiền phòng / Bao gồm bữa sáng" is one cell on every reference sheet.
+    # Anything wider is a real row -- a till prints the quantity, the price and
+    # the amount under the dish name, and those are three cells, not a footnote.
+    folded = [row for row in plan[1:]
+              if len(row) == 1 and row[0][0] == row[0][1]
+              and any(place[0] <= row[0][0] <= place[1] for place in first)]
+    stacked = [row for row in plan[1:] if row not in folded]
+
+    # A column's own `cellstyle:` -- read here, once, rather than per row --
+    # paints the CELL a value sits in, never the value itself: the text a
+    # reader would copy off the page is exactly what `values.get(source, "")`
+    # already was, and `check_boxes.py`'s ink check reads the same pixels
+    # either way. See `_heat_fills`/`_HATCH_CLS`.
+    heat_keys = [c["key"] for c in columns if c.get("cellstyle") == "heatmap"]
+    hatch_keys = {c["key"] for c in columns if c.get("cellstyle") == "hatch_zero"}
+    item_values_list = [(item, item_values(item, receipt)) for item in receipt.items]
+    heat_max = {key: max((v for v in
+                          (_numeric(vals.get(key, "")) for _it, vals in item_values_list)
+                          if v), default=0.0)
+               for key in heat_keys}
+
+    for item, values in item_values_list:
+        extra: dict[int, list[tuple[str, str]]] = {}
+        for row in folded:
+            start, _end, source, _align = row[0]
+            text = values.get(source, "")
+            if text:
+                extra.setdefault(start, []).append((f"menu.{source}", text))
+        fills = _heat_fills(values, heat_keys, heat_max)
+        if getattr(item, "is_group", False):
+            # A block heading is a row of the table, not a caption above it: it
+            # carries the block's column sums. Its name runs across the columns
+            # that describe a line -- unit, quantity, the two unit prices --
+            # because a heading has none of those.
+            table_rows.append(_group_row(columns, keys, values, spec, item))
+            continue
+        table_rows.append(_item_row(columns, first, values, extra, fills, hatch_keys))
+        for row in stacked:
+            if any(values.get(place[2]) for place in row):
+                table_rows.append(_item_row(columns, row, values, {}, fills, hatch_keys))
+        table_rows.extend(_item_extras(spec, item, receipt, values, columns))
+
+    for _ in range(blank_rows):
+        table_rows.append(Row([Cell() for _ in columns], cls="blank"))
+
+    for entry in totals or []:
+        grand = bool(entry.get("grand"))
+        kind = "total.grand" if grand else "total.line"
+        total_cells: list[Cell] = []
+        used = 0
+        # An export invoice puts the exchange rate in the same row as the total,
+        # in its own merged cell: `Tỉ giá (Rate)` over three columns, then the
+        # total's label over two, then the amount. Two spans in one row is what
+        # the reference sheet does and what a grid of characters cannot say.
+        lead = entry.get("lead")
+        if lead:
+            lead_kind, lead_text, lead_span = lead
+            total_cells.append(Cell(span(lead_kind, lead_text), html=True,
+                                    kind=lead_kind, cls="tlead", colspan=lead_span))
+            used = lead_span
+        width = totals_label_span if totals_label_span else len(columns) - 1 - used
+        width = max(1, min(width, len(columns) - 1 - used))
+        total_cells.append(Cell(span(f"{kind}.label", entry.get("label", "")), html=True,
+                                kind=f"{kind}.label", cls="tlabel", colspan=width))
+        used += width
+        total_cells.extend(Cell() for _ in range(len(columns) - used - 1))
+        total_cells.append(Cell(span(kind, entry.get("value", "")), html=True,
+                                kind=kind, cls="r", align="right"))
+        table_rows.append(Row(total_cells, cls="grand" if grand else "total"))
+
+    # A print engine repeats `<thead>` on every page a table runs onto, and
+    # that is usually right. It is wrong for a form whose paper says otherwise:
+    # the hospital bill's second page continues its table with no header at
+    # all, and the repeat also puts a hundred glyphs of column titles into the
+    # PDF's character stream that the markup lists once -- which is exactly the
+    # noise `match_runs` has to step over to find the next field.
+    repeat = bool((spec.get("table") or {}).get("repeat_header", True))
+    # `.rothdr` is `table-layout:fixed` (see `document()`'s shared style) --
+    # only when a header is rotated, not on every table, because a rotated
+    # title is the one case an auto-layout column would otherwise widen to
+    # fit: the browser sizes an auto column from its WIDEST rendered content,
+    # and a vertical/diagonal title's rendered width is its own height.
+    if (spec.get("table") or {}).get("header_style"):
+        cls = f"{cls} rothdr"
+    table = TableSpec(rows=table_rows, columns=table_columns, border=Border.none(),
+                      cls=cls, repeat_header=repeat)
+    return render_table(table, rows=rows)
+
+
+def _item_extras(spec: dict, item, receipt, values: dict[str, str],
+                 columns: list[dict]) -> list[Row]:
+    """The rows a layout hangs under an item: its name, its old price, a discount.
+
+    Three of them, and each is a full-width row, which is where `colspan` earns
+    its keep a second time: a supermarket bill puts the barcode on the priced
+    line and the product name on its own line underneath, running the whole
+    width of the paper. On the grid that is a cell nobody ruled; here it is a
+    cell that says how many columns it covers.
+    """
+    settings = spec.get("item") or {}
+    width = len(columns)
+    out: list[Row] = []
+
+    def full(kind: str, text: str, css_cls: str = "") -> Row:
+        return Row([Cell(span(kind, text), html=True, kind=kind, cls=css_cls,
+                         colspan=width)], cls="extra")
+
+    if item.note and settings.get("note_row"):
+        out.append(full("menu.note", item.note, "indent"))
+    if getattr(item, "original_price", 0) and settings.get("original_price_row"):
+        label = settings["original_price_row"].get("label", "Giá gốc:")
+        out.append(full("menu.originalprice",
+                        f"{label} {receipt.cash(item.original_price)}", "indent"))
+    if item.discount:
+        label = (settings.get("discount_row") or {}).get("label", "KM")
+        left = max(1, width - 1)
+        out.append(Row([
+            Cell(span("menu.discount.label", label), html=True,
+                kind="menu.discount.label", colspan=left),
+            Cell(span("menu.discountprice", receipt.cash(-abs(item.discount))), html=True,
+                kind="menu.discountprice", cls="r", align="right"),
+        ], cls="extra"))
+    return out
+
+
+_HEADER_STYLE_CLASS = {"vertical": "vert", "diagonal": "diag"}
+
+
+def _header_title(title: str, rotate: str | None) -> str:
+    """A column title, rotated by wrapping it rather than by rotating the cell.
+
+    The `<th>` itself stays unrotated: it is what `CELL_REGIONS_JS` measures
+    for `data-cell`'s own extent (`_render_cell` in `components/table.py`),
+    and a rotated CELL reports a `getBoundingClientRect()` enclosing the
+    rotated rectangle -- wider and shorter than the column it names, and
+    liable to overlap its neighbour's. The wrapper carries the transform
+    instead, so the column boundary a reader of the structure sees is still
+    the column's real edges; only the text inside leans.
+    """
+    run = span("colhdr", title)
+    return f'<div class="{rotate}">{run}</div>' if rotate and run else run
+
+
+def _header_rows(columns: list[dict], spec: dict) -> list[Row]:
+    """The column titles, in one band or two.
+
+    `header_groups:` in a layout file names a run of columns that share a
+    heading -- "Nguồn thanh toán (đồng)" over the four columns a hospital bill
+    splits its money into. The columns outside every group then have to reach
+    down through both bands, which is `rowspan=2`, and `components.table`
+    works the edges out. There is no arithmetic here and that is the point: the
+    same statement drawn on a character grid would be a wide cell that happens to
+    have no rule under half of it.
+
+    `table.header_style: vertical|diagonal` turns every title on its side
+    instead -- a narrow column bought back at the cost of a taller header
+    band, which is a real trade a print shop makes when it has more columns
+    than width. The rotation is CSS only (`.vert`/`.diag`, in `document()`'s
+    shared style), never a second element inside the labelled span: `page.py::
+    CELL_RECTS_JS` already knows to measure a transformed run as one box
+    rather than walking it character by character (see its own comment), so
+    a plain `span(kind, title)` stays exactly what every other header cell
+    writes.
+    """
+    table = spec.get("table") or {}
+    groups = table.get("header_groups") or []
+    rotate = _HEADER_STYLE_CLASS.get(table.get("header_style", ""))
+    keys = [column["key"] for column in columns]
+
+    def resolve(entries) -> list[tuple[int, int, str]]:
+        out: list[tuple[int, int, str]] = []
+        for entry in entries:
+            first, last = str(entry.get("from", "")), str(entry.get("to", ""))
+            if first not in keys or last not in keys:
+                continue
+            out.append((keys.index(first), keys.index(last),
+                        str(entry.get("title", ""))))
+        return sorted(out)
+
+    resolved_spans = resolve(groups)
+    supers = resolve(table.get("header_supers") or [])
+    if supers:
+        return _header_rows_three(columns, resolved_spans, supers, rotate)
+
+    if not resolved_spans:
+        return [Row([
+            Cell(_header_title(column.get("title", ""), rotate), html=True, kind="colhdr",
+                align=safe_align(column.get("title_align", "center")),
+                cls=align_class(column.get("title_align", "center")))
+            for column in columns
+        ], header=True)]
+
+    grouped = {index for start, end, _ in resolved_spans for index in range(start, end + 1)}
+    top: list[Cell] = []
+    index = 0
+    while index < len(columns):
+        here = next((s for s in resolved_spans if s[0] == index), None)
+        if here:
+            start, end, title = here
+            top.append(Cell(span("colhdr", title), html=True, kind="colhdr",
+                            cls="c", align="center", colspan=end - start + 1))
+            index = end + 1
+            continue
+        column = columns[index]
+        top.append(Cell(span("colhdr", column.get("title", "")), html=True, kind="colhdr",
+                        rowspan=2, align=safe_align(column.get("title_align", "center")),
+                        cls=align_class(column.get("title_align", "center"))))
+        index += 1
+    lower = [
+        Cell(span("colhdr", columns[index].get("title", "")), html=True, kind="colhdr",
+            align=safe_align(columns[index].get("title_align", "center")),
+            cls=align_class(columns[index].get("title_align", "center")))
+        for index in sorted(grouped)
+    ]
+    return [Row(top, header=True), Row(lower, header=True)]
+
+
+def _header_rows_three(columns: list[dict], groups: list[tuple[int, int, str]],
+                       supers: list[tuple[int, int, str]],
+                       rotate: str | None) -> list[Row]:
+    """Ba tầng tiêu đề: `header_supers:` gộp chính những `header_groups:`.
+
+    Tờ mẫu nhà nước hay tờ khai hải quan in như thế -- một tiêu đề lớn trùm
+    lên vài tiêu đề nhóm, mỗi nhóm lại trùm lên mấy cột. Hai tầng không nói
+    được điều ấy: nó chỉ vẽ được "nhóm trên cột", không vẽ được "nhóm trên
+    nhóm", và một bảng hai tầng là bảng không dạy mô hình đọc dáng thứ ba.
+
+    Luật xếp, đúng một câu cho cả ba tầng và cùng câu `synthgen/markup.py`
+    dùng: **mỗi cột thuộc về ô hẹp nhất phủ nó, và ô nào không có tầng dưới
+    thì `rowspan` xuống tới đáy `<thead>`.** Nên một cột đứng ngoài mọi thứ
+    được `rowspan=3`, một nhóm ngoài mọi super được `rowspan=2` với các cột
+    của nó rơi thẳng xuống đáy, và một cột nằm trong super mà ngoài nhóm được
+    `rowspan=2` ở tầng giữa.
+
+    Một super phủ NỬA một nhóm là một khai báo sai, không phải một dáng bảng:
+    HTML không có ô nào cắt đôi được một `colspan`. Những nhóm ấy bị bỏ qua,
+    và bỏ qua thì tệ hơn là báo -- nhưng một tiêu đề vẽ lệch còn tệ hơn nữa,
+    nên chúng được thu về đúng phần super không chạm tới.
+    """
+    def title_cell(index: int, tier_span: int = 1) -> Cell:
+        column = columns[index]
+        align = safe_align(column.get("title_align", "center"))
+        return Cell(_header_title(column.get("title", ""), rotate), html=True,
+                    kind="colhdr", align=align,
+                    cls=align_class(column.get("title_align", "center")),
+                    rowspan=tier_span if tier_span > 1 else 1)
+
+    def wide(title: str, width: int, tier_span: int = 1) -> Cell:
+        return Cell(span("colhdr", title), html=True, kind="colhdr",
+                    cls="c", align="center", colspan=width,
+                    rowspan=tier_span if tier_span > 1 else 1)
+
+    # Nhóm nào bị một super cắt đôi thì không dùng được ở tầng giữa.
+    def inside(span_range, outer) -> bool:
+        return outer[0] <= span_range[0] and span_range[1] <= outer[1]
+
+    def straddles(span_range, outer) -> bool:
+        return (not inside(span_range, outer)
+                and span_range[0] <= outer[1] and outer[0] <= span_range[1])
+
+    usable = [g for g in groups if not any(straddles(g, s) for s in supers)]
+    group_at = {start: (start, end, title) for start, end, title in usable}
+    super_at = {start: (start, end, title) for start, end, title in supers}
+
+    top: list[Cell] = []
+    middle: list[Cell] = []
+    bottom: list[Cell] = []
+    index = 0
+    while index < len(columns):
+        if index in super_at:
+            start, end, title = super_at[index]
+            top.append(wide(title, end - start + 1))
+            inner = start
+            while inner <= end:
+                if inner in group_at:
+                    g_start, g_end, g_title = group_at[inner]
+                    middle.append(wide(g_title, g_end - g_start + 1))
+                    bottom.extend(title_cell(leaf)
+                                  for leaf in range(g_start, g_end + 1))
+                    inner = g_end + 1
+                else:
+                    middle.append(title_cell(inner, 2))
+                    inner += 1
+            index = end + 1
+            continue
+        if index in group_at:
+            start, end, title = group_at[index]
+            top.append(wide(title, end - start + 1, 2))
+            bottom.extend(title_cell(leaf) for leaf in range(start, end + 1))
+            index = end + 1
+            continue
+        top.append(title_cell(index, 3))
+        index += 1
+
+    rows = [Row(top, header=True)]
+    if middle:
+        rows.append(Row(middle, header=True))
+    if bottom:
+        rows.append(Row(bottom, header=True))
+    return rows
+
+
+def _group_row(columns: list[dict], keys: list[str], values: dict[str, str],
+              spec: dict, item) -> Row:
+    """A block heading: its name over the descriptive columns, then its sums."""
+    width = int((spec.get("table") or {}).get("group_span") or 0)
+    if width < 1:
+        # No declaration: run the name up to the first column that has a number
+        # on this row, which is where the sums begin.
+        width = next((index for index, key in enumerate(keys) if values.get(key)), 1)
+        width = max(width, 1)
+    width = min(width, len(columns))
+    cells = [Cell(span("menu.name", values.get("name", "")), html=True,
+                 kind="menu.name", cls="gname", colspan=width)]
+    for index in range(width, len(columns)):
+        key = keys[index]
+        cells.append(Cell(span(f"menu.{key}", values.get(key, "")), html=True,
+                          kind=f"menu.{key}",
+                          cls=align_class(columns[index].get("align", "left"))))
+    return Row(cells, cls="grouprow")
+
+
+def _placements(row: list[dict], keys: list[str]) -> list[tuple[int, int, str, str]]:
+    """`(first_col, last_col, source, align)` for each entry of an item row.
+
+    `span: [qty, amount]` in a layout file means one cell running from one named
+    column to another -- a dish name laid across the three money columns of a
+    till receipt. On the character grid that is a wide cell that happens to have
+    no rule through it; here it is a `colspan`, which is the same statement made
+    where a reader of the label can see it.
+    """
+    out = []
+    for entry in row:
+        names = entry.get("span")
+        if names:
+            edges = [keys.index(str(name)) for name in names if str(name) in keys]
+            if not edges:
+                continue
+            start, end = min(edges), max(edges)
+        else:
+            column = entry.get("col")
+            if column not in keys:
+                continue
+            start = end = keys.index(column)
+        source = str(entry.get("from", entry.get("col", "")))
+        out.append((start, end, source, str(entry.get("align", ""))))
+    return sorted(out)
+
+
+_DIGITS = re.compile(r"\d")
+
+
+def _numeric(text: str) -> float | None:
+    """The magnitude a formatted money cell shows, or None if it shows none.
+
+    Off the same STRING every reader sees (`values.get(source, "")`, already
+    through `receipt.cash()`), not off the `Item`'s own field -- a column's
+    `source` key does not always name one field (`_placements` also resolves
+    `span: [...]`), and re-deriving that mapping here to reach a raw number
+    would be a second, easier-to-drift path to the same value the page
+    already committed to printing.
+
+    Every digit, `,`/`.`/whitespace dropped, not parsed as a real decimal:
+    `rulebase.text.money`'s four styles do not agree on which mark is the
+    thousands separator -- `dot` writes `12.904`, `comma_2dp` writes
+    `12,904.00` -- so treating either punctuation mark as authoritative reads
+    one style right and every other style off by a factor of a thousand.
+    A heatmap only compares rows against each other WITHIN one table, which
+    one `money_style` renders throughout, so the relative order this produces
+    is exactly as correct as the true value would have been; the absolute
+    number is not read by anything.
+    """
+    digits = "".join(_DIGITS.findall(text))
+    return float(digits) if digits else None
+
+
+def _heat_fills(values: dict[str, str], heat_keys: list[str],
+                heat_max: dict[str, float]) -> dict[str, float]:
+    """This row's share of each heatmap column's largest value, 0..100."""
+    fills: dict[str, float] = {}
+    for key in heat_keys:
+        largest = heat_max.get(key) or 0.0
+        if not largest:
+            continue
+        number = _numeric(values.get(key, ""))
+        if number:
+            fills[key] = round(min(100.0, 100.0 * number / largest), 1)
+    return fills
+
+
+def _item_row(columns: list[dict], places: list[tuple[int, int, str, str]],
+              values: dict[str, str], extra: dict[int, list[tuple[str, str]]],
+              fills: dict[str, float] | None = None,
+              hatch_keys: set[str] | None = None) -> Row:
+    """One row: the placed cells, and an empty cell for every column between.
+
+    A gap cell's `align` is left unset rather than restated: it carries no
+    text, and an unset `Cell.align`/`Cell.valign` already inherits the
+    column's own default (see `components.table._render_cell`) -- the same
+    outcome `cls=align_class(...)` alone produced before, one fewer thing
+    computed twice.
+
+    `fills`/`hatch_keys` paint the CELL a column's own `cellstyle:` asked for
+    (D-2/D-3 of the table-diversity guideline: a mini-bar behind a money
+    column's largest values, or a hatch over one that is genuinely empty on
+    this row) -- both are `Cell.bg`/`Cell.cls`, which `render_table` already
+    turns into inline CSS the DOM does not otherwise carry, so neither can
+    move a box `CELL_RECTS_JS` measures or duplicate the text a reader copies.
+    """
+    fills = fills or {}
+    hatch_keys = hatch_keys or set()
+    cells: list[Cell] = []
+    column = 0
+    for start, end, source, align in places:
+        while column < start:
+            cells.append(Cell(cls=align_class(columns[column].get("align", "left"))))
+            column += 1
+        if column > end:
+            continue                  # two entries claimed the same column
+        text = values.get(source, "")
+        inner = span(f"menu.{source}", text)
+        for kind, extra_text in extra.get(start, []):
+            inner += f'<div class="sub">{span(kind, extra_text)}</div>'
+        resolved_align = safe_align(align or columns[start].get("align", "left"))
+        cls = align_class(align or columns[start].get("align", "left"))
+        bg = None
+        if source in fills:
+            pct = fills[source]
+            bg = f"linear-gradient(to right,#cfe3ff {pct:g}%,transparent {pct:g}%)"
+        elif source in hatch_keys and not text.strip():
+            cls = f"{cls} hatch".strip()
+        cells.append(Cell(inner, html=True, kind=f"menu.{source}",
+                          colspan=end - start + 1, align=resolved_align,
+                          cls=cls, bg=bg))
+        column = end + 1
+    while column < len(columns):
+        cells.append(Cell(cls=align_class(columns[column].get("align", "left"))))
+        column += 1
+    return Row(cells)
+
+
+def totals_block(parse: dict, *, indent: float = 0.4, grand: int = -1, stamp: str = "") -> str:
+    """Totals nudged into the right-hand part of the sheet, not in a table.
+
+    What an invoice that designed its own paper does: the block stops short of
+    the left margin and the emphasised line is the one being asked for.
+
+    `grand` is which line that is, and it is not always the last. A shop's
+    invoice ends on the amount due, so the emphasis falls at the bottom; a hotel
+    folio *opens* with the total and then lists what was paid against it, so the
+    emphasis falls on the first line and the lines under it are the settlement.
+    Pass -1 for the last, 0 for the first, None for none.
+
+    `stamp`: a fragment from `seal_mark(anchor="totals", ...)` (through
+    `render_ornament_marks()`), the same slot convention `signature_block(
+    stamp=)` already has. `seal_mark` positions it `position:absolute`
+    against ITS containing block, so this div needs `position:relative` only
+    when a stamp is actually given -- unconditional would give every OTHER
+    absolutely-positioned thing inside `.totals` (there is none today, but a
+    family's own CSS might add one) a new containing block it did not ask
+    for.
+    """
+    totals = parse.get("total") or {}
+    if not totals:
+        return ""
+    lines = list(totals.items())
+    picked = None if grand is None else (grand % len(lines))
+    out = []
+    for index, (label, value) in enumerate(lines):
+        emphasis = index == picked
+        kind = "total.grand" if emphasis else "total.line"
+        out.append(
+            f'<div class="trow{" grand" if emphasis else ""}">'
+            f'{span(f"{kind}.label", label, "lab")}'
+            f'{span(kind, value, "amt")}</div>')
+    position = "position:relative;" if stamp else ""
+    return (f'<div class="totals" style="margin-left:{indent * 100:.0f}%;{position}">'
+            f'{"".join(out)}{stamp}</div>')
+
+
+def signature_block(receipt, parse: dict, *, stamp: str = "", stamp_index: int = -1) -> str:
+    """The signature captions, and the names under them when the sheet has any.
+
+    The captions come from `receipt.invoice.signatures` rather than being
+    written out here: they are furniture, not label, but they are the *same*
+    furniture the character grid prints, and a document that says "Người bán
+    hàng" on one renderer and "Bên bán" on the other is two documents.
+
+    `stamp_index` is which column `stamp` (the issuer's own seal --
+    `seal_mark(anchor="signature_seller", ...)`, through `render_ornament_
+    marks()`) lands in, Python-indexed into `invoice.signatures` (so -1, the
+    default, is the last column). Most families list the issuer last (a
+    shop's own invoice: buyer, then seller); `lodging.py` lists the
+    receptionist FIRST ("Lễ tân", "Khách hàng"), so it passes `0` -- the
+    column order is each family's own layout choice, not something this
+    function should guess at.
+    """
+    invoice = getattr(receipt, "invoice", None)
+    if invoice is None or not invoice.signatures:
+        return ""
+    names = list((parse.get("invoice") or {}).get("signed_names") or [])
+    stamp_at = stamp_index % len(invoice.signatures)
+    columns = []
+    for index, (title, note) in enumerate(invoice.signatures):
+        who = names[index] if index < len(names) else ""
+        columns.append(
+            # `position:relative` inline, not left to each family's `.sign`
+            # rule. `seal_mark` places a slot-anchored stamp with
+            # `position:absolute;top:0;left:50%`, which resolves against the
+            # nearest POSITIONED ancestor -- so a family whose `.sign` is
+            # static sends the seal to `#sheet`'s own top-centre, straight
+            # across the letterhead. `lodging.py` happened to set it and was
+            # the only family drawing seals at all; the moment the other nine
+            # were wired up, the first page put a company seal through the
+            # middle of its own name. The requirement belongs to the function
+            # that emits the div, not to ten stylesheets that each have to
+            # remember it.
+            f'<div class="sign" style="position:relative;">'
+            f'{span("sign.title", title, "t")}'
+            f'<div class="n">{span("sign.note", note)}</div>'
+            f'<div class="who">{span("sign.name", who)}</div>'
+            f'{stamp if index == stamp_at else ""}'
+            f"</div>")
+    return f'<div class="signs">{"".join(columns)}</div>'
+
+
+def notes_blocks(lines: Sequence[str], *, limit: int | None = None) -> list[list[str]]:
+    """`invoice.notes` split into blocks on blank lines.
+
+    The same convention `_emit_notes` in `rulebase/layout.py` reads: a blank
+    entry ends a block, so one document can print a "who to pay" block and a
+    "how to reach us" block from the same flat list without either family
+    inventing its own key for the second one. `modern.py::_notes` and
+    `form.py::_notes_block` used to each parse this by hand, identically down
+    to the loop -- `limit` is the one place they differed (`modern.py` shows
+    at most two blocks side by side; `form.py` prints as many as the document
+    gives it), so it is the one parameter here rather than two functions.
+
+    Returns the *lines*, not markup: each family still turns a block into its
+    own shape (columns, boxes, `<p>` tags, an "h" class on a heading line),
+    which is the part that is genuinely different between them.
+    """
+    blocks: list[list[str]] = [[]]
+    for line in lines:
+        if line.strip():
+            blocks[-1].append(line)
+        else:
+            blocks.append([])
+    blocks = [block for block in blocks if block]
+    return blocks[:limit] if limit else blocks
+
+
+def footer_block(parse: dict) -> str:
+    lines = parse.get("footer") or []
+    if not lines:
+        return ""
+    return ('<div class="foot">'
+            + "".join(f'<div>{span("footer", line)}</div>' for line in lines)
+            + "</div>")
+
+
+def words_block(receipt, parse: dict) -> str:
+    invoice = parse.get("invoice") or {}
+    words = invoice.get("words", "")
+    if not words:
+        return ""
+    label = getattr(getattr(receipt, "invoice", None), "words_label", "")
+    return (f'<div class="words">{span("invoice.words.label", label, "wl")}'
+            f'{span("invoice.words", words)}</div>')
+
+
+# --------------------------------------------------------------------------
+# the page box
+
+
+# ------------------------------------------------------------------ nhiều trang
+
+# `page_order` itself lives in `rulebase/layout.py`, with the other facts about
+# what a layout FILE may say -- `agent/compose_layout.py` checks a composition
+# against the same rule before writing one, and it cannot import this package.
+# Re-exported here so a family reads `base.page_order` beside the two helpers
+# below, which ARE this package's business: how the items divide, and which
+# receipt each sheet draws.
+from rulebase.layout import (PageOrderError, TABLE_SECTION,  # noqa: E402
+                             page_order)
+
+
+def table_pages(pages: Sequence[Sequence[str]]) -> list[int]:
+    """Which sheets the item table runs onto, in order."""
+    return [index for index, page in enumerate(pages) if TABLE_SECTION in page]
+
+
+def split_items(count: int, pages: int, first: int | None = None) -> list[tuple[int, int]]:
+    """`(low, high)` into the item list for each sheet the table runs onto.
+
+    `first` is `table.rows_first` -- how many lines the opening sheet holds,
+    which is smaller than the rest because the letterhead, the parties and the
+    title are above them. Left None, the lines are divided evenly, which is
+    what a table with nothing above it does.
+
+    The remainder goes to the EARLIER sheets rather than the last: a final page
+    carrying one line and a signature block is the shape that reads as a
+    mistake, and it is the one this arithmetic is most likely to produce.
+    """
+    pages = max(int(pages), 1)
+    if pages == 1 or count <= 0:
+        return [(0, count)]
+    if first is not None and first > 0:
+        rest = max(count - first, 0)
+        others = pages - 1
+        per, extra = divmod(rest, others) if others else (0, 0)
+        bounds, cursor = [(0, min(first, count))], min(first, count)
+        for index in range(others):
+            take = per + (1 if index < extra else 0)
+            bounds.append((cursor, cursor + take))
+            cursor += take
+        return bounds
+    per, extra = divmod(count, pages)
+    bounds, cursor = [], 0
+    for index in range(pages):
+        take = per + (1 if index < extra else 0)
+        bounds.append((cursor, cursor + take))
+        cursor += take
+    return bounds
+
+
+def page_receipt(receipt, low: int, high: int):
+    """The same receipt showing only items `low:high`.
+
+    A copy, not a mutation: `ground_truth()` and `text_sequence()` are read
+    off the ORIGINAL after every sheet is drawn, because the record describes
+    one document however many sheets it took -- see `pipeline/record.py`'s
+    `pages[]`, which has carried a page number since schema 1.
+    """
+    from dataclasses import replace
+
+    return replace(receipt, items=list(receipt.items)[low:high])
+
+
+def document(body: str | Sequence[str], css: str, *, paper: str = "A4", padding: str = "10mm",
+            font: str = SERIF, size: str = "8.6pt", colour: str = "#111",
+            line_height: str = "1.3", overlay: str = "") -> str:
+    """The page skeleton both engines lay out identically.
+
+    `@page` gets `margin: 0` and the padding goes on `#sheet` rather than the
+    other way round, because the browser has no `@page`: putting the margin
+    there would give WeasyPrint a white border the browser's element screenshot
+    does not have, and the two renderers would disagree about where the paper
+    ends. `min-height` is a floor, not a height -- a page whose content grew
+    past its paper stays visible rather than being cropped into looking fine.
+
+    `paper` must be a `PAPERS` key. It used to fall back to A4 silently on
+    a miss -- harmless while every caller only ever passed "A4"/"A5"
+    (confirmed: every `sheets/*.py` call site did, at the time this was
+    tightened), but a real risk once a family needs several non-A4 sizes
+    (`periodical.py` uses four): a typo would render a wrong-sized page
+    with no error at all.
+
+    `overlay`: page-anchored fragments from `render_ornament_marks()` --
+    every `ornament.yaml` seal `mark` whose `anchor` is not one of the two
+    slots a family plugs in itself (`signature_seller`/`signature_buyer`
+    through `signature_block(stamp=)`, `totals` through `totals_block(
+    stamp=)`). Placed first inside `#sheet` so it paints *under* the real
+    content, and positioned against `#sheet`'s own box -- already
+    `position:relative;overflow:hidden`, which is also what gives
+    `page_edge_left` (the "giáp lai" seal that straddles the paper's edge)
+    its half-cut-off look for free.
+    """
+    if paper not in PAPERS:
+        raise KeyError(f"paper={paper!r} is not one of {', '.join(sorted(PAPERS))}")
+    width, height = PAPERS[paper]
+    # One sheet or several, the same skeleton. A list means the layout declared
+    # a `page_order`, and each entry is one printed side: its own element, its
+    # own screenshot, its own row in the record's `pages[]`. The FIRST keeps
+    # `id="sheet"` so every selector already written against it -- the
+    # renderer's `#sheet`, `sheets/__init__.py::_SHEET_OPEN`, the ornament CSS
+    # that positions a seal against the paper's own box -- keeps meaning what
+    # it meant. The rest are reached by `.sheet`, which is why the rule below
+    # is written for both.
+    bodies = [body] if isinstance(body, str) else list(body)
+    if not bodies:
+        bodies = [""]
+    sheets_html = "".join(
+        f'<div class="sheet"{"" if index else " id=\"sheet\""} '
+        f'data-page="{index + 1}">{overlay if index == 0 else ""}{piece}</div>'
+        for index, piece in enumerate(bodies))
+    return f"""<!doctype html><html lang="vi"><head><meta charset="utf-8"><style>
+{{FONT_FACES}}
+@page{{size:{paper} portrait;margin:0;}}
+*{{box-sizing:border-box;}}
+html,body{{margin:0;padding:0;background:#fff;}}
+#sheet,.sheet{{
+  position:relative;width:{width};min-height:{height};padding:{padding};
+  background:#fff;color:{colour};font-family:{font};font-size:{size};
+  line-height:{line_height};overflow:hidden;-webkit-font-smoothing:antialiased;
+}}
+table{{width:100%;border-collapse:collapse;}}
+thead.once{{display:table-row-group;}}
+td.r,th.r,.r{{text-align:right;}}
+td.c,th.c,.c{{text-align:center;}}
+.sub{{font-style:italic;color:#3a3a3a;}}
+.hatch{{background:repeating-linear-gradient(45deg,transparent 0 2.2mm,#00000014 2.2mm 3mm);}}
+table.rothdr{{table-layout:fixed;}}
+.vert{{writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;
+  padding-top:2mm;padding-bottom:2mm;}}
+.diag{{writing-mode:horizontal-tb;transform:rotate(-45deg);transform-origin:left bottom;
+  white-space:nowrap;display:inline-block;}}
+.foot div{{margin-top:.4mm;}}
+{css}
+.sheet+.sheet{{margin-top:6mm;}}
+</style></head><body>{sheets_html}</body></html>"""
+
+
+__all__ = [
+    "EVERY_RUN",
+    "MONO", "ORNAMENT_DIR", "PAPERS", "REPO_ROOT", "SANS", "SERIF", "Rows",
+    "align_class", "bilingual_field_line", "cell", "columns_of", "comb_box",
+    "document", "esc", "field_line",
+    "footer_block", "initials", "item_rows", "items_table", "key_strip",
+    "ncols_of", "notes_blocks", "ornament_url", "party_pairs", "party_rows",
+    # No `signed_lines` -- 459dfd4 deleted the function (zero callers) and
+    # took it out of this list; a later rewrite of the list put the name
+    # back without the function, so `from base import *` raised.
+    "qr_svg", "render_ornament_marks", "rng_for", "safe_align", "seal_mark",
+    "signature_block",
+    "span", "stamp", "structure_tokens",
+    "totals_block", "words_block",
+]

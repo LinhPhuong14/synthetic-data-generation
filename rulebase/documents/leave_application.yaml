@@ -1,0 +1,50 @@
+# THAM SỐ NỘI DUNG — leave_application
+#
+# ĐƠN XIN NGHỈ PHÉP: tờ nhân viên tự viết hoặc điền vào mẫu công ty, rồi đi
+# qua ba chỗ ký — người làm đơn, trưởng bộ phận, giám đốc. Không cơ quan nào
+# ban hành dáng, nên `free`.
+#
+# `yn_1`/`yn_2` là hai câu hỏi Có/Không mà tờ đơn nào cũng hỏi: đã bàn giao
+# công việc chưa, có hưởng lương không.
+
+profile: admin
+invoice: true
+no_items: true
+form_fields: true
+show_vat: false
+show_subtotal: false
+show_payment: false
+show_amount_words: false
+show_number: false
+show_seller_tax_code: false
+show_seller_website: false
+titles: ["ĐƠN XIN NGHỈ PHÉP", "ĐƠN XIN NGHỈ VIỆC RIÊNG"]
+serial_format: "{n}/ĐXNP"
+professions:
+  - "Nhân viên kinh doanh"
+  - "Kế toán viên"
+  - "Chuyên viên nhân sự"
+  - "Kỹ thuật viên"
+  - "Nhân viên kho vận"
+  - "Trợ lý dự án"
+party_fields:
+  left:
+    - [buyer_company, "Kính gửi"]
+    - [applicant_name, "Tôi tên là"]
+    - [profession, "Chức vụ"]
+    - [seller_unit, "Bộ phận"]
+  right:
+    - [date, "Nghỉ từ ngày"]
+    - [due_date, "Đến hết ngày"]
+    - [witness_name, "Người nhận bàn giao công việc"]
+    - [applicant_phone, "Số điện thoại liên hệ khi cần"]
+notes:
+  - "Lý do xin nghỉ:"
+  - "Tôi có việc riêng của gia đình cần giải quyết trong thời gian nêu trên."
+  - "Đã bàn giao đầy đủ công việc cho người có tên ở trên: {yn_1}"
+  - "Đề nghị được hưởng nguyên lương trong thời gian nghỉ: {yn_2}"
+  - "Tôi xin cam đoan trở lại làm việc đúng thời hạn và chấp hành đầy đủ nội quy của công ty."
+signature_labels:
+  - ["Người làm đơn", "(Ký, ghi rõ họ tên)"]
+  - ["Trưởng bộ phận", "(Ký, ghi rõ họ tên)"]
+  - ["Ban Giám đốc", "(Ký, đóng dấu)"]

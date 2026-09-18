@@ -1,0 +1,63 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: bang_diem
+profile: admin
+org_kind: state
+national: 0.85
+titles:
+- BẢNG ĐIỂM HỌC TẬP
+- BẢNG ĐIỂM TOÀN KHOÁ
+- KẾT QUẢ HỌC TẬP
+subtitles:
+- ''
+- (Bản chính)
+- Hệ đào tạo chính quy
+fields:
+- full_name
+- dob
+- id_no
+- record_no
+- period
+field_span:
+- 4
+- 5
+columns:
+- - stt
+  - name
+  - qty
+  - note
+- - stt
+  - ref
+  - name
+  - qty
+  - note
+- - stt
+  - name
+  - unit
+  - qty
+  - note
+totals: count
+words: false
+sign_sets:
+- - TRƯỞNG PHÒNG ĐÀO TẠO
+  - HIỆU TRƯỞNG
+- - NGƯỜI LẬP BẢNG
+  - HIỆU TRƯỞNG
+notes:
+- Bảng điểm chỉ có giá trị khi có dấu giáp lai của nhà trường.
+- Thang điểm 10, điểm đạt từ 4,0 trở lên.
+rows:
+- 8
+- 120
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- signatures
+optional:
+- meta
+- footer
+- notes
+- totals
+- footnote
+en_ok: true

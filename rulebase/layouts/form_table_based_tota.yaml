@@ -1,0 +1,64 @@
+# soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (totals_first), giữ nguyên cột và dây nối dữ liệu của form_table_based
+id: form_table_based_tota
+name: form_table_based — totals_first
+source: 'soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (totals_first), giữ nguyên cột và dây nối dữ liệu của form_table_based'
+family: form
+width:
+- 85
+- 95
+gutter: 2
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- header
+- table
+- totals
+- signatures
+- notes
+- footer
+header:
+  title: true
+checklist:
+  checked_rate: 0.6
+columns:
+- key: stt
+  title: STT
+  width: 5
+  align: center
+  title_align: center
+- key: name
+  title: Hạng mục kiểm tra
+  width: 0
+  align: left
+  title_align: left
+- key: qty
+  title: Giá trị đo được
+  width: 13
+  align: right
+  title_align: right
+- key: unit
+  title: Đơn vị
+  width: 10
+  align: center
+  title_align: center
+- key: amount
+  title: Chi phí
+  width: 14
+  align: right
+  title_align: right
+item:
+  wrap_name: true
+  rows:
+  - - col: stt
+      from: stt
+    - col: name
+      from: name
+    - col: qty
+      from: qty
+    - col: unit
+      from: unit
+    - col: amount
+      from: amount
+table:
+  caption: BẢNG KÊ CHI TIẾT

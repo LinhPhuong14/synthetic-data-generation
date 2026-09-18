@@ -1,0 +1,72 @@
+# soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (totals_first), giữ nguyên cột và dây nối dữ liệu của form_handover_record
+id: form_handover_record_tota
+name: form_handover_record — totals_first
+source: 'soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (totals_first), giữ nguyên cột và dây nối dữ liệu của form_handover_record'
+family: form
+width:
+- 86
+- 96
+gutter: 2
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- header
+- parties
+- table
+- totals
+- signatures
+- notes
+- footer
+header:
+  title: true
+fields:
+  columns: two
+columns:
+- key: stt
+  title: STT
+  width: 5
+  align: center
+  title_align: center
+- key: name
+  title: Tên tài sản, công cụ
+  width: 0
+  align: left
+  title_align: left
+- key: unit
+  title: ĐVT
+  width: 8
+  align: center
+  title_align: center
+- key: qty
+  title: Số lượng
+  width: 10
+  align: right
+  title_align: right
+- key: amount
+  title: Giá trị còn lại
+  width: 16
+  align: right
+  title_align: right
+item:
+  wrap_name: true
+  rows:
+  - - col: stt
+      from: stt
+    - col: name
+      from: name
+    - col: unit
+      from: unit
+    - col: qty
+      from: qty
+    - col: amount
+      from: amount
+signatures:
+  name_gap: 4
+  stamp_width: 22
+table:
+  caption: BẢNG KÊ CHI TIẾT
+  header_groups:
+  - title: Số tiền (đồng)
+    from: qty
+    to: amount

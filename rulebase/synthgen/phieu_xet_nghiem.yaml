@@ -1,0 +1,61 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: phieu_xet_nghiem
+profile: medical
+org_kind: hospital
+national: 0.7
+titles:
+- PHIẾU KẾT QUẢ XÉT NGHIỆM
+- PHIẾU XÉT NGHIỆM
+- KẾT QUẢ CẬN LÂM SÀNG
+subtitles:
+- ''
+- (Kết quả chỉ có giá trị cho mẫu đã nhận)
+- Khoa Xét nghiệm
+fields:
+- patient
+- dob
+- gender
+- record_no
+- diagnosis
+- ward
+- admitted
+field_span:
+- 5
+- 7
+columns:
+- - stt
+  - name
+  - qty
+  - unit
+  - note
+- - stt
+  - ref
+  - name
+  - qty
+  - unit
+  - note
+totals: none
+words: false
+sign_sets:
+- - BÁC SĨ ĐỌC KẾT QUẢ
+- - KỸ THUẬT VIÊN
+  - TRƯỞNG KHOA
+notes:
+- Kết quả cần được bác sĩ điều trị đọc cùng lâm sàng.
+- Mẫu được lưu trong 07 ngày kể từ ngày nhận.
+rows:
+- 5
+- 60
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- signatures
+optional:
+- meta
+- footer
+- notes
+- footnote
+- formula
+en_ok: false

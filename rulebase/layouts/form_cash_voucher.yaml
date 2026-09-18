@@ -1,0 +1,29 @@
+# PHIẾU THU — Mẫu số 01-TT. Khổ A5 dọc, khối trường hai cột (bên trái là người
+# nộp và số tiền, bên phải là ngày và hai tài khoản kế toán), một đoạn lý do,
+# NĂM chỗ ký trên một hàng.
+#
+# Hẹp hơn mọi bố cục A4 của kho vì tờ thật là nửa khổ: `width` 62..72 ký tự,
+# không phải 86..96. Đây cũng là bố cục duy nhất ở đây khai `sheet: a5`.
+id: form_cash_voucher
+name: Cash receipt voucher (01-TT) — A5, two-column fields, five signature slots
+source: "phiếu thu Mẫu số 01-TT (Thông tư 200/2014/TT-BTC) — khổ A5, năm chỗ ký"
+family: form
+
+width: [62, 72]
+gutter: 2
+rule_char: "-"
+sheet: a5
+rules: marks
+
+sections: [header, parties, notes, signatures, footer]
+
+header:
+  title: true
+
+fields:
+  columns: two
+
+signatures:
+  name_gap: 3
+  stamp_width: 18
+  stamp_gap: 2

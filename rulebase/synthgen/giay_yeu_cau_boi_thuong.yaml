@@ -1,0 +1,57 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: giay_yeu_cau_boi_thuong
+profile: insurance
+org_kind: company
+national: 0.4
+titles:
+- GIẤY YÊU CẦU BỒI THƯỜNG
+- ĐƠN YÊU CẦU TRẢ TIỀN BẢO HIỂM
+subtitles:
+- ''
+- Mẫu BT-01
+- ''
+fields:
+- insured
+- policy_no
+- dob
+- id_no
+- address_home
+- phone_home
+- cover_from
+field_span:
+- 5
+- 7
+columns:
+- - stt
+  - date
+  - name
+  - amount
+  - note
+totals: money
+words: false
+sign_sets:
+- - NGƯỜI YÊU CẦU
+- - NGƯỜI YÊU CẦU
+  - GIÁM ĐỊNH VIÊN
+  - DOANH NGHIỆP BẢO HIỂM
+notes:
+- Tôi cam đoan các thông tin khai trên là đúng sự thật.
+- Hồ sơ kèm theo gồm các chứng từ gốc.
+rows:
+- 1
+- 20
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- signatures
+optional:
+- meta
+- footer
+- notes
+- clauses
+- totals
+- checks
+- questions
+en_ok: false

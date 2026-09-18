@@ -1,0 +1,28 @@
+# giấy giới thiệu do cơ quan nhà nước cấp: quốc hiệu đứng trên, trường xếp MỘT cột chứ không hai, khổ A5
+# -- tờ nhỏ hơn nên chữ và ô ký đo ra khác hẳn bản doanh nghiệp
+id: form_dispatch_govt
+name: Introduction letter — national masthead, one field column, no table
+source: 'soạn tay theo agent/prompts/anatomy.md §4 — giấy giới thiệu do cơ quan nhà nước cấp: quốc hiệu đứng trên, trường xếp MỘT cột chứ không hai, khổ A5 -- tờ nhỏ hơn nên chữ và ô ký đo ra khác hẳn bản
+  doanh nghiệp'
+family: form
+width:
+- 80
+- 90
+gutter: 2
+rule_char: '-'
+sheet: a5
+rules: marks
+sections:
+- header
+- parties
+- notes
+- signatures
+- footer
+header:
+  masthead: govt
+  title: true
+fields:
+  columns: one
+signatures:
+  name_gap: 4
+  stamp_width: 22

@@ -1,0 +1,45 @@
+# This repository is not an installable package: the renderer has its own
+# dependencies and its own virtualenv, and the rule-base is meant to be
+# importable without them. What lives here is the tooling configuration shared
+# across both.
+
+[tool.ruff]
+line-length = 90
+# The rule-base and the tools around it must stay importable from an ordinary
+# system Python, which is older than the renderer's. Targeting the older one
+# keeps ruff from suggesting syntax that would break there.
+target-version = "py39"
+# Vendored third-party code keeps its own style and its own pre-commit config.
+# Keep this list in step with VENDORED in tools/paths.py, which is what
+# `tasks.py check` uses.
+extend-exclude = [
+    "augmentations",
+    # Runs inside Blender's own Python (3.10+), not this repo's py38 floor -- parenthesized
+    # `with` (PEP 617) and anything else newer than 3.8 is fine there. See its own NOTICE.md.
+    "degradation/blender/vendor",
+    ".venv*",
+]
+
+[tool.ruff.lint]
+# Correctness and imports; not a style crusade over code adapted from upstream.
+select = ["E", "F", "I"]
+ignore = [
+    "E501",  # long lines
+    "E731",  # assigned lambdas read fine in the layout helpers
+]
+
+[tool.pytest.ini_options]
+# `pythonpath` so `import rulebase` works without installing the package, and
+# so `conftest.py` helpers are importable by name from the test modules.
+testpaths = ["tests"]
+pythonpath = [".", "tests"]
+# No `-x`: stopping at the first failure hides every later one, and the whole
+# point of a suite this small is seeing the full picture in one run.
+addopts = "-q --strict-markers"
+# `slow` is for the tests that build real images through a renderer venv. They
+# are the only ones that can prove a claim about pixels, so they are part of
+# the suite rather than something to remember to run; `-m "not slow"` skips
+# them when the renderers are not built.
+markers = [
+    "slow: renders through a real backend; needs that renderer's virtualenv",
+]

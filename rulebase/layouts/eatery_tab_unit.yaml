@@ -1,0 +1,74 @@
+# soạn tay theo agent/prompts/anatomy.md §2
+# — phiếu tính tiền quán nhậu có cột đơn vị (chai / lon / đĩa): bốn cột một dòng, khác hẳn bản hai dòng có cột số thứ tự
+# — thêm cột đơn giá: `menu.unitprice` phải có chỗ in. thêm `item.discount_row` như phôi gốc: dòng khuyến mãi là chỗ `menu.discountprice` được in ra
+id: eatery_tab_unit
+name: Pub tab — unit column between the dish and the running amount
+source: 'soạn tay theo agent/prompts/anatomy.md §2 — phiếu tính tiền quán nhậu có cột đơn vị (chai / lon / đĩa): bốn cột một dòng, khác hẳn bản hai dòng có cột số thứ tự — thêm cột đơn giá: `menu.unitprice`
+  phải có chỗ in. thêm `item.discount_row` như phôi gốc: dòng khuyến mãi là chỗ `menu.discountprice` được in ra'
+family: till
+width:
+- 50
+- 58
+rule_char: '-'
+header:
+  name_scale:
+  - 1.15
+  - 1.45
+  name_bold: true
+  title: true
+  title_scale:
+  - 1.15
+  - 1.4
+meta:
+  style: two_column
+  rule_after: true
+column_header: true
+column_header_bold: false
+columns:
+- key: name
+  title: Món
+  width: 0
+  align: left
+  title_align: left
+- key: unit
+  title: ĐVT
+  width: 6
+  align: center
+  title_align: center
+- key: qty
+  title: SL
+  width: 4
+  align: right
+  title_align: right
+- key: unit_price
+  title: Đơn giá
+  width: 10
+  align: right
+  title_align: right
+- key: amount
+  title: Tiền
+  width: 12
+  align: right
+  title_align: right
+item:
+  wrap_name: true
+  rows:
+  - - col: name
+      from: name
+    - col: unit
+      from: unit
+    - col: qty
+      from: qty
+    - col: unit_price
+      from: unit_price
+    - col: amount
+      from: amount
+  discount_row:
+    label: Giảm giá
+totals:
+  emphasise_grand: true
+  grand_scale:
+  - 1.15
+  - 1.45
+footer:
+  rule_before: false

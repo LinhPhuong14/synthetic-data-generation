@@ -1,0 +1,90 @@
+# Hoá đơn nhiều mặt hàng — in ra HAI tờ A4.
+#
+# Quyết định (§4 anatomy):
+#   (3) bảng CÓ KHUNG đầy đủ và kẻ mọi dòng — dáng biểu mẫu in sẵn, không phải
+#       dáng laser hiện đại chỉ kẻ ngang.
+#   (5) khối tổng NGOÀI bảng, và nó sang tờ thứ hai cùng ô ký: chỗ người ta ký
+#       là chỗ có tổng tiền để đối chiếu.
+#   Bảng chạy qua cả hai tờ, tiêu đề cột IN LẠI ở tờ sau (`repeat_header`) —
+#       ngược với bảng kê viện phí, vì hoá đơn thương mại không có phần hành
+#       chính đánh số để người đọc bám vào.
+#
+# Số dòng hàng thật quyết định có tờ hai hay không: hoá đơn ít dòng gộp lại một
+# tờ. Xem `rulebase/layout.py::page_order`.
+id: invoice_long_ledger
+name: Long sales invoice — two A4 sheets, ruled grid, header repeated overleaf
+source: "soạn mới theo agent/prompts/anatomy.md §4 — không đo từ ảnh nào"
+family: modern
+
+width: [78, 90]
+gutter: 2
+rule_char: "="
+sheet: a4
+rules: marks
+
+sections: [header, strip, parties, table, totals, words, signatures, footer]
+
+page_order:
+  - [header, strip, parties, table]
+  - [table, totals, words, signatures, footer]
+
+header:
+  name_scale: [1.20, 1.40]
+  name_bold: true
+  title: true
+
+strip:
+  rule_after: true
+
+parties:
+  style: two_column
+  split: 0.55
+  gap: 3
+  boxed: true
+
+column_header: true
+column_header_bold: true
+columns:
+  - {key: stt,        title: "STT",                  width: 4,  align: center, title_align: center}
+  - {key: name,       title: "Tên hàng hoá, dịch vụ", width: 0,  align: left,   title_align: left}
+  - {key: unit,       title: "ĐVT",                  width: 8,  align: center, title_align: center}
+  - {key: qty,        title: "Số lượng",             width: 8,  align: right,  title_align: center}
+  - {key: unit_price, title: "Đơn giá",              width: 13, align: right,  title_align: center}
+  - {key: amount,     title: "Thành tiền",           width: 15, align: right,  title_align: center}
+
+item:
+  wrap_name: true
+  rows:
+    - - {col: stt, from: stt}
+      - {col: name, from: name}
+      - {col: unit, from: unit}
+      - {col: qty, from: qty}
+      - {col: unit_price, from: unit_price}
+      - {col: amount, from: amount}
+
+table:
+  # Bảng phải nói nó là bảng gì.
+  caption: "CHI TIẾT HÀNG HOÁ, DỊCH VỤ"
+  frame: true
+  row_rules: true
+  header_rules: true
+  shade: 0.06
+  repeat_header: true
+  rows_first: 8
+  blank_rows: 0
+
+totals:
+  frame: true
+  indent: 0.40
+  emphasise_grand: true
+
+words:
+  frame: true
+
+signatures:
+  name_gap: 4
+  stamp_gap: 2
+  stamp_width: 28
+
+footer:
+  rule_before: true

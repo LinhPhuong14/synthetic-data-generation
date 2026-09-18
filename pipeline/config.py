@@ -1,0 +1,438 @@
+"""One file declares a whole run, and a typo in it stops the run.
+
+    from pipeline.config import Config
+    config = Config.load("pipeline.yaml")
+
+`pipeline.yaml`:
+
+    run:      {out: data/run01, per_backend: 5000, seed: 2026, workers: auto,
+               pairing: paired}
+    backends: [html]
+    shard:    {size: 250}
+    overrides:
+      augmentation.torn_edges.weight: 0.5
+    quality:  {drift_tolerance: 0.15, sample_for_ocr: 500}
+
+Two properties matter more than the shape:
+
+**Unknown keys raise.** A `pipeline.yaml` with `ouput:` in it that runs anyway,
+using the default, is the silent failure this repository keeps being bitten by
+-- the same shape as a rules file the manifest forgets, or a tag with a typo in
+it that simply makes a value undrawable.
+
+**Every override must resolve.** `augmentation.no_such_value.weight` names
+nothing; accepting it would mean the run quietly used the unmodified weights
+while its config says otherwise, and nobody would find out from the output.
+
+`quality:` is parsed and carried but unused here -- W2 reads it. It is declared
+now so `pipeline.yaml` does not change shape between waves.
+"""
+
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+from pipeline.plan import DEFAULT_NAMING
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+# Where a run-specific rules directory is announced to the renderers. Unset
+# means the shipped `rulebase/rules/`, which is why a run without overrides is
+# byte-identical to one from before this existed.
+RULES_ENV = "VLM_RULES_ROOT"
+
+# Same idea, for LLM-composed content (`agent/compose.py`): a path to a JSON
+# file of `{seed: {field: value}}` overrides, read inside `rulebase/content.py`
+# -- not a new CLI flag or `Job`/`force` field, because a renderer subprocess
+# needing more than an id string is exactly what `RULES_ENV` above already
+# solves, and a second style for the same problem would be the wrong kind of
+# new. Unset means every field comes from corpus/params as it always has.
+CONTENT_OVERRIDES_ENV = "VLM_CONTENT_OVERRIDES"
+
+RUN_KEYS = {"out", "per_backend", "seed", "workers", "clean", "force", "pairing",
+            "layouts", "template", "naming", "save_html"}
+SHARD_KEYS = {"size"}
+QUALITY_KEYS = {"drift_tolerance", "sample_for_ocr"}
+TOP_KEYS = {"run", "backends", "shard", "overrides", "quality"}
+
+# Whether the backends draw the same receipts or different ones.
+#
+#   paired       all backends share one seed range: the same receipt, drawn
+#                three ways. This is what makes "the same seed gives the same
+#                words in the same columns whether the page was drawn glyph by
+#                glyph or screenshotted from a browser" a fact about the data
+#                rather than a claim about the sampler, and it is the only mode
+#                in which comparing the renderers means anything.
+#   independent  each backend gets its own seed block, so N backends give N
+#                times the distinct pages. For volume, not for comparison.
+#
+# `paired` is the default because the comparison is what this repository is
+# for, and because a dataset built the other way looks identical from outside.
+PAIRINGS = ("paired", "independent")
+DEFAULT_PAIRING = "paired"
+
+# Which backends a run may draw with, and which have been taken out of that job.
+#
+# The repository was built around three renderers drawing one receipt three
+# ways, and `pairing: paired` exists to make that comparison mean something.
+# That is no longer what it is for: **`html` is the renderer**, and the other
+# two have been retired from dataset generation for reasons that belong next to
+# the list rather than in a commit message nobody re-reads.
+#
+# They were retired first and deleted afterwards, and the distinction is the
+# whole reason this dict still exists. `generators/genalog/` and
+# `generators/synthdog/` are gone from the tree -- but 115 of the pages they
+# drew are still committed under `data/dataset60/`, `data/invoices54/`,
+# `data/forms16/` and `data/dataset_test/`, and every tool that READS a dataset
+# (`tools/check_boxes.py`, `tools/ocr_proof.py`, `tools/monitor.py`,
+# `pipeline/drift.py`, `pipeline/record.py::framework_of`) still handles their
+# records and must keep doing so. Deleting a renderer does not un-draw its
+# pages.
+#
+# So the names live on here, for one job: a config that asks for one of them
+# gets a sentence saying what happened, instead of the generic "not a backend"
+# it would otherwise get from a lookup miss.
+ACTIVE_BACKENDS = ("html",)
+GONE_BACKENDS = {
+    "genalog": (
+        "deleted. WeasyPrint recovered a box by walking the labelled runs "
+        "beside the PDF's own glyph layer, which cost a second implementation "
+        "of the page geometry for every feature the browser backend gained"
+    ),
+    "synthdog": (
+        "deleted. It drew a character grid, not a CSS sheet, so it could not "
+        "print any layout added since generators/html/sheets/. The textures it "
+        "is remembered for are generated by `make patterns`, which never called "
+        "synthtiger; see docs/renderers.md"
+    ),
+}
+
+
+class ConfigError(ValueError):
+    """The run declaration is wrong, and running it would not mean what it says."""
+
+
+def _reject_unknown(section: str, given: dict, known: set[str]) -> None:
+    unknown = sorted(set(given) - known)
+    if unknown:
+        raise ConfigError(
+            f"{section}: unknown keys {unknown}; allowed are {sorted(known)}"
+        )
+
+
+@dataclass(frozen=True)
+class Config:
+    out: Path
+    # Images per backend, or 0 for `auto`: "one of every layout", resolved
+    # against the run's layout list by `pipeline/plan.py::build_plan`, which is
+    # the first place that knows how many layouts there are.
+    per_backend: int
+    seed: int
+    workers: int          # already resolved: `auto` becomes a number here
+    backends: tuple[str, ...]
+    shard_size: int
+    clean: bool = False
+    force: tuple[str, ...] = ()
+    pairing: str = DEFAULT_PAIRING
+    # Which layouts this run draws from, by name. Empty means "whatever is in
+    # `rulebase/layouts/`", which is right for a dataset and wrong for a fixed
+    # comparison: `split_by_layout` walks the list in order, so a run that took
+    # the directory silently draws different layouts the day someone adds one.
+    layouts: tuple[str, ...] = ()
+    # Which page model the HTML backends draw. Empty means the character grid
+    # every backend has drawn since the beginning; `auto` means the CSS sheet
+    # for the layout the recipe drew (`generators/html/sheets/`); a layout id
+    # forces one particular dress. The glyph backend has no CSS at all, so a run
+    # that asks for a sheet must not include it -- see `Config.from_dict`.
+    template: str = ""
+    # Beside every image, its own page's markup as `.html` -- see
+    # `generators/html/render.py --save-html`. Off by default, same reason a
+    # run that never asked for it should not carry it.
+    save_html: bool = False
+    # A format string over `backend`, `index`, and any rule-base attribute a
+    # page was drawn with (`document`, `layout`, `visual`, ...). The default
+    # keeps every filename this repository has ever committed unchanged;
+    # naming by document type, or by anything else, is `run.naming` in
+    # `pipeline.yaml` -- one line, not a rule this file hardcodes. See
+    # `resolve_naming` for what makes a template valid.
+    naming: str = DEFAULT_NAMING
+    overrides: dict[str, Any] = field(default_factory=dict)
+    quality: dict[str, Any] = field(default_factory=dict)
+    source: Path | None = None
+
+    @classmethod
+    def load(cls, path: Path | str) -> "Config":
+        path = Path(path)
+        if not path.exists():
+            raise ConfigError(f"no config at {path}")
+        raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        return cls.from_dict(raw, source=path)
+
+    @classmethod
+    def from_dict(cls, raw: dict, source: Path | None = None) -> "Config":
+        if not isinstance(raw, dict):
+            raise ConfigError("the config must be a mapping")
+        _reject_unknown("config", raw, TOP_KEYS)
+
+        run = raw.get("run") or {}
+        if not isinstance(run, dict):
+            raise ConfigError("run: must be a mapping")
+        _reject_unknown("run", run, RUN_KEYS)
+
+        shard = raw.get("shard") or {}
+        _reject_unknown("shard", shard, SHARD_KEYS)
+
+        quality = raw.get("quality") or {}
+        _reject_unknown("quality", quality, QUALITY_KEYS)
+
+        backends = raw.get("backends")
+        if not backends:
+            raise ConfigError("backends: at least one is required")
+        if not isinstance(backends, list):
+            raise ConfigError("backends: must be a list")
+        # A retired backend is refused here, by name and with the reason, so a
+        # config that would draw a third of its images from a renderer nobody
+        # maintains fails before any work is done. A name that is merely
+        # UNKNOWN is not refused here: the seed arithmetic in `pipeline/plan.py`
+        # is genuinely N-backend and its tests need to name more than one, and
+        # `pipeline/worker.BACKENDS` is what actually has to resolve a name to a
+        # script -- that is where a typo stops.
+        for name in map(str, backends):
+            if name in GONE_BACKENDS:
+                raise ConfigError(
+                    f"backends: {name!r} is {GONE_BACKENDS[name]}. "
+                    f"Drawable backends are {list(ACTIVE_BACKENDS)}."
+                )
+
+        out = run.get("out")
+        if not out:
+            raise ConfigError("run.out: required")
+
+        if run.get("per_backend") is None:
+            raise ConfigError("run.per_backend: required (a number, or 'auto')")
+        per_backend = resolve_per_backend(run["per_backend"])
+
+        size = int(shard.get("size", 250))
+        if size < 1:
+            raise ConfigError(f"shard.size: must be >= 1, got {size}")
+
+        overrides = raw.get("overrides") or {}
+        if not isinstance(overrides, dict):
+            raise ConfigError("overrides: must be a mapping of 'attr.id.field' to value")
+
+        pairing = str(run.get("pairing", DEFAULT_PAIRING))
+        if pairing not in PAIRINGS:
+            raise ConfigError(
+                f"run.pairing: expected one of {list(PAIRINGS)}, got {pairing!r}")
+
+        layouts = run.get("layouts") or ()
+        if isinstance(layouts, str) or not isinstance(layouts, (list, tuple)):
+            raise ConfigError("run.layouts: must be a list of layout names")
+
+        # `grid` is a value, not an absence. It used to arrive as "", so a
+        # config that never mentioned a page model produced the older one and
+        # said so nowhere -- and the page model is the single largest visual
+        # decision in a run. Written down it can be argued with; defaulted it
+        # cannot. `pipeline.yaml` states it.
+        template = str(run.get("template") or "grid")
+        if template == "grid":
+            template = ""                      # what the backends call the grid
+        elif template != "auto" and not template.replace("_", "").isalnum():
+            raise ConfigError(
+                f"run.template: expected 'grid', 'auto' or a layout id, got "
+                f"{template!r}")
+
+        naming = resolve_naming(run.get("naming"))
+
+        return cls(
+            # Absolute here, at the edge, once. A renderer that runs from its
+            # own directory turns a relative output path into a directory
+            # under itself -- silently, because a backend creates whatever it
+            # is given. That is how the glyph backend used to eat a run's
+            # output. Resolving late is what makes it possible; resolving here
+            # is what stops it, for any backend added later too.
+            out=Path(out).expanduser().resolve(),
+            per_backend=per_backend,
+            seed=int(run.get("seed", 2026)),
+            workers=resolve_workers(run.get("workers", "auto")),
+            backends=tuple(str(name) for name in backends),
+            shard_size=size,
+            clean=bool(run.get("clean", False)),
+            force=tuple(str(item) for item in (run.get("force") or ())),
+            pairing=pairing,
+            layouts=tuple(str(name) for name in layouts),
+            template=template,
+            save_html=bool(run.get("save_html", False)),
+            naming=naming,
+            overrides=dict(overrides),
+            quality=dict(quality),
+            source=source,
+        )
+
+
+def resolve_per_backend(value: Any) -> int:
+    """`auto` -> 0, meaning "one image of every layout, whatever there are".
+
+    Zero rather than a number, because the number is not knowable here: this
+    file never reads `rulebase/layouts/`, and the layout list is only settled in
+    `pipeline/run.py` (a run may name its own). `pipeline/plan.py::build_plan`
+    turns the zero into `len(layouts)` and records the result in `plan.json`, so
+    the dataset still says the number it was built with.
+
+    It exists because the alternative was a config that goes stale by addition:
+    every layout must get at least one image or the run refuses to start, so
+    `per_backend: 20` was fine at eighteen layouts and refuses to run at
+    forty-two. The floor moves whenever somebody adds a YAML file, and a default
+    config that stops working the day the repository grows is a default nobody
+    can trust.
+    """
+    if isinstance(value, str):
+        if value.strip().lower() != "auto":
+            raise ConfigError(
+                f"run.per_backend: expected a number or 'auto', got {value!r}")
+        return 0
+    per_backend = int(value)
+    if per_backend < 1:
+        raise ConfigError(f"run.per_backend: must be >= 1, got {per_backend}")
+    return per_backend
+
+
+def resolve_naming(value: Any) -> str:
+    """A checked `run.naming`, or `DEFAULT_NAMING` if the run named none.
+
+    Checked once, here, against every placeholder a template could legally
+    use -- `backend`, `index`, and every attribute name `rulebase/rules/`
+    ships (read from `_order.yaml` through `rulebase.spec.ATTRIBUTES`, not
+    listed by hand, so an attribute added later is usable in a template
+    without a change on this side) plus `variant`, which only an agent run
+    adds. A typo here is a config that runs for hours and never once agrees
+    with itself about a file's name; the alternative is a `KeyError` three
+    shards in, with no line number pointing at `pipeline.yaml`.
+    """
+    from rulebase.spec import ATTRIBUTES
+
+    template = str(value or DEFAULT_NAMING)
+    sample = {"backend": "html", "index": 0,
+             **{name: "x" for name in ATTRIBUTES}, "variant": "x"}
+    try:
+        template.format(**sample)
+    except KeyError as error:
+        raise ConfigError(
+            f"run.naming: {template!r} names {error}, which is not `backend`, "
+            f"`index`, or a rule-base attribute; have "
+            f"{', '.join(sorted(sample))}") from error
+    except (IndexError, ValueError) as error:
+        raise ConfigError(f"run.naming: {template!r} is not a valid format string ({error})")
+    return template
+
+
+def resolve_workers(value: Any) -> int:
+    """`auto` -> one fewer than the CPUs, so the machine stays usable."""
+    if isinstance(value, str):
+        if value.strip().lower() != "auto":
+            raise ConfigError(f"run.workers: expected a number or 'auto', got {value!r}")
+        return max(1, (os.cpu_count() or 2) - 1)
+    workers = int(value)
+    if workers < 1:
+        raise ConfigError(f"run.workers: must be >= 1, got {workers}")
+    return workers
+
+
+# ---------------------------------------------------------------- overrides
+
+
+def apply_overrides(rules: dict, overrides: dict[str, Any]) -> dict:
+    """Return `rules` with `attribute.id.field` entries replaced.
+
+    Only fields that already exist on the option may be set. Inventing one --
+    `visual.laser_sharp.wieght` -- would be accepted silently by a looser
+    implementation and change nothing, which is the failure this rejects.
+    """
+    from rulebase.spec import Option
+
+    if not overrides:
+        return rules
+
+    patched = {attribute: list(options) for attribute, options in rules.items()}
+    for path, value in overrides.items():
+        parts = str(path).split(".")
+        if len(parts) != 3:
+            raise ConfigError(
+                f"overrides: {path!r} should be 'attribute.value_id.field', "
+                f"e.g. augmentation.torn_edges.weight"
+            )
+        attribute, option_id, attr = parts
+        if attribute not in patched:
+            raise ConfigError(
+                f"overrides: {path!r} names attribute {attribute!r}, which does not "
+                f"exist; have {sorted(patched)}"
+            )
+        index = next((i for i, o in enumerate(patched[attribute]) if o.id == option_id), None)
+        if index is None:
+            raise ConfigError(
+                f"overrides: {path!r} names {attribute}/{option_id!r}, which does not "
+                f"exist; have {sorted(o.id for o in patched[attribute])}"
+            )
+        option = patched[attribute][index]
+        if attr not in {"weight", "tags", "requires", "excludes"}:
+            raise ConfigError(
+                f"overrides: {path!r} sets {attr!r}; only weight, tags, requires "
+                f"and excludes can be overridden (params belong in the rules file)"
+            )
+        raw = {
+            "id": option.id,
+            "weight": option.weight,
+            "tags": sorted(option.tags),
+            "requires": sorted(option.requires),
+            "excludes": sorted(option.excludes),
+            "params": option.params,
+        }
+        raw[attr] = value
+        patched[attribute][index] = Option.from_dict(raw, attribute)
+    return patched
+
+
+def materialise_rules(rules: dict, destination: Path) -> Path:
+    """Write `rules` out as a rules directory a renderer can be pointed at.
+
+    The renderers are separate processes with their own interpreters, so an
+    override cannot be handed over as a Python object -- it has to become files.
+    `_order.yaml` is written from the mapping's own order, which is where draw
+    order lives since W0.
+    """
+    destination.mkdir(parents=True, exist_ok=True)
+    for attribute, options in rules.items():
+        payload = {"options": [
+            {
+                "id": option.id,
+                "weight": option.weight,
+                **({"tags": sorted(option.tags)} if option.tags else {}),
+                **({"requires": sorted(option.requires)} if option.requires else {}),
+                **({"excludes": sorted(option.excludes)} if option.excludes else {}),
+                **({"params": option.params} if option.params else {}),
+            }
+            for option in options
+        ]}
+        (destination / f"{attribute}.yaml").write_text(
+            yaml.safe_dump(payload, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    (destination / "_order.yaml").write_text(
+        yaml.safe_dump({"order": list(rules)}, allow_unicode=True), encoding="utf-8")
+    return destination
+
+
+__all__ = [
+    "Config",
+    "ConfigError",
+    "CONTENT_OVERRIDES_ENV",
+    "RULES_ENV",
+    "apply_overrides",
+    "materialise_rules",
+    "resolve_naming",
+    "resolve_per_backend",
+    "resolve_workers",
+]

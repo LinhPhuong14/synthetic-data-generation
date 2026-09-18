@@ -1,0 +1,8 @@
+# Tráng miệng — thực đơn nhà hàng.
+# Định dạng: tên món<TAB>giá thấp<TAB>giá cao   (đơn vị VND)
+Chè khúc bạch	29000	39000
+Bánh flan caramel	19000	29000
+Trái cây theo mùa	29000	45000
+Rau câu dừa	19000	29000
+Kem dừa Bến Tre	25000	35000
+Chè đậu xanh nước cốt dừa	19000	25000

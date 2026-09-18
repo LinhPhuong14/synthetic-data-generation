@@ -1,0 +1,76 @@
+# soạn tay theo agent/prompts/anatomy.md §2
+# — mỗi món chiếm HAI dòng: dòng trên là số thứ tự và tên món trải hết bề ngang, dòng dưới là số lượng / đơn giá / thành tiền thụt vào
+# — bề ngang lưới rộng hơn bản một dòng vì mỗi món đã tốn hai dòng: tên ít xuống dòng thì trang mới vừa khổ A4 (đo: 108.7% khi [58,66])
+# — in cả `note` như phôi gốc: bỏ một cột là để lại một trường trong nhãn mà giấy không có chỗ in, đặt vào ô `stt` bỏ trống của dòng số liệu để không tốn thêm dòng
+id: eatery_menu_two_row
+name: Restaurant bill A4 — dish name on its own line, figures indented below
+source: 'soạn tay theo agent/prompts/anatomy.md §2 — mỗi món chiếm HAI dòng: dòng trên là số thứ tự và tên món trải hết bề ngang, dòng dưới là số lượng / đơn giá / thành tiền thụt vào — bề ngang lưới rộng
+  hơn bản một dòng vì mỗi món đã tốn hai dòng: tên ít xuống dòng thì trang mới vừa khổ A4 (đo: 108.7% khi [58,66]) — in cả `note` như phôi gốc: bỏ một cột là để lại một trường trong nhãn mà giấy không có
+  chỗ in, đặt vào ô `stt` bỏ trống của dòng số liệu để không tốn thêm dòng'
+family: till
+width:
+- 72
+- 82
+sheet: a4
+rule_char: '-'
+header:
+  name_scale:
+  - 1.15
+  - 1.45
+  name_bold: true
+  title: true
+  title_scale:
+  - 1.15
+  - 1.4
+meta:
+  style: pipes
+  rule_after: false
+column_header: true
+column_header_bold: false
+columns:
+- key: stt
+  title: TT
+  width: 4
+  align: center
+  title_align: center
+- key: qty
+  title: Số lượng
+  width: 10
+  align: right
+  title_align: right
+- key: unit_price
+  title: Đơn giá
+  width: 12
+  align: right
+  title_align: right
+- key: amount
+  title: Thành tiền
+  width: 13
+  align: right
+  title_align: right
+item:
+  wrap_name: true
+  rows:
+  - - col: stt
+      from: stt
+    - from: name
+      span:
+      - qty
+      - amount
+      align: left
+  - - col: stt
+      from: note
+      align: left
+    - col: qty
+      from: qty
+    - col: unit_price
+      from: unit_price
+    - col: amount
+      from: amount
+totals:
+  emphasise_grand: true
+  grand_scale:
+  - 1.15
+  - 1.45
+footer:
+  rule_before: false

@@ -1,0 +1,57 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: bien_ban_vi_pham
+profile: admin
+org_kind: state
+national: 0.95
+titles:
+- BIÊN BẢN VI PHẠM HÀNH CHÍNH
+- BIÊN BẢN XỬ LÝ VI PHẠM
+subtitles:
+- ''
+- Mẫu số 01/BB
+fields:
+- full_name
+- dob
+- gender
+- id_no
+- address_home
+- record_no
+- period
+field_span:
+- 5
+- 7
+columns:
+- - stt
+  - name
+  - note
+- - stt
+  - name
+  - qty
+  - note
+totals: none
+words: false
+sign_sets:
+- - NGƯỜI VI PHẠM
+  - NGƯỜI LẬP BIÊN BẢN
+- - NGƯỜI VI PHẠM
+  - NGƯỜI CHỨNG KIẾN
+  - NGƯỜI LẬP BIÊN BẢN
+notes:
+- Biên bản lập thành hai bản, mỗi bên giữ một bản.
+- Người vi phạm có quyền giải trình trong thời hạn 05 ngày.
+rows:
+- 0
+- 12
+always:
+- letterhead
+- doctitle
+- fields
+- clauses
+- signatures
+optional:
+- meta
+- footer
+- notes
+- legal_basis
+- table
+en_ok: false

@@ -1,0 +1,36 @@
+# Phôi khai bằng FILE — ví dụ có thật, và là thứ kiểm rằng đường dây này chạy.
+# `synthgen/archetypes.py` tả định dạng; `synthgen/design.py` gộp nó vào.
+#
+# Biên nhận hồ sơ: bộ phận một cửa nhận giấy tờ của dân, liệt kê từng loại,
+# hẹn ngày trả. Không tiền, nên `totals: none`.
+id: bien_nhan_ho_so
+titles:
+  - BIÊN NHẬN HỒ SƠ
+  - GIẤY BIÊN NHẬN HỒ SƠ
+  - PHIẾU TIẾP NHẬN HỒ SƠ
+subtitles:
+  - ""
+  - (Mẫu 05/BN)
+  - Bộ phận tiếp nhận và trả kết quả
+profile: admin
+org_kind: state
+national: 0.8
+fields: [full_name, id_no, address_home, phone_home, record_no, period]
+field_span: [4, 6]
+columns:
+  - [stt, name, unit, note]
+  - [stt, name, qty, note]
+  - [stt, ref, name, qty, note]
+totals: count
+words: false
+sign_sets:
+  - [NGƯỜI NỘP HỒ SƠ, NGƯỜI TIẾP NHẬN]
+  - [Người nộp, Cán bộ tiếp nhận, Lãnh đạo bộ phận]
+notes:
+  - Biên nhận này được lập thành hai bản, mỗi bên giữ một bản.
+  - Đề nghị mang theo biên nhận khi đến nhận kết quả.
+  - Quá hạn hẹn trả mà chưa nhận được kết quả, đề nghị liên hệ bộ phận tiếp nhận.
+rows: [2, 22]
+always: [letterhead, doctitle, fields, table, signatures]
+optional: [meta, notes, footer, totals]
+en_ok: false

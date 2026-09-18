@@ -1,0 +1,26 @@
+# Cơ quan/đơn vị phát hành giấy tờ hành chính: tên pháp nhân<TAB>phòng ban phát hành.
+#
+# Khác `shops_invoice.txt` ở cột hai: hoá đơn GTGT ghi CHI NHÁNH phát hành, còn
+# một giấy giới thiệu hay một biên bản bàn giao ghi PHÒNG BAN — vì tờ giấy đi
+# giữa các bộ phận của cùng một pháp nhân, không giữa hai pháp nhân. Cột hai in
+# ngay dưới tên công ty, đúng chỗ tờ thật đặt nó.
+#
+# Có cả đơn vị sự nghiệp và ban quản lý, không chỉ công ty: giấy giới thiệu và
+# biên bản họp là loại giấy mà một trường học hay một ban quản lý dự án in
+# nhiều hơn một doanh nghiệp thương mại.
+
+CÔNG TY CỔ PHẦN XÂY DỰNG VÀ THƯƠNG MẠI TIẾN ĐẠT	Phòng Hành chính — Nhân sự
+CÔNG TY TNHH KỸ THUẬT CÔNG NGHIỆP HOÀNG LONG	Phòng Tổ chức — Hành chính
+CÔNG TY CỔ PHẦN ĐẦU TƯ HẠ TẦNG PHƯƠNG NAM	Ban Quản lý dự án số 1
+CÔNG TY TNHH SẢN XUẤT VÀ XUẤT NHẬP KHẨU MINH QUANG	Phòng Kế hoạch — Vật tư
+CÔNG TY CỔ PHẦN DỊCH VỤ VÀ THƯƠNG MẠI ĐÔNG Á	Văn phòng Công ty
+CÔNG TY TNHH MỘT THÀNH VIÊN MÔI TRƯỜNG ĐÔ THỊ SÔNG HỒNG	Đội Quản lý vận hành
+TRUNG TÂM DỊCH VỤ VIỆC LÀM TỈNH HÀ NAM	Phòng Tổ chức — Hành chính
+TRƯỜNG TRUNG CẤP NGHỀ KỸ THUẬT CÔNG NGHỆ VIỆT HÀN	Phòng Đào tạo
+CÔNG TY CỔ PHẦN LOGISTICS VÀ VẬN TẢI HẢI ĐĂNG	Phòng Điều hành kho vận
+CÔNG TY TNHH THIẾT BỊ Y TẾ AN KHANG	Phòng Hành chính tổng hợp
+BAN QUẢN LÝ CHỢ ĐẦU MỐI PHÍA NAM	Tổ Hành chính
+CÔNG TY CỔ PHẦN NÔNG SẢN THỰC PHẨM TÂY ĐÔ	Phòng Kinh doanh
+CÔNG TY TNHH TƯ VẤN VÀ GIÁM SÁT XÂY DỰNG BẢO TÍN	Phòng Kỹ thuật
+CÔNG TY CỔ PHẦN CƠ KHÍ VÀ LẮP MÁY SỐ 5	Phân xưởng Cơ khí
+CÔNG TY TNHH PHẦN MỀM VÀ GIẢI PHÁP SỐ VIỆT TIN	Phòng Dự án

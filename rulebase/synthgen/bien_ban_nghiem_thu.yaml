@@ -1,0 +1,64 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: bien_ban_nghiem_thu
+profile: invoice
+org_kind: company
+national: 0.6
+titles:
+- BIÊN BẢN NGHIỆM THU
+- BIÊN BẢN NGHIỆM THU HOÀN THÀNH HẠNG MỤC
+- BIÊN BẢN NGHIỆM THU CÔNG VIỆC XÂY DỰNG
+subtitles:
+- ''
+- 'Số: ..../BBNT'
+- (Theo Nghị định 06/2021/NĐ-CP)
+fields:
+- party_a
+- party_b
+- contract_no
+- object
+- period
+field_span:
+- 4
+- 5
+columns:
+- - stt
+  - name
+  - unit
+  - qty
+  - note
+- - stt
+  - ref
+  - name
+  - unit
+  - qty
+  - unit_price
+  - amount
+totals: money
+words: false
+sign_sets:
+- - ĐẠI DIỆN BÊN GIAO THẦU
+  - ĐẠI DIỆN BÊN NHẬN THẦU
+- - CHỦ ĐẦU TƯ
+  - TƯ VẤN GIÁM SÁT
+  - NHÀ THẦU THI CÔNG
+notes:
+- Các bên thống nhất nghiệm thu và đưa hạng mục vào sử dụng.
+- Biên bản là căn cứ thanh toán khối lượng hoàn thành.
+rows:
+- 2
+- 60
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- signatures
+optional:
+- meta
+- footer
+- notes
+- totals
+- clauses
+- legal_basis
+- figure
+en_ok: false

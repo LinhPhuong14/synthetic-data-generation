@@ -1,0 +1,55 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: bang_cham_cong_tang_ca
+profile: admin
+org_kind: company
+national: 0.2
+titles:
+- BẢNG CHẤM CÔNG LÀM THÊM GIỜ
+- BẢNG THEO DÕI TĂNG CA
+- BẢNG KÊ GIỜ LÀM THÊM
+subtitles:
+- Tháng ..../....
+- ''
+- Mẫu số 01b-LĐTL
+fields:
+- seller_name
+- period
+field_span:
+- 1
+- 2
+columns:
+- - stt
+  - name
+  - date
+  - qty
+  - note
+- - stt
+  - name
+  - qty
+  - unit_price
+  - amount
+  - note
+totals: count
+words: false
+sign_sets:
+- - NGƯỜI CHẤM CÔNG
+  - PHỤ TRÁCH BỘ PHẬN
+  - GIÁM ĐỐC
+notes:
+- Giờ làm thêm được tính theo quy định tại Điều 98 Bộ luật Lao động.
+rows:
+- 6
+- 90
+always:
+- letterhead
+- doctitle
+- table
+- signatures
+optional:
+- meta
+- footer
+- notes
+- totals
+- fields
+- footnote
+en_ok: false

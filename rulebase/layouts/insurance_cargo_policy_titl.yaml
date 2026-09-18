@@ -1,0 +1,48 @@
+# soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (title_first), giữ nguyên cột và dây nối dữ liệu của insurance_cargo_policy
+id: insurance_cargo_policy_titl
+name: insurance_cargo_policy — title_first
+source: 'soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (title_first), giữ nguyên cột và dây nối dữ liệu của insurance_cargo_policy'
+family: insurance
+composition: cargo_policy
+width:
+- 92
+- 104
+gutter: 2
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- doctitle
+- letterhead
+- parties
+- notes
+- signatures
+- footer
+letterhead:
+  frame: false
+  labels:
+    address: ''
+    tax_code: ''
+    phone: ''
+    account: ''
+    branch: ''
+    form_no: ''
+    serial: ''
+    number: 'Policy No.:'
+parties:
+  style: stacked
+bilingual_left:
+- - The Assured
+  - Người được bảo hiểm
+- - Address
+  - Địa chỉ
+- - Vessel / Conveyance
+  - Phương tiện vận chuyển
+- - Marks & Numbers
+  - Ký mã hiệu
+- - From
+  - Từ
+- - To
+  - Đến
+- - Sum insured
+  - Số tiền bảo hiểm

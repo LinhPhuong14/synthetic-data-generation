@@ -1,0 +1,50 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: thong_bao
+profile: admin
+org_kind: state
+national: 0.9
+titles:
+- THÔNG BÁO
+- THÔNG BÁO NỘI BỘ
+- THÔNG BÁO KẾT LUẬN
+subtitles:
+- Về việc ....
+- ''
+- 'Kính gửi: Các đơn vị trực thuộc'
+fields:
+- record_no
+- period
+field_span:
+- 2
+- 2
+columns:
+- - stt
+  - name
+  - date
+  - note
+totals: none
+words: false
+sign_sets:
+- - TL. GIÁM ĐỐC
+  - CHÁNH VĂN PHÒNG
+- - NƠI NHẬN
+  - GIÁM ĐỐC
+notes:
+- Đề nghị các đơn vị nghiêm túc triển khai thực hiện.
+- Thông báo này thay cho giấy mời họp.
+rows:
+- 0
+- 14
+always:
+- letterhead
+- doctitle
+- notes
+- signatures
+optional:
+- meta
+- footer
+- clauses
+- table
+- footnote
+- legal_basis
+en_ok: false

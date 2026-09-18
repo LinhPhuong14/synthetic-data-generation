@@ -1,0 +1,49 @@
+{
+  "_doc": [
+    "Nhóm trường KIE lồng nhau. Khoá là TIỀN TỐ của `data-kind`, không phải tên",
+    "trường in trên giấy -- `kind` là từ vựng ĐÓNG do code sinh, nên một loại",
+    "chứng từ mới dùng lại nhóm cũ mà không ai phải thêm dòng nào ở đây. Cùng",
+    "lý lẽ `rulebase/kie_glossary.py` tra hai tầng và đặt tầng `kind` làm tầng",
+    "bảo đảm.",
+    "",
+    "`min_fields` là số trường TỐI THIỂU để nhóm được dựng. Một đối tượng bọc",
+    "đúng một trường không nói thêm gì cả -- nó chỉ làm đường dẫn dài thêm một",
+    "đoạn, nên dưới ngưỡng thì trường ở lại tầng một.",
+    "",
+    "Họ `invoice.` CỐ Ý không có ở đây: nó là chỗ chứa mọi cặp nhãn-giá trị",
+    "chung chung, đo được 99 trường khác nhau trên 80 tờ. Gộp chúng vào một",
+    "đối tượng là đặt tên 'thông tin' cho một cái túi, và một cái túi có tên",
+    "vẫn là một cái túi."
+  ],
+  "groups": {
+    "store.": {
+      "name": "thong_tin_don_vi",
+      "describe": "Issuing organisation: its name, address and registration numbers."
+    },
+    "sign.": {
+      "name": "chu_ky",
+      "describe": "The people who sign this document and the capacity each signs in."
+    },
+    "total.": {
+      "name": "tong_cong",
+      "describe": "Totals printed at the foot of the document."
+    },
+    "meta.": {
+      "name": "so_hieu_van_ban",
+      "describe": "Reference marks of the form itself: form number, serial, document number."
+    },
+    "toc.": {
+      "name": "muc_luc",
+      "describe": "Table of contents: each heading and the page it starts on."
+    },
+    "survey.": {
+      "name": "cau_hoi",
+      "describe": "Questions on the form and the answer ticked or written for each."
+    },
+    "clause.": {
+      "name": "dieu_khoan",
+      "describe": "Numbered clauses of the agreement and the text of each."
+    }
+  },
+  "min_fields": 2
+}

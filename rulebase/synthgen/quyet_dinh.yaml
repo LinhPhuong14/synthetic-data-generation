@@ -1,0 +1,51 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: quyet_dinh
+profile: admin
+org_kind: state
+national: 0.95
+titles:
+- QUYẾT ĐỊNH
+- QUYẾT ĐỊNH CỦA GIÁM ĐỐC
+- QUYẾT ĐỊNH BAN HÀNH
+subtitles:
+- Về việc ....
+- ''
+- (Ban hành kèm theo Tờ trình số ....)
+fields:
+- record_no
+- period
+- full_name
+- position
+field_span:
+- 3
+- 4
+columns:
+- - stt
+  - name
+  - note
+totals: none
+words: false
+sign_sets:
+- - GIÁM ĐỐC
+- - TM. BAN GIÁM ĐỐC
+  - GIÁM ĐỐC
+- - THỦ TRƯỞNG ĐƠN VỊ
+notes:
+- Quyết định có hiệu lực kể từ ngày ký.
+- Các ông, bà có tên tại Điều 1 chịu trách nhiệm thi hành Quyết định này.
+rows:
+- 0
+- 10
+always:
+- letterhead
+- doctitle
+- legal_basis
+- clauses
+- signatures
+optional:
+- meta
+- footer
+- notes
+- table
+- footnote
+en_ok: false

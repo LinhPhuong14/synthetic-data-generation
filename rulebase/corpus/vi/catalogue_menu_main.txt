@@ -1,0 +1,14 @@
+# Món chính — thực đơn nhà hàng.
+# Định dạng: tên món<TAB>giá thấp<TAB>giá cao   (đơn vị VND)
+Canh chua cá lóc	79000	109000
+Tôm rang muối	135000	185000
+Bò lúc lắc khoai tây	109000	145000
+Sườn nướng mật ong	89000	119000
+Cá kho tộ	85000	115000
+Gà nướng lá chanh	99000	135000
+Lẩu thái hải sản	189000	259000
+Mực xào sa tế	119000	159000
+Cơm chiên hải sản	69000	89000
+Bún bò Huế	55000	69000
+Rau muống xào tỏi	35000	45000
+Đậu que xào thịt bò	49000	65000

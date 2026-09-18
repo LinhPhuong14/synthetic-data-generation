@@ -1,0 +1,53 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: don_khieu_nai
+profile: admin
+org_kind: state
+national: 0.95
+titles:
+- ĐƠN KHIẾU NẠI
+- ĐƠN KIẾN NGHỊ, PHẢN ÁNH
+- ĐƠN TỐ CÁO
+subtitles:
+- ''
+- 'Kính gửi: ....'
+- (Theo Luật Khiếu nại 2011)
+fields:
+- full_name
+- dob
+- gender
+- id_no
+- address_home
+- phone_home
+field_span:
+- 4
+- 6
+columns:
+- - stt
+  - name
+  - date
+  - note
+totals: none
+words: false
+sign_sets:
+- - NGƯỜI KHIẾU NẠI
+- - NGƯỜI LÀM ĐƠN
+  - XÁC NHẬN CỦA ĐỊA PHƯƠNG
+notes:
+- Tôi cam đoan những nội dung trình bày trên là đúng sự thật.
+- Kèm theo đơn là các tài liệu, chứng cứ liên quan.
+rows:
+- 0
+- 10
+always:
+- letterhead
+- doctitle
+- fields
+- clauses
+- signatures
+optional:
+- meta
+- footer
+- notes
+- legal_basis
+- table
+en_ok: false

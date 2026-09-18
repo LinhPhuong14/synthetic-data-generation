@@ -1,0 +1,247 @@
+# HỒ SƠ PHÁN ĐOÁN CỦA "LLM" — sửa file này là đổi phân phối của cả lượt chạy.
+#
+# `tools/mock_llm.py` là một endpoint OpenAI-compatible KHÔNG có model thật ở
+# sau: nó trả lời đúng giao thức mà `agent/client.py` gửi đi, nhưng thứ quyết
+# định là bảng dưới đây. Dùng để DIỄN TẬP một lượt chạy agent (xem phân phối,
+# chỉnh, rồi mới vẽ) mà không cần GPU, và để lượt diễn tập ấy lặp lại được.
+#
+# KHÔNG có id nào được viết cứng trong code. Mọi thứ ở đây là:
+#   * `share`  — tỷ lệ MỤC TIÊU của một họ giá trị, khớp bằng glob trên id.
+#   * `bias`   — nhân thẳng vào weight của rulebase, glob trên id.
+#   * `rules`  — điều kiện: khi các THẺ đã gom (hoặc id đã chọn) khớp `when`,
+#                nhân vào các thuộc tính bốc SAU đó.
+# Một giá trị mới thêm vào rulebase tự động rơi vào glob khớp với nó, nên file
+# này không phải sửa mỗi lần thêm chứng từ — đúng cách rulebase/ vẫn làm.
+
+persona: |
+  Bộ chọn tham số cho máy sinh ảnh chứng từ Việt Nam. Ưu tiên: từng trang phải
+  hợp lý như giấy thật, cả lô phải phủ đều. Quán vỉa hè không in GTGT có mã
+  vạch; máy in nhiệt không in màu; phôi nhà nước chỉ được đóng dấu.
+
+# ------------------------------------------------------------ đa dạng hoá
+# Prompt của planner chỉ cho LLM thấy 6 giá trị dùng NHIỀU NHẤT mỗi thuộc tính.
+# `pressure` là mức né chúng; `block_pressure` là mức né lặp trong cùng một
+# block 24 trang. 0 = mặc kệ, 1 = gần như phủ đều.
+pressure: 0.55
+block_pressure: 0.9
+
+# ------------------------------------------------------- tỷ lệ theo họ giấy
+# Bốc độc lập theo weight của rulebase cho ra: bảo hiểm 29,6%, giấy tính tiền
+# 18,5%, hoá đơn thương mại 17,3%, biểu mẫu 12,3%, báo/tạp chí 9,9%, hoá đơn
+# nhà nước + điện nước 8,6%, viện phí + uỷ quyền 3,7%. 12 mẫu bảo hiểm mới
+# thêm nuốt mất gần một phần ba lượt chạy — đây là chỗ chỉnh lại.
+share:
+  document:
+    "insurance_*": 0.16
+    "newspaper_*": 0.04
+    "magazine_*": 0.04
+    "form_*": 0.13
+    # Năm tờ hành chính doanh nghiệp mới soạn. Khai từng id chứ không một glob
+    # chung: tên chúng không có tiền tố chung nào, và một glob `*_letter` hay
+    # `*_record` sẽ vơ nhầm `authorisation_letter`. Mỗi id một họ nên báo cáo
+    # phân phối cũng đọc ra từng tờ, không gộp.
+    "handover_record": 0.03
+    "meeting_minutes": 0.03
+    "dispatch_letter": 0.025
+    "cash_receipt_voucher": 0.025
+    "leave_application": 0.02
+    "restaurant_menu_full": 0.03
+    "*_eatery": 0.10
+    "supermarket*": 0.06
+    "convenience_store": 0.03
+    "restaurant_vat": 0.03
+    "utility_*": 0.07
+    "hospital_bill": 0.04
+    "authorisation_letter": 0.03
+    # phần còn lại (hoá đơn thương mại + GTGT + xuất khẩu + lưu trú + bakery)
+    # chia đều phần dư ~0.23
+
+  augmentation:
+    # Ảnh sạch tinh không dạy được gì; ảnh nát quá thì nhãn không kiểm được.
+    "pristine": 0.03
+    "real_paper": 0.08
+    "light": 0.08
+    "medium": 0.08
+    "heavy": 0.03
+    "photocopy*": 0.11
+    "flatbed_scan": 0.07
+    "forwarded_photo": 0.07
+    "screen_photo": 0.04
+    "ghost_text": 0.04
+    "paper_creased": 0.06
+    # Họ "gấp" và họ "nếp gấp" khai bằng GLOB chứ không bằng id: `folded_thirds`,
+    # `folded_quarters` và `creased_flat` (mesh `fold_3` / `fold_4` / `crease` vừa
+    # thêm vào degradation/blender/meshes.py) rơi thẳng vào đây, và cái thêm ngày
+    # mai cũng vậy. Cả họ nặng cân hơn hai giá trị đơn nó thay: gấp để bỏ phong bì
+    # rồi vuốt phẳng lại là dáng PHỔ BIẾN NHẤT của giấy tờ hành chính đi quét,
+    # không phải một ca hiếm.
+    "folded*": 0.06
+    "crease*": 0.05
+    "page_curl": 0.03
+    "crumple": 0.02
+    "lifted_corner": 0.02
+    "annotated": 0.03
+    "scribbled": 0.03
+    "security_*": 0.02
+    "worn_plate": 0.02
+    "impact_ribbon": 0.02
+    "misregistered": 0.01
+
+  # Cân bằng hai ngôn ngữ. `invoice_en` là giá trị DUY NHẤT đọc corpus tiếng
+  # Anh (`params.lang: en`), nên nó một mình phải gánh cả nửa lượt chạy: bốc
+  # theo weight của rulebase chỉ ra 24%. Glob `*_en` chứ không phải id, để một
+  # giá trị tiếng Anh thêm sau này tự vào cùng họ và cả họ chia lại tỷ lệ.
+  content:
+    "*_en": 0.45
+
+  handwriting:
+    # Chỉ layout `fillable` mới bốc tới hand_*; tỷ lệ này là trên toàn lượt,
+    # nên thực tế sẽ thấp hơn — báo cáo phân phối cho biết con số thật.
+    "typed": 0.62
+    "hand_*": 0.38
+
+  ornament:
+    # Glob ĐẶC HIỆU đứng trước glob rộng: một id thuộc về glob ĐẦU TIÊN khớp nó,
+    # nên `qr_and_seal` phải đứng trước `*seal*` mới có họ riêng.
+    "no_ornament": 0.22
+    "qr_and_seal": 0.04
+    "*seal*": 0.30
+    "copy_stamp": 0.02
+    # `branded_*`, `dong_son_*`, `wave_only` đòi thẻ doc_service — chỉ lưu trú,
+    # bakery và giấy uỷ quyền có nó, tức ~15% lượt chạy. Đặt mục tiêu cao hơn
+    # trần ấy thì báo cáo lúc nào cũng báo thiếu mà không sửa được bằng số.
+    "branded_*": 0.05
+    "wave_only": 0.02
+    "dong_son_*": 0.04
+    "watermark_*": 0.07
+    "security_print": 0.05
+    "shelf_barcode": 0.06
+    "verify_qr": 0.06
+
+  # `variant` KHÔNG đặt ở đây: dressing `f_*` đòi thẻ aug_free, `l_*` bị
+  # aug_locked loại, nên một tỷ lệ toàn cục không dịch được thành tỷ lệ thật —
+  # 30% cho `l_*` đã ra 52,5% vì các trang locked/livery không có gì khác để
+  # bốc. Điều khiển nó bằng luật theo hạng, ở mục `rules` phía dưới.
+
+# ------------------------------------------- nhân thẳng, không theo ngữ cảnh
+bias:
+  layout:
+    # 12 phôi bảo hiểm và 12 phôi biểu mẫu đều bị khoá cứng vào đúng một
+    # document, nên chúng không cần đẩy; các phôi hoá đơn hiện đại thì dùng
+    # chung nhiều document nên tự nhiên đông. Hạ nhẹ để không nuốt hết.
+    "invoice_logo_*": 0.85
+    "invoice_multipage": 0.6      # trang 2 hiếm khi là thứ cần học đầu tiên
+  color:
+    "mono_black": 0.9
+
+# ------------------------------------------------------ luật theo ngữ cảnh
+# `when.tags` khớp các thẻ đã gom được tới lúc bốc thuộc tính đó.
+# `when.ids`  khớp glob trên id đã chọn của một thuộc tính trước.
+rules:
+
+  - name: "giấy nhiệt quầy tính tiền"
+    when: {tags: [till_receipt]}
+    then:
+      visual:       {"thermal_*": 3.0, "laser_*": 0.1, "dot_matrix": 0.6, "impact_*": 0.2}
+      color:        {"thermal_yellow": 2.2, "faded_gray": 1.6, "mono_black": 1.2}
+      content:      {"market_*": 1.4, "ascii_upper": 1.3}
+      handwriting:  {"typed": 3.0, "hand_*": 0.25}
+      augmentation: {"forwarded_photo": 2.2, "screen_photo": 1.8, "paper_creased": 1.8,
+                     "page_curl": 2.0, "crumple": 1.6, "lifted_corner": 1.6,
+                     "photocopy*": 0.3, "flatbed_scan": 0.5, "security_*": 0.05,
+                     "pristine": 0.4, "ghost_text": 1.4}
+
+  - name: "chứng từ thương mại — dựng lại dáng là đúng với đời thật"
+    when: {tags: [aug_free]}
+    then:
+      variant: {"f_*": 2.4, "l_*": 0.45, "none": 0.5}
+
+  - name: "phôi ngành quy định — đổi được mực, không đổi được hình"
+    when: {tags: [aug_livery]}
+    then:
+      variant: {"l_*": 1.5, "none": 0.7}
+
+  - name: "sổ tay ghi tay ở chợ"
+    when: {tags: [handwritten]}
+    then:
+      handwriting:  {"hand_*": 6.0, "typed": 0.3}
+      augmentation: {"paper_creased": 1.6, "folded": 1.6, "annotated": 1.5}
+
+  - name: "phôi in sẵn — điền tay là chuyện thường"
+    when: {tags: [printed_form, fillable]}
+    then:
+      handwriting:  {"hand_*": 1.8, "typed": 0.8}
+      augmentation: {"photocopy*": 1.6, "flatbed_scan": 1.4, "folded": 1.3,
+                     "annotated": 1.4, "security_*": 1.5}
+      ornament:     {"security_print": 1.5, "watermark_*": 1.3, "overlap_seal": 1.4}
+
+  - name: "phôi nhà nước — chỉ được đóng dấu"
+    when: {tags: [aug_locked]}
+    then:
+      ornament:     {"no_ornament": 0.25, "*seal*": 2.0, "security_print": 1.8}
+      color:        {"mono_black": 1.4, "red_logo": 1.3, "blue_ink": 0.8}
+      augmentation: {"photocopy*": 1.5, "flatbed_scan": 1.4, "scribbled": 0.5}
+
+  - name: "hoá đơn điện nước — máy in kim, giấy liên"
+    when: {tags: [doc_utility]}
+    then:
+      visual:       {"impact_invoice": 2.2, "laser_invoice": 0.8}
+      augmentation: {"impact_ribbon": 3.0, "folded": 1.6, "worn_plate": 1.4}
+      variant:      {"l_*": 1.6, "none": 0.8}
+
+  - name: "chứng từ dịch vụ có thương hiệu"
+    when: {tags: [doc_service]}
+    then:
+      color:        {"blue_ink": 1.5, "red_logo": 1.5}
+      ornament:     {"branded_*": 1.6, "dong_son_*": 1.5, "wave_only": 1.3}
+      augmentation: {"pristine": 1.4, "flatbed_scan": 1.3, "scribbled": 0.6}
+
+  - name: "viện phí — bảng kê nhiều cột, hay bị photo"
+    when: {tags: [doc_medical]}
+    then:
+      augmentation: {"photocopy*": 2.2, "ghost_text": 1.6, "flatbed_scan": 1.4,
+                     "crumple": 0.5, "screen_photo": 0.6}
+      handwriting:  {"hand_*": 1.4}
+
+  - name: "báo và tạp chí — in offset, không dấu má"
+    when: {tags: [periodical]}
+    then:
+      ornament:     {"no_ornament": 3.0, "*seal*": 0.15, "watermark_*": 0.4,
+                     "*barcode*": 0.3, "*qr*": 0.3}
+      handwriting:  {"typed": 5.0, "hand_*": 0.1}
+      color:        {"mono_black": 1.5, "faded_gray": 1.3}
+      augmentation: {"ghost_text": 1.6, "folded": 1.8, "paper_creased": 1.5,
+                     "photocopy*": 1.3, "security_*": 0.05, "annotated": 1.3}
+      variant:      {"none": 1.4}
+
+  - name: "giấy chứng nhận bảo hiểm — phôi có sẵn, đóng dấu là bắt buộc"
+    when: {tags: [insurance]}
+    then:
+      ornament:     {"*seal*": 2.2, "no_ornament": 0.3, "security_print": 1.6,
+                     "verify_qr": 1.3}
+      handwriting:  {"hand_*": 1.8}
+      augmentation: {"flatbed_scan": 1.5, "photocopy*": 1.4, "folded": 1.5,
+                     "screen_photo": 1.3, "crumple": 0.6}
+
+  - name: "hoá đơn xuất khẩu / tiếng Anh"
+    when: {tags: [bilingual]}
+    then:
+      ornament:     {"export_seal": 2.5, "verify_qr": 1.3}
+      color:        {"mono_black": 1.3}
+      augmentation: {"flatbed_scan": 1.6, "photocopy*": 1.3}
+
+  - name: "máy in kim đã chọn thì vết mực phải khớp"
+    when: {tags: [impact]}
+    then:
+      augmentation: {"impact_ribbon": 3.5, "worn_plate": 1.6, "ghost_text": 1.3}
+
+  - name: "mực nhạt sẵn thì đừng làm cũ tới mức không đọc được"
+    when: {tags: [faint_ink]}
+    then:
+      augmentation: {"heavy": 0.3, "photocopy*": 0.6, "ghost_text": 0.6,
+                     "real_paper": 1.4, "light": 1.4}
+
+  - name: "trang đã có hoa văn bảo an thì đừng chồng thêm nền bảo an"
+    when: {tags: [guilloche_back]}
+    then:
+      augmentation: {"security_*": 0.1}

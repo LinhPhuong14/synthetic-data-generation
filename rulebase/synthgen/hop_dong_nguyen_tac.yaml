@@ -1,0 +1,53 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: hop_dong_nguyen_tac
+profile: invoice
+org_kind: company
+national: 0.5
+titles:
+- HỢP ĐỒNG NGUYÊN TẮC
+- HỢP ĐỒNG KHUNG
+- THOẢ THUẬN HỢP TÁC
+subtitles:
+- 'Số: ..../HĐNT'
+- ''
+- ''
+fields:
+- party_a
+- party_b
+- rep_a
+- contract_no
+- term
+- value
+field_span:
+- 5
+- 6
+columns:
+- - stt
+  - name
+  - amount
+  - note
+totals: money
+words: false
+sign_sets:
+- - ĐẠI DIỆN BÊN A
+  - ĐẠI DIỆN BÊN B
+notes:
+- Hợp đồng này là cơ sở để hai bên ký các đơn hàng cụ thể.
+- Mọi sửa đổi phải lập thành phụ lục bằng văn bản.
+rows:
+- 0
+- 18
+always:
+- letterhead
+- doctitle
+- fields
+- clauses
+- signatures
+optional:
+- meta
+- footer
+- notes
+- legal_basis
+- table
+- totals
+en_ok: true

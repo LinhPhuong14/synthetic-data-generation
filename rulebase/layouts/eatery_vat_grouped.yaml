@@ -1,0 +1,88 @@
+# soạn tay theo agent/prompts/anatomy.md §2
+# — hoá đơn quán có thuế in trên giấy cuộn: cột suất thuế và cột tiền gộp dưới một ô 'Thuế GTGT'
+# — bảng hai tầng trên giấy hẹp
+# — in cả cột số thứ tự như phôi gốc
+# — thêm `item.discount_row` như phôi gốc: dòng khuyến mãi là chỗ `menu.discountprice` được in ra
+id: eatery_vat_grouped
+name: VAT eatery roll — tax rate and amount under one tier
+source: 'soạn tay theo agent/prompts/anatomy.md §2 — hoá đơn quán có thuế in trên giấy cuộn: cột suất thuế và cột tiền gộp dưới một ô ''Thuế GTGT'' — bảng hai tầng trên giấy hẹp — in cả cột số thứ tự như
+  phôi gốc — thêm `item.discount_row` như phôi gốc: dòng khuyến mãi là chỗ `menu.discountprice` được in ra'
+family: till
+width:
+- 46
+- 54
+rule_char: '-'
+header:
+  name_scale:
+  - 1.15
+  - 1.45
+  name_bold: true
+  title: true
+  title_scale:
+  - 1.15
+  - 1.4
+meta:
+  style: two_column
+  rule_after: true
+column_header: true
+column_header_bold: false
+columns:
+- key: stt
+  title: TT
+  width: 3
+  align: right
+  title_align: right
+- key: name
+  title: Món
+  width: 0
+  align: left
+  title_align: left
+- key: qty
+  title: SL
+  width: 4
+  align: right
+  title_align: right
+- key: unit_price
+  title: Đơn giá
+  width: 10
+  align: right
+  title_align: right
+- key: vat_rate
+  title: TS%
+  width: 5
+  align: center
+  title_align: center
+- key: amount
+  title: Tiền
+  width: 11
+  align: right
+  title_align: right
+item:
+  wrap_name: true
+  rows:
+  - - col: stt
+      from: stt
+    - col: name
+      from: name
+    - col: qty
+      from: qty
+    - col: unit_price
+      from: unit_price
+    - col: vat_rate
+      from: vat_rate
+    - col: amount
+      from: amount
+  discount_row:
+    label: Giảm giá
+table:
+  header_groups:
+  - title: Thuế GTGT
+    from: vat_rate
+    to: amount
+totals:
+  emphasise_grand: true
+  grand_scale:
+  - 1.15
+  - 1.45
+footer:
+  rule_before: false

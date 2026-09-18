@@ -1,0 +1,52 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: giay_nop_tien
+profile: invoice
+org_kind: company
+national: 0.4
+titles:
+- GIẤY NỘP TIỀN VÀO TÀI KHOẢN
+- GIẤY NỘP TIỀN MẶT
+- PHIẾU NỘP TIỀN
+subtitles:
+- 'Liên 2: Giao khách hàng'
+- ''
+- ''
+fields:
+- full_name
+- id_no
+- seller_bank
+- buyer_name
+- payment
+field_span:
+- 4
+- 5
+columns:
+- - stt
+  - name
+  - amount
+totals: money
+words: true
+sign_sets:
+- - NGƯỜI NỘP TIỀN
+  - GIAO DỊCH VIÊN
+- - NGƯỜI NỘP
+  - THỦ QUỸ
+  - KIỂM SOÁT
+notes:
+- Khách hàng kiểm tra thông tin trước khi ký.
+rows:
+- 1
+- 8
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- totals
+optional:
+- meta
+- footer
+- notes
+- words
+- signatures
+en_ok: true

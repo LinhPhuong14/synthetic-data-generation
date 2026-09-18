@@ -1,0 +1,55 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: thong_bao_nop_thue
+profile: invoice
+org_kind: state
+national: 1.0
+titles:
+- THÔNG BÁO NỘP THUẾ
+- THÔNG BÁO NỘP TIỀN THUẾ, TIỀN CHẬM NỘP
+subtitles:
+- ''
+- Mẫu số 01/TB-TĐN
+fields:
+- seller_name
+- seller_tax
+- seller_addr
+- record_no
+- period
+field_span:
+- 3
+- 5
+columns:
+- - stt
+  - name
+  - date
+  - amount
+- - stt
+  - ref
+  - name
+  - amount
+  - note
+totals: money
+words: true
+sign_sets:
+- - CHI CỤC TRƯỞNG
+- - NGƯỜI LẬP
+  - CHI CỤC TRƯỞNG
+notes:
+- Quá thời hạn nộp, người nộp thuế phải trả tiền chậm nộp theo quy định.
+rows:
+- 1
+- 20
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- totals
+- signatures
+optional:
+- meta
+- footer
+- notes
+- words
+- legal_basis
+en_ok: false

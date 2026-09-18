@@ -1,0 +1,32 @@
+# biên bản của cơ quan nhà nước, họp dài: quốc hiệu trên đầu, trường một cột, và phần kết luận cùng ô ký sang TỜ THỨ HAI
+id: form_minutes_govt_split
+name: Minutes — national masthead, one field column, carried to a second sheet
+source: 'soạn tay theo agent/prompts/anatomy.md §4 — biên bản của cơ quan nhà nước, họp dài: quốc hiệu trên đầu, trường một cột, và phần kết luận cùng ô ký sang TỜ THỨ HAI'
+family: form
+width:
+- 80
+- 90
+gutter: 2
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- header
+- parties
+- notes
+- signatures
+- footer
+page_order:
+- - header
+  - parties
+- - notes
+  - signatures
+  - footer
+header:
+  masthead: govt
+  title: true
+fields:
+  columns: one
+signatures:
+  name_gap: 6
+  stamp_width: 24

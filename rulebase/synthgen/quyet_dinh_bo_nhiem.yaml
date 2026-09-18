@@ -1,0 +1,50 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: quyet_dinh_bo_nhiem
+profile: admin
+org_kind: company
+national: 0.85
+titles:
+- QUYẾT ĐỊNH BỔ NHIỆM
+- QUYẾT ĐỊNH ĐIỀU ĐỘNG
+- QUYẾT ĐỊNH TIẾP NHẬN
+subtitles:
+- Về việc bổ nhiệm cán bộ
+- ''
+- ''
+fields:
+- full_name
+- dob
+- position
+- record_no
+- period
+field_span:
+- 4
+- 5
+columns:
+- - stt
+  - name
+  - note
+totals: none
+words: false
+sign_sets:
+- - GIÁM ĐỐC
+- - TM. HỘI ĐỒNG QUẢN TRỊ
+  - CHỦ TỊCH
+notes:
+- Quyết định có hiệu lực kể từ ngày ký.
+- Ông (bà) có tên tại Điều 1 và các bộ phận liên quan chịu trách nhiệm thi hành.
+rows:
+- 0
+- 6
+always:
+- letterhead
+- doctitle
+- legal_basis
+- clauses
+- signatures
+optional:
+- meta
+- footer
+- notes
+- fields
+en_ok: false

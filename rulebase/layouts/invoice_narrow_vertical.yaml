@@ -1,0 +1,76 @@
+# Hoá đơn nhiều cột trên khổ hẹp — tiêu đề cột XOAY DỌC.
+#
+# Quyết định (§2.5 và §4 anatomy): khi số cột nhiều hơn bề ngang cho phép, một
+# nhà in thật xoay tiêu đề cột đứng lên để mua lại bề ngang, đổi bằng một dải
+# tiêu đề cao hơn. Đây là phép đánh đổi có thật của nghề in, không phải một
+# hiệu ứng trang trí — và nó là thứ `table.header_style` dựng được mà không bố
+# cục nào trong kho đang dùng.
+#
+# Xoay là CSS thuần trên `.vert`; `page.py::CELL_RECTS_JS` đã biết đo một run
+# bị transform như MỘT hộp thay vì tách từng ký tự, nên nhãn vẫn khớp mực.
+id: invoice_narrow_vertical
+name: Sales invoice — rotated column heads bought back as measure
+source: "soạn mới theo agent/prompts/anatomy.md §2.5 — không đo từ ảnh nào"
+family: modern
+
+width: [72, 82]
+gutter: 1
+rule_char: "-"
+sheet: a4
+rules: marks
+
+sections: [header, parties, table, totals, words, signatures, footer]
+
+header:
+  align: split
+  name_scale: [1.10, 1.25]
+  name_bold: true
+  title: true
+
+parties:
+  style: stacked
+  gap: 1
+
+column_header: true
+columns:
+  - {key: stt,        title: "STT",                  width: 4,  align: center, title_align: center}
+  - {key: name,       title: "Tên hàng hoá, dịch vụ", width: 0,  align: left,   title_align: left}
+  - {key: unit,       title: "ĐVT",                  width: 8,  align: center, title_align: center}
+  - {key: qty,        title: "Số lượng",             width: 8,  align: right,  title_align: center}
+  - {key: unit_price, title: "Đơn giá",              width: 13, align: right,  title_align: center}
+  - {key: amount,     title: "Thành tiền",           width: 15, align: right,  title_align: center}
+
+item:
+  wrap_name: true
+  rows:
+    - - {col: stt, from: stt}
+      - {col: name, from: name}
+      - {col: unit, from: unit}
+      - {col: qty, from: qty}
+      - {col: unit_price, from: unit_price}
+      - {col: amount, from: amount}
+
+table:
+  # Bảng phải nói nó là bảng gì.
+  caption: "BẢNG KÊ CHI TIẾT"
+  frame: true
+  row_rules: true
+  header_style: vertical
+  shade: 0.0
+  blank_rows: 1
+
+totals:
+  frame: false
+  indent: 0.50
+  emphasise_grand: true
+
+words:
+  frame: false
+
+signatures:
+  name_gap: 3
+  stamp_gap: 2
+  stamp_width: 24
+
+footer:
+  rule_before: false

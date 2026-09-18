@@ -1,0 +1,594 @@
+"""Every task in this repository, runnable without `make`.
+
+    python tasks.py                 # list the tasks
+    python tasks.py setup
+    python tasks.py dataset -n 5 -o data/thu
+    python tasks.py proof --dataset data/dataset60
+
+Windows has no `make`, and the Makefile is full of things `cmd.exe` cannot run
+-- `bin/python`, `rm -rf`, `git ls-files | xargs`. Rather than keep a second
+copy of the task list in a `.bat` that drifts, the tasks live here and the
+Makefile is a thin wrapper that calls this file. There is one definition of
+what `dataset` means, on every platform.
+
+Only the standard library is used, so this runs on a bare system Python before
+any virtualenv exists -- which it has to, since building them is a task.
+"""
+
+from __future__ import annotations
+
+import argparse
+import compileall
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "tools"))
+
+from paths import (  # noqa: E402
+    REPO_ROOT,
+    VENDORED,
+    VENVS,
+    WINDOWS,
+    first_available_python,
+    venv_python,
+    venv_tool,
+)
+
+TASKS: dict[str, tuple] = {}
+
+
+def task(name: str, help: str):
+    def register(function):
+        TASKS[name] = (function, help)
+        return function
+
+    return register
+
+
+def run(command, cwd: Path | None = None, check: bool = True) -> int:
+    printable = " ".join(str(part) for part in command)
+    print(f"$ {printable}")
+    result = subprocess.run([str(part) for part in command], cwd=str(cwd or REPO_ROOT))
+    if check and result.returncode != 0:
+        raise SystemExit(result.returncode)
+    return result.returncode
+
+
+# ------------------------------------------------------------------ setup
+
+
+PIP_FAILED = """
+pip could not install into the {name} environment.
+
+If the output above says CERTIFICATE_VERIFY_FAILED, this is not a repository
+problem: something between this machine and pypi.org is re-signing TLS with a
+certificate Python does not trust -- usually a corporate inspecting proxy. The
+browser trusts it because Windows trusts it; Python ships its own trust store
+and does not.
+
+Teach Python to use the Windows store, once, and every environment this task
+builds afterwards inherits it:
+
+  py -m pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org pip_system_certs
+
+docs/windows.md has the alternatives (a pip.ini, PIP_CERT, an exported CA) and
+what to do about Playwright, which downloads through the same proxy.
+"""
+
+
+def _pip(python: Path, name: str, *arguments) -> None:
+    """A pip step that explains itself when the network refuses it.
+
+    Worth the wrapper because the raw failure is five identical retry warnings
+    and an OSError, which reads like a broken repository rather than like a
+    proxy -- and because it happens on the FIRST thing setup does, so there is
+    nothing else on screen to suggest otherwise.
+    """
+    if run([python, "-m", "pip", *arguments], check=False) != 0:
+        raise SystemExit(PIP_FAILED.format(name=name))
+
+
+def _make_venv(name: str, requirements: Path, extra_first: list[str] | None = None) -> Path:
+    venv = VENVS[name]
+    run([sys.executable, "-m", "venv", venv])
+    python = venv_python(venv)
+    _pip(python, name, "install", "-q", "-U", "pip")
+    if extra_first:
+        _pip(python, name, "install", "-q", *extra_first)
+    _pip(python, name, "install", "-q", "-r", str(requirements))
+    return python
+
+
+@task("setup-html", "HTML renderer: playwright plus a headless browser")
+def setup_html(args) -> None:
+    python = _make_venv("html", REPO_ROOT / "generators" / "html" / "requirements.txt")
+    run([python, "-c", "import playwright, cv2; print('html renderer ready')"])
+    if WINDOWS:
+        # No system browser is shipped on Windows, unlike the Linux container
+        # this repository was built in, so Playwright has to fetch its own.
+        run([python, "-m", "playwright", "install", "chromium"])
+
+
+@task("setup-blender", "geometry warps: Blender plus numpy for its own interpreter")
+def setup_blender(args) -> None:
+    """Not one of the three renderer environments, and not part of `setup`.
+
+    `degradation/blender/` shells out to a real `blender` executable rather than importing
+    anything -- see that module's own docstring for why. Nothing in `generators/html/
+    .venv` needs it, and the three rule-base options that use it (`page_curl`, `folded`,
+    `lifted_corner` in `rulebase/rules/augmentation.yaml`) all ship `enabled: false`, so a
+    clone that never forces one of them never needs this task either.
+    """
+    blender = shutil.which("blender")
+    if not blender:
+        if sys.platform.startswith("linux"):
+            print("No `blender` on PATH -- trying `apt-get install -y blender`.")
+            if run(["apt-get", "install", "-y", "blender"], check=False) != 0:
+                raise SystemExit(
+                    "`apt-get install blender` failed (no apt, or no root). Install Blender "
+                    "yourself -- 4.1+ preferred, see degradation/blender/vendor/"
+                    "blender_utils.py for what a pre-4.1 build (e.g. Ubuntu's own package) "
+                    "needs -- and put it on PATH, then re-run this task.")
+            blender = shutil.which("blender")
+        else:
+            raise SystemExit(
+                "No `blender` on PATH. Install it from https://www.blender.org/download/ "
+                "(4.1+ preferred) and put it on PATH, then re-run this task.")
+    if not blender:
+        raise SystemExit("`blender` still not on PATH after installing it -- check your shell's PATH.")
+
+    print(f"$ {blender} --version")
+    run([blender, "--version"])
+
+    # `degradation/blender/vendor/*.py` runs INSIDE Blender, against whatever Python it was
+    # built with -- a distro package like `apt install blender` shares the system
+    # interpreter, a download from blender.org bundles its own. Either way `numpy` is the
+    # one thing that Python needs and does not already have; asking Blender for its own
+    # `sys.executable` is what makes this work for both without telling them apart.
+    # Already there? A distro Blender on a machine with `python3-numpy` needs
+    # nothing at all, and asking first turns the common case into one command
+    # that prints a version instead of an install that fails loudly.
+    #
+    # Asked by looking for the MARKER in the output, not by the exit code:
+    # **Blender exits 0 even when `--python-expr` raises**. Measured -- a
+    # `ModuleNotFoundError` inside the expression printed a full traceback,
+    # "Blender quit", and `$? == 0`, so an exit-code probe reports a Blender
+    # with no numpy as ready and the first warped page is where you find out.
+    if _blender_has_numpy(blender):
+        print("blender geometry warps ready")
+        return
+
+    print("Installing numpy into Blender's own Python...")
+    # `--break-system-packages` is only a valid pip flag on a PEP 668 "externally managed"
+    # interpreter -- true for `apt install blender`'s shared system Python, an error on
+    # blender.org's own bundled one. Tried first without it; retried with it only on that
+    # specific failure, rather than guessing which kind of install this is up front.
+    install_numpy = (
+        "import subprocess, sys\n"
+        "try:\n"
+        "    import pip  # noqa: F401\n"
+        "except ImportError:\n"
+        "    subprocess.check_call([sys.executable, '-m', 'ensurepip', '--default-pip'],"
+        " stdout=subprocess.DEVNULL)\n"
+        "try:\n"
+        "    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-q', 'numpy'])\n"
+        "except subprocess.CalledProcessError:\n"
+        "    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-q',"
+        " '--break-system-packages', 'numpy'])\n"
+    )
+    run([blender, "--background", "--python-expr", install_numpy], check=False)
+    if not _blender_has_numpy(blender):
+        # Debian and Ubuntu ship their Blender against the SYSTEM python and strip
+        # `ensurepip` out of it, so the three-step fallback above has nothing left to
+        # fall back to: no `pip`, and no way to bootstrap one. Measured on Ubuntu with
+        # Blender 4.0.2 -- `/usr/bin/python3.12 -m ensurepip` exits non-zero and
+        # `-m pip` reports "No module named pip".
+        #
+        # The distro's own numpy is the answer there, and naming it is the whole
+        # value of this branch: the failure it replaces was two nested tracebacks
+        # ending in `ModuleNotFoundError: No module named 'pip'`, which says what
+        # broke and not one word about what to do.
+        interpreter = _blender_python(blender)
+        raise SystemExit(
+            f"Could not install numpy into Blender's Python ({interpreter or 'unknown'}).\n"
+            f"\n"
+            f"If that path is your SYSTEM python -- which is what `apt install blender`\n"
+            f"gives you -- pip cannot be bootstrapped into it, and the distro package is\n"
+            f"the way in:\n"
+            f"\n"
+            f"    sudo apt-get install -y python3-numpy\n"
+            f"\n"
+            f"then re-run `make setup-blender` to confirm. For a blender.org download,\n"
+            f"which bundles its own Python, install numpy into THAT interpreter instead.")
+
+    print("blender geometry warps ready")
+
+
+MARKER = "__numpy_ok__"
+
+
+def _blender_has_numpy(blender: str) -> bool:
+    """Whether Blender's Python can `import numpy` -- by the marker it prints.
+
+    Not by the exit code: Blender returns 0 whatever the expression does. See
+    `setup_blender`.
+    """
+    try:
+        out = subprocess.run(
+            [blender, "--background", "--python-expr",
+             f"import numpy; print('{MARKER}', numpy.__version__)"],
+            capture_output=True, text=True, timeout=180)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return MARKER in (out.stdout or "")
+
+
+def _blender_python(blender: str) -> str:
+    """Which interpreter Blender runs scripts against -- the system one for a
+    distro package, a bundled one for a blender.org download. Reported rather
+    than guessed at, because the fix differs between the two."""
+    try:
+        out = subprocess.run(
+            [blender, "--background", "--python-expr", "import sys; print(sys.executable)"],
+            capture_output=True, text=True, timeout=120).stdout
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    return next((line.strip() for line in out.splitlines()
+                 if line.strip().startswith("/")), "")
+
+
+@task("setup", "build the renderer environment (html)")
+def setup(args) -> None:
+    # One renderer, one environment. There were three of these tasks while
+    # `synthdog` and `genalog` were on disk; both are deleted now, and the
+    # pages they drew are read without either -- see
+    # `pipeline/config.py::GONE_BACKENDS`.
+    setup_html(args)
+
+
+# ------------------------------------------------------------- generation
+
+
+@task("textures", "regenerate the generated paper sheets in textures/paper")
+def textures(args) -> None:
+    run([first_available_python(), REPO_ROOT / "tools" / "make_textures.py"])
+
+
+@task("ornaments", "regenerate the seals and flourishes in textures/ornament")
+def ornaments(args) -> None:
+    run([first_available_python(), REPO_ROOT / "tools" / "make_ornaments.py"])
+
+
+@task("templates", "print the reference sheets in samples/")
+def templates(args) -> None:
+    for directory in ("invoice-templates", "form-templates", "insurance-templates",
+                      "periodical-templates"):
+        run([first_available_python(),
+             REPO_ROOT / "samples" / directory / "render.py"])
+
+
+@task("blanks", "the standard forms each document is drawn from")
+def blanks(args) -> None:
+    run([first_available_python(), REPO_ROOT / "tools" / "rules_report.py",
+         "--blanks"])
+
+
+@task("dataset", "labelled dataset with the html renderer (-n images)")
+def dataset(args) -> None:
+    # `--template auto`: every shipped layout already has a real entry in
+    # generators/html/sheets/FAMILIES, so this draws through the CSS-sheet
+    # family every layout was actually designed against, not the
+    # character-grid fallback. See tools/baseline.py::arguments()'s docstring.
+    run([first_available_python(), REPO_ROOT / "tools" / "generate_dataset.py",
+         "-o", args.out, "-n", str(args.count or "auto"), "--template", "auto"])
+
+
+@task("dataset-clean", "the same dataset with no ageing and no distortion")
+def dataset_clean(args) -> None:
+    run([first_available_python(), REPO_ROOT / "tools" / "generate_dataset.py",
+         "-o", f"{args.out}_clean", "-n", str(args.count or "auto"),
+         "--clean", "--template", "auto"])
+
+
+@task("tables", "table-structure images, from the html backend")
+def tables(args) -> None:
+    # The html backend's interpreter, because the table generator IS the html
+    # backend: same Chromium, same boxes off the same laid-out DOM. There is no
+    # fourth environment to build any more.
+    run([venv_python(VENVS["html"]), REPO_ROOT / "tools" / "generate_tables.py",
+         "-o", args.out, "-n", str(args.count or 60)])
+
+
+@task("handwriting", "regenerate data/hand12: every field a person fills in, in ink")
+def handwriting(args) -> None:
+    # The html backend's own interpreter, and a job list rather than -n: which
+    # layouts are in the set is the measurement, not a quota.
+    #
+    # `--handwriting font` fills every field. The `model` source is WriteViT and
+    # is the real thing, but it cannot write digits and leaves 129 of these 159
+    # fields typed; the trade is set out in data/hand12/README.md. `font` needs
+    # nothing installed -- the two faces are in fonts/hand/ -- so this task no
+    # longer depends on `setup-writevit`.
+    out = Path(args.out if args.out != str(Path("data") / "dataset60")
+               else Path("data") / "hand12")
+    run([venv_python(VENVS["html"]), REPO_ROOT / "generators" / "html" / "render.py",
+         "--template", "auto", "--handwriting", "font",
+         "--jobs", REPO_ROOT / "data" / "hand12" / "jobs.json",
+         "-o", out / "html"])
+
+
+@task("signatures", "regenerate samples/signatures: the style grid and two signed sheets")
+def signatures(args) -> None:
+    # The html backend's interpreter: the showcase rasterises its own SVG with
+    # the renderer's Chromium rather than a second SVG library, so what the
+    # sample shows is what a page will show. No WriteViT and no checkpoint --
+    # the engine reads outlines out of `fonts/hand/` and nothing else.
+    out = Path(args.out if args.out != str(Path("data") / "dataset60")
+               else REPO_ROOT / "samples" / "signatures")
+    run([venv_python(VENVS["html"]), REPO_ROOT / "tools" / "signature_showcase.py",
+         "-o", out])
+
+
+@task("setup-writevit", "clone WriteViT beside the repo and fetch its weights")
+def setup_writevit(args) -> None:
+    # Not one of the three renderer environments and deliberately not part of
+    # `setup`: nothing here imports WriteViT, its weights and data are 294 MB,
+    # and only `--handwriting` needs it.
+    run([first_available_python(), REPO_ROOT / "tools" / "writevit" / "setup.py"])
+
+
+@task("run", "run pipeline.yaml: preflight, shards in parallel, assemble")
+def run_pipeline(args) -> None:
+    command = [first_available_python(), REPO_ROOT / "pipeline" / "run.py"]
+    if args.out != str(Path("data") / "dataset60"):
+        command += ["-o", args.out]
+    run(command)
+
+
+@task("baseline-write", "capture the golden fingerprint of the generator")
+def baseline_write(args) -> None:
+    run([first_available_python(), REPO_ROOT / "tools" / "baseline.py", "--write",
+         "--reason", args.reason])
+
+
+@task("baseline-verify", "regenerate the fixed plans and compare to the golden file")
+def baseline_verify(args) -> None:
+    run([first_available_python(), REPO_ROOT / "tools" / "baseline.py"])
+
+
+@task("proof", "read a dataset back with Tesseract and score it")
+def proof(args) -> None:
+    run([first_available_python(), REPO_ROOT / "tools" / "ocr_proof.py", args.dataset])
+
+
+@task("profile", "time every stage of every renderer and write a cost model")
+def profile(args) -> None:
+    run([first_available_python(), REPO_ROOT / "tools" / "profile_pipeline.py",
+         "-c", str(args.count or 8), "-o", args.out])
+
+
+@task("check-boxes", "verify every renderer's boxes still land on its text")
+def check_boxes(args) -> None:
+    run([first_available_python(), REPO_ROOT / "tools" / "check_boxes.py", args.dataset])
+
+
+@task("showcase", "one before/after image per degradation model")
+def showcase(args) -> None:
+    run([first_available_python(), REPO_ROOT / "tools" / "degradation_showcase.py"])
+
+
+@task("patterns", "regenerate every shared pattern: paper, backgrounds, ornaments")
+def patterns(args) -> None:
+    """The whole pattern layer in one task.
+
+    `textures/paper/`, `textures/background/` and `textures/ornament/` are what
+    every page is composited onto and marked with. They are generated rather
+    than photographed so a fresh clone can render, and so a seed reproduces a
+    sheet exactly.
+    """
+    textures(args)
+    ornaments(args)
+
+
+@task("preview-grid", "print sampled receipts as text (--layout to pin one)")
+def preview_grid(args) -> None:
+    command = [sys.executable, REPO_ROOT / "tools" / "preview_grid.py"]
+    command += ["--layout", args.layout] if args.layout else ["--all"]
+    run(command)
+
+
+@task("visualize", "local Gradio app: sinh ảnh, thử con dấu, thử viết tay hybrid")
+def visualize(args) -> None:
+    # The html backend's interpreter: the live-gallery tab drives
+    # `pipeline.run.execute()` in-process, and the handwriting tab imports
+    # `generators/html/handwriting.py` directly -- both need what that venv
+    # already has.
+    run([venv_python(VENVS["html"]), REPO_ROOT / "tools" / "visualize" / "app.py"])
+
+
+# -------------------------------------------------------------- the rules
+
+
+@task("preflight", "every check that must pass before generating an image")
+def preflight(args) -> None:
+    run([first_available_python(), REPO_ROOT / "pipeline" / "preflight.py"])
+
+
+@task("check-rules", "validate rules/: unreachable values, bad tags, missing files")
+def check_rules(args) -> None:
+    run([first_available_python(), REPO_ROOT / "tools" / "rules_report.py", "--check"])
+
+
+@task("check-corpus", "validate corpus/: missing files, wrong column counts")
+def check_corpus(args) -> None:
+    run([sys.executable, REPO_ROOT / "tools" / "rules_report.py", "--corpus"])
+
+
+@task("distribution", "show what 2000 draws from the rules look like")
+def distribution(args) -> None:
+    run([sys.executable, REPO_ROOT / "tools" / "rules_report.py", "--distribution"])
+
+
+@task("monitor", "the whole rule space, or a run while it is still going")
+def monitor(args) -> None:
+    # `--static` needs nothing but the rules; a run directory needs nothing at
+    # all beyond what is already on disk. Either way it writes nothing, so it is
+    # safe to point at a job a pool of workers is in the middle of.
+    command = [first_available_python(), REPO_ROOT / "tools" / "monitor.py"]
+    command += [args.run] if getattr(args, "run", None) else ["--static"]
+    run(command)
+
+
+@task("figures-stamp", "rebuild the figures in docs/co-che-sinh-con-dau.md")
+def figures_stamp(args) -> None:
+    """Documentation code, not the pipeline.
+
+    Each figure re-runs the measurement the document quotes and draws the
+    result, so a number in the prose and the picture beside it come from the
+    same run and cannot drift apart.
+    """
+    run([first_available_python(), REPO_ROOT / "docs" / "figures" / "make_stamp_figures.py"])
+
+
+@task("legibility", "does a chain age the text out of its own label boxes?")
+def legibility(args) -> None:
+    """The check `docs/lam-cu-de-xuat.md` ranks first, ahead of any new model.
+
+    A box says there is text there. A chain that ages the text away while the
+    label still claims it is not hard data, it is poisoned data -- and until
+    this existed nothing in the repository measured it. Exit 1 if any chain
+    loses 5% or more of its boxes.
+    """
+    run([first_available_python(), REPO_ROOT / "tools" / "legibility.py"])
+
+
+@task("list-degradations", "names usable in an augmentation chain")
+def list_degradations(args) -> None:
+    run([first_available_python(), "-c",
+         "import degradation; print(chr(10).join(degradation.names()))"])
+
+
+# ---------------------------------------------------------------- quality
+
+
+def _tracked_python() -> list[Path]:
+    listing = subprocess.run(
+        ["git", "ls-files", "*.py"], cwd=str(REPO_ROOT),
+        capture_output=True, text=True, check=True,
+    ).stdout.split()
+    return [
+        REPO_ROOT / name for name in listing
+        if not name.startswith(VENDORED)
+    ]
+
+
+@task("check", "byte-compile every tracked Python file (no dependencies needed)")
+def check(args) -> None:
+    files = _tracked_python()
+    ok = True
+    for path in files:
+        # `quiet=1` still prints the traceback of a real syntax error, which is
+        # the only thing this task exists to surface.
+        if not compileall.compile_file(path, quiet=1, force=True):
+            ok = False
+    if not ok:
+        raise SystemExit("some files failed to compile")
+    print(f"all {len(files)} python files compile")
+
+
+@task("lint", "ruff: correctness and imports, not formatting")
+def lint(args) -> None:
+    run([_ruff(), "check", "."])
+
+
+@task("format", "apply the fixes ruff can make safely")
+def format_(args) -> None:
+    run([_ruff(), "check", "--fix", "."])
+
+
+def _ruff():
+    """Prefer a ruff inside a venv; fall back to one on PATH."""
+    for venv in VENVS.values():
+        candidate = venv_tool(venv, "ruff")
+        if candidate.exists():
+            return candidate
+    found = shutil.which("ruff")
+    if found:
+        return found
+    raise SystemExit("ruff not found: `pip install ruff`, or run `python tasks.py setup`")
+
+
+# Directories `clean` must never walk into. A bare `rglob("__pycache__")`
+# descends into every virtualenv and deletes site-packages caches -- harmless,
+# but it is not what "remove caches and generated output" means, and on a slow
+# disk it makes the next run of every tool noticeably slower.
+SKIP_DIRS = {".git", ".venv", "node_modules"}
+
+
+@task("clean", "remove caches and generated output")
+def clean(args) -> None:
+    targets = [
+        REPO_ROOT / ".ruff_cache",
+        REPO_ROOT / ".pytest_cache",
+        REPO_ROOT / "data" / "visualize_runs",
+    ]
+    targets += [
+        path for path in REPO_ROOT.rglob("__pycache__")
+        if not SKIP_DIRS.intersection(path.relative_to(REPO_ROOT).parts)
+    ]
+    for target in targets:
+        if target.exists():
+            print(f"rm -r {target.relative_to(REPO_ROOT)}")
+            shutil.rmtree(target, ignore_errors=True)
+
+
+# ------------------------------------------------------------------- main
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument("task", nargs="?", choices=sorted(TASKS), help="task to run")
+    parser.add_argument("-o", "--out", default=str(Path("data") / "dataset60"),
+                        help="output directory (dataset, dataset-clean, preview)")
+    # No default here: each task below states its own, because they are not the
+    # same number and never were -- a dataset wants one image of every layout
+    # (`auto`), a table run wants 60, the profiler wants 8.
+    parser.add_argument("-n", "--count", default=None,
+                        help="images to make (dataset, dataset-clean, tables, "
+                             "profile). For a dataset, `auto` -- the default -- "
+                             "is one image of every layout there is, which is "
+                             "also the floor any number has to clear")
+    parser.add_argument("--dataset", default=str(Path("data") / "dataset60"),
+                        help="dataset to score (proof)")
+    parser.add_argument("--layout", help="pin one bố cục (preview-grid)")
+    parser.add_argument("--reason", default="",
+                        help="why the golden baseline is being replaced "
+                             "(baseline-write); kept in the file")
+    # No default on purpose: `monitor` with nothing to point at reports the rule
+    # space, and a default would silently turn that into "monitor whichever
+    # dataset happens to be the usual one".
+    parser.add_argument("--run", help="a run directory to monitor")
+    args = parser.parse_args()
+
+    if not args.task:
+        width = max(len(name) for name in TASKS)
+        print("Tasks:\n")
+        for name in sorted(TASKS):
+            print(f"  {name:<{width}}  {TASKS[name][1]}")
+        print(f"\n  python {Path(__file__).name} <task> [-n N] [-o DIR]")
+        return 0
+
+    if args.task == "preview" and args.out == str(Path("data") / "dataset60"):
+        args.out = str(Path(os.environ.get("TEMP", "/tmp")) / "preview")
+
+    TASKS[args.task][0](args)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

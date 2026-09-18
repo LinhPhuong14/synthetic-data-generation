@@ -1,0 +1,26 @@
+# tờ khai có dán ảnh: `page.photobox` chèn ô ảnh vào khối đầu, đẩy toàn bộ trường xuống và sang
+# -- mọi hộp nhãn dịch chỗ
+id: form_dense_photobox
+name: Dense civil form — 4x6 photo box beside the masthead
+source: 'soạn tay theo agent/prompts/anatomy.md §4 — tờ khai có dán ảnh: `page.photobox` chèn ô ảnh vào khối đầu, đẩy toàn bộ trường xuống và sang -- mọi hộp nhãn dịch chỗ'
+family: form
+width:
+- 84
+- 94
+gutter: 2
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- header
+- parties
+- notes
+- signatures
+- footer
+header:
+  masthead: govt
+  title: true
+page:
+  photobox: true
+fields:
+  columns: two

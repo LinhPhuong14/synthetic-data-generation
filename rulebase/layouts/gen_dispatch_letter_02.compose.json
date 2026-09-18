@@ -1,0 +1,60 @@
+{
+ "document": "dispatch_letter",
+ "seed": 5002,
+ "paper": {
+  "sheet": "a4",
+  "width": [
+   70,
+   92
+  ],
+  "gutter": 2
+ },
+ "reasoning": {
+  "printer": "chế độ coverage: không có server, nên tờ này do một phép bốc có hạt giống 5002 quyết, không do ai suy luận về nhà in",
+  "reader": "không suy luận — thứ tự khối và thứ tự cột chép từ phôi `form_dispatch_letter`, khối thêm vào đặt theo chỗ các phôi khác đặt nó",
+  "first": "header",
+  "required": [
+   "footer",
+   "header",
+   "notes",
+   "parties",
+   "signatures"
+  ],
+  "density": "bề ngang 70..92 ký tự — đầu hẹp lấy từ 0 ký tự cột cố định của phôi cộng 12 tối thiểu cho cột tên, không phải từ một phán đoán về giấy"
+ },
+ "blocks": [
+  {
+   "section": "header",
+   "region": "Page-Header"
+  },
+  {
+   "section": "parties",
+   "region": "Text"
+  },
+  {
+   "section": "notes",
+   "region": "Text"
+  },
+  {
+   "section": "signatures",
+   "region": "Form"
+  },
+  {
+   "section": "footer",
+   "region": "Page-Footer"
+  }
+ ],
+ "settings": {
+  "header": {
+   "title": true
+  },
+  "signatures": {
+   "name_gap": 5,
+   "stamp_width": 26
+  }
+ },
+ "page": {},
+ "page_order": [],
+ "unmet": [],
+ "by": "coverage"
+}

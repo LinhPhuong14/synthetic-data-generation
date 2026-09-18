@@ -1,0 +1,50 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: giay_moi
+profile: admin
+org_kind: state
+national: 0.9
+titles:
+- GIẤY MỜI
+- GIẤY MỜI HỌP
+- THƯ MỜI
+subtitles:
+- ''
+- Trân trọng kính mời
+- V/v dự họp
+fields:
+- record_no
+- period
+- full_name
+- position
+field_span:
+- 3
+- 4
+columns:
+- - stt
+  - name
+  - date
+  - note
+totals: none
+words: false
+sign_sets:
+- - TL. GIÁM ĐỐC
+  - CHÁNH VĂN PHÒNG
+- - BAN TỔ CHỨC
+notes:
+- Đề nghị đại biểu đến đúng giờ và mang theo giấy mời.
+- Trường hợp không tham dự được, đề nghị báo lại trước 01 ngày.
+rows:
+- 0
+- 8
+always:
+- letterhead
+- doctitle
+- fields
+- notes
+- signatures
+optional:
+- meta
+- footer
+- table
+- clauses
+en_ok: false

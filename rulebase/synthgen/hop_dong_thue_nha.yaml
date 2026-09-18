@@ -1,0 +1,57 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: hop_dong_thue_nha
+profile: admin
+org_kind: company
+national: 0.7
+titles:
+- HỢP ĐỒNG THUÊ NHÀ
+- HỢP ĐỒNG THUÊ MẶT BẰNG
+- HỢP ĐỒNG CHO THUÊ CĂN HỘ
+subtitles:
+- 'Số: ..../HĐTN'
+- ''
+- ''
+fields:
+- party_a
+- party_b
+- address_home
+- term
+- value
+- record_no
+field_span:
+- 5
+- 6
+columns:
+- - stt
+  - name
+  - amount
+  - note
+totals: money
+words: true
+sign_sets:
+- - BÊN CHO THUÊ
+  - BÊN THUÊ
+- - BÊN A
+  - BÊN B
+  - NGƯỜI LÀM CHỨNG
+notes:
+- Hợp đồng lập thành hai bản, mỗi bên giữ một bản.
+- Bên thuê đặt cọc một tháng tiền thuê khi ký hợp đồng.
+rows:
+- 0
+- 16
+always:
+- letterhead
+- doctitle
+- fields
+- clauses
+- signatures
+optional:
+- meta
+- footer
+- notes
+- legal_basis
+- table
+- totals
+- words
+en_ok: false

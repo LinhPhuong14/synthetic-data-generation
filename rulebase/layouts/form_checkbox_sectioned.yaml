@@ -1,0 +1,28 @@
+# tờ kiểm có chia mục: A là trường hai cột, B là danh sách ô đánh dấu. Bản gốc chỉ có một dải ô đánh dấu, không có tầng chữ cái nào
+id: form_checkbox_sectioned
+name: Checklist form — lettered A/B, two field columns above the ticks
+source: 'soạn tay theo agent/prompts/anatomy.md §4 — tờ kiểm có chia mục: A là trường hai cột, B là danh sách ô đánh dấu. Bản gốc chỉ có một dải ô đánh dấu, không có tầng chữ cái nào'
+family: form
+width:
+- 86
+- 96
+gutter: 2
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- header
+- parties
+- notes
+- signatures
+- footer
+header:
+  title: true
+fields:
+  columns: two
+checklist:
+  checked_rate: 0.5
+sectioned:
+  titles:
+  - Thông tin đối tượng kiểm
+  - Nội dung kiểm tra

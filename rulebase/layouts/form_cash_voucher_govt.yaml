@@ -1,0 +1,27 @@
+# phiếu thu của đơn vị sự nghiệp: khổ A4 thay A5, có quốc hiệu, trường hai cột
+# — tờ to hơn hẳn bản phiếu thu doanh nghiệp
+id: form_cash_voucher_govt
+name: Cash voucher — A4 with a national masthead and two field columns
+source: 'soạn tay theo agent/prompts/anatomy.md §4 — phiếu thu của đơn vị sự nghiệp: khổ A4 thay A5, có quốc hiệu, trường hai cột — tờ to hơn hẳn bản phiếu thu doanh nghiệp'
+family: form
+width:
+- 84
+- 94
+gutter: 2
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- header
+- parties
+- notes
+- signatures
+- footer
+header:
+  masthead: govt
+  title: true
+fields:
+  columns: two
+signatures:
+  name_gap: 5
+  stamp_width: 26

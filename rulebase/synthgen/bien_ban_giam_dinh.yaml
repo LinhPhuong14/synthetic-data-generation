@@ -1,0 +1,60 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: bien_ban_giam_dinh
+profile: insurance
+org_kind: company
+national: 0.3
+titles:
+- BIÊN BẢN GIÁM ĐỊNH THIỆT HẠI
+- BIÊN BẢN GIÁM ĐỊNH TỔN THẤT
+subtitles:
+- ''
+- 'Số: ..../BBGĐ'
+fields:
+- insured
+- policy_no
+- object
+- sum_insured
+- period
+field_span:
+- 4
+- 5
+columns:
+- - stt
+  - name
+  - qty
+  - unit_price
+  - amount
+  - note
+- - stt
+  - ref
+  - name
+  - amount
+  - note
+totals: money
+words: true
+sign_sets:
+- - GIÁM ĐỊNH VIÊN
+  - CHỦ TÀI SẢN
+- - BÊN ĐƯỢC BẢO HIỂM
+  - GIÁM ĐỊNH VIÊN
+  - DOANH NGHIỆP BẢO HIỂM
+notes:
+- Biên bản là căn cứ xác định số tiền bồi thường.
+rows:
+- 2
+- 30
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- totals
+- signatures
+optional:
+- meta
+- footer
+- notes
+- words
+- figure
+- clauses
+en_ok: false

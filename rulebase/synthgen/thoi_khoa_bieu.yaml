@@ -1,0 +1,48 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: thoi_khoa_bieu
+profile: admin
+org_kind: state
+national: 0.3
+titles:
+- THỜI KHOÁ BIỂU
+- LỊCH HỌC
+- THỜI KHOÁ BIỂU HỌC KỲ
+subtitles:
+- Áp dụng từ ngày ....
+- ''
+- 'Lớp: ....'
+fields:
+- record_no
+- period
+field_span:
+- 1
+- 2
+columns:
+- - stt
+  - date
+  - name
+  - note
+- - stt
+  - name
+  - unit
+  - note
+totals: none
+words: false
+sign_sets:
+- - TRƯỞNG PHÒNG ĐÀO TẠO
+notes:
+- Thời khoá biểu có thể thay đổi, sinh viên theo dõi thông báo.
+rows:
+- 6
+- 50
+always:
+- letterhead
+- doctitle
+- table
+optional:
+- meta
+- footer
+- notes
+- signatures
+- footnote
+en_ok: false

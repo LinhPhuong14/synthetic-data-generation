@@ -1,0 +1,59 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: phieu_tiem_chung
+profile: medical
+org_kind: hospital
+national: 0.8
+titles:
+- PHIẾU TIÊM CHỦNG
+- SỔ TIÊM CHỦNG CÁ NHÂN
+- GIẤY CHỨNG NHẬN TIÊM CHỦNG
+subtitles:
+- ''
+- Mẫu TC-01
+- ''
+fields:
+- patient
+- dob
+- gender
+- address_home
+- record_no
+field_span:
+- 4
+- 5
+columns:
+- - stt
+  - date
+  - name
+  - ref
+  - note
+- - stt
+  - date
+  - name
+  - qty
+  - note
+totals: count
+words: false
+sign_sets:
+- - CÁN BỘ TIÊM CHỦNG
+- - NGƯỜI ĐƯỢC TIÊM
+  - CÁN BỘ Y TẾ
+  - TRƯỞNG TRẠM
+notes:
+- Theo dõi tại điểm tiêm ít nhất 30 phút sau khi tiêm.
+- Giữ phiếu để đối chiếu cho các mũi tiếp theo.
+rows:
+- 1
+- 18
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- signatures
+optional:
+- meta
+- footer
+- notes
+- photo
+- footnote
+en_ok: true

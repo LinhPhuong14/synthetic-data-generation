@@ -1,0 +1,55 @@
+# THAM SỐ NỘI DUNG — handover_record
+#
+# BIÊN BẢN BÀN GIAO TÀI SẢN: hai bên, một bảng đếm đồ, ba chữ ký. Tờ này có
+# bảng hàng thật (`num_items`) nên KHÁC mọi biểu mẫu `no_items` khác của kho —
+# và đó là lý do nó là một document riêng chứ không phải một layout thứ hai
+# của `form_brief`: một layout có bảng mà tài liệu không sinh dòng hàng là
+# đúng lỗi `pipeline/invariants.py` bắt.
+#
+# Cột "Thành tiền" đọc `amount` — giá trị còn lại của tài sản, con số duy nhất
+# trên tờ giấy, nên `totals` có mặt và cộng đúng.
+
+profile: admin
+invoice: true
+form_fields: true
+num_items: [3, 7]
+price_step: 1000
+show_vat: false
+show_subtotal: false
+show_payment: false
+show_amount_words: false
+show_number: false
+show_seller_tax_code: false
+show_seller_website: false
+titles: ["BIÊN BẢN BÀN GIAO TÀI SẢN", "BIÊN BẢN BÀN GIAO CÔNG CỤ DỤNG CỤ"]
+serial_format: "{n}/BBBG"
+units: ["Cái", "Bộ", "Chiếc", "Hộp", "Thùng", "Máy"]
+# Nhãn dòng tổng: tờ này KHÔNG thanh toán gì, nó cộng giá trị còn lại của số
+# tài sản đã đếm. Để nguyên nhãn mặc định là in "Thanh toán" lên một biên bản
+# không có đồng nào đổi chủ.
+total_labels:
+  grand: "Tổng giá trị tài sản bàn giao"
+professions:
+  - "Nhân viên phòng Vật tư"
+  - "Thủ kho"
+  - "Kế toán tài sản"
+  - "Cán bộ kỹ thuật"
+  - "Trưởng bộ phận"
+party_fields:
+  left:
+    - [applicant_name, "Bên giao (ông/bà)"]
+    - [profession, "Chức vụ"]
+    - [seller_unit, "Đơn vị"]
+  right:
+    - [witness_name, "Bên nhận (ông/bà)"]
+    - [buyer_company, "Đơn vị"]
+    - [date, "Thời gian bàn giao"]
+notes:
+  - "Hôm nay, hai bên cùng tiến hành kiểm kê và bàn giao số tài sản, công cụ dụng cụ có tên trong bảng trên."
+  - "Bên nhận đã kiểm tra hiện trạng, số lượng và chủng loại của toàn bộ tài sản nêu trên và xác nhận đúng như đã ghi."
+  - "Kể từ thời điểm ký biên bản này, Bên nhận chịu trách nhiệm quản lý, sử dụng và bảo quản số tài sản đã nhận."
+  - "Biên bản được lập thành 02 bản có giá trị như nhau, mỗi bên giữ 01 bản."
+signature_labels:
+  - ["Bên giao", "(Ký, ghi rõ họ tên)"]
+  - ["Bên nhận", "(Ký, ghi rõ họ tên)"]
+  - ["Xác nhận của đơn vị", "(Ký, đóng dấu)"]

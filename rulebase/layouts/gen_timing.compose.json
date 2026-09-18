@@ -1,0 +1,141 @@
+{
+ "document": "bakery_order",
+ "seed": 4001,
+ "paper": {
+  "sheet": "a4",
+  "width": [
+   68,
+   82
+  ],
+  "gutter": 3
+ },
+ "reasoning": {
+  "printer": "chế độ coverage: không có server, nên tờ này do một phép bốc có hạt giống 4001 quyết, không do ai suy luận về nhà in",
+  "reader": "không suy luận — thứ tự khối và thứ tự cột chép từ phôi `invoice_brand`, khối thêm vào đặt theo chỗ các phôi khác đặt nó",
+  "first": "header",
+  "required": [
+   "footer",
+   "header",
+   "notes",
+   "parties",
+   "strip",
+   "table",
+   "totals"
+  ],
+  "density": "bề ngang 68..82 ký tự — đầu hẹp lấy từ 44 ký tự cột cố định của phôi cộng 12 tối thiểu cho cột tên, không phải từ một phán đoán về giấy"
+ },
+ "blocks": [
+  {
+   "section": "header",
+   "region": "Page-Header"
+  },
+  {
+   "section": "strip",
+   "region": "Text"
+  },
+  {
+   "section": "parties",
+   "region": "Text"
+  },
+  {
+   "section": "table",
+   "region": "Table",
+   "columns": [
+    {
+     "key": "stt",
+     "title": "Mục",
+     "width": 5,
+     "align": "center"
+    },
+    {
+     "key": "name",
+     "title": "Sản phẩm",
+     "width": 0,
+     "align": "left"
+    },
+    {
+     "key": "qty",
+     "title": "Số lượng",
+     "width": 10,
+     "align": "right"
+    },
+    {
+     "key": "unit_price",
+     "title": "Đơn giá",
+     "width": 14,
+     "align": "right"
+    },
+    {
+     "key": "amount",
+     "title": "Thành tiền",
+     "width": 15,
+     "align": "right"
+    }
+   ]
+  },
+  {
+   "section": "totals",
+   "region": "Table"
+  },
+  {
+   "section": "notes",
+   "region": "Text"
+  },
+  {
+   "section": "footer",
+   "region": "Page-Footer"
+  }
+ ],
+ "settings": {
+  "header": {
+   "name_scale": [
+    1.35,
+    1.6
+   ],
+   "name_bold": true,
+   "title": true,
+   "address": false,
+   "phone": false,
+   "title_scale": [
+    1.3,
+    1.55
+   ],
+   "address2": false,
+   "website": false
+  },
+  "strip": {
+   "rule_after": false
+  },
+  "parties": {
+   "style": "two_column",
+   "split": 0.38,
+   "gap": 3
+  },
+  "table": {
+   "frame": false,
+   "shade": 0.12,
+   "header_rules": true
+  },
+  "totals": {
+   "emphasise_grand": true,
+   "grand_scale": [
+    1.1,
+    1.3
+   ],
+   "grand_two_lines": false,
+   "frame": false,
+   "indent": 0.4
+  },
+  "notes": {
+   "style": "two_column",
+   "split": 0.52
+  },
+  "footer": {
+   "rule_before": false
+  }
+ },
+ "page": {},
+ "page_order": [],
+ "unmet": [],
+ "by": "coverage"
+}

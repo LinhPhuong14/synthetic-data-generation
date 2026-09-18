@@ -1,0 +1,32 @@
+# Tài sản, công cụ dụng cụ ghi trên biên bản bàn giao nội bộ.
+# Định dạng: tên<TAB>giá trị còn lại tối thiểu<TAB>giá trị còn lại tối đa  (VND)
+#
+# KHÔNG phải hàng hoá bán ra như `items_invoice.txt`: cột tiền ở đây là GIÁ TRỊ
+# CÒN LẠI của một món đồ đã dùng, nên khoảng giá thấp hơn nhiều và rất rộng —
+# một cái ghế xoay đã khấu hao và một máy chủ mới mua nằm trên cùng một tờ.
+
+Máy tính xách tay Dell Latitude	4500000	22000000
+Máy tính để bàn HP ProDesk	3200000	14000000
+Màn hình LCD 24 inch	1200000	4500000
+Máy in laser đen trắng	1800000	9000000
+Máy in đa chức năng	3500000	16000000
+Máy chiếu và màn chiếu	4000000	18000000
+Bàn làm việc gỗ công nghiệp	900000	4200000
+Ghế xoay văn phòng	450000	2400000
+Tủ hồ sơ sắt hai cánh	1500000	6500000
+Tủ tài liệu gỗ ba ngăn	1200000	5200000
+Điều hoà treo tường 12000 BTU	3500000	13500000
+Máy hút ẩm công nghiệp	2800000	9500000
+Điện thoại bàn IP	350000	1800000
+Bộ định tuyến mạng không dây	600000	3600000
+Máy chấm công vân tay	1500000	6800000
+Máy huỷ tài liệu	1100000	5400000
+Két sắt chống cháy	3800000	17000000
+Xe đẩy hàng hai tầng	800000	3200000
+Thang nhôm gấp bốn đoạn	700000	2900000
+Bộ dụng cụ cơ khí cầm tay	1200000	5800000
+Máy khoan bê tông	1500000	7200000
+Đồng hồ đo điện vạn năng	450000	2600000
+Bình chữa cháy bột ABC	280000	1200000
+Camera giám sát trong nhà	600000	3400000
+Máy bộ đàm cầm tay	900000	4800000

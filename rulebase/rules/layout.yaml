@@ -1,0 +1,807 @@
+# THUỘC TÍNH 2/10 — BỐ CỤC
+#
+# Mỗi `id` ở đây phải có một file cùng tên trong `rulebase/layouts/`. File đó
+# mô tả cột, dòng, chỗ ngắt — đo từ ảnh hoá đơn thật, xem phần `source:`.
+#
+# requires/excludes ràng buộc bố cục với loại document: bố cục siêu thị in mã
+# vạch thì chỉ dùng được cho document có gắn thẻ `has_barcode`. Không có ràng
+# buộc này thì sampler sẽ sinh ra hoá đơn quán nhậu có cột mã vạch trống.
+#
+# ---------------------------------------------------------------------------
+# NODE CHA (`groups:`) — vì "bố cục" đã không còn là MỘT loại việc
+#
+# Danh sách phẳng nói được "có bao nhiêu bố cục", nhưng không nói được rằng tờ
+# giấy tính tiền in nhiệt và tờ hoá đơn xuất khẩu song ngữ chỉ giống nhau đúng
+# ở chỗ cùng đo bằng ký tự. `groups:` là chỗ ghi điều đó: mỗi node là một HỌ
+# giấy tờ, có `id` cho code và `label` cho người đọc.
+#
+# Node không phải để trang trí. `tags`, `requires`, `excludes` viết trên node
+# được HỢP vào từng giá trị bên dưới, nên ràng buộc đúng cho cả họ thì viết
+# một lần — và bố cục thêm vào sau này không thể quên nó. Xem `rulebase/spec.py`.
+#
+# File luật dùng `options:` HOẶC `groups:`, không dùng cả hai.
+
+groups:
+
+  # ------------------------------------------------------------------------
+  - id: retail_receipt
+    label: "Hoá đơn tiêu dùng — giấy tính tiền in tại quầy"
+    # Giấy cuộn, in xong đưa tay khách. Không ghi tên ai, không có chữ ký,
+    # không có số hoá đơn để tra cứu: nó ghi lại một lần mua, không phải một
+    # chứng từ. Cả họ này bị loại khỏi mọi document là hoá đơn.
+    excludes: [doc_invoice]
+    tags: [till_receipt]
+    options:
+      # `excludes: [has_groups]` trên cả ba layout dưới: chúng không đọc
+      # `table.group_span`, nên một document khai `groups:` (restaurant_menu_full)
+      # sẽ ra banner mục hẹp 1 cột thay vì chạy hết bề rộng -- đúng nhưng xấu,
+      # và không phải thứ layout này được đo từ ảnh nào. `eatery_menu_full` là
+      # layout duy nhất cho `has_groups`.
+      - id: eatery_indexed
+        weight: 3
+        requires: [doc_eatery]
+        excludes: [has_groups]
+        tags: [has_index_column, two_line_items]
+
+      # soạn tay 2026-09-10: phôi khác bộ cột và khác mẫu dòng, cùng loại giấy với eatery_indexed.
+      # Ràng buộc chép nguyên từ phôi gốc — cùng loại giấy thì cùng điều kiện vẽ.
+      - id: eatery_vat_vertical
+        weight: 2
+        requires: [doc_eatery]
+        excludes: [has_groups]
+        tags: [has_index_column, two_line_items]
+
+      # soạn tay 2026-09-10: phôi khác bộ cột và khác mẫu dòng, cùng loại giấy với eatery_indexed.
+      # Ràng buộc chép nguyên từ phôi gốc — cùng loại giấy thì cùng điều kiện vẽ.
+      - id: eatery_vat_grouped
+        weight: 2
+        requires: [doc_eatery]
+        excludes: [has_groups]
+        tags: [has_index_column, two_line_items]
+
+      # llm-generated, varied from eatery_indexed on 2026-08-27.
+      # Same document kind, so the same requires/excludes/tags; half the weight,
+      # because a variant should not double how often this kind is drawn.
+      - id: eatery_indexed_b
+        weight: 1
+        requires: [doc_eatery]
+        excludes: [has_groups]
+        tags: [has_index_column, two_line_items]
+
+      - id: eatery_ascii
+        weight: 2
+        requires: [doc_eatery]
+        excludes: [has_vat, has_groups]        # máy in đời cũ không in dòng thuế
+        tags: [ascii_only, no_title]
+
+      # soạn tay 2026-09-10: phôi khác bộ cột và khác mẫu dòng, cùng loại giấy với eatery_ascii.
+      # Ràng buộc chép nguyên từ phôi gốc — cùng loại giấy thì cùng điều kiện vẽ.
+      - id: eatery_tab_unit
+        weight: 2
+        requires: [doc_eatery]
+        excludes: [has_vat, has_groups]
+        tags: [ascii_only, no_title]
+
+      # Pha 0 / kế hoạch 19-kiểu-bảng: thực đơn chia mục, dòng banner colspan
+      # chạy hết bề rộng (`table.group_span`) -- xem `eatery_menu_full.yaml`.
+      # `requires: [has_groups]` buộc nó chỉ bốc cho document thật sự khai
+      # `groups:` (restaurant_menu_full), không lẫn vào pub_eatery/street_eatery.
+      - id: eatery_menu_full
+        weight: 2
+        requires: [doc_eatery, has_groups]
+        tags: [grouped_sections, colspan_banner]
+
+      # soạn tay 2026-09-10: phôi khác bộ cột và khác mẫu dòng, cùng loại giấy với eatery_menu_full.
+      # Ràng buộc chép nguyên từ phôi gốc — cùng loại giấy thì cùng điều kiện vẽ.
+      - id: eatery_menu_note_rail
+        weight: 2
+        requires: [doc_eatery, has_groups]
+        tags: [grouped_sections, colspan_banner]
+
+      # soạn tay 2026-09-10: phôi khác bộ cột và khác mẫu dòng, cùng loại giấy với eatery_menu_full.
+      # Ràng buộc chép nguyên từ phôi gốc — cùng loại giấy thì cùng điều kiện vẽ.
+      - id: eatery_menu_two_row
+        weight: 2
+        requires: [doc_eatery, has_groups]
+        tags: [grouped_sections, colspan_banner]
+
+      # soạn tay 2026-09-10: phôi khác bộ cột và khác mẫu dòng, cùng loại giấy với eatery_menu_full.
+      # Ràng buộc chép nguyên từ phôi gốc — cùng loại giấy thì cùng điều kiện vẽ.
+      - id: eatery_menu_vat
+        weight: 2
+        requires: [doc_eatery, has_groups]
+        tags: [grouped_sections, colspan_banner]
+
+      - id: market_barcode
+        weight: 3
+        requires: [has_barcode]
+        tags: [barcode_rows]
+
+      # soạn tay 2026-09-10: phôi khác bộ cột và khác mẫu dòng, cùng loại giấy với market_barcode.
+      # Ràng buộc chép nguyên từ phôi gốc — cùng loại giấy thì cùng điều kiện vẽ.
+      - id: market_barcode_two_row
+        weight: 2
+        requires: [has_barcode]
+        tags: [barcode_rows]
+
+      - id: market_compact
+        weight: 3
+        requires: [doc_market]
+        excludes: [has_vat_lines]  # bố cục này không có chỗ cho dòng VAT riêng
+        tags: [wrapped_names]
+
+      # soạn tay 2026-09-10: phôi khác bộ cột và khác mẫu dòng, cùng loại giấy với market_compact.
+      # Ràng buộc chép nguyên từ phôi gốc — cùng loại giấy thì cùng điều kiện vẽ.
+      - id: market_slim_ledger
+        weight: 2
+        requires: [doc_market]
+        excludes: [has_vat_lines]
+        tags: [wrapped_names]
+
+      - id: notebook_ledger
+        weight: 2
+        requires: [doc_market]
+        # Không VAT và không mã vạch. Quyển sổ chép tay không tách dòng thuế,
+        # và không ai chép tay mã vạch của từng món — mà nhãn thì vẫn sinh ra
+        # `menu.barcode` nếu document có thẻ đó, thành ra một giá trị trong
+        # nhãn không có nét chữ nào trên trang. `tests/test_sheets.py` bắt
+        # đúng chuyện này.
+        excludes: [has_vat_lines, has_barcode]
+        tags: [handwritten, ruled_paper, fillable]
+
+      - id: market_vat
+        weight: 2
+        requires: [has_vat_lines]
+        tags: [vat_rows]
+
+
+  # ------------------------------------------------------------------------
+  - id: statutory_invoice
+    label: "Hoá đơn theo mẫu — tờ khung in sẵn, có Mẫu số / Ký hiệu / Số"
+    # Tờ A4 in sẵn khung: mẫu số, ký hiệu, số nhảy; bảng có kẻ ô và có dòng
+    # đánh số cột; cuối trang là chữ ký hai bên. Khung bảng đòi font đều nét
+    # (xem `laser_invoice` trong rules/visual.yaml), nên `ruled_table` đi kèm
+    # cả họ.
+    requires: [doc_invoice]
+    tags: [wide_paper, printed_form, ruled_table]
+    options:
+      - id: invoice_vat_form
+        weight: 2
+        requires: [invoice_form]
+        tags: [dotted_fields, fillable]
+
+      - id: invoice_vat_form_titl
+        weight: 2
+        requires: [invoice_form]
+        tags: [dotted_fields, fillable]
+
+      - id: invoice_vat_form_part
+        weight: 2
+        requires: [invoice_form]
+        tags: [dotted_fields, fillable]
+
+      # Bản in ra của hoá đơn điện tử: khối người bán trong khung, và tờ kết
+      # bằng bảng chia tiền theo từng thuế suất thay vì một dòng thuế.
+      - id: invoice_vat_summary
+        weight: 2
+        requires: [invoice_summary]
+        tags: [summary_table, boxed_letterhead, fillable]
+
+      - id: invoice_vat_summary_word
+        weight: 2
+        requires: [invoice_summary]
+        tags: [summary_table, boxed_letterhead, fillable]
+
+      - id: invoice_vat_summary_part
+        weight: 2
+        requires: [invoice_summary]
+        tags: [summary_table, boxed_letterhead, fillable]
+
+      # Tờ song ngữ. Không có `letterhead`: bên bán trên mẫu xuất khẩu là một
+      # khối trường có nhãn như bên mua, không phải một dòng tiêu đề.
+      - id: invoice_export
+        weight: 2
+        requires: [doc_export]
+        excludes: [has_vat]        # hàng xuất khẩu chịu thuế suất 0%
+        tags: [bilingual, numbered_columns, stacked_parties, fillable]
+
+      - id: invoice_export_tota
+        weight: 2
+        requires: [doc_export]
+        excludes: [has_vat]        # hàng xuất khẩu chịu thuế suất 0%
+        tags: [bilingual, numbered_columns, stacked_parties, fillable]
+
+  # ------------------------------------------------------------------------
+  - id: utility_invoice
+    label: "Hoá đơn dịch vụ tiện ích — điện, nước, tính theo chỉ số công tơ"
+    # Cũng là tờ mẫu, nhưng bán một thứ đo được chứ không bán một giỏ hàng:
+    # số lượng là HIỆU của hai chỉ số in ngay cạnh nó, nên bảng luôn có cột
+    # chỉ số và người đọc trừ lại được.
+    requires: [doc_utility]
+    tags: [wide_paper, printed_form, ruled_table]
+    options:
+      - id: invoice_water
+        weight: 2
+        requires: [metered_water]
+        tags: [meter_rows, fillable]
+
+      - id: invoice_water_word
+        weight: 2
+        requires: [metered_water]
+        tags: [meter_rows, fillable]
+
+      - id: invoice_water_titl
+        weight: 2
+        requires: [metered_water]
+        tags: [meter_rows, fillable]
+
+      - id: invoice_water_part
+        weight: 2
+        requires: [metered_water]
+        tags: [meter_rows, fillable]
+
+      - id: invoice_power
+        weight: 2
+        requires: [metered_power]
+        tags: [tier_rows, fillable]
+
+      - id: invoice_power_part
+        weight: 2
+        requires: [metered_power]
+        tags: [tier_rows, fillable]
+
+  # ------------------------------------------------------------------------
+  - id: lodging_invoice
+    label: "Hoá đơn lưu trú — khách sạn, khu nghỉ dưỡng, một dòng một đêm"
+    # Bán một khoảng THỜI GIAN chứ không bán một giỏ hàng: bảng có cột ngày và
+    # cột phòng, số dòng bằng số đêm, và tờ giấy kết bằng dòng đã trả / còn
+    # lại vì khách thanh toán khi trả phòng.
+    requires: [doc_lodging]
+    tags: [wide_paper, no_frame, key_strip, dated_rows]
+    options:
+      - id: invoice_hotel_stay
+        weight: 2
+        tags: [signature_names, fillable]
+
+      - id: invoice_hotel_compact
+        weight: 2
+        tags: [signature_names, narrow_sheet, fillable]
+
+  # ------------------------------------------------------------------------
+  - id: modern_invoice
+    label: "Hoá đơn thiết kế riêng — không kẻ khung, tổng tiền dồn về lề phải"
+    # Không phải tờ mẫu: doanh nghiệp tự thiết kế, in laser. Dấu hiệu là chỗ
+    # KHÔNG có — không khung, không dòng đánh số cột, không ô chữ ký đóng dấu
+    # — và chỗ có: khối tổng tiền nép sát lề phải thay vì chạy hết bề ngang.
+    requires: [doc_invoice]
+    tags: [wide_paper, no_frame]
+    options:
+      - id: invoice_tax_en
+        tags: [fillable]
+        weight: 2
+        requires: [lang_en]
+
+      # Tờ của tiệm bánh: địa chỉ cửa hàng xuống chân trang, chân trang chia
+      # hai khối cạnh nhau.
+      - id: invoice_brand
+        weight: 2
+        requires: [doc_brand]
+        tags: [key_strip, footer_columns, fillable]
+
+      - id: invoice_brand_note
+        weight: 2
+        requires: [doc_brand]
+        tags: [key_strip, footer_columns, fillable]
+
+      # llm-generated, composed for bakery_order from 1 phôi, registered against invoice_brand for its requires/excludes on 2026-09-09.
+      # Same document kind, so the same requires/excludes/tags; half the weight,
+      # because a variant should not double how often this kind is drawn.
+      - id: gen_try_bakery_order
+        weight: 1
+        requires: [doc_brand]
+        tags: [key_strip, footer_columns, fillable]
+
+      # llm-generated, composed for bakery_order from 1 phôi, registered against invoice_brand for its requires/excludes on 2026-09-09.
+      # Same document kind, so the same requires/excludes/tags; half the weight,
+      # because a variant should not double how often this kind is drawn.
+      # ----------------------------------------------------------------
+      # MƯỜI BỐ CỤC ROOT "Invoice / Billing" — xem docs/root-document-
+      # taxonomy.md §3.1. Chia hai nhóm theo đúng những gì mỗi file liệt
+      # trong `sections:` của nó, khớp với tài liệu nó `requires
+      - id: invoice_header_table
+        tags: [fillable]
+        weight: 2
+        requires: [rich_fields]
+
+      - id: invoice_logo_split
+        tags: [fillable]
+        weight: 2
+        requires: [rich_fields]
+
+      - id: invoice_logo_center
+        weight: 2
+        requires: [bare_fields]
+
+      - id: invoice_two_column
+        tags: [fillable]
+        weight: 2
+        requires: [rich_fields]
+
+      # Soạn mới, không đo từ ảnh: tiêu đề bảng hai tầng (`table.header_groups`),
+      # hộp số góc thay `strip`, các bên xếp dọc. Xem file bố cục.
+      - id: invoice_grouped_money
+        tags: [fillable]
+        weight: 2
+        requires: [rich_fields]
+
+      - id: invoice_rail_ledger
+        tags: [fillable]
+        weight: 2
+        requires: [rich_fields]
+
+      - id: invoice_long_ledger
+        tags: [fillable]
+        weight: 2
+        requires: [rich_fields]
+
+      - id: invoice_narrow_vertical
+        tags: [fillable]
+        weight: 2
+        requires: [rich_fields]
+
+      - id: invoice_sidebar
+        tags: [fillable]
+        weight: 2
+        requires: [rich_fields]
+
+      - id: invoice_keyvalue
+        tags: [fillable]
+        weight: 2
+        requires: [rich_fields]
+
+      - id: invoice_dense_table
+        weight: 2
+        requires: [bare_fields]
+
+      - id: invoice_minimalist
+        weight: 2
+        requires: [bare_fields]
+
+      - id: invoice_multipage
+        weight: 1
+        requires: [bare_fields]
+
+      - id: invoice_remittance
+        tags: [fillable]
+        weight: 2
+        requires: [rich_fields]
+
+  # ------------------------------------------------------------------------
+  - id: administrative_form
+    label: "Chứng từ hành chính — không phải hoá đơn, nhưng vẫn là giấy tờ có nhãn"
+    # Hai tờ đầu tiên trong kho KHÔNG ghi lại một lần mua bán. Một tờ kê chi phí
+    # điều trị và chia tiền cho bốn nguồn; một tờ uỷ quyền cho người khác đi
+    # nhận tiền và không có bảng hàng nào cả. Chúng ở chung một họ vì cùng một
+    # điểm: cấu trúc nằm ở KHỐI TRƯỜNG, không ở bảng — kể cả tờ có bảng mười
+    # hai cột, thì hai mươi trường đánh số phía trên vẫn là nửa còn lại của nó.
+    requires: [doc_invoice]
+    tags: [wide_paper, printed_form]
+    options:
+      - id: medical_statement
+        weight: 2
+        requires: [doc_medical]
+        tags: [ruled_table, grouped_rows, multi_source, fillable]
+
+      - id: medical_statement_titl
+        weight: 2
+        requires: [doc_medical]
+        tags: [ruled_table, grouped_rows, multi_source, fillable]
+
+      - id: medical_statement_part
+        weight: 2
+        requires: [doc_medical]
+        tags: [ruled_table, grouped_rows, multi_source, fillable]
+
+      - id: medical_statement_spli
+        weight: 2
+        requires: [doc_medical]
+        tags: [ruled_table, grouped_rows, multi_source, fillable]
+
+      # Cùng mẫu 01/KBCB, tiêu đề BA tầng (`table.header_supers`). Tờ mẫu in
+      # ra cả hai dáng, và một bộ dữ liệu chỉ có dáng hai tầng là bộ không dạy
+      # mô hình đọc dáng thứ ba.
+      - id: medical_statement_tiers
+        weight: 2
+        requires: [doc_medical]
+        tags: [ruled_table, grouped_rows, multi_source, fillable]
+
+      - id: authorisation_letter
+        weight: 2
+        requires: [doc_authorisation]
+        tags: [no_frame, dotted_fields, field_form, fillable]
+
+      - id: authorisation_letter_titl
+        weight: 2
+        requires: [doc_authorisation]
+        tags: [no_frame, dotted_fields, field_form, fillable]
+
+      # Root 3 (Form / Application) — mười layout khớp mười đề xuất ở
+      # `docs/root-document-taxonomy.md` § 3.3 (FORM-01..FORM-10). Mỗi
+      # `requires:` khớp đúng tag document ở `rules/document.yaml` cho
+      # đúng hình dạng nội dung layout đó cần in — cùng cơ chế root 1 dùng
+      # cho invoice_plain/invoice_detailed. Vẽ qua họ `form` mới,
+      # `generators/html/sheets/form.py`.
+      - id: form_questionnaire
+        weight: 2
+        requires: [bare_kv]
+        tags: [field_form, fillable]
+
+      # soạn tay 2026-09-10: phôi khác khung cho cùng loại giấy với form_questionnaire.
+      # Ràng buộc chép nguyên từ phôi gốc — cùng loại giấy thì cùng điều kiện vẽ.
+      - id: form_questionnaire_checklist
+        weight: 2
+        requires: [bare_kv]
+        tags: [field_form, fillable]
+
+      - id: form_timesheet_grid
+        weight: 1
+        requires: [roster]
+        tags: [ruled_table, grid_form]
+
+      - id: form_timesheet_grid_spli
+        weight: 1
+        requires: [roster]
+        tags: [ruled_table, grid_form]
+
+      - id: form_project_kv
+        weight: 2
+        requires: [bare_kv]
+        tags: [field_form, fillable]
+
+      - id: form_two_column
+        weight: 1
+        requires: [symmetric]
+        tags: [field_form, two_column, fillable]
+
+      # soạn tay 2026-09-10: phôi khác khung cho cùng loại giấy với form_two_column.
+      # Ràng buộc chép nguyên từ phôi gốc — cùng loại giấy thì cùng điều kiện vẽ.
+      - id: form_two_column_govt_a5
+        weight: 1
+        requires: [symmetric]
+        tags: [field_form, two_column, fillable]
+
+      # soạn tay 2026-09-10: phôi khác khung cho cùng loại giấy với form_two_column.
+      # Ràng buộc chép nguyên từ phôi gốc — cùng loại giấy thì cùng điều kiện vẽ.
+      - id: form_two_column_photo
+        weight: 1
+        requires: [symmetric]
+        tags: [field_form, two_column, fillable]
+
+      - id: form_multi_section
+        weight: 1
+        requires: [sectioned]
+        tags: [ruled_table, field_form, fillable]
+
+      - id: form_multi_section_part
+        weight: 1
+        requires: [sectioned]
+        tags: [ruled_table, field_form, fillable]
+
+      - id: form_multi_section_spli
+        weight: 1
+        requires: [sectioned]
+        tags: [ruled_table, field_form, fillable]
+
+      - id: form_checkbox_heavy
+        weight: 1
+        requires: [checklist]
+        tags: [checkbox_form, fillable]
+
+      # soạn tay 2026-09-10: phôi khác khung cho cùng loại giấy với form_checkbox_heavy.
+      # Ràng buộc chép nguyên từ phôi gốc — cùng loại giấy thì cùng điều kiện vẽ.
+      - id: form_checkbox_govt
+        weight: 1
+        requires: [checklist]
+        tags: [checkbox_form, fillable]
+
+      # soạn tay 2026-09-10: phôi khác khung cho cùng loại giấy với form_checkbox_heavy.
+      # Ràng buộc chép nguyên từ phôi gốc — cùng loại giấy thì cùng điều kiện vẽ.
+      - id: form_checkbox_sectioned
+        weight: 1
+        requires: [checklist]
+        tags: [checkbox_form, fillable]
+
+      - id: form_activity_signature
+        weight: 1
+        requires: [activity]
+        tags: [ruled_table, field_form]
+
+      - id: form_activity_signature_tota
+        weight: 1
+        requires: [activity]
+        tags: [ruled_table, field_form]
+
+      - id: form_table_based
+        weight: 1
+        requires: [checklist_table]
+        tags: [ruled_table, checkbox_form]
+
+      - id: form_table_based_tota
+        weight: 1
+        requires: [checklist_table]
+        tags: [ruled_table, checkbox_form]
+
+      - id: form_government_app
+        weight: 1
+        requires: [dense_registry]
+        tags: [field_form, govt_masthead, fillable]
+
+      # soạn tay 2026-09-10: phôi khác khung cho cùng loại giấy với form_government_app.
+      # Ràng buộc chép nguyên từ phôi gốc — cùng loại giấy thì cùng điều kiện vẽ.
+      - id: form_dense_photobox
+        weight: 1
+        requires: [dense_registry]
+        tags: [field_form, govt_masthead, fillable]
+
+      - id: form_dense_registration
+        weight: 1
+        requires: [dense_registry]
+        tags: [field_form, fillable]
+
+  # ------------------------------------------------------------------------
+      # ----------------------------------------------------------------------
+      # Năm tờ hành chính doanh nghiệp. Tất cả vẽ qua họ `form`, nên không
+      # template CSS nào phải thêm — đúng bước 5 của README §6: thêm thành
+      # viên vào họ có sẵn thì đọc từ file bố cục.
+      - id: form_dispatch_letter
+        weight: 2
+        requires: [dispatch_note]
+        tags: [field_form, fillable]
+
+      # soạn tay 2026-09-10: phôi khác khung cho cùng loại giấy với form_dispatch_letter.
+      # Ràng buộc chép nguyên từ phôi gốc — cùng loại giấy thì cùng điều kiện vẽ.
+      - id: form_dispatch_sectioned
+        weight: 2
+        requires: [dispatch_note]
+        tags: [field_form, fillable]
+
+      # soạn tay 2026-09-10: phôi khác khung cho cùng loại giấy với form_dispatch_letter.
+      # Ràng buộc chép nguyên từ phôi gốc — cùng loại giấy thì cùng điều kiện vẽ.
+      - id: form_dispatch_checklist
+        weight: 2
+        requires: [dispatch_note]
+        tags: [field_form, fillable]
+
+      # soạn tay 2026-09-10: phôi khác khung cho cùng loại giấy với form_dispatch_letter.
+      # Ràng buộc chép nguyên từ phôi gốc — cùng loại giấy thì cùng điều kiện vẽ.
+      - id: form_dispatch_govt
+        weight: 2
+        requires: [dispatch_note]
+        tags: [field_form, fillable]
+
+      # llm-generated, composed for dispatch_letter from 1 phôi, registered against form_dispatch_letter for its requires/excludes on 2026-09-09.
+      # Same document kind, so the same requires/excludes/tags; half the weight,
+      # because a variant should not double how often this kind is drawn.
+      - id: form_handover_record
+        weight: 2
+        requires: [handover]
+        tags: [field_form, ruled_table, fillable]
+
+      - id: form_handover_record_note
+        weight: 2
+        requires: [handover]
+        tags: [field_form, ruled_table, fillable]
+
+      - id: form_handover_record_tota
+        weight: 2
+        requires: [handover]
+        tags: [field_form, ruled_table, fillable]
+
+      # `sheet: a5` — bố cục duy nhất của họ này không phải A4, nên nó KHÔNG
+      # mang `wide_paper` mà node cha đặt... node cha đặt cho cả nhóm, nên tag
+      # ấy vẫn tới; `a5` chỉ đổi khổ giấy, không đổi việc nó là giấy rời.
+      - id: form_cash_voucher
+        weight: 2
+        requires: [cash_voucher]
+        tags: [field_form, fillable]
+
+      # soạn tay 2026-09-10: phôi khác khung cho cùng loại giấy với form_cash_voucher.
+      # Ràng buộc chép nguyên từ phôi gốc — cùng loại giấy thì cùng điều kiện vẽ.
+      - id: form_cash_voucher_govt
+        weight: 2
+        requires: [cash_voucher]
+        tags: [field_form, fillable]
+
+      - id: form_leave_application
+        weight: 2
+        requires: [leave_request]
+        tags: [field_form, fillable]
+
+      # Không `fillable`: biên bản họp được đánh máy rồi in ra ký, không ai
+      # điền tay vào giữa đoạn văn. Thiếu tag ấy là cách nói "đừng bốc chữ
+      # viết tay cho tờ này" bằng chính bộ luật.
+      - id: form_meeting_minutes
+        weight: 2
+        requires: [meeting_record]
+        tags: [field_form]
+
+      # soạn tay 2026-09-10: phôi khác khung cho cùng loại giấy với form_meeting_minutes.
+      # Ràng buộc chép nguyên từ phôi gốc — cùng loại giấy thì cùng điều kiện vẽ.
+      - id: form_minutes_govt_split
+        weight: 2
+        requires: [meeting_record]
+        tags: [field_form]
+
+      # soạn tay 2026-09-10: phôi khác khung cho cùng loại giấy với form_meeting_minutes.
+      # Ràng buộc chép nguyên từ phôi gốc — cùng loại giấy thì cùng điều kiện vẽ.
+      - id: form_minutes_sectioned
+        weight: 2
+        requires: [meeting_record]
+        tags: [field_form]
+
+  - id: periodical_page
+    label: "Báo/tạp chí — trang biên tập, không phải hoá đơn"
+    # Root 4 (Newspaper/Magazine) -- bốn layout đầu tiên khớp bốn mockup ở
+    # `docs/root-document-taxonomy.md` § 3.7 (N-01, N-06, N-09, N-10). Một
+    # trang báo/tạp chí không ghi lại một lần mua bán: không bên mua/bán,
+    # không bảng hàng, không tổng tiền -- `excludes: [doc_invoice]` ở đây
+    # giống hệt `retail_receipt` ở trên, không phải một ngoại lệ mới. Vẽ qua
+    # họ `periodical` mới, `generators/html/sheets/periodical.py`; mô hình
+    # nội dung ở `rulebase/periodical.py` (bốn dataclass, không kế thừa
+    # `Receipt`/`Invoice`) chứ không phải một `document:` mới trên mô hình cũ.
+    excludes: [doc_invoice]
+    tags: [periodical, wide_paper]
+    options:
+      - id: newspaper_front_broadsheet
+        weight: 2
+        requires: [periodical_lead_sidebar]
+        tags: [lead_sidebar, multi_column_body]
+
+        # TẮT: trang rao vặt không phải chứng từ hành chính, và bố cục của
+        # nó để trống hai phần ba tờ giấy bên phải — đo trên html_131 của
+        # data/llm200: ảnh 1354x2117, cột quảng cáo chiếm ~35% bề ngang,
+        # phần còn lại là giấy trắng. Một trang như thế dạy mô hình rằng
+        # hai phần ba tờ giấy thường không có gì để đọc.
+      - id: newspaper_classifieds
+        enabled: false
+        weight: 2
+        requires: [periodical_classifieds]
+        tags: [classified_ads, six_column]
+
+      - id: magazine_contents
+        weight: 2
+        requires: [periodical_toc]
+        tags: [toc_listing, two_column]
+
+      - id: magazine_qa_interview
+        weight: 2
+        requires: [periodical_qa]
+        tags: [qa_transcript, two_column, full_bleed_photo]
+
+  # ------------------------------------------------------------------------
+  - id: insurance_page
+    label: "Bảo hiểm — chứng nhận, hợp đồng, đơn từ, thẻ"
+    # Mười layout, mười `composition:` riêng trong `family: insurance`
+    # (`generators/html/sheets/insurance.py`) -- nhưng vẫn `requires:
+    # [doc_invoice]` ở đây, giống `administrative_form` phía trên, KHÔNG
+    # giống `periodical_page`: mỗi document bảo hiểm vẫn đặt `invoice: true`
+    # và dựng một `Invoice` thật (`rulebase/content.py`), không phải một mô
+    # hình nội dung mới. `sheet: a4` trên cả mười layout (kể cả những tờ
+    # thật sự khổ ngang/nhỏ hơn) là quy ước đã lập từ `periodical_page`.
+    requires: [doc_invoice]
+    tags: [insurance]
+    options:
+      - id: insurance_moto_certificate
+        weight: 2
+        requires: [insurance_moto_cert]
+        tags: [tiny_card, landscape, fillable]
+
+      - id: insurance_auto_certificate
+        weight: 2
+        requires: [insurance_auto_cert]
+        tags: [table_form, landscape, fillable]
+
+      - id: insurance_life_schedule
+        weight: 2
+        requires: [insurance_life_schedule]
+        tags: [priced_table, boxed_note, fillable]
+
+      - id: insurance_application_form
+        weight: 2
+        requires: [insurance_application_form]
+        tags: [comb_box, checklist_table, fillable]
+
+      - id: insurance_application_form_part
+        weight: 2
+        requires: [insurance_application_form]
+        tags: [comb_box, checklist_table, fillable]
+
+      - id: insurance_application_form_note
+        weight: 2
+        requires: [insurance_application_form]
+        tags: [comb_box, checklist_table, fillable]
+
+      - id: insurance_health_id_card
+        weight: 2
+        requires: [insurance_health_id_card]
+        tags: [id_card, landscape, two_faces, fillable]
+
+      - id: insurance_health_id_card_titl
+        weight: 2
+        requires: [insurance_health_id_card]
+        tags: [id_card, landscape, two_faces, fillable]
+
+      - id: insurance_health_certificate
+        weight: 2
+        requires: [insurance_health_cert]
+        tags: [sidebar, grouped_rows, fillable]
+
+      - id: insurance_health_certificate_note
+        weight: 2
+        requires: [insurance_health_cert]
+        tags: [sidebar, grouped_rows, fillable]
+
+      - id: insurance_cargo_policy
+        weight: 2
+        requires: [insurance_cargo_policy]
+        tags: [bilingual, bare_kv, fillable]
+
+      - id: insurance_cargo_policy_titl
+        weight: 2
+        requires: [insurance_cargo_policy]
+        tags: [bilingual, bare_kv, fillable]
+
+      - id: insurance_fire_certificate
+        weight: 2
+        requires: [insurance_fire_cert]
+        tags: [roman_sections, priced_table, fillable]
+
+      - id: insurance_fire_certificate_part
+        weight: 2
+        requires: [insurance_fire_cert]
+        tags: [roman_sections, priced_table, fillable]
+
+      - id: insurance_fire_certificate_note
+        weight: 2
+        requires: [insurance_fire_cert]
+        tags: [roman_sections, priced_table, fillable]
+
+      - id: insurance_fire_certificate_tota
+        weight: 2
+        requires: [insurance_fire_cert]
+        tags: [roman_sections, priced_table, fillable]
+
+      - id: insurance_travel_certificate
+        weight: 2
+        requires: [insurance_travel_cert]
+        tags: [bilingual, landscape, priced_table, fillable]
+
+      - id: insurance_travel_certificate_titl
+        weight: 2
+        requires: [insurance_travel_cert]
+        tags: [bilingual, landscape, priced_table, fillable]
+
+      - id: insurance_travel_certificate_part
+        weight: 2
+        requires: [insurance_travel_cert]
+        tags: [bilingual, landscape, priced_table, fillable]
+
+      - id: insurance_travel_certificate_note
+        weight: 2
+        requires: [insurance_travel_cert]
+        tags: [bilingual, landscape, priced_table, fillable]
+
+      - id: insurance_property_contract
+        weight: 2
+        requires: [insurance_property_contract]
+        tags: [two_party, priced_table, fillable]
+
+      - id: insurance_property_contract_note
+        weight: 2
+        requires: [insurance_property_contract]
+        tags: [two_party, priced_table, fillable]
+
+      - id: insurance_property_contract_tota
+        weight: 2
+        requires: [insurance_property_contract]
+        tags: [two_party, priced_table, fillable]

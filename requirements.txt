@@ -1,0 +1,16 @@
+# Môi trường `.venv` ở gốc kho: sinh dữ liệu (`synthgen/`, `agent/`) VÀ vẽ.
+#
+# Trước đây `playwright` chỉ có ở `generators/html/.venv`, nên
+# `agent/compose_page.py` chạy bằng `.venv` sinh xong HTML là bước vẽ chết ngay
+# ở `import playwright` -- lượt pilot7 ra 24 trang mà không một tấm ảnh nào để
+# xem. Hai môi trường cho một đường chạy là một chỗ hỏng không ai thấy cho đến
+# khi nó hỏng.
+#
+# Chromium KHÔNG tải lại: `~/.cache/ms-playwright/` dùng chung giữa các môi
+# trường, nên `pip install playwright` là đủ, không cần `playwright install`.
+playwright==1.62.0        # dàn trang và đo hộp -- `generators/html/page.py`
+opencv-python-headless>=4.8,<5   # đọc/ghi ảnh, vẽ hộp chồng lên trang
+numpy>=1.24
+PyYAML>=6.0               # rulebase/ là YAML
+Pillow>=10.0              # ảnh hoạ tiết, con dấu
+pytest>=8.0               # tests/

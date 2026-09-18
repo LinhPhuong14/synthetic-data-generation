@@ -1,0 +1,62 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: phieu_bao_gia_dich_vu
+profile: invoice
+org_kind: company
+national: 0.05
+titles:
+- BÁO GIÁ DỊCH VỤ
+- BẢNG CHÀO GIÁ DỊCH VỤ
+- PHIẾU BÁO GIÁ
+subtitles:
+- Hiệu lực 30 ngày
+- ''
+- QUOTATION
+fields:
+- seller_name
+- seller_tax
+- seller_addr
+- seller_phone
+- buyer_name
+- buyer_org
+field_span:
+- 4
+- 6
+columns:
+- - stt
+  - name
+  - unit
+  - qty
+  - unit_price
+  - amount
+- - stt
+  - name
+  - unit_price
+  - discount
+  - amount
+  - note
+totals: money
+words: false
+sign_sets:
+- - NGƯỜI LẬP BÁO GIÁ
+  - GIÁM ĐỐC KINH DOANH
+notes:
+- Giá trên chưa bao gồm thuế GTGT.
+- Báo giá không phải là hợp đồng.
+rows:
+- 2
+- 40
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- totals
+optional:
+- meta
+- footer
+- notes
+- words
+- signatures
+- summary
+- clauses
+en_ok: true

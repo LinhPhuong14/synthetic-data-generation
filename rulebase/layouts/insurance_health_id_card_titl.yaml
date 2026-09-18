@@ -1,0 +1,32 @@
+# soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (title_first), giữ nguyên cột và dây nối dữ liệu của insurance_health_id_card
+id: insurance_health_id_card_titl
+name: insurance_health_id_card — title_first
+source: 'soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (title_first), giữ nguyên cột và dây nối dữ liệu của insurance_health_id_card'
+family: insurance
+composition: health_id_card
+width:
+- 92
+- 104
+gutter: 2
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- doctitle
+- letterhead
+- parties
+- notes
+- footer
+letterhead:
+  frame: false
+  labels:
+    address: ''
+    tax_code: ''
+    phone: ''
+    account: ''
+    branch: ''
+    form_no: ''
+    serial: ''
+    number: 'Mã số thẻ:'
+parties:
+  style: stacked

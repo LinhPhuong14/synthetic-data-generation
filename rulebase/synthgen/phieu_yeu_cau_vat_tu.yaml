@@ -1,0 +1,57 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: phieu_yeu_cau_vat_tu
+profile: invoice
+org_kind: company
+national: 0.1
+titles:
+- PHIẾU YÊU CẦU VẬT TƯ
+- PHIẾU ĐỀ NGHỊ CẤP VẬT TƯ
+- PHIẾU LĨNH VẬT TƯ
+subtitles:
+- ''
+- 'Số: ..../YCVT'
+fields:
+- full_name
+- position
+- record_no
+- period
+- object
+field_span:
+- 4
+- 5
+columns:
+- - stt
+  - ref
+  - name
+  - unit
+  - qty
+  - note
+- - stt
+  - name
+  - unit
+  - qty
+  - unit_price
+  - amount
+totals: money
+words: false
+sign_sets:
+- - NGƯỜI ĐỀ NGHỊ
+  - PHỤ TRÁCH BỘ PHẬN
+  - THỦ KHO
+notes:
+- Vật tư chỉ được cấp khi phiếu có đủ chữ ký phê duyệt.
+rows:
+- 2
+- 40
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- signatures
+optional:
+- meta
+- footer
+- notes
+- totals
+en_ok: false

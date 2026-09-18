@@ -1,0 +1,111 @@
+# soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (title_first), giữ nguyên cột và dây nối dữ liệu của invoice_water
+id: invoice_water_titl
+name: invoice_water — title_first
+source: 'soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (title_first), giữ nguyên cột và dây nối dữ liệu của invoice_water'
+family: statutory
+width:
+- 84
+- 92
+gutter: 3
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- doctitle
+- letterhead
+- parties
+- table
+- totals
+- words
+- signatures
+- footer
+letterhead:
+  name_scale:
+  - 1.05
+  - 1.25
+  name_bold: true
+  serial_width: 24
+  labels:
+    address: 'Địa chỉ:'
+    tax_code: 'Mã số thuế:'
+    phone: ''
+    branch: ''
+    serial: 'Ký hiệu:'
+    number: 'Số:'
+doctitle:
+  scale:
+  - 1.2
+  - 1.45
+parties:
+  style: two_column
+  split: 0.56
+  gap: 2
+  leader: ''
+column_header: true
+column_header_bold: true
+columns:
+- key: meter_now
+  title: Số Đọc Tháng Này
+  width: 14
+  align: center
+  title_align: center
+- key: meter_prev
+  title: Số Đọc Tháng Trước
+  width: 14
+  align: center
+  title_align: center
+- key: qty
+  title: Số Lượng Tiêu Thụ (m3)
+  width: 14
+  align: center
+  title_align: center
+- key: quota
+  title: Định Mức Tiêu Thụ (m3)
+  width: 14
+  align: right
+  title_align: center
+- key: unit_price
+  title: Đơn giá (đ)
+  width: 14
+  align: right
+  title_align: center
+- key: amount
+  title: Thành tiền (đ)
+  width: 12
+  align: right
+  title_align: center
+table:
+  frame: true
+  row_rules: true
+  shade: 0.08
+  blank_rows: 4
+  caption: CHI TIẾT SỬ DỤNG
+item:
+  wrap_name: false
+  rows:
+  - - from: name
+      span:
+      - meter_now
+      - amount
+  - - col: meter_now
+      from: meter_now
+    - col: meter_prev
+      from: meter_prev
+    - col: qty
+      from: qty
+  - - col: quota
+      from: quota
+    - col: unit_price
+      from: tier_price
+    - col: amount
+      from: amount
+totals:
+  frame: true
+  emphasise_grand: true
+words:
+  frame: true
+signatures:
+  stamp_width: 46
+  stamp_gap: 2
+footer:
+  rule_before: false

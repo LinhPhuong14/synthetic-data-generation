@@ -1,0 +1,47 @@
+# THAM SỐ NỘI DUNG — dispatch_letter
+#
+# GIẤY GIỚI THIỆU: tờ một cơ quan viết cho một cơ quan khác để cử người của
+# mình đi liên hệ công tác. Không nhà nước nào ban hành dáng cho nó — mỗi công
+# ty một mẫu, in sẵn nửa trên rồi điền tay nửa dưới — nên `free`.
+#
+# Không bảng hàng (`no_items: true`), và `form_fields: true` để lấy khối lý
+# lịch của người được giới thiệu (họ tên, số CCCD, chức vụ).
+
+profile: admin
+invoice: true
+no_items: true
+form_fields: true
+show_vat: false
+show_subtotal: false
+show_payment: false
+show_amount_words: false
+show_number: false
+show_seller_tax_code: true
+show_seller_website: false
+titles: ["GIẤY GIỚI THIỆU"]
+serial_format: "{n}/GT"
+professions:
+  - "Chuyên viên phòng Kinh doanh"
+  - "Nhân viên phòng Hành chính — Nhân sự"
+  - "Kế toán viên"
+  - "Cán bộ kỹ thuật"
+  - "Trưởng nhóm dự án"
+  - "Nhân viên phòng Vật tư"
+party_fields:
+  left:
+    - [buyer_company, "Kính gửi"]
+    - [buyer_address, "Địa chỉ"]
+    - [applicant_name, "Trân trọng giới thiệu ông/bà"]
+    - [profession, "Chức vụ"]
+  right:
+    - [applicant_id, "Số CCCD"]
+    - [applicant_id_date, "Ngày cấp"]
+    - [applicant_phone, "Điện thoại liên hệ"]
+    - [due_date, "Giấy này có giá trị đến hết ngày"]
+notes:
+  - "Về việc:"
+  - "Được cử đến Quý cơ quan để liên hệ công tác theo nội dung hai bên đã trao đổi."
+  - "Đề nghị Quý cơ quan tạo điều kiện giúp đỡ để ông/bà có tên trên hoàn thành nhiệm vụ được giao."
+  - "Trân trọng cảm ơn."
+signature_labels:
+  - ["Thủ trưởng đơn vị", "(Ký tên, đóng dấu)"]

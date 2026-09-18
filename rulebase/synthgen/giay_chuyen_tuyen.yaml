@@ -1,0 +1,60 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: giay_chuyen_tuyen
+profile: medical
+org_kind: hospital
+national: 0.95
+titles:
+- GIẤY CHUYỂN TUYẾN KHÁM BỆNH, CHỮA BỆNH BHYT
+- GIẤY CHUYỂN VIỆN
+subtitles:
+- Mẫu số 6/BHYT
+- ''
+- ''
+fields:
+- patient
+- dob
+- gender
+- record_no
+- ward
+- diagnosis
+- card_no
+- admitted
+- treatment
+field_span:
+- 6
+- 9
+columns:
+- - stt
+  - name
+  - note
+- - stt
+  - date
+  - name
+  - note
+totals: none
+words: false
+sign_sets:
+- - BÁC SĨ ĐIỀU TRỊ
+  - GIÁM ĐỐC BỆNH VIỆN
+- - NGƯỜI BỆNH
+  - BÁC SĨ
+  - THỦ TRƯỞNG ĐƠN VỊ
+notes:
+- Giấy chuyển tuyến có giá trị 10 ngày làm việc kể từ ngày ký.
+- Người bệnh xuất trình thẻ BHYT và giấy tờ tuỳ thân khi đến tuyến trên.
+rows:
+- 0
+- 12
+always:
+- letterhead
+- doctitle
+- fields
+- clauses
+- signatures
+optional:
+- meta
+- footer
+- notes
+- legal_basis
+- table
+en_ok: false

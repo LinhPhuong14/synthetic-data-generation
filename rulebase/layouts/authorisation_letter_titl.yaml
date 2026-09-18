@@ -1,0 +1,50 @@
+# soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (title_first), giữ nguyên cột và dây nối dữ liệu của authorisation_letter
+id: authorisation_letter_titl
+name: authorisation_letter — title_first
+source: 'soạn mới: đổi thứ tự khối theo agent/prompts/anatomy.md §4 (title_first), giữ nguyên cột và dây nối dữ liệu của authorisation_letter'
+family: statement
+width:
+- 92
+- 104
+gutter: 2
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- doctitle
+- letterhead
+- parties
+- notes
+- signatures
+- footer
+letterhead:
+  frame: false
+  name_scale:
+  - 1.0
+  - 1.1
+  name_bold: true
+  serial_width: 26
+  labels:
+    address: ''
+    tax_code: ''
+    phone: 'Tel:'
+    account: ''
+    branch: ''
+    form_no: ''
+    serial: 'Số:'
+    number: ''
+doctitle:
+  scale:
+  - 1.3
+  - 1.5
+parties:
+  style: stacked
+  leader: .
+notes:
+  style: block
+signatures:
+  name_gap: 4
+  stamp_width: 0
+  stamp_gap: 3
+footer:
+  rule_before: true

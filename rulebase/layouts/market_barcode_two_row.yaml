@@ -1,0 +1,80 @@
+# soạn tay theo agent/prompts/anatomy.md §2
+# — băng siêu thị thật in mã vạch và tên trên MỘT dòng, rồi dòng dưới mới là số lượng nhân đơn giá
+# — hai dòng một mặt hàng
+# — thêm cột thuế suất: `menu.vatrate` phải có chỗ in. thêm `item.discount_row` như phôi gốc: dòng khuyến mãi là chỗ `menu.discountprice` được in ra
+id: market_barcode_two_row
+name: Supermarket roll — barcode line then quantity x price = amount
+source: 'soạn tay theo agent/prompts/anatomy.md §2 — băng siêu thị thật in mã vạch và tên trên MỘT dòng, rồi dòng dưới mới là số lượng nhân đơn giá — hai dòng một mặt hàng — thêm cột thuế suất: `menu.vatrate`
+  phải có chỗ in. thêm `item.discount_row` như phôi gốc: dòng khuyến mãi là chỗ `menu.discountprice` được in ra'
+family: till
+width:
+- 44
+- 50
+rule_char: '-'
+header:
+  name_scale:
+  - 1.15
+  - 1.45
+  name_bold: true
+  title: true
+  title_scale:
+  - 1.15
+  - 1.4
+meta:
+  style: two_column
+  rule_after: true
+column_header: true
+column_header_bold: false
+columns:
+- key: barcode
+  title: Mã vạch
+  width: 14
+  align: left
+  title_align: left
+- key: qty
+  title: SL
+  width: 5
+  align: right
+  title_align: right
+- key: vat_rate
+  title: TS
+  width: 4
+  align: center
+  title_align: center
+- key: unit_price
+  title: Đơn giá
+  width: 11
+  align: right
+  title_align: right
+- key: amount
+  title: Thành tiền
+  width: 12
+  align: right
+  title_align: right
+item:
+  wrap_name: true
+  rows:
+  - - col: barcode
+      from: barcode
+    - from: name
+      span:
+      - qty
+      - amount
+      align: left
+  - - col: qty
+      from: qty
+    - col: vat_rate
+      from: vat_rate
+    - col: unit_price
+      from: unit_price
+    - col: amount
+      from: amount
+  discount_row:
+    label: Khuyến mãi
+totals:
+  emphasise_grand: true
+  grand_scale:
+  - 1.15
+  - 1.45
+footer:
+  rule_before: false

@@ -1,0 +1,57 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: phieu_dang_ky_du_thi
+profile: admin
+org_kind: state
+national: 0.95
+titles:
+- PHIẾU ĐĂNG KÝ DỰ THI
+- PHIẾU ĐĂNG KÝ XÉT TUYỂN
+subtitles:
+- Mẫu số 01
+- Kỳ thi năm ....
+fields:
+- full_name
+- dob
+- gender
+- id_no
+- address_home
+- phone_home
+- record_no
+field_span:
+- 5
+- 7
+columns:
+- - stt
+  - ref
+  - name
+  - note
+- - stt
+  - name
+  - qty
+  - note
+totals: none
+words: false
+sign_sets:
+- - THÍ SINH
+- - THÍ SINH
+  - CÁN BỘ THU NHẬN HỒ SƠ
+notes:
+- Thí sinh chịu trách nhiệm về tính chính xác của thông tin đã khai.
+- Hồ sơ không hợp lệ sẽ bị loại.
+rows:
+- 1
+- 16
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- signatures
+optional:
+- meta
+- footer
+- notes
+- checks
+- photo
+- questions
+en_ok: false

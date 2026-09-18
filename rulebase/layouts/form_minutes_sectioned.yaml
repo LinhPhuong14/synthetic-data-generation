@@ -1,0 +1,26 @@
+# biên bản chia mục: A là thành phần dự họp, B là diễn biến. Chia mục là một tầng DOM nữa, không phải một dải khối phẳng
+id: form_minutes_sectioned
+name: Minutes — lettered A/B, attendance in A, proceedings in B
+source: 'soạn tay theo agent/prompts/anatomy.md §4 — biên bản chia mục: A là thành phần dự họp, B là diễn biến. Chia mục là một tầng DOM nữa, không phải một dải khối phẳng'
+family: form
+width:
+- 86
+- 96
+gutter: 2
+rule_char: '-'
+sheet: a4
+rules: marks
+sections:
+- header
+- parties
+- notes
+- signatures
+- footer
+header:
+  title: true
+fields:
+  columns: two
+sectioned:
+  titles:
+  - Thành phần tham dự
+  - Nội dung cuộc họp

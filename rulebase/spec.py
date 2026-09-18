@@ -1,0 +1,748 @@
+"""The rule-base: six attributes, many values each, one drawn per image.
+
+    document      what kind of paper this is       (loại document)
+    layout        how the fields are arranged      (bố cục)
+    content       what goes in the fields          (nội dung)
+    visual        font, paper, print quality       (hình thức)
+    color         the ink and the tint             (màu)
+    augmentation  how the page is then aged        (làm cũ)
+
+Every value carries a weight, so the mix is tuned by editing numbers in
+`rules/*.yaml` and nothing else. Values also carry tags, and may require or
+exclude tags chosen earlier -- that is what stops the sampler from pairing a
+supermarket barcode layout with a hand-written restaurant corpus, or asking a
+1990s thermal printer for colour.
+
+Attributes are drawn in the order above, each one seeing the tags the earlier
+ones contributed. So `document` is the widest choice and `augmentation` the
+narrowest, which matches how a real receipt comes about: the shop decides what
+it prints long before the page decides how it will be creased.
+
+    from rulebase import sample_recipe
+    recipe = sample_recipe(seed=7)
+    recipe.layout.id            -> 'market_barcode'
+    recipe.get("visual", "font_size")
+"""
+
+from __future__ import annotations
+
+import os
+import random
+from dataclasses import dataclass, field, replace
+from pathlib import Path
+from typing import Any, Iterable, Sequence
+
+import yaml
+
+import profiling
+
+# A run may need rules of its own -- `pipeline.yaml` can re-weight a value for
+# one job without editing the shipped files. The renderers are separate
+# processes, so the only way to hand them a variation is a directory on disk and
+# an environment variable pointing at it. Unset, which is the normal case, this
+# is exactly the shipped path and nothing about generation changes.
+RULES_ROOT = Path(os.environ.get("VLM_RULES_ROOT") or Path(__file__).resolve().parent / "rules")
+ORDER_FILE = "_order.yaml"
+
+# Attributes whose `params:` live one file per value, beside the rules rather
+# than inside them. `document` earned this: seventeen values, each carrying the
+# whole content model of a kind of paper, made one file of 750 lines where the
+# sampling space -- which values exist, how often, under what tags -- was the
+# part you actually came to read, and the part you had to scroll past fifty
+# lines of `total_labels` to find.
+#
+# The split is the one `layout` already uses: `rules/layout.yaml` holds the
+# space, `layouts/<id>.yaml` holds the detail. Nothing downstream notices,
+# because everything reads `Option.params` and that is filled in either way.
+PARAMS_DIRS = {"document": "documents"}
+
+
+class RuleError(ValueError):
+    """A rules file asks for something impossible."""
+
+
+def attribute_order(root: Path | str = RULES_ROOT) -> tuple[str, ...]:
+    """The attributes, in the order they are drawn, from `rules/_order.yaml`.
+
+    Attributes are discovered rather than hard-coded, so a seventh criterion is
+    a new YAML file and a line in the manifest -- no Python edit. The manifest
+    exists because auto-discovery alone would be a downgrade: a hard-coded
+    tuple is impossible to forget, a directory listing is not. Three ways to
+    get it wrong, all of them loud:
+
+    * a `rules/foo.yaml` the manifest never mentions -- the file would simply
+      never be drawn, and generation would carry on without it;
+    * a manifest entry with no file behind it;
+    * the same attribute listed twice, which would draw it twice and let the
+      second draw see the first one's tags.
+
+    Order is not cosmetic. A value can only `require` a tag that an *earlier*
+    attribute sets, so this list decides which constraints are expressible;
+    `validate()` reports the ones that are not.
+    """
+    root = Path(root)
+    path = root / ORDER_FILE
+    if not path.exists():
+        raise RuleError(f"missing {path}: it lists the attributes and their order")
+    raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    order = raw.get("order")
+    if not order:
+        raise RuleError(f"{path}: no 'order:' list")
+    order = [str(name) for name in order]
+
+    duplicates = sorted({name for name in order if order.count(name) > 1})
+    if duplicates:
+        raise RuleError(f"{path}: {duplicates} listed more than once")
+
+    present = {p.stem for p in root.glob("*.yaml") if not p.name.startswith("_")}
+    listed = set(order)
+    forgotten = sorted(present - listed)
+    if forgotten:
+        raise RuleError(
+            f"{path}: {forgotten} exist in {root} but are not listed, so they "
+            f"would never be drawn; add them or delete the files"
+        )
+    missing = sorted(listed - present)
+    if missing:
+        raise RuleError(f"{path}: lists {missing}, but there is no rules file for them")
+    return tuple(order)
+
+
+class _Attributes(Sequence):
+    """`ATTRIBUTES` as it always was, but read from the manifest.
+
+    A module-level tuple would freeze the order at import time, before a test
+    or a tool has had the chance to point at a different rules directory. This
+    reads on use and stays a plain sequence, so `for a in ATTRIBUTES`,
+    `a in ATTRIBUTES`, indexing and `len()` all behave as they did.
+    """
+
+    def _order(self) -> tuple[str, ...]:
+        return attribute_order()
+
+    def __getitem__(self, index):
+        return self._order()[index]
+
+    def __len__(self) -> int:
+        return len(self._order())
+
+    def __repr__(self) -> str:
+        return repr(self._order())
+
+    def __eq__(self, other) -> bool:
+        return tuple(self._order()) == tuple(other)
+
+    def __hash__(self) -> int:
+        return hash(self._order())
+
+
+ATTRIBUTES: Sequence[str] = _Attributes()
+
+
+@dataclass(frozen=True)
+class Group:
+    """A parent node: a family of values, and what the family has in common.
+
+    A rules file lists its values flat under `options:`, or sorts them into
+    `groups:` -- each node an `id`, a `label` a reader can understand, and its
+    own `options:`. `rules/layout.yaml` uses the second form, because "bố cục"
+    stopped being one kind of thing: a thermal till receipt and a printed VAT
+    form share a grid and nothing else, and a flat list said so nowhere.
+
+    The node is not decoration. `tags`, `requires` and `excludes` written on it
+    are merged into every value beneath it, so a constraint that holds for the
+    whole family is stated once and cannot be forgotten on the next value
+    added to it.
+    """
+
+    id: str
+    label: str = ""
+    tags: frozenset[str] = frozenset()
+    requires: frozenset[str] = frozenset()
+    excludes: frozenset[str] = frozenset()
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any], attribute: str) -> "Group":
+        known = {"id", "label", "tags", "requires", "excludes", "options"}
+        unknown = set(raw) - known
+        if unknown:
+            raise RuleError(
+                f"{attribute}: group {raw.get('id', '?')!r} has unknown keys "
+                f"{sorted(unknown)}; a node carries no params of its own"
+            )
+        if "id" not in raw:
+            raise RuleError(f"{attribute}: a group has no id")
+        return cls(
+            id=str(raw["id"]),
+            label=str(raw.get("label", "")),
+            tags=frozenset(raw.get("tags") or ()),
+            requires=frozenset(raw.get("requires") or ()),
+            excludes=frozenset(raw.get("excludes") or ()),
+        )
+
+
+@dataclass(frozen=True)
+class Option:
+    """One value of one attribute."""
+
+    id: str
+    weight: float = 1.0
+    tags: frozenset[str] = frozenset()
+    requires: frozenset[str] = frozenset()
+    excludes: frozenset[str] = frozenset()
+    params: dict[str, Any] = field(default_factory=dict)
+    # `enabled: false` -- present, never drawn by chance, still drawable by
+    # name. The same word `rulebase/layouts/*.yaml` uses for a layout and the
+    # same idea as `degradation.SWITCHED_OFF`: switching a value off is not
+    # deleting it.
+    #
+    # Weight 0 is the obvious way to say this and `validate()` calls it dead
+    # rules, correctly -- an option nobody can draw is almost always a typo in
+    # a tag name. This is the declared form of the same state, so the two can
+    # be told apart: a value that is off ON PURPOSE says so, and `--force
+    # handwriting=hand_model` still reaches it (forcing looks a value up by id
+    # and never consults its weight).
+    enabled: bool = True
+    # Which parent node this value sits under, "" for a flat file. Set from the
+    # structure of the file and never from a key on the value itself: a value
+    # that could name its own parent would let two nodes claim it.
+    group: str = ""
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any], attribute: str,
+                  parent: "Group | None" = None) -> "Option":
+        known = {"id", "weight", "tags", "requires", "excludes", "params", "enabled"}
+        unknown = set(raw) - known
+        if unknown:
+            raise RuleError(
+                f"{attribute}: option {raw.get('id', '?')!r} has unknown keys "
+                f"{sorted(unknown)}; params belong under 'params:'"
+            )
+        if "id" not in raw:
+            raise RuleError(f"{attribute}: an option has no id")
+        weight = float(raw.get("weight", 1.0))
+        if weight < 0:
+            raise RuleError(f"{attribute}/{raw['id']}: negative weight")
+        inherited = parent or Group(id="")
+        return cls(
+            id=str(raw["id"]),
+            weight=weight,
+            tags=frozenset(raw.get("tags") or ()) | inherited.tags,
+            requires=frozenset(raw.get("requires") or ()) | inherited.requires,
+            excludes=frozenset(raw.get("excludes") or ()) | inherited.excludes,
+            params=dict(raw.get("params") or {}),
+            enabled=bool(raw.get("enabled", True)),
+            group=inherited.id,
+        )
+
+    def allowed(self, tags: Iterable[str]) -> bool:
+        tags = set(tags)
+        return self.requires <= tags and not (self.excludes & tags)
+
+
+@dataclass(frozen=True)
+class Recipe:
+    """One sampled point in the space -- everything a backend needs."""
+
+    seed: int
+    choices: dict[str, Option]
+    tags: frozenset[str]
+
+    def __getattr__(self, name: str) -> Option:
+        try:
+            return self.choices[name]
+        except KeyError:
+            raise AttributeError(name) from None
+
+    def get(self, attribute: str, key: str, default: Any = None) -> Any:
+        option = self.choices.get(attribute)
+        return default if option is None else option.params.get(key, default)
+
+    def ids(self) -> dict[str, str]:
+        return {name: option.id for name, option in self.choices.items()}
+
+    def to_dict(self) -> dict[str, Any]:
+        """Provenance to store next to the image."""
+        return {
+            "seed": self.seed,
+            "attributes": {
+                name: (
+                    {"id": option.id, "group": option.group, "params": option.params}
+                    if option.group
+                    else {"id": option.id, "params": option.params}
+                )
+                for name, option in self.choices.items()
+            },
+            "tags": sorted(self.tags),
+        }
+
+
+def _read_values(
+    raw: dict[str, Any], attribute: str, path: Path
+) -> tuple[list[Option], list[Group]]:
+    """The values of one attribute, flat or sorted into parent nodes.
+
+    A file writes `options:` or `groups:`, never both. Two places to add a
+    value is two places to forget one, and a half-sorted file no longer says
+    at a glance whether the attribute has a taxonomy at all.
+    """
+    flat, nodes = raw.get("options"), raw.get("groups")
+    if flat and nodes:
+        raise RuleError(
+            f"{path}: has both 'options:' and 'groups:'; a file sorts its values "
+            f"into parent nodes or lists them flat, not half of each"
+        )
+    if not flat and not nodes:
+        raise RuleError(f"{path}: no options")
+    if flat:
+        return [Option.from_dict(item, attribute) for item in flat], []
+
+    groups: list[Group] = []
+    options: list[Option] = []
+    seen: set[str] = set()
+    for item in nodes:
+        group = Group.from_dict(item, attribute)
+        if group.id in seen:
+            raise RuleError(f"{path}: duplicate group id {group.id!r}")
+        seen.add(group.id)
+        members = item.get("options")
+        if not members:
+            raise RuleError(
+                f"{path}: group {group.id!r} has no options; an empty node is a "
+                f"family nobody can draw from"
+            )
+        groups.append(group)
+        options += [Option.from_dict(member, attribute, group) for member in members]
+    return options, groups
+
+
+def load_groups(root: Path | str = RULES_ROOT) -> dict[str, list[Group]]:
+    """The parent nodes of each attribute; `[]` for an attribute listed flat.
+
+    Separate from `load_rules` because the sampler has no use for a node -- it
+    draws values, and a value already carries everything its node gave it. The
+    nodes themselves are for the reader: `tools/rules_report.py` counts draws
+    per family, and the docs name them.
+    """
+    root = Path(root)
+    groups: dict[str, list[Group]] = {}
+    for attribute in attribute_order(root):
+        path = root / f"{attribute}.yaml"
+        raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        groups[attribute] = _read_values(raw, attribute, path)[1]
+    return groups
+
+
+# (thư mục -> (vân tay file, luật đã phân tích)). Nhỏ và có giới hạn: một
+# phiên chỉ chạm tới cây đã ship và cây mà lượt chạy tự dựng.
+_RULES_CACHE: dict[Path, tuple[tuple, dict[str, list["Option"]]]] = {}
+
+
+def load_rules(root: Path | str = RULES_ROOT) -> dict[str, list[Option]]:
+    """Read every `rules/<attribute>.yaml`, in the order the manifest gives.
+
+    The returned dict is insertion-ordered in draw order, and everything
+    downstream iterates *it* rather than a module-level constant. That is what
+    lets a caller load a different rules directory -- a test, a preflight
+    against a candidate tree -- and have the sampler honour its order.
+
+    Files are read and checked before the manifest is consulted, so a broken
+    YAML is reported as a broken YAML rather than as a manifest mismatch.
+    """
+    with profiling.stage("rules"):
+        root = Path(root)
+        # Nhớ theo (thư mục, dấu vân của mọi file trong đó). Đo ngày
+        # 2026-09-10: `_load_rules` phân tích 171 file YAML MỖI LẦN gọi, và
+        # `rulebase.make()` gọi nó một lần cho mỗi trang -- 9.5 trong 9.9 giây
+        # của ba lần `make` là đọc lại đúng những file vừa đọc. Preflight dựng
+        # 12 trang cho mỗi phôi, nên nó trả giá ấy hơn một nghìn lần: 42 phút
+        # cho việc lẽ ra tốn chưa tới hai.
+        #
+        # Vân tay là (tên, mtime_ns, cỡ) của từng file chứ không phải chỉ
+        # đường dẫn. Một lượt chạy DỰNG rules root riêng cho mình rồi
+        # `agent/rules.py::activate` chuyển sang đó, và một file sửa tại chỗ
+        # phải làm hỏng bộ nhớ đệm ngay -- khoá chỉ theo đường dẫn sẽ trả về
+        # luật cũ cho một cây vừa đổi, một lỗi im lặng và rất khó truy.
+        stamp = tuple(sorted(
+            (path.name, path.stat().st_mtime_ns, path.stat().st_size)
+            for path in root.glob("*.yaml") if not path.name.startswith("_")))
+        cached = _RULES_CACHE.get(root)
+        if cached is not None and cached[0] == stamp:
+            parsed = cached[1]
+        else:
+            parsed = _load_rules(root)
+            _RULES_CACHE[root] = (stamp, parsed)
+            if len(_RULES_CACHE) > 8:
+                _RULES_CACHE.pop(next(iter(_RULES_CACHE)))
+        # Bản sao NÔNG: `Option` là dataclass frozen, nên chia sẻ chính đối
+        # tượng là an toàn; cái không an toàn là chia sẻ dict và các list, vì
+        # một caller sắp xếp hay lọc tại chỗ sẽ sửa luôn bản của mọi caller sau.
+        return {attribute: list(options) for attribute, options in parsed.items()}
+
+
+def _params_root(root: Path, attribute: str) -> Path | None:
+    """Where `<attribute>/<id>.yaml` lives, or None if it keeps params inline.
+
+    Beside the rules directory, and only if it is actually there. A tree either
+    splits its params out or keeps them inline, and the directory is how it
+    says which -- there is no falling back to the shipped one, which would make
+    a tree's rules and another tree's params into one rule set.
+
+    Inline is not a legacy shape to be migrated away: `pipeline.config
+    .materialise_rules` writes a run's overrides as a flat directory with
+    `params:` in the file, because that tree is generated, read once by a
+    renderer subprocess, and never edited by anyone. The split exists to keep a
+    file a person edits readable, and that argument does not apply to it.
+    """
+    name = PARAMS_DIRS.get(attribute)
+    if name is None:
+        return None
+    candidate = root.parent / name
+    return candidate if candidate.is_dir() else None
+
+
+def _attach_params(entries: list[Option], attribute: str,
+                   params_root: Path) -> list[Option]:
+    """Fill each option's params from its own file, and check the pairing.
+
+    Both directions, because both failures are silent otherwise: an option with
+    no file would draw a document with an empty content model, and a file no
+    option names is a rename that got half done.
+    """
+    out = []
+    for option in entries:
+        if option.params:
+            raise RuleError(
+                f"{attribute}/{option.id}: params belong in "
+                f"{params_root.name}/{option.id}.yaml, not in the rules file")
+        path = params_root / f"{option.id}.yaml"
+        if not path.is_file():
+            raise RuleError(f"{attribute}/{option.id}: no {path}")
+        loaded = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        if not isinstance(loaded, dict):
+            raise RuleError(f"{path}: expected a mapping of params")
+        out.append(replace(option, params=loaded))
+    known = {option.id for option in entries}
+    for path in sorted(params_root.glob("*.yaml")):
+        if path.stem not in known:
+            raise RuleError(
+                f"{path}: no {attribute} option named {path.stem!r}")
+    return out
+
+
+def _load_rules(root: Path) -> dict[str, list[Option]]:
+    files = sorted(path for path in root.glob("*.yaml") if not path.name.startswith("_"))
+    if not files:
+        raise RuleError(f"missing rules files in {root}")
+
+    parsed: dict[str, list[Option]] = {}
+    for path in files:
+        attribute = path.stem
+        raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        entries = _read_values(raw, attribute, path)[0]
+        seen: set[str] = set()
+        for option in entries:
+            if option.id in seen:
+                raise RuleError(f"{path}: duplicate option id {option.id!r}")
+            seen.add(option.id)
+        params_root = _params_root(root, attribute)
+        if params_root is not None:
+            entries = _attach_params(entries, attribute, params_root)
+        parsed[attribute] = entries
+
+    return {attribute: parsed[attribute] for attribute in attribute_order(root)}
+
+
+def _weighted_choice(options: Sequence[Option], rng: random.Random) -> Option:
+    total = sum(option.weight for option in options)
+    if total <= 0:
+        raise RuleError("every candidate has weight 0")
+    threshold = rng.random() * total
+    upto = 0.0
+    for option in options:
+        upto += option.weight
+        if upto >= threshold:
+            return option
+    return options[-1]  # only reachable through float rounding
+
+
+class _Clash(RuleError):
+    """A pin did not fit what *this attempt* happened to draw before it.
+
+    A `RuleError` subclass on purpose: without `force` there is nothing to
+    retry, so it propagates and reads exactly as it always did.
+    """
+
+
+# How many times one seed may re-draw before the pin is declared unreachable.
+# Whether it really is unreachable is then decided by `_reachable_tags`, not by
+# having run out of patience -- see `sample_recipe`.
+#
+# **Measured, and it had to be raised.** Pinning a layout is rejection
+# sampling: the document is drawn first, and a draw that lands on a document
+# the pinned layout cannot dress is thrown away. So the budget has to cover the
+# WORST hit rate in the rule base, and that rate falls every time a document
+# root is added -- the invoice, form and periodical roots between them made a
+# forced invoice layout much rarer than it used to be.
+#
+# Measured over 300 single-draw attempts per layout, the two thinnest are:
+#
+#     authorisation_letter   0.3% per draw   -> 4,138 attempts for 1e-6 failure
+#     invoice_tax_en         0.7% per draw   -> 2,066
+#     (the easiest layout is 14.3%)
+#
+# At 500 this failed for real: `pipeline/drift.py` draws 400 expectations per
+# pinned layout, and one of `invoice_tax_en`'s failed -- which surfaced only
+# when a layout was added, because the expectation seed block is indexed by
+# position and everything after the new layout shifted by one. The run drew all
+# 42 images correctly and still exited non-zero.
+#
+# 6,000 covers the measured worst case with room for the next root. It costs
+# nothing on the happy path: the loop stops at the first draw that fits, so a
+# 14% layout still exits after about seven.
+DRAW_ATTEMPTS = 6_000
+
+
+def _draw_once(order: tuple[str, ...], rules: dict[str, list[Option]],
+               force: dict[str, str], rng: random.Random
+               ) -> tuple[dict[str, Option], set[str]]:
+    """One pass down the attributes. Raises `_Clash` if a pin does not fit."""
+    tags: set[str] = set()
+    choices: dict[str, Option] = {}
+
+    for attribute in order:
+        options = rules[attribute]
+        candidates = [option for option in options
+                      if option.enabled and option.allowed(tags)]
+        if attribute in force:
+            wanted = force[attribute]
+            by_id = {option.id: option for option in options}
+            if wanted not in by_id:
+                # Not a clash: no draw will ever conjure a value that is not in
+                # the rules, so retrying would only delay the same answer.
+                raise RuleError(
+                    f"{attribute}: no option {wanted!r}; have "
+                    f"{', '.join(sorted(by_id))}"
+                )
+            pinned = by_id[wanted]
+            if not pinned.allowed(tags):
+                blocking = sorted((pinned.requires - tags) | (pinned.excludes & tags))
+                raise _Clash(
+                    f"{attribute}={wanted!r} is not compatible with the recipe so "
+                    f"far ({', '.join(sorted(tags)) or 'no tags'}); tags at fault: "
+                    f"{', '.join(blocking)}"
+                )
+            chosen = pinned
+        else:
+            if not candidates:
+                raise _Clash(
+                    f"{attribute}: nothing satisfies the tags chosen so far "
+                    f"({', '.join(sorted(tags)) or 'none'})"
+                )
+            chosen = _weighted_choice(candidates, rng)
+        choices[attribute] = chosen
+        tags |= chosen.tags
+
+    return choices, tags
+
+
+def _reachable_tags(order: tuple[str, ...], rules: dict[str, list[Option]],
+                    force: dict[str, str], upto: int) -> set[frozenset[str]]:
+    """Every tag set the attributes before `upto` can possibly produce.
+
+    A breadth-first sweep over tag sets rather than over recipes: two different
+    draws that leave the same tags are the same thing to everything downstream,
+    so the state space stays small even though the recipe space does not.
+
+    Used only when a seed has failed every attempt, to answer the question that
+    decides which of two messages the caller gets: is this pin unreachable, or
+    was this seed merely unlucky? Answering it by "we gave up" would be a guess.
+    """
+    states: set[frozenset[str]] = {frozenset()}
+    for attribute in order[:upto]:
+        options = rules[attribute]
+        if attribute in force:
+            options = [option for option in options if option.id == force[attribute]]
+        following: set[frozenset[str]] = set()
+        for tags in states:
+            for option in options:
+                # Never drawn means it cannot supply a tag either -- by weight
+                # 0 or by `enabled: false`, which are the accidental and the
+                # declared spelling of the same state.
+                if option.weight > 0 and option.enabled and option.allowed(tags):
+                    following.add(frozenset(tags | option.tags))
+        states = following
+        if not states:
+            break
+    return states
+
+
+def sample_recipe(
+    seed: int | None = None,
+    rules: dict[str, list[Option]] | None = None,
+    force: dict[str, str] | None = None,
+    attempts: int = DRAW_ATTEMPTS,
+) -> Recipe:
+    """Draw one value per attribute, honouring weights and constraints.
+
+    `force` pins an attribute to a named value -- how the dataset driver gets
+    an even spread over layouts instead of the weighted mix that a single
+    random image should have. A pinned value still has to satisfy its own
+    `requires`/`excludes`, otherwise the recipe it produced would be one the
+    rules say cannot exist.
+
+    **A pin that clashes re-draws; it does not move to another seed.** Until
+    W1b, `make()` handled a clash by trying `seed + 1`, `seed + 2` and so on
+    until one fitted. That kept the function deterministic and quietly made it
+    many-to-one: every seed in the gap before a fitting one returned that same
+    recipe, so 2000 consecutive seeds pinned to `market_vat` produced 217
+    distinct recipes and a run of 36 seeds could collapse onto a single page.
+    A dataset built that way reports twenty images and holds ten.
+
+    Re-drawing from the same `random.Random(seed)` fixes it without touching the
+    contract everything else depends on: `recipe.seed` is still the seed that
+    was asked for, and it still reproduces the page. The alternatives were
+    worse -- a separate `effective_seed` leaves two kinds of seed for every
+    reader to keep straight, and pre-computing which seeds fit puts knowledge of
+    the rules into the scheduling layer.
+
+    Without `force` nothing can clash, the loop returns on its first pass, and
+    the draw is bit-for-bit what it was before.
+    """
+    rules = rules or load_rules()
+    force = force or {}
+    # The order comes from the rules mapping, not from the manifest on disk:
+    # a caller that built `rules` by hand decides its own order, and reading
+    # the shipped manifest here would ignore that.
+    order = tuple(rules)
+    unknown = set(force) - set(order)
+    if unknown:
+        raise RuleError(f"cannot force unknown attributes {sorted(unknown)}")
+    if attempts < 1:
+        raise RuleError(f"attempts must be at least 1, got {attempts}")
+
+    if seed is None:
+        seed = random.randrange(2**31)
+    rng = random.Random(seed)
+
+    clash: _Clash | None = None
+    for _ in range(attempts):
+        try:
+            choices, tags = _draw_once(order, rules, force, rng)
+        except _Clash as unlucky:
+            if not force:
+                raise            # nothing to re-draw around; this is the answer
+            clash = unlucky
+            continue
+        return Recipe(seed=seed, choices=choices, tags=frozenset(tags))
+
+    # Out of attempts. Which of the two failures this is has to be decided, not
+    # assumed: "impossible" and "unlucky" want different actions from a caller.
+    impossible = [
+        f"{attribute}={force[attribute]!r}"
+        for index, attribute in enumerate(order)
+        if attribute in force
+        and not any(
+            option.allowed(tags)
+            for option in rules[attribute] if option.id == force[attribute]
+            for tags in _reachable_tags(order, rules, force, index)
+        )
+    ]
+    if impossible:
+        raise RuleError(
+            f"{', '.join(impossible)} cannot be drawn at all: no legal choice of the "
+            f"attributes before it produces the tags it needs. The rules forbid this "
+            f"combination, so no seed will satisfy it.\n  last clash: {clash}"
+        )
+    raise RuleError(
+        f"seed {seed} failed {attempts} draws with {force}; the combination is "
+        f"legal, so this seed is unlucky rather than impossible -- raise `attempts` "
+        f"or use another seed.\n  last clash: {clash}"
+    )
+
+
+def parse_force(items: Iterable[str] | None, layout: str | None = None) -> dict[str, str] | None:
+    """Turn `["augmentation=pristine"]` into the dict `sample_recipe` wants.
+
+    Every renderer takes the same `--force ATTR=ID` flag, so this lives here
+    rather than being written out three times and drifting. `layout` is the
+    older, narrower flag; it is folded in so both spellings work.
+    """
+    forced: dict[str, str] = {}
+    for item in items or ():
+        attribute, separator, value = item.partition("=")
+        if not separator or not value:
+            raise RuleError(f"--force expects ATTR=ID, got {item!r}")
+        attribute = attribute.strip()
+        if attribute not in ATTRIBUTES:
+            raise RuleError(
+                f"--force: unknown attribute {attribute!r}; have {', '.join(ATTRIBUTES)}"
+            )
+        forced[attribute] = value.strip()
+    if layout:
+        forced.setdefault("layout", layout)
+    return forced or None
+
+
+def enumerate_valid(
+    attribute: str,
+    rules: dict[str, list[Option]] | None = None,
+    tags: Iterable[str] = (),
+) -> list[str]:
+    """Which values of `attribute` are reachable given `tags`. For the docs."""
+    rules = rules or load_rules()
+    return [option.id for option in rules[attribute] if option.allowed(tags)]
+
+
+def validate(rules: dict[str, list[Option]] | None = None) -> list[str]:
+    """Static check of the rules: unreachable values, unsatisfiable tags.
+
+    Run by the test suite. A value nobody can ever draw is almost always a
+    typo in a tag name rather than a deliberate switch-off, and a silent one
+    -- generation keeps working, that value just never appears.
+    """
+    rules = rules or load_rules()
+    problems: list[str] = []
+
+    # Every tag that could ever be set by an earlier attribute.
+    reachable: set[str] = set()
+    for attribute in rules:
+        for option in rules[attribute]:
+            missing = option.requires - reachable
+            if missing:
+                problems.append(
+                    f"{attribute}/{option.id}: requires {sorted(missing)}, which no "
+                    f"earlier attribute ever sets"
+                )
+            # An option that DECLARES itself off is not dead rules: it is a
+            # value kept for `--force` and for the day it is switched back on.
+            # Weight 0 without that declaration still is.
+            if option.weight == 0 and option.enabled:
+                problems.append(f"{attribute}/{option.id}: weight 0, never drawn")
+        reachable |= {tag for option in rules[attribute] for tag in option.tags}
+
+    # Something has to be drawable for every attribute in the worst case.
+    for attribute in rules:
+        if not any(option.weight > 0 and option.enabled for option in rules[attribute]):
+            problems.append(
+                f"{attribute}: no option is drawable (every one is weight 0 or "
+                f"`enabled: false`)")
+    return problems
+
+
+__all__ = [
+    "ATTRIBUTES",
+    "ORDER_FILE",
+    "attribute_order",
+    "Group",
+    "Option",
+    "Recipe",
+    "RuleError",
+    "RULES_ROOT",
+    "enumerate_valid",
+    "load_groups",
+    "load_rules",
+    "parse_force",
+    "sample_recipe",
+    "validate",
+]

@@ -1,0 +1,65 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: van_don
+profile: invoice
+org_kind: company
+national: 0.1
+titles:
+- VẬN ĐƠN
+- PHIẾU VẬN CHUYỂN
+- BILL OF LADING
+subtitles:
+- ''
+- 'Số vận đơn: ....'
+- 'Liên 1: Lưu'
+fields:
+- seller_name
+- seller_tax
+- seller_addr
+- buyer_name
+- buyer_org
+- buyer_tax
+- record_no
+field_span:
+- 5
+- 7
+columns:
+- - stt
+  - name
+  - unit
+  - qty
+  - note
+- - stt
+  - ref
+  - name
+  - qty
+  - unit
+  - amount
+  - note
+totals: count
+words: false
+sign_sets:
+- - NGƯỜI GỬI HÀNG
+  - LÁI XE
+  - NGƯỜI NHẬN HÀNG
+- - BÊN GIAO
+  - BÊN VẬN CHUYỂN
+  - BÊN NHẬN
+notes:
+- Người nhận kiểm tra hàng trước khi ký nhận.
+- Mọi khiếu nại về hàng hoá phải lập biên bản tại thời điểm giao.
+rows:
+- 2
+- 50
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- signatures
+optional:
+- meta
+- footer
+- notes
+- totals
+- footnote
+en_ok: true

@@ -1,0 +1,50 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: so_ho_khau
+profile: admin
+org_kind: state
+national: 0.9
+titles:
+- TRÍCH LỤC HỘ KHẨU
+- THÔNG TIN HỘ GIA ĐÌNH
+- SỔ HỘ KHẨU - TRÍCH LỤC
+subtitles:
+- ''
+- 'Số sổ: ....'
+- Mẫu HK01
+fields:
+- full_name
+- address_home
+- record_no
+- period
+field_span:
+- 3
+- 4
+columns:
+- - stt
+  - name
+  - date
+  - note
+- - stt
+  - name
+  - note
+totals: count
+words: false
+sign_sets:
+- - TRƯỞNG CÔNG AN PHƯỜNG
+notes:
+- Trích lục chỉ có giá trị tham khảo, không thay thế giấy tờ gốc.
+rows:
+- 2
+- 20
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- signatures
+optional:
+- meta
+- footer
+- notes
+- totals
+en_ok: false

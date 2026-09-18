@@ -1,0 +1,59 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+id: phieu_chi_dinh
+profile: medical
+org_kind: hospital
+national: 0.5
+titles:
+- PHIẾU CHỈ ĐỊNH CẬN LÂM SÀNG
+- PHIẾU CHỈ ĐỊNH XÉT NGHIỆM
+- PHIẾU CHỈ ĐỊNH
+subtitles:
+- ''
+- Khoa ....
+- (Thực hiện trong ngày)
+fields:
+- patient
+- dob
+- gender
+- record_no
+- ward
+- diagnosis
+- admitted
+field_span:
+- 5
+- 7
+columns:
+- - stt
+  - name
+  - qty
+  - unit_price
+  - amount
+- - stt
+  - ref
+  - name
+  - qty
+  - note
+totals: money
+words: false
+sign_sets:
+- - BÁC SĨ CHỈ ĐỊNH
+- - BÁC SĨ CHỈ ĐỊNH
+  - ĐIỀU DƯỠNG
+notes:
+- Người bệnh nộp phiếu tại quầy thu ngân trước khi thực hiện.
+rows:
+- 2
+- 25
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- signatures
+optional:
+- meta
+- footer
+- notes
+- totals
+- footnote
+en_ok: false
