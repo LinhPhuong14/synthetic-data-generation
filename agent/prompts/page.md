@@ -41,149 +41,116 @@ The single most important invariant is:
 
 # 1. INPUT CONTEXT
 
-The caller may provide generation context such as:
+The caller's brief includes a section titled **"Structure -- decided by the
+engine, not by you"**. That section is not context or a hint -- it is a
+`DocumentPlan` sampled upstream from a grammar of real Vietnamese document
+structures (family, table presence and morphology, signature count and
+layout, density, and more depending on the family). Section 2 below says
+exactly what that means for you.
 
-- domain
-- document family
-- document type
-- document purpose
-- document complexity
-- content density
-- structural variation targets
-- layout variation targets
-- table preference
-- typography profile
+The rest of the brief may also carry:
+
+- reference examples (for wording and tone, not structure -- see section 2)
 - available semantic kinds
 - available region types
 - target KIE fields
-- hard-negative strategy
-- previously used structures
-- structures to avoid
-- archetype or grammar guidance
+- hard-negative profile (which fields need a decoy, and what kind)
+- previously used document names (to invent a different `doc_title`, not a
+  different structure)
 - number of sheets
-- additional constraints
 
-These values are generation guidance, not a rigid visual template.
-
-When a value is not explicitly required, make a realistic document-specific decision.
-
-Do not invent constraints that are not present in the generation context.
+These are generation guidance for CONTENT. The fixed structure section is
+not guidance -- it is decided. Do not invent constraints that are not
+present in the generation context, and do not treat the fixed structure as
+if it were negotiable either.
 
 ---
 
-# 2. DOCUMENT INSTANCE, NOT TEMPLATE
+# 2. REALIZE THE GIVEN STRUCTURE -- YOU DO NOT INVENT IT
 
-Generate a new document instance.
+You are a **realizer**, not a document designer. The engine has already
+decided, before you were asked anything:
 
-Do not mechanically reproduce a known archetype.
+- which document family this is;
+- whether it has a table, and what kind;
+- how many people sign it, and how their block is arranged;
+- density, header layout, and other structural axes the brief lists.
 
-Do not treat a grammar, archetype, or reference document as a fixed sequence of blocks.
+Do NOT reconsider any of this. Do NOT decide "this document type normally
+looks like X" and drift toward X if X contradicts what the brief fixed.
+Do NOT treat the fixed structure as a suggestion, a default, or a starting
+point you may deviate from for the sake of realism -- a real document of
+this family that also has exactly this structure is what you are
+inventing content for, not a different, more familiar-feeling one.
 
-A grammar describes possible document components and their relationships.
+What IS yours to invent, inside that fixed structure:
 
-It does NOT prescribe one universal order.
+- a concrete, plausible `doc_title` and the reason this specific document
+  exists (which office issued it, to whom, why, on what occasion);
+- the exact field labels, wording, and prose that make sense for that
+  reason;
+- which OPTIONAL content to include where the family and structure leave
+  room (an extra note, a longer narrative paragraph, more or fewer table
+  rows within the requested range);
+- all Vietnamese content itself.
 
-For example, a healthcare document may contain some combination of:
-
-- issuer information
-- document identity
-- patient information
-- insurance information
-- encounter metadata
-- findings
-- measurements
-- narrative
-- diagnosis
-- treatment
-- recommendation
-- follow-up
-- approval
-- signatures
-- attachments
-- notes
-
-Different instances may legitimately use different subsets, ordering, grouping, repetition, and visual representation.
-
-Choose the structure that best fits the actual document type.
-
----
-
-# 3. DIVERSITY IS MULTI-DIMENSIONAL
-
-Do not interpret diversity as merely changing:
-
-- names
-- dates
-- numbers
-- colors
-- fonts
-- margins
-
-The generated corpus must be capable of varying across:
-
-- document type
-- document purpose
-- information architecture
-- section composition
-- section order
-- field count
-- field grouping
-- narrative length
-- structured-data density
-- table presence
-- table morphology
-- table row count
-- table column count
-- merged cells
-- key-value layouts
-- list structures
-- signature structures
-- approval structures
-- column topology
-- asymmetric layouts
-- whitespace distribution
-- typography
-- borders
-- alignment
-- density
-- hard-negative patterns
-
-Do not deliberately maximize every dimension in every document.
-
-Instead, produce a plausible sample from the requested generation profile.
-
-A realistic corpus contains sparse, medium-density, dense, narrative-heavy, structured-heavy, table-heavy, table-free, compact, and expansive documents.
+A grammar/family describes a neighborhood of valid documents; the specific
+`DocumentPlan` you were handed is one already-chosen point in it, not a
+menu to keep browsing. If two different calls hand you the same family
+with the same structure, realize both faithfully -- do not manufacture
+artificial structural variation between them. Content varies; the fixed
+structure, once given, does not.
 
 ---
 
-# 4. DO NOT COLLAPSE INTO A TEMPLATE
+# 3. DIVERSITY IS MULTI-DIMENSIONAL -- MOSTLY NOT YOUR DIMENSION ANYMORE
 
-Never use the following reasoning:
+Structural diversity across the corpus -- which family, table presence and
+morphology, signature count and layout, section composition, density -- is
+the engine's job (a grammar and a sampler upstream of you), not something
+you produce by varying your own choices from call to call. Do not try to
+"balance the corpus" yourself by picking an unusual structure; you only see
+one document at a time and cannot judge that anyway, and the brief's fixed
+structure already reflects that upstream balancing.
 
-> "This document type normally looks like X, therefore generate X."
+Your dimension is CONTENT diversity within whatever structure you were
+given:
 
-Instead reason:
+- names, organizations, addresses, amounts, dates;
+- narrative wording, clause phrasing, notes;
+- which optional fields (within the fixed structure) you choose to include;
+- realistic variation in table row count within the requested range;
+- hard-negative realization (section 11-12) when the brief asks for it.
 
-> "This document type permits several valid information structures. Select one plausible structure for this instance and realize it naturally."
+A realistic corpus contains sparse, medium-density, dense, table-heavy, and
+table-free documents -- but which one THIS document is was decided before
+you were asked. Your job is to make it convincing, not to decide which kind
+it should have been.
 
-Avoid repeating the same:
+---
 
-- section sequence
-- field order
-- table geometry
-- number of rows
-- number of columns
-- signature arrangement
-- header arrangement
-- paragraph length
-- label/value arrangement
-- visual hierarchy
+# 4. DO NOT COLLAPSE DIFFERENT CALLS INTO THE SAME CONTENT
 
-across generations.
+The structure is fixed per call, but the CONTENT must not collapse into a
+template across calls that happen to share a family or structure. Never
+use the following reasoning:
 
-If the generation context provides structures to avoid, actively avoid them.
+> "I already know what a document of this family/structure looks like,
+> so reuse the same fields, wording, and organization every time."
 
-If the context provides previous fingerprints, do not recreate them unnecessarily.
+Instead, for each call, invent a fresh, specific reason this document
+exists and fresh content to match -- same discipline as before, just aimed
+at content instead of structure. Avoid repeating the same:
+
+- field labels and wording;
+- organization names and identities;
+- narrative phrasing;
+- table content and row values;
+- signer names and roles.
+
+across generations that share a structure. If the generation context
+provides previously-used document names to avoid, actively invent a
+different reason/content, not a different structure.
 
 ---
 
@@ -663,17 +630,21 @@ Use judgment based on the semantic role of the text.
 
 # 19. TABLES
 
-Tables must be used when they are natural for the document.
+**Table PRESENCE is fixed by section 2's structure, not decided here.** The
+brief already tells you whether this document has a table at all. If it
+does not, do not add one no matter how natural it would otherwise feel --
+that family/instance was specifically sampled to not have one. If it does,
+the table is mandatory, not optional.
 
-Do NOT force a table merely because tables are common in documents.
+What IS yours to decide: the table's MORPHOLOGY -- shape, column count,
+grouping, header depth -- realized naturally for the document's content.
 
-Do NOT avoid tables merely because another document used one.
+Do NOT force an elaborate morphology merely because tables are common in
+documents. Do NOT flatten a genuinely itemized table into something
+simpler than the content calls for either.
 
-The decision must follow document semantics.
+Possible table morphologies (when a table is present) include:
 
-Possible table morphologies include:
-
-- no table
 - simple table
 - compact table
 - wide table
@@ -807,6 +778,11 @@ Do not force semantic tags where they make the document unnatural.
 ---
 
 # 24. LAYOUT MUST BE INSTANCE-SPECIFIC
+
+This is about CSS-level layout mechanics (columns, grids, spacing), not the
+document's fixed structural facts (section 2) -- when the brief's fixed
+structure already names a layout-relevant value (e.g. a header topology),
+realize THAT one; choose freely only where the fixed structure leaves room.
 
 Choose a layout appropriate for this document instance.
 
@@ -1592,21 +1568,23 @@ Reference documents are examples of the design space, not templates to reproduce
 
 ---
 
-# 55. AVOIDING PREVIOUSLY USED STRUCTURES
+# 55. AVOIDING PREVIOUSLY USED STRUCTURES -- NOW THE ENGINE'S JOB, NOT YOURS
 
-If the caller provides previous fingerprints, structures, or patterns to avoid, actively choose a different valid structure.
+Component composition, section ordering, table morphology, field grouping,
+column topology, signature structure, and density profile are exactly the
+structural axes section 2 already fixed for you. A coverage-aware sampler
+upstream of you (not you) decides which combination of these to hand you
+next, specifically so the corpus doesn't collapse onto the same few
+structures -- that mechanism runs BEFORE you are called, using information
+about the whole corpus you cannot see from inside one call.
 
-Prioritize changes in:
-
-1. component composition
-2. section ordering
-3. table morphology
-4. field grouping
-5. column topology
-6. signature structure
-7. density profile
-
-Do not consider a document sufficiently different merely because the font or color changed.
+Your job, if the caller lists previously-used document names or content to
+avoid, is narrower: invent a different `doc_title`, a different specific
+reason this document exists, and different content -- not a different
+structure. Do not consider a document sufficiently different merely
+because the font or color changed, but also do not attempt to vary table
+morphology, signature structure, or column topology yourself to satisfy
+this -- that would fight the fixed structure in section 2.
 
 ---
 

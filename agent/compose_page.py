@@ -46,6 +46,7 @@ import concurrent.futures as cf
 import datetime as _dt
 import json
 import os
+import random
 import re
 import queue
 import pathlib
@@ -60,6 +61,8 @@ if __package__ in (None, ""):                   # `python compose_page.py`
 
 from agent.client import LLMError, from_env
 from agent.promptbook import prompt
+from agent import document_plan as DP
+from agent import grammar as G
 from agent import rate_match
 from pipeline import failures
 from synthgen import design as D
@@ -110,22 +113,31 @@ def system_prompt() -> str:
 def schema() -> dict:
     """Hình dạng câu trả lời. vLLM ép theo nó bằng constrained decoding.
 
-    ## `plan` là chỗ model TỰ NGHĨ, và nó phải nghĩ TRƯỚC khi viết HTML
+    ## `plan` KHÔNG còn là nơi model quyết cấu trúc -- đó là việc của engine
 
-    Bản trước đưa model một phôi đã khai sẵn: trường nào, ai ký, ghi chú gì.
-    Model chỉ còn việc bày chúng ra. Kết quả là ba mươi tờ đi ra từ cùng một
-    khuôn -- đúng thứ kiến trúc "N phôi" mà người dùng đã bác.
+    Bản trước-trước đưa model một phôi đã khai sẵn: trường nào, ai ký, ghi
+    chú gì. Model chỉ còn việc bày chúng ra. Kết quả là ba mươi tờ đi ra từ
+    cùng một khuôn -- đúng thứ kiến trúc "N phôi" mà người dùng đã bác.
 
-    Giờ nó tự quyết, và `plan` bắt nó nói ra quyết định ấy thành lời trước khi
-    viết một dòng HTML nào. Không phải để đẹp: `field_plan` buộc model ÁNH XẠ
-    trường nó vừa nghĩ ra sang `data-kind` có thật trong từ vựng đóng -- và đó
-    đúng là chỗ nó hỏng nhiều nhất ở lượt thử trước. Sáu tờ trượt vì
-    `patient.name`, `project.code`, `admission.date`: những cái tên model tự
-    đặt cho trường mà nó chưa bao giờ phải đối chiếu với danh sách.
+    Bản kế (trước Phase 5) để model tự quyết HOÀN TOÀN, và `plan` bắt nó
+    nói quyết định ấy ra trước khi viết HTML. Đúng hướng ở chỗ model không
+    còn điền vào khuôn cố định -- nhưng sai ở chỗ "quyết định" đó không ai
+    kiểm, nên không khác gì model tự tạo ra plan RỒI TỰ CHẤM cho chính nó.
 
-    Bắt nó viết ánh xạ ra trước thì nó phải đối chiếu. Và khi không có `kind`
-    nào hợp, nó thấy điều ấy lúc LẬP KẾ HOẠCH chứ không phải lúc đã viết xong
-    trang.
+    Phase 5 (`docs/ke-hoach-refactor-engine.md`, điểm 3 review): cấu trúc
+    -- có bảng hay không, mấy chữ ký, family nào -- giờ do
+    `agent/grammar.py` + `agent/document_plan.py` RÚT TRƯỚC, đưa vào brief
+    qua `describe_plan()`. `plan` trong JSON trả về đây vẫn giữ (protocol
+    ổn định, `reasoning` vẫn hữu ích để gỡ lỗi), nhưng đổi vai trò thành
+    **tóm tắt việc model đã làm**, không phải nguồn quyết cấu trúc --
+    `agent/compose_page.py::plan_conformance_problems()` so HTML với
+    `DocumentPlan` của ENGINE, không so với `plan` model tự khai ở đây.
+
+    `field_plan` vẫn buộc model ÁNH XẠ trường nó viết sang `data-kind` có
+    thật trong từ vựng đóng -- đây là chỗ nó hỏng nhiều nhất khi còn được
+    hỏi (sáu tờ trượt vì `patient.name`, `project.code`, `admission.date`:
+    tên model tự đặt cho trường mà nó chưa bao giờ phải đối chiếu với danh
+    sách), và việc đó không đổi dù cấu trúc trang không còn do model quyết.
     """
     return {
         "type": "object",
@@ -401,6 +413,105 @@ DOMAIN_STEMS = {
          "ban_quyen", "toa_soan"),
 }
 
+# TÊN THẬT tiếng Việt cho 30 family của `agent/grammar.py` (Phase 3-4,
+# `docs/ke-hoach-refactor-engine.md`). Model không còn cần đoán tên chứng từ
+# từ một lĩnh vực rồi tự bịa `doc_slug` -- family ĐÃ LÀ một slug snake_case
+# hợp lệ (`one()` gán thẳng `doc_slug = plan.family`, không hỏi model), và
+# gợi ý ở đây chỉ để model biết gọi gì bằng tiếng Việt (`doc_kind`) và viết
+# nội dung gì cho đúng loại giấy tờ. Một câu ngắn, không phải định nghĩa đầy
+# đủ -- phần "loại giấy tờ này thật sự trông ra sao" là việc của
+# `agent/grammar.py`, không phải việc lặp lại ở đây.
+FAMILY_HINT = {
+    "authorisation_letter": "giấy uỷ quyền",
+    "cash_receipt_voucher": "phiếu thu/chi tiền mặt",
+    "dispatch_letter": "công văn hoặc thông báo hành chính",
+    "export_invoice": "hoá đơn xuất khẩu",
+    "form_activity": "biên bản hoạt động có xác nhận chữ ký",
+    "form_checklist": "phiếu kiểm tra dạng checklist",
+    "form_dense": "phiếu đăng ký hoặc hồ sơ khai chi tiết",
+    "form_roster": "bảng chấm công hoặc phân công theo lịch",
+    "form_sectioned": "biểu mẫu nhiều mục có bảng dữ liệu",
+    "form_symmetric": "biểu mẫu hai cột đối xứng",
+    "handover_record": "biên bản bàn giao",
+    "hospital_bill": "bảng kê chi phí khám chữa bệnh",
+    "hotel_stay": "hoá đơn lưu trú khách sạn",
+    "insurance_application_form": "giấy yêu cầu bảo hiểm",
+    "insurance_auto_certificate": "giấy chứng nhận bảo hiểm ô tô",
+    "insurance_cargo_policy": "đơn bảo hiểm hàng hoá",
+    "insurance_fire_certificate": "giấy chứng nhận bảo hiểm cháy nổ",
+    "insurance_health_certificate": "giấy chứng nhận bảo hiểm sức khoẻ",
+    "insurance_health_id_card": "thẻ bảo hiểm y tế",
+    "insurance_life_schedule": "bảng quyền lợi bảo hiểm nhân thọ",
+    "insurance_moto_certificate": "giấy chứng nhận bảo hiểm xe máy",
+    "insurance_property_contract": "hợp đồng bảo hiểm tài sản",
+    "insurance_travel_certificate": "giấy chứng nhận bảo hiểm du lịch",
+    "invoice_detailed": "hoá đơn bán hàng chi tiết",
+    "leave_application": "đơn xin nghỉ phép",
+    "meeting_minutes": "biên bản họp",
+    "retail_vat_invoice": "hoá đơn bán lẻ có thuế GTGT",
+    "tax_invoice_en": "hoá đơn thuế song ngữ Anh-Việt",
+    "utility_power": "hoá đơn tiền điện",
+    "utility_water": "hoá đơn tiền nước",
+}
+
+
+# FAMILY -> khoá của `DOMAIN_STEMS`, để `inspiration()` lọc phôi tham khảo
+# đúng lĩnh vực của family đã chọn -- không phải theo `index % 12` như bản
+# cũ. Hai chu kỳ khác độ dài (30 family, 12 domain) drift ra khỏi nhau nếu
+# cứ lấy chung một `index`, đúng lớp lỗi mà chính comment ở `DOMAIN_STEMS`
+# phía trên đã kể lại (pilot9: tờ thuế in khối chẩn đoán y tế). Ánh xạ
+# tường minh ở đây tránh lặp lại đúng lỗi ấy dưới hình dạng khác.
+FAMILY_DOMAIN = {
+    "hospital_bill": 0, "insurance_health_certificate": 0,
+    "insurance_health_id_card": 0,
+    "form_dense": 1, "form_checklist": 1,
+    "authorisation_letter": 2, "dispatch_letter": 2, "form_activity": 2,
+    "form_sectioned": 2, "form_symmetric": 2, "handover_record": 2,
+    "leave_application": 2, "meeting_minutes": 2,
+    "cash_receipt_voucher": 3, "retail_vat_invoice": 3, "tax_invoice_en": 3,
+    "invoice_detailed": 3, "export_invoice": 3,
+    "insurance_application_form": 5, "insurance_auto_certificate": 5,
+    "insurance_cargo_policy": 5, "insurance_fire_certificate": 5,
+    "insurance_life_schedule": 5, "insurance_moto_certificate": 5,
+    "insurance_property_contract": 5, "insurance_travel_certificate": 5,
+    "form_roster": 9,
+    "utility_power": 8, "utility_water": 8, "hotel_stay": 8,
+}
+
+
+def describe_plan(plan: DP.DocumentPlan) -> str:
+    """`DocumentPlan` -> đoạn brief mô tả CẤU TRÚC engine đã quyết -- đây
+    là chỗ mục 5.1 (Phase 5) thật sự đổi: model không còn được mời "tự
+    nghĩ" cấu trúc, chỉ hiện thực hoá cái đã có.
+
+    Không nêu GIÁ TRỊ nội dung (tên công ty, số tiền...) -- chỉ nêu HÌNH
+    DẠNG (có bảng hay không, mấy chữ ký, bố cục nào). Nội dung vẫn của
+    model, đúng "không khoá literal" (điểm 1 review, tránh G1)."""
+    a = plan.assignment
+    lines = [f"- family: `{plan.family}` (đã chọn sẵn -- KHÔNG đổi sang loại "
+            "chứng từ khác)"]
+    if "density" in a:
+        lines.append(f"- density: {a['density']}")
+    if "header" in a:
+        lines.append(f"- header/letterhead layout: {a['header']}")
+    if "party_block" in a:
+        lines.append(f"- customer/party block layout: {a['party_block']}")
+    if "table" in a:
+        lines.append(f"- table: CÓ, kiểu {a['table']} (không phải \"none\")")
+    else:
+        lines.append("- table: KHÔNG -- đừng vẽ bảng nào trên trang này")
+    if "signature_count" in a:
+        n = a["signature_count"]
+        lines.append(f"- signatures: đúng {n} người ký"
+                     + (" (không chữ ký nào)" if n == 0 else ""))
+    if "signature_layout" in a:
+        lines.append(f"- signature layout: {a['signature_layout']}")
+    if plan.hard_negative_profile:
+        decoys = "; ".join(f"{k} (chiến lược {v})"
+                           for k, v in plan.hard_negative_profile.items())
+        lines.append(f"- hard negatives bắt buộc cho: {decoys}")
+    return "\n".join(lines)
+
 
 # CHUYỂN VÀO `agent/rate_match.py` (Phase 4 task 4.4, docs/ke-hoach-refactor-
 # engine.md) -- cùng lý do `sheets` dưới `one()` cũng chuyển: sampler cần
@@ -412,28 +523,42 @@ wants_table = rate_match.wants_table
 
 SAY = {
     "en": {
-        "after_table": "Read them to see which blocks real paper is built from -- then invent a sheet quite UNLIKE these three. This one HAS a table, so the table is ONE block inside that skeleton, not the skeleton itself.",
+        "after_table": "Read them for how real Vietnamese paper words things "
+                       "(labels, signature block wording, section order) -- "
+                       "not for whether to have a table. This document's own "
+                       "table decision is already fixed above; use these only "
+                       "for wording and tone.",
         "shapes": "Three real Vietnamese documents, reduced to their SHAPE "
                   "(not their content):",
         "blocks": "blocks", "signs": "signed by", "nosign": "nobody signs",
-        "after": "Read them to see which blocks real paper is built from -- "
-                 "then invent a sheet quite UNLIKE these three. Note: most "
-                 "documents have **no item table at all**.",
-        "step1": "## Step one: INVENT the document",
-        "field": "Field", "invent":
-            "Think of **a document type that really exists** in that field, "
-            "then answer for yourself: what is this sheet for, which body "
-            "issues it, who signs it, which information fields it prints, and "
-            "if it has a table, what the table lists.",
+        "after": "Read them for how real Vietnamese paper words things -- not "
+                 "for structure. This document's own structure is already "
+                 "fixed above.",
+        "step1": "## Step one: REALIZE the document the engine already planned",
+        "field": "Reference field (for wording/tone only -- not a menu to "
+                 "pick a new document type from)", "invent":
+            "The structure below is DECIDED, not a suggestion -- table "
+            "presence, signature count, layout topology are the engine's "
+            "call, not yours. Your job: invent a document `doc_title` and "
+            "content that plausibly NEEDS exactly this structure, then "
+            "realize it. Answer for yourself: given this structure, what is "
+            "this sheet for, which body issues it, what does it print -- "
+            "not whether to have a table or how many people sign, which are "
+            "already fixed.",
         "planfirst": "Put your answers in the `plan` block. **Write `plan` "
-                     "first, `html` second** -- and the HTML must match the "
-                     "`plan` you just wrote.\n\nWrite `doc_kind` in "
-                     "VIETNAMESE (the sheet's real name). Write `doc_slug` in "
-                     "ENGLISH snake_case, for the folder name -- e.g. "
-                     "`vat_declaration`, `tuition_notice`, "
-                     "`warehouse_issue_note`.",
+                     "first, `html` second** -- and the HTML must match both "
+                     "the `plan` you just wrote AND the structure fixed "
+                     "above. `plan` here is your OWN summary of how you "
+                     "realized the fixed structure, not a second, competing "
+                     "source of truth -- the structure above is authoritative "
+                     "and the validator checks the HTML against IT, not "
+                     "against your `plan`.\n\nWrite `doc_kind` in VIETNAMESE "
+                     "(the sheet's real name, matching the document family "
+                     "above). `doc_slug` is filled in for you from the "
+                     "family -- do not worry about it.",
         "done": "Already made this run", "nothing": "nothing yet",
-        "other": "Invent a DIFFERENT type.",
+        "other": "Invent a plausible DIFFERENT reason/content for the same "
+                 "fixed structure -- not a different document type.",
         "step2": "## Step two: map each field to a `data-kind`",
         "map": "Every field you just invented must correspond to ONE "
                "`data-kind` from the list below. Write the `label` -> `kind` "
@@ -461,7 +586,7 @@ SAY = {
 }
 
 
-def inspiration(index: int, lang: str = "en", how_many: int = 3,
+def inspiration(index: int, family: str, lang: str = "en", how_many: int = 3,
                 table: bool = False) -> str:
     """Vài phôi THẬT của kho, đưa cho model ĐỌC HIỂU chứ không phải ĐIỀN.
 
@@ -491,8 +616,10 @@ def inspiration(index: int, lang: str = "en", how_many: int = 3,
         return ""
     say = SAY["en"]
     # Lọc theo lĩnh vực TRƯỚC khi quay vòng. Không đủ ba phôi khớp thì bù bằng
-    # cả kho -- thà một ví dụ lệch còn hơn không có ví dụ nào.
-    stems = DOMAIN_STEMS.get(index % len(DOMAINS), ())
+    # cả kho -- thà một ví dụ lệch còn hơn không có ví dụ nào. Tra qua
+    # `FAMILY_DOMAIN`, không qua `index % len(DOMAINS)` -- xem lý do ở chỗ
+    # khai `FAMILY_DOMAIN`.
+    stems = DOMAIN_STEMS.get(FAMILY_DOMAIN.get(family, -1), ())
     near = [a for a in pool if any(s in a.id for s in stems)]
     if len(near) >= how_many:
         pool = near
@@ -513,17 +640,26 @@ def inspiration(index: int, lang: str = "en", how_many: int = 3,
     return f"{say['shapes']}\n\n" + "\n".join(lines) + f"\n\n{close}\n\n"
 
 
-def ask_for(index: int, made: list[str], sheets: int, table: bool,
-            lang: str = "en") -> str:
-    """Lời nhờ cho MỘT tờ. Không có phôi nào ở đây -- model tự nghĩ ra.
+def ask_for(index: int, made: list[str], plan: DP.DocumentPlan, sheets: int,
+           lang: str = "en") -> str:
+    """Lời nhờ cho MỘT tờ.
+
+    Phase 5 (task 5.1, `docs/ke-hoach-refactor-engine.md`): trước đây
+    không có phôi nào ở đây, model tự nghĩ toàn bộ cấu trúc. Giờ `plan`
+    (rút từ `agent/grammar.py` qua `agent/document_plan.py`) CỐ ĐỊNH cấu
+    trúc -- có bảng hay không, mấy chữ ký, bố cục nào -- và model chỉ còn
+    tự do ở nội dung: `doc_title` cụ thể, lý do tài liệu này tồn tại, chữ
+    trên trang. Đây đúng ranh giới "LLM là Realizer" (mục 1 tư duy gốc),
+    không phải nới lỏng ngược lại G1.
 
     `made` là những loại chứng từ lượt này đã làm. Đưa vào để đẩy sang chỗ
     khác, không phải để cấm: cùng lối `agent/planner.py` dùng `pressure` để
     phủ đuôi phân phối thay vì bốc độc lập và bỏ trống những góc hiếm."""
     say = SAY["en"]
-    domain, who = DOMAINS_EN[index % len(DOMAINS)]
+    hint = FAMILY_HINT.get(plan.family, plan.family)
     every = ", ".join(sorted(kinds()))
     seen = (", ".join(made[-14:]) if made else say["nothing"])
+    table = "table" in plan.assignment
     # Số dòng bảng theo SỐ TỜ, không theo chỉ số lượt. Bản trước cho tới 30
     # dòng trên một tờ giấy duy nhất: bảng nuốt hết trang (đúng cái đã sửa ở
     # `1e6b114`), và thân bảng là 21% số ký tự model phải viết ra, tức 21%
@@ -534,8 +670,10 @@ def ask_for(index: int, made: list[str], sheets: int, table: bool,
     many = (say["one_sheet"] if sheets == 1 else say["n_sheets"].format(n=sheets))
     return (
         f"{say['step1']}\n\n"
-        f"{say['field']}: **{domain}** ({who}).\n\n"
-        f"{inspiration(index, lang, table=table)}"
+        f"{say['field']}: **{hint}** (`{plan.family}`).\n\n"
+        "### Structure -- decided by the engine, not by you\n\n"
+        f"{describe_plan(plan)}\n\n"
+        f"{inspiration(index, plan.family, lang, table=table)}"
         f"{say['invent']}\n\n"
         f"{say['planfirst']}\n\n"
         f"{say['done']}: {seen}. {say['other']}\n\n"
@@ -714,6 +852,45 @@ def plan_problems(plan: dict, html: str) -> list[str]:
     return found
 
 
+_HTML_TABLE = re.compile(r"<table\b", re.IGNORECASE)
+
+
+def plan_conformance_problems(plan: DP.DocumentPlan, html: str) -> list[str]:
+    """So HTML THẬT với `DocumentPlan` của ENGINE -- không qua `plan` model
+    tự khai lại trong câu trả lời (điểm 3 review, Phase 5 task 5.2):
+    `DocumentPlan` là nguồn sự thật, `plan_problems()` ở trên vẫn hữu ích
+    (bắt model khai `field_plan` sai từ vựng, hoặc bỏ sót phần đã hứa
+    trong CHÍNH câu trả lời của nó) nhưng không được dùng để nói "cấu trúc
+    trang đúng" -- việc đó là của hàm này.
+
+    Chỉ kiểm hai điều đo được chắc chắn từ HTML mà không cần đoán: có bảng
+    hay không (thẻ `<table>` thật), có chữ ký hay không (`data-kind` bắt
+    đầu bằng `sign.`) -- cả hai đều là nhị phân trong `DocumentPlan`
+    (`"table" in assignment`, `signature_count == 0` hay `> 0`), nên so
+    được thẳng, không cần suy luận số lượng chính xác."""
+    found: list[str] = []
+    has_table = bool(_HTML_TABLE.search(html))
+    wants_table_plan = "table" in plan.assignment
+    if wants_table_plan and not has_table:
+        found.append(f"engine plan ({plan.family}) yêu cầu có bảng "
+                     "(`table` trong DocumentPlan) nhưng HTML không có thẻ "
+                     "`<table>` nào")
+    elif not wants_table_plan and has_table:
+        found.append(f"engine plan ({plan.family}) không có nhánh `table` "
+                     "(gia đình này không dùng bảng) nhưng HTML có `<table>`")
+
+    sig_count = plan.assignment.get("signature_count")
+    has_signature = "sign." in html
+    if sig_count == 0 and has_signature:
+        found.append(f"engine plan ({plan.family}) yêu cầu 0 chữ ký nhưng "
+                     "HTML có `data-kind` bắt đầu bằng `sign.`")
+    elif isinstance(sig_count, int) and sig_count > 0 and not has_signature:
+        found.append(f"engine plan ({plan.family}) yêu cầu {sig_count} chữ "
+                     "ký nhưng HTML không có `data-kind` nào bắt đầu bằng "
+                     "`sign.`")
+    return found
+
+
 def budget(sheets: int) -> int:
     """Trần token đầu ra cho một tài liệu `sheets` tờ.
 
@@ -809,12 +986,19 @@ def one(client, index: int, made: list[str], seed: int,
         lang: str = "en") -> dict:
     """Một tờ: hỏi, đo, gác cổng. Không ném -- lỗi là một kết quả."""
     started = time.time()
-    # Cả hai hàm sống ở `agent/rate_match.py` (Phase 4 task 4.4) -- lý do
-    # đầy đủ (2..8 tờ trải đều, 46% có bảng khớp phân bố engine) nằm ở
-    # docstring của chính chúng, không lặp lại ở đây.
+    # Số tờ vẫn quay vòng qua `agent/rate_match.py` (Phase 4 task 4.4) --
+    # khái niệm "mấy trang" không nằm trong grammar (Phase 3), độc lập với
+    # family đã rút.
     sheets = rate_match.sheet_count(index)
-    table = wants_table(index)
-    brief = ask_for(index, made, sheets, table, lang)
+    # PHASE 5 (task 5.1): family + cấu trúc rút từ `agent/grammar.py` qua
+    # `agent/document_plan.py`, KHÔNG để model tự nghĩ nữa. `seed + index`
+    # giống hệt cách `seals()`/`hands()` bên dưới seed -- an toàn khi chạy
+    # song song (`ThreadPoolExecutor` trong `run()`), mỗi `index` một RNG
+    # riêng, không có state dùng chung.
+    rng = random.Random(seed + index)
+    family = sorted(G.FAMILIES)[index % len(G.FAMILIES)]
+    plan = DP.sample(G.FAMILIES[family], rng)
+    brief = ask_for(index, made, plan, sheets, lang)
     try:
         answer, usage = client.decide_with_usage(
             system_prompt(),
@@ -836,7 +1020,12 @@ def one(client, index: int, made: list[str], seed: int,
     in_tokens = int(usage.get("prompt_tokens") or 0)
 
     html = str(answer.get("html") or "")
-    plan = dict(answer.get("plan") or {})
+    # `declared` là model TỰ TÓM TẮT nó đã làm gì -- KHÔNG phải nguồn sự
+    # thật (điểm 3 review, Phase 5 task 5.2). Đặt tên khác `plan` (biến ở
+    # trên, `DocumentPlan` của engine) có chủ đích: hai biến trùng tên từng
+    # là cách dễ nhất để lỡ tay validate nhầm bằng bản model tự khai thay vì
+    # bản engine đã quyết.
+    declared = dict(answer.get("plan") or {})
     # CÂY DỮ LIỆU. Bản trước khai nó trong schema rồi vứt đi -- đo được 0/12 tờ
     # có `data` trong `declared/`, không phải vì model không viết mà vì không
     # ai đọc ra khỏi câu trả lời.
@@ -858,20 +1047,27 @@ def one(client, index: int, made: list[str], seed: int,
     # Nét chữ ký sau con dấu, cùng một lẽ: model đặt CHỖ, engine điền MỰC.
     html, signed = hands(html, seed=seed + index)
     mended["dấu thật đã điền"] = stamped
-    found = (problems(html) + plan_problems(plan, html)
-             + sheet_plan_problems(plan, sheets))
-    # `doc_slug` model tự đặt, đã đúng dạng nhờ `pattern` trong schema.
-    # `_slug(doc_kind)` chỉ là lưới đỡ cho server không ép được ràng buộc.
-    kind = str(plan.get("doc_slug") or "").strip() or _slug(
-        plan.get("doc_kind") or "llm")
+    # `plan_conformance_problems` so HTML với `plan` (ENGINE, authoritative).
+    # `plan_problems`/`sheet_plan_problems` vẫn so với `declared` (model tự
+    # khai) -- vẫn hữu ích để bắt model tự mâu thuẫn với chính lời nó vừa
+    # nói, nhưng không còn là nơi quyết "cấu trúc trang có đúng không".
+    found = (problems(html) + plan_problems(declared, html)
+             + sheet_plan_problems(declared, sheets)
+             + plan_conformance_problems(plan, html))
+    # `doc_slug` giờ LÀ `plan.family` -- engine đã quyết, không hỏi model
+    # nữa (điểm 3 review). `declared.get("doc_slug")` không còn dùng để
+    # đặt tên thư mục, chỉ còn trong `declared` để đọc lại lúc gỡ lỗi.
+    kind = plan.family
     return {
         "index": index, "archetype": kind, "ok": not found,
         "seconds": spent, "why": found,
-        "html": html, "rows": rows, "plan": plan,
+        "html": html, "rows": rows, "plan": declared,
+        "engine_plan": dict(plan.assignment),
+        "hard_negative_profile": dict(plan.hard_negative_profile),
         "data": tree,
-        "loai_tai_lieu": str(plan.get("doc_kind") or kind),
-        "doc_title": str(plan.get("doc_title") or ""),
-        "sheets_asked": sheets, "table_asked": table,
+        "loai_tai_lieu": str(declared.get("doc_kind") or kind),
+        "doc_title": str(declared.get("doc_title") or ""),
+        "sheets_asked": sheets, "table_asked": "table" in plan.assignment,
         "chars": len(html), "rows_wrong": wrong, "rows_total": total,
         "tokens_in": in_tokens, "tokens_out": out_tokens,
         "tokens_per_second": round(out_tokens / spent, 1) if spent else 0.0,
@@ -1109,8 +1305,8 @@ def run(want: int, out: Path, *, concurrency: int, seed: int,
 
     print(f"[trang] {want} tờ, {concurrency} request song song, "
           f"model {client.model}")
-    print(f"[trang] model TỰ NGHĨ loại chứng từ; {len(DOMAINS)} lĩnh vực "
-          "quay vòng, không phôi nào")
+    print(f"[trang] engine chọn family + cấu trúc ({len(G.FAMILIES)} family, "
+          "agent/grammar.py); model hiện thực hoá nội dung (Phase 5)")
     out.mkdir(parents=True, exist_ok=True)
     (out / "html").mkdir(exist_ok=True)
     (out / "rejected").mkdir(exist_ok=True)

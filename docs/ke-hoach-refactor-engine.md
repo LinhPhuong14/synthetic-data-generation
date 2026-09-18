@@ -515,12 +515,47 @@ không phải:
 Engine DocumentPlan → LLM tự tạo plan thứ hai → so hai plan
 ```
 
-| # | Task | File chính | DoD |
-|---|---|---|---|
-| 5.1 | Thiết kế lại `ask_for()`/brief để chèn `DocumentPlan` đã rút (Phase 4) thay vì để model tự nghĩ toàn bộ `plan` — nhưng vẫn để model tự do trong phạm vi plan CHO PHÉP (không khoá literal, tránh G1) | `agent/compose_page.py::ask_for()` | brief có đủ: document family, structure đã rút, density, table plan, layout plan, field plan, hard-negative plan (từ 3.4/4.1) |
-| 5.2 | `schema()` đổi theo: nếu `plan` vẫn còn trong structured output (lý do protocol/debug — `reasoning` đang hữu ích), nó đổi vai trò thành **execution summary / realization metadata**, KHÔNG authoritative, KHÔNG dùng để validate. Validator (Phase 2) so trực tiếp HTML/`data-path` sinh ra với `DocumentPlan` gốc của engine | `agent/compose_page.py::schema()` | test: model lệch `DocumentPlan` gốc bị `PLAN_VIOLATION` bắt được bằng cách so HTML thật với plan gốc — không qua trung gian "plan model tự khai lại" |
-| 5.3 | Cập nhật `page.md`: bỏ phần dạy model "tự phát minh cấu trúc từ đầu" (mục 2-4 hiện tại của `page.md`), thay bằng "hiện thực hoá plan được đưa, trong phạm vi cho phép"; nói rõ `plan` (nếu còn trong schema) chỉ là tóm tắt việc đã làm, không phải nơi model tự quyết cấu trúc | `agent/prompts/page.md` | không còn mâu thuẫn giữa prompt và schema mới; không còn câu nào ngụ ý model "tự nghĩ" cấu trúc từ đầu |
-| 5.4 | Đo lại token/giây sau khi context động (thường DÀI hơn vì có plan cụ thể) — theo `docs/kiem-soat-llm.md`, prefill không chậm decode đáng kể, nhưng vẫn phải đo lại không suy đoán | — | số đo mới ghi vào `docs/kiem-soat-llm.md` |
+| # | Task | File chính | DoD | Trạng thái |
+|---|---|---|---|---|
+| 5.1 | Thiết kế lại `ask_for()`/brief để chèn `DocumentPlan` đã rút (Phase 4) thay vì để model tự nghĩ toàn bộ `plan` — nhưng vẫn để model tự do trong phạm vi plan CHO PHÉP (không khoá literal, tránh G1) | `agent/compose_page.py::ask_for()` | brief có đủ: document family, structure đã rút, density, table plan, layout plan, field plan, hard-negative plan (từ 3.4/4.1) | **Xong** — `one()` rút `plan = DP.sample(G.FAMILIES[family], rng)` (family quay vòng qua 30 family, RNG = `seed+index`, an toàn song song); `ask_for()` nhận `plan`, gọi `describe_plan()` mới để đưa family/density/table/party_block/signature/hard-negative vào brief; `table`/`doc_slug` không còn hỏi model (`table = "table" in plan.assignment`, `kind = plan.family`) |
+| 5.2 | `schema()` đổi theo: nếu `plan` vẫn còn trong structured output (lý do protocol/debug — `reasoning` đang hữu ích), nó đổi vai trò thành **execution summary / realization metadata**, KHÔNG authoritative, KHÔNG dùng để validate. Validator (Phase 2) so trực tiếp HTML/`data-path` sinh ra với `DocumentPlan` gốc của engine | `agent/compose_page.py::schema()` | test: model lệch `DocumentPlan` gốc bị `PLAN_VIOLATION` bắt được bằng cách so HTML thật với plan gốc — không qua trung gian "plan model tự khai lại" | **Xong** — biến cục bộ đổi tên `plan`→`declared` (model tự khai) vs `plan` (DocumentPlan engine, biến khác hẳn) để không lỡ tay lẫn lộn; `plan_conformance_problems(plan, html)` mới so HTML thật với 2 sự kiện nhị phân của engine plan (có bảng hay không qua `<table>` thật; có chữ ký hay không qua `data-kind` bắt đầu `sign.`) — không đọc `declared` chút nào. `schema()`'s docstring viết lại nói rõ vai trò mới. 8 test trong `tests/test_plan_conformance.py` |
+| 5.3 | Cập nhật `page.md`: bỏ phần dạy model "tự phát minh cấu trúc từ đầu" (mục 2-4 hiện tại của `page.md`), thay bằng "hiện thực hoá plan được đưa, trong phạm vi cho phép"; nói rõ `plan` (nếu còn trong schema) chỉ là tóm tắt việc đã làm, không phải nơi model tự quyết cấu trúc | `agent/prompts/page.md` | không còn mâu thuẫn giữa prompt và schema mới; không còn câu nào ngụ ý model "tự nghĩ" cấu trúc từ đầu | **Xong (rà theo trọng điểm, không tuyên bố quét hết 1885 dòng)** — viết lại mục 1-4 (input context, "REALIZE không INVENT", diversity là việc content không phải structure, tránh trùng lặp là việc content không phải structure) đúng 4 mục DoD nêu; quét thêm bắt được 3 chỗ mâu thuẫn khác không nằm trong phạm vi gốc: mục 19 (TABLES — sự có/không của bảng giờ cố định, chỉ còn quyết morphology), mục 24 (LAYOUT — phân biệt CSS-level với structural fact đã cố định), mục 55 (AVOIDING PREVIOUSLY USED STRUCTURES — viết lại thành việc content, structure là việc coverage sampler Phase 4.3) |
+| 5.4 | Đo lại token/giây sau khi context động (thường DÀI hơn vì có plan cụ thể) — theo `docs/kiem-soat-llm.md`, prefill không chậm decode đáng kể, nhưng vẫn phải đo lại không suy đoán | — | số đo mới ghi vào `docs/kiem-soat-llm.md` | **BLOCKED** — xem 5.5 dưới, không phải "chưa làm", mà không làm được lúc này vì một phụ thuộc dùng chung đang hỏng |
+
+### 5.5 — Chặn 5.4: `synthgen/llm_page.py::kinds()` hỏng do việc song song trên `synthgen/`
+
+Không phải do phần việc Phase 1-5 ở đây. Phát hiện khi chạy
+`tests/test_plan_conformance.py` mới viết: `kinds()` (dùng trong
+`ask_for()` để liệt kê từ vựng `data-kind`, và trong `problems()` để gác
+cổng) ném `KeyError: 'table'` — `synthgen/markup.py::markup()` tra
+`_BUILDERS['table']` cho một khối KHÔNG chảy (head/tail), nhưng `'table'`
+chỉ có trong `FLOW_BUILDERS`, không có trong `_BUILDERS`. Xác nhận bằng
+`git status`: `synthgen/design.py` (+273/-51 dòng), `synthgen/archetypes.py`,
+`synthgen/markup.py`, `synthgen/content.py`, `synthgen/corpus.py`,
+`synthgen/draw.py`, `synthgen/overlay.py`, `synthgen/paginate.py`,
+`synthgen/phrasing.py`, `synthgen/run.py` đều đang sửa dở (không phải của
+phiên này) — rất có thể một archetype mới cho phép `table` xuất hiện ở vị
+trí head/tail mà `markup.py` chưa theo kịp.
+
+**Tác động đo được:** chạy `pytest tests/` toàn bộ lúc phát hiện — hàng
+trăm test hỏng, trải khắp `test_sheets.py`, `test_signature.py`,
+`test_spec.py`, và cả những test Phase 1-2 TỪNG QUA (`test_llm_page.py`,
+`test_failures.py`) giờ cũng hỏng vì cùng một `KeyError` — không phải hồi
+quy do phần việc ở đây, `git diff` xác nhận các file Phase 1-2 không đổi
+từ lúc chúng còn qua. Đây là lỗi TẠM THỜI trên cây làm việc dùng chung,
+không phải lỗi trong bất kỳ commit nào ở nhánh Phase 1-5.
+
+**Vì sao không tự sửa:** `synthgen/markup.py`/`synthgen/design.py` đang có
+người sửa dở (không phải phiên này) — sửa đè lên sẽ đụng đúng việc đang
+làm. Test mới của Phase 5 (`tests/test_plan_conformance.py`) đã cô lập
+khỏi lỗi này bằng cách giả lập `kinds()` (`monkeypatch`), nên chạy sạch
+độc lập với tình trạng `synthgen/`; các test Phase 1-2 thì KHÔNG cô lập
+được theo cách đó (chúng đang kiểm chính `problems()`/`kinds()` thật), nên
+tạm thời đỏ cho tới khi việc kia xong.
+
+5.4 (đo token/giây) cần một lượt gọi LLM thật qua trọn `agent.compose_page`
+— vô nghĩa khi chạy lúc `kinds()` đang hỏng (mọi trang sẽ hỏng ở cổng
+trước khi kịp đo gì). Hoãn tới khi `synthgen/` ổn định lại.
 
 ---
 
