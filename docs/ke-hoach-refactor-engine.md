@@ -312,12 +312,20 @@ IF document = contract    THEN clause_section = repeatable
 IF signature_count = 3    THEN signature_layout ∈ {horizontal, approval_chain, stacked}
 ```
 
-| # | Task | File chính | DoD |
-|---|---|---|---|
-| 3.1 | Viết grammar cho 3-5 document family thí điểm dưới dạng cây tuỳ chọn CÓ ràng buộc điều kiện giữa nhánh (như ví dụ trên) | file mới, ví dụ `agent/grammar.py` | **"Grammar must define a compositional constraint space with conditional dependencies, rather than a finite Cartesian product of predefined visual variants."** Mỗi family có ít nhất một ràng buộc nối hai nhánh trở lên — liệt kê nhánh độc lập không tính là đạt |
-| 3.2 | Đếm kích thước không gian tổ hợp SAU khi áp ràng buộc (không phải tích Descartes thô trước ràng buộc) | cùng file | số liệu ghi vào docstring/doc: tổng tổ hợp thô, tổ hợp còn lại sau ràng buộc, và tổ hợp bị loại — chứng minh ràng buộc thật sự cắt bớt không gian phẳng chứ không chỉ trang trí |
-| 3.3 | Grammar phải xuất được **constraint**, không phải giá trị cụ thể — plan cụ thể do sampler (Phase 4) rút ra khỏi grammar bằng trọng số + giải ràng buộc, không phải grammar tự ấn định | cùng file | grammar không có nhánh nào bị hard-code một giá trị duy nhất |
-| 3.4 | **(điểm 4)** Grammar khai luôn hard-negative-compatible strategies cho từng field/context — field nào hợp lý với decoy dạng lexical/format/contextual/..., field nào không | cùng file | mỗi field trong field vocabulary có (có thể rỗng) danh sách strategy hợp lệ; Phase 4.1 đọc trực tiếp danh sách này khi rút `hard_negative_profile`, không đợi Phase 6 mới nghĩ tới |
+| # | Task | File chính | DoD | Trạng thái |
+|---|---|---|---|---|
+| 3.1 | Viết grammar cho 3-5 document family thí điểm dưới dạng cây tuỳ chọn CÓ ràng buộc điều kiện giữa nhánh (như ví dụ trên) | `agent/grammar.py` | **"Grammar must define a compositional constraint space with conditional dependencies, rather than a finite Cartesian product of predefined visual variants."** Mỗi family có ít nhất một ràng buộc nối hai nhánh trở lên — liệt kê nhánh độc lập không tính là đạt | **Xong (thí điểm 3 family)** — `invoice`, `contract`, `certificate`, mỗi family 5-6 nhánh, 3 ràng buộc điều kiện nối nhánh |
+| 3.2 | Đếm kích thước không gian tổ hợp SAU khi áp ràng buộc (không phải tích Descartes thô trước ràng buộc) | `agent/grammar.py::space_size()` | số liệu ghi vào docstring/doc: tổng tổ hợp thô, tổ hợp còn lại sau ràng buộc, và tổ hợp bị loại — chứng minh ràng buộc thật sự cắt bớt không gian phẳng chứ không chỉ trang trí | **Xong** — `invoice` 768→472 (cắt 296, 39%), `contract` 324→200 (cắt 124, 38%), `certificate` 48→27 (cắt 21, 44%). Cả 3 family đều `cut > 0` — không family nào có ràng buộc trang trí. Test khoá lại: `tests/test_grammar.py::test_every_pilot_family_has_a_real_not_decorative_constraint` |
+| 3.3 | Grammar phải xuất được **constraint**, không phải giá trị cụ thể — plan cụ thể do sampler (Phase 4) rút ra khỏi grammar bằng trọng số + giải ràng buộc, không phải grammar tự ấn định | `agent/grammar.py::valid_options()` | grammar không có nhánh nào bị hard-code một giá trị duy nhất | **Xong** — `valid_options(grammar, branch, assignment)` trả tập còn hợp lệ theo assignment đã có, không trả một giá trị cố định; Phase 4 gọi hàm này để rút, không đọc thẳng một field cấu hình sẵn |
+| 3.4 | **(điểm 4)** Grammar khai luôn hard-negative-compatible strategies cho từng field/context — field nào hợp lý với decoy dạng lexical/format/contextual/..., field nào không | `agent/grammar.py::FieldCompat` | mỗi field trong field vocabulary có (có thể rỗng) danh sách strategy hợp lệ; Phase 4.1 đọc trực tiếp danh sách này khi rút `hard_negative_profile`, không đợi Phase 6 mới nghĩ tới | **Xong (phạm vi thí điểm)** — 5 field/family khai compat (không phải toàn bộ ~80 kind của từ vựng — mở rộng cùng lúc với 3→30 family); `doc_title`/`sign.name` khai rỗng có chủ đích (không có decoy hợp lý), test khoá lại |
+
+**Trạng thái tổng:** 3 family thí điểm xong, đã đo, đã test (14 test trong
+`tests/test_grammar.py`). Theo đúng yêu cầu — **dừng ở đây để duyệt trước
+khi viết thành 30 family** (task 3.1 mở rộng, chưa làm). Ràng buộc trong 3
+family hiện tại là suy luận hợp lý (docstring `agent/grammar.py` nói rõ:
+"a starting point... not verified domain expertise"), không phải tra cứu từ
+dữ liệu thật — khi mở rộng lên 30, nên đối chiếu với `rulebase/` hoặc mẫu
+thật thay vì tiếp tục suy luận tay.
 
 ---
 
