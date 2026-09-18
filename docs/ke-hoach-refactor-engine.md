@@ -596,6 +596,36 @@ track 1, không chạy được trên track 3 — xác nhận từ audit).
 | 7.2 | Viết document-diversity distance riêng, đọc fingerprint từ Phase 4.2, không đọc hình học | file mới | test mục 49 (tư duy gốc): 1 document × 100 dressing ≠ 100 document diversity |
 | 7.3 | Corpus report tách hai loại diversity ra hai bảng số khác nhau | `tools/` script từ Phase 2.4 | báo cáo có hai section riêng |
 
+**Xong cả ba.**
+
+- **7.1** — không sửa một dòng nào của `agent/distance.py` (`git status` xác
+  nhận file sạch suốt Phase 7). Track 1 không có regression từ phía tôi;
+  các test track 1 đang FAIL hôm nay (`test_sheets.py`/`test_signature.py`/
+  `test_spec.py`, `ModuleNotFoundError`) là việc của nhánh `synthgen/`
+  đang sửa song song, không liên quan `agent/distance.py`.
+- **7.2** — `agent/document_distance.py` (mới): `distance(a, b)` giữa hai
+  `Fingerprint` = số tầng (coarse/mid/fine) khác nhau chia 3 -- không dùng
+  trọng số tự chọn, cùng tinh thần `agent/coverage.py` đã chọn thứ tự từ
+  điển thay vì tổng có trọng số. `corpus_diversity(fingerprints)` gộp một
+  lô: distinct-coarse/mid/fine cộng khoảng cách trung bình theo cặp.
+  `tests/test_document_distance.py::
+  test_one_document_rendered_a_hundred_ways_is_zero_document_diversity`
+  khoá đúng mục 49: fingerprint của CÙNG một `DocumentPlan` không đổi dù
+  gọi lại bao nhiêu lần (dressing không đụng `assignment`), trong khi
+  100 document THẬT SỰ khác nhau (family khác nhau) đo được diversity > 0
+  rõ rệt -- hai trục tách nhau vì cấu trúc code, không phải vì quy ước.
+- **7.3** — `tools/llm/corpus_stats.py` thêm `document_diversity` (gọi
+  `agent.document_distance.corpus_diversity` trên `Fingerprint` dựng lại từ
+  `engine_plan`/`hard_negative_profile` mỗi trang trong `compose_report.
+  json` -- không cần `DocumentPlan` gốc) và `hard_negative_coverage`
+  (Phase 6: bao nhiêu trang engine HỎI có mồi giả so với bao nhiêu trang
+  model THỰC SỰ khai `data-decoy-for`). Đổi tên `not_measurable_yet` ->
+  `not_measurable_here`: những khái niệm Phase 3/4/6 hứa trước đây giờ đo
+  được rồi, chỉ còn thứ cần ảnh đã vẽ (`synthgen/check.py`, để Phase 8) hoặc
+  không áp dụng cho track 3 (dressing diversity) là thật sự ngoài script
+  này. Test: `tests/test_document_distance.py` (10 test), `tests/
+  test_corpus_stats.py` (+6 test cho hai bảng mới).
+
 ---
 
 ## Phase 8 — Tổng kết & kiểm tra ở quy mô
