@@ -66,8 +66,8 @@ from agent import grammar as G
 from agent import rate_match
 from pipeline import failures
 from synthgen import design as D
-from synthgen.llm_page import (REGIONS, _rooted, declared_paths, kinds,
-                               printed_kinds, problems)
+from synthgen.llm_page import (REGIONS, _rooted, content_length_problems,
+                               declared_paths, kinds, printed_kinds, problems)
 from synthgen.adorn import hands, seals
 from synthgen.repair import repair
 
@@ -1067,9 +1067,13 @@ def one(client, index: int, made: list[str], seed: int,
     # `plan_problems`/`sheet_plan_problems` vẫn so với `declared` (model tự
     # khai) -- vẫn hữu ích để bắt model tự mâu thuẫn với chính lời nó vừa
     # nói, nhưng không còn là nơi quyết "cấu trúc trang có đúng không".
+    # `content_length_problems` gác CHỮ THẬT SỰ có trên trang, không qua lời
+    # khai -- `sheet_plan_problems` ở trên chỉ gác `sheet_plan` model tự
+    # viết, và đo trên pilot16 (Phase 8) thấy lời khai đủ mà chữ vẫn thiếu.
     found = (problems(html) + plan_problems(declared, html)
              + sheet_plan_problems(declared, sheets)
-             + plan_conformance_problems(plan, html))
+             + plan_conformance_problems(plan, html)
+             + content_length_problems(html, sheets))
     # `doc_slug` giờ LÀ `plan.family` -- engine đã quyết, không hỏi model
     # nữa (điểm 3 review). `declared.get("doc_slug")` không còn dùng để
     # đặt tên thư mục, chỉ còn trong `declared` để đọc lại lúc gỡ lỗi.

@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from agent.compose_page import plan_problems, sheet_plan_problems
 from pipeline import failures as F
-from synthgen.llm_page import problems
+from synthgen.llm_page import content_length_problems, problems
 
 SHEET = ('<div class="sheet">'
         '<span data-kind="title">HOÁ ĐƠN</span>'
@@ -139,6 +139,14 @@ def test_too_few_planned_sheets_is_density_violation():
 def test_a_sheet_with_no_sections_is_density_violation():
     plan = {"sheet_plan": [{"sheet": 1, "sections": []}]}
     assert _one(sheet_plan_problems(plan, 1)) == F.DENSITY_VIOLATION
+
+
+# ----------------------------------------------- content_length_problems()
+
+
+def test_a_page_far_shorter_than_the_sheets_asked_is_density_violation():
+    short = '<div class="sheet"><span data-kind="title">A</span></div>'
+    assert _one(content_length_problems(short, 4)) == F.DENSITY_VIOLATION
 
 
 # ----------------------------------------------------------------- tally
