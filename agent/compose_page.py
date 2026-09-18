@@ -570,9 +570,14 @@ SAY = {
         "one_sheet": "This document is **one sheet**.",
         "n_sheets": "This document runs to about **{n} A4 sheets**: write "
                     "ONE `<div class=\"sheet\">` holding enough content for "
-                    "that many -- the machine cuts it to A4 height. Do not "
-                    "open a new `.sheet`, and do not number the pages "
-                    "yourself.",
+                    "that many -- the machine cuts it to A4 height. Target "
+                    "roughly **{chars} characters of visible HTML content "
+                    "in total** (about 8,000 characters per A4 sheet) -- a "
+                    "sheet that gets cut to fewer pages than asked is "
+                    "treated as a FAILURE, not a shorter valid document. "
+                    "State a `sheet_plan` that commits to writing all {n} "
+                    "sheets, not a subset. Do not open a new `.sheet`, and "
+                    "do not number the pages yourself.",
         "table": "This one HAS an item table, {lo}-{hi} rows.",
         "notable": "This one has **no item table at all**. Lay it out some "
                    "other way: two-column field blocks, prose, numbered "
@@ -667,7 +672,8 @@ def ask_for(index: int, made: list[str], plan: DP.DocumentPlan, sheets: int,
     # liệu một tờ thì không.
     low, high = 4 + index % 4, 10 + sheets * 4
     shape = (say["table"].format(lo=low, hi=high) if table else say["notable"])
-    many = (say["one_sheet"] if sheets == 1 else say["n_sheets"].format(n=sheets))
+    many = (say["one_sheet"] if sheets == 1
+            else say["n_sheets"].format(n=sheets, chars=sheets * 8000))
     return (
         f"{say['step1']}\n\n"
         f"{say['field']}: **{hint}** (`{plan.family}`).\n\n"
@@ -902,11 +908,16 @@ def budget(sheets: int) -> int:
 
     2 600 token cho `plan` và `rows`, cộng 4 200 mỗi tờ. Trần trên 30 000 để
     một lời gọi lạc lối vẫn hỏng nhanh thay vì ăn hết cửa sổ ngữ cảnh."""
-    # Trần trên 40 000, không 30 000. Tám tờ cần chừng 31 200 token ở mức
-    # 8 000 ký tự mỗi tờ, nên trần cũ cắt cụt đúng cỡ dài nhất. Cửa sổ ngữ
-    # cảnh của máy chủ là 262 144 nên còn rộng chán; trần ở đây chỉ để một
-    # lời gọi lạc lối hỏng nhanh thay vì ăn hết cửa sổ.
-    return min(40_000, 2_600 + max(1, sheets) * 4_200)
+    # Trần trên 60 000, không 40 000, và 5 200/tờ, không 4 200. Đo trên
+    # pilot16 (Phase 8): KHÔNG một tờ nào trong lô chạm trần cũ -- tờ tốn
+    # nhiều token nhất (`form_checklist`, xin 6 tờ) dùng 14 173/27 800, chưa
+    # tới nửa trần -- nên "xin N tờ mà cắt ra M<N tờ" không phải do CHẠM
+    # TRẦN, mà do model tự viết ngắn hơn được phép. Trần vẫn nới thêm ở đây
+    # để không bao giờ là nguyên nhân, cả hiện tại lẫn khi lời dặn (xem
+    # `n_sheets` ở SAY) bắt đầu đẩy model viết dài hơn thật. Cửa sổ ngữ cảnh
+    # máy chủ 262 144 nên còn rất rộng; trần chỉ để một lời gọi lạc lối hỏng
+    # nhanh thay vì ăn hết cửa sổ.
+    return min(60_000, 2_600 + max(1, sheets) * 5_200)
 
 
 def patience(sheets: int, floor: float) -> float:
