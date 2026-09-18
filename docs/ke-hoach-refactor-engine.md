@@ -315,17 +315,57 @@ IF signature_count = 3    THEN signature_layout ∈ {horizontal, approval_chain,
 | # | Task | File chính | DoD | Trạng thái |
 |---|---|---|---|---|
 | 3.1 | Viết grammar cho 3-5 document family thí điểm dưới dạng cây tuỳ chọn CÓ ràng buộc điều kiện giữa nhánh (như ví dụ trên) | `agent/grammar.py` | **"Grammar must define a compositional constraint space with conditional dependencies, rather than a finite Cartesian product of predefined visual variants."** Mỗi family có ít nhất một ràng buộc nối hai nhánh trở lên — liệt kê nhánh độc lập không tính là đạt | **Xong (thí điểm 3 family)** — `invoice`, `contract`, `certificate`, mỗi family 5-6 nhánh, 3 ràng buộc điều kiện nối nhánh |
-| 3.2 | Đếm kích thước không gian tổ hợp SAU khi áp ràng buộc (không phải tích Descartes thô trước ràng buộc) | `agent/grammar.py::space_size()` | số liệu ghi vào docstring/doc: tổng tổ hợp thô, tổ hợp còn lại sau ràng buộc, và tổ hợp bị loại — chứng minh ràng buộc thật sự cắt bớt không gian phẳng chứ không chỉ trang trí | **Xong** — `invoice` 768→472 (cắt 296, 39%), `contract` 324→200 (cắt 124, 38%), `certificate` 48→27 (cắt 21, 44%). Cả 3 family đều `cut > 0` — không family nào có ràng buộc trang trí. Test khoá lại: `tests/test_grammar.py::test_every_pilot_family_has_a_real_not_decorative_constraint` |
+| 3.2 | Đếm kích thước không gian tổ hợp SAU khi áp ràng buộc (không phải tích Descartes thô trước ràng buộc) | `agent/grammar.py::space_size()` | số liệu ghi vào docstring/doc: tổng tổ hợp thô, tổ hợp còn lại sau ràng buộc, và tổ hợp bị loại — chứng minh ràng buộc thật sự cắt bớt không gian phẳng chứ không chỉ trang trí | **Xong (số liệu sau đối chiếu 3.5)** — `invoice` 1296→435 (cắt 861, 66%), `contract` 972→560 (cắt 412, 42%), `certificate` 48→27 (cắt 21, 44%). Cả 3 family đều `cut > 0`. Test khoá lại: `tests/test_grammar.py::test_every_pilot_family_has_a_real_not_decorative_constraint` |
 | 3.3 | Grammar phải xuất được **constraint**, không phải giá trị cụ thể — plan cụ thể do sampler (Phase 4) rút ra khỏi grammar bằng trọng số + giải ràng buộc, không phải grammar tự ấn định | `agent/grammar.py::valid_options()` | grammar không có nhánh nào bị hard-code một giá trị duy nhất | **Xong** — `valid_options(grammar, branch, assignment)` trả tập còn hợp lệ theo assignment đã có, không trả một giá trị cố định; Phase 4 gọi hàm này để rút, không đọc thẳng một field cấu hình sẵn |
 | 3.4 | **(điểm 4)** Grammar khai luôn hard-negative-compatible strategies cho từng field/context — field nào hợp lý với decoy dạng lexical/format/contextual/..., field nào không | `agent/grammar.py::FieldCompat` | mỗi field trong field vocabulary có (có thể rỗng) danh sách strategy hợp lệ; Phase 4.1 đọc trực tiếp danh sách này khi rút `hard_negative_profile`, không đợi Phase 6 mới nghĩ tới | **Xong (phạm vi thí điểm)** — 5 field/family khai compat (không phải toàn bộ ~80 kind của từ vựng — mở rộng cùng lúc với 3→30 family); `doc_title`/`sign.name` khai rỗng có chủ đích (không có decoy hợp lý), test khoá lại |
 
-**Trạng thái tổng:** 3 family thí điểm xong, đã đo, đã test (14 test trong
-`tests/test_grammar.py`). Theo đúng yêu cầu — **dừng ở đây để duyệt trước
-khi viết thành 30 family** (task 3.1 mở rộng, chưa làm). Ràng buộc trong 3
-family hiện tại là suy luận hợp lý (docstring `agent/grammar.py` nói rõ:
-"a starting point... not verified domain expertise"), không phải tra cứu từ
-dữ liệu thật — khi mở rộng lên 30, nên đối chiếu với `rulebase/` hoặc mẫu
-thật thay vì tiếp tục suy luận tay.
+### 3.5 — Đối chiếu 3 family với `rulebase/layouts/*.yaml` (theo yêu cầu, trước khi viết 30 family)
+
+Không suy luận thêm — đọc `sections:` thật của layout track 1. Bắt được
+**hai lỗi thật** trong bản grammar đầu tiên:
+
+1. Nhánh `table` của `invoice` từng có `"none"`. **23/23** layout hoá đơn
+   gốc trong `rulebase/layouts/invoice_*.yaml` đều có `table` trong
+   `sections:` — không layout nào bỏ bảng. Xoá `"none"`.
+2. `signature_count` của `invoice` từng bắt buộc ≥1. **6/23 (26%)** layout
+   thật (`invoice_dense_table`, `invoice_multipage`, `invoice_brand`,
+   `invoice_logo_center`, `invoice_minimalist`, `invoice_tax_en`) không có
+   `signatures`. Thêm `0`, cùng hai ràng buộc buộc `signature_layout` phải
+   khớp (`0` → `"none"`, `≥1` → khác `"none"`).
+
+Và một chỗ **thiếu hẳn**: `contract` không có nhánh `table` nào trong bản
+đầu. Đối chiếu `insurance_property_contract.yaml` (đại diện gần nhất trong
+rulebase cho "hợp đồng có phụ lục bảng") thấy `sections:` của nó có cả
+`table` lẫn `totals`. Thêm nhánh `table` (`none`/`simple`/`schedule`) và một
+ràng buộc: bảng `schedule` kéo theo `density` phải `dense`/`very_dense`.
+
+Và một chỗ **phóng đại**: ràng buộc "certificate sparse → không bảng" dùng
+sai trục. Đối chiếu `rulebase/layouts/insurance_*_certificate.yaml` (5
+layout gốc): **3/5** (`fire`, `health`, `travel`) CÓ bảng — bảng ở
+certificate không hiếm, nó gắn với việc certificate xác nhận NHIỀU khoản
+mục (quyền lợi/hạng mục) hay MỘT sự việc đơn (`auto`/`moto`, 2/5, không
+bảng). Đổi trục `density` thành `confirms` (`single_fact`/`itemized_list`)
+cho đúng nghĩa.
+
+**Giới hạn thật của phép đối chiếu này**, nói rõ để không tưởng đã xong
+hoàn toàn: `rulebase/layouts/*.yaml` trả lời tốt câu "khối X có mặt hay
+không" (đọc thẳng `sections:`), nhưng nó tham số hoá liên tục
+(`width: [88, 100]`, `name_scale: [1.25, 1.45]`), không phải cây quyết định
+rời rạc như grammar này — các option CHI TIẾT bên trong một khối đã có mặt
+(`header` nên chia mấy kiểu, tên gì) vẫn là từ vựng tự đặt của module này,
+chưa tra được từ đâu xa hơn. Khi mở rộng lên 30 family, phần "có khối này
+không" nên tiếp tục đối chiếu `sections:` như đã làm; phần "khối này chia
+kiểu gì" vẫn cần suy luận có ghi chú, hoặc một nguồn đối chiếu khác chưa
+xác định.
+
+**Số liệu sau khi sửa:** `invoice` 1296→435 (cắt 861, 66% — tăng mạnh vì
+hai ràng buộc `signature_layout` mới), `contract` 972→560 (cắt 412, 42%),
+`certificate` không đổi kích thước (48→27) vì chỉ đổi TÊN trục, không đổi
+số lượng option. 14 test cũ vẫn qua nguyên (không phải viết lại, vì
+interface `Branch`/`Constraint` không đổi, chỉ nội dung 3 family đổi).
+
+**Trạng thái tổng:** 3 family đã đối chiếu, đã đo lại, đã test. **Dừng ở
+đây để duyệt trước khi viết thành 30 family** (task 3.1 mở rộng, chưa làm).
 
 ---
 
