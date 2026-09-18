@@ -66,8 +66,8 @@ from agent import grammar as G
 from agent import rate_match
 from pipeline import failures
 from synthgen import design as D
-from synthgen.llm_page import (REGIONS, _rooted, content_length_problems,
-                               declared_paths, kinds, printed_kinds, problems)
+from synthgen.llm_page import (REGIONS, _rooted, declared_paths, kinds,
+                               printed_kinds, problems)
 from synthgen.adorn import hands, seals
 from synthgen.repair import repair
 
@@ -795,6 +795,59 @@ def sheet_plan_problems(plan: dict, sheets: int) -> list[str]:
     return []
 
 
+# Dưới ngưỡng này thì coi là THIẾU RÕ RỆT, không phải một tờ hụt nhẹ. Đo
+# trên pilot16 (Phase 8, `docs/ke-hoach-refactor-engine.md`): "xin 6 -> cắt
+# ra 5" (83%) là một tờ gần đủ, không đáng loại; "xin 4 -> cắt ra 2" (50%),
+# "xin 8 -> cắt ra 1" (12%) là thiếu thật. 0.6 nằm giữa hai nhóm ấy trên
+# đúng dữ liệu đã đo, không phải một số chọn khơi khơi.
+SHEET_SHORTFALL_RATIO = 0.6
+
+
+def _reconcile_sheet_count(made: list[dict],
+                           actual_pages: dict[str, int]) -> list[str]:
+    """Sửa lại `ok`/`why` của những trang đã qua cổng CHỮ nhưng dàn trang
+    THẬT ra ít tờ hơn hẳn số đã xin. Đổi tại chỗ trên `made`; trả về danh
+    sách `stem` vừa bị lật, để gọi nơi rời file khỏi `html/` sang
+    `rejected/`.
+
+    ## Vì sao đây là một hàm RIÊNG, chạy SAU `one()`, không phải một dòng
+    ## nữa trong `found` của `one()`
+
+    Đã thử đúng cách "một dòng nữa trong `found`" trước: đo `visible_chars()`
+    (`synthgen/llm_page.py`) trên `html`, so với một hằng số "8 000 ký tự mỗi
+    tờ A4", gác TRƯỚC khi dàn trang. Chạy thật trên pilot16 lộ ngay sai lầm:
+    `authorisation_letter` (bố cục key-value xếp dọc, mỗi trường một dòng)
+    đo được ~1 150 ký tự MỖI TỜ THẬT -- so với 8 000 ước lượng từ văn xuôi/
+    bảng dày, chênh bảy lần -- và trang ấy bị gác SAI dù nó xin 2 tờ mà dàn
+    ra tới 3 tờ THẬT (nhiều hơn xin, không phải thiếu). Không hằng số ký tự
+    nào đúng cho mọi kiểu bố cục mà track 3 cố tình đa dạng ra.
+
+    Số tờ THẬT chỉ trình duyệt biết chắc (`synthgen/draw_llm.py`, cắt theo
+    chiều cao A4 thật qua Playwright) -- và phép đo ấy chạy trong luồng
+    `Artist`/`Drawer`, SONG SONG với vòng lặp sinh trang trong `run()`, xong
+    SAU khi `one()` đã quyết `ok`. Nên việc GÁC THẬT phải là một bước riêng,
+    chạy sau khi `Artist.close()` đã có đủ `artist.rows`, không thể nhét vào
+    `found` của `one()` được."""
+    flipped: list[str] = []
+    for made_page in made:
+        if not made_page.get("ok"):
+            continue
+        asked = int(made_page.get("sheets_asked") or 1)
+        if asked <= 1:
+            continue
+        stem = f"llm_{made_page['archetype']}_{made_page['index']:04d}"
+        actual = actual_pages.get(stem)
+        if actual is None or actual >= asked * SHEET_SHORTFALL_RATIO:
+            continue
+        made_page["ok"] = False
+        made_page["why"] = [
+            *(made_page.get("why") or []),
+            f"xin {asked} tờ nhưng dàn trang thật chỉ ra {actual} tờ "
+            f"(dưới {SHEET_SHORTFALL_RATIO:.0%} số đã xin)"]
+        flipped.append(stem)
+    return flipped
+
+
 def plan_problems(plan: dict, html: str) -> list[str]:
     """Kế hoạch model tự viết có khớp với trang nó vẽ không.
 
@@ -1072,8 +1125,7 @@ def one(client, index: int, made: list[str], seed: int,
     # viết, và đo trên pilot16 (Phase 8) thấy lời khai đủ mà chữ vẫn thiếu.
     found = (problems(html) + plan_problems(declared, html)
              + sheet_plan_problems(declared, sheets)
-             + plan_conformance_problems(plan, html)
-             + content_length_problems(html, sheets))
+             + plan_conformance_problems(plan, html))
     # `doc_slug` giờ LÀ `plan.family` -- engine đã quyết, không hỏi model
     # nữa (điểm 3 review). `declared.get("doc_slug")` không còn dùng để
     # đặt tên thư mục, chỉ còn trong `declared` để đọc lại lúc gỡ lỗi.
@@ -1433,6 +1485,32 @@ def run(want: int, out: Path, *, concurrency: int, seed: int,
                 artist.put(out / folder / f"{stem}.html", got["ok"])
 
     spent = time.time() - started
+
+    # ĐÓNG THỢ VẼ TRƯỚC KHI CHỐT BÁO CÁO, không sau. `artist.rows` chỉ đầy đủ
+    # sau khi luồng vẽ xử lý xong toàn bộ hàng đợi (`Artist.close()` gọi
+    # `join()`), và `_reconcile_sheet_count` cần đúng dữ liệu ấy để sửa `made`
+    # TRƯỚC khi `kept`/`report` được tính từ nó -- tính trước rồi sửa sau thì
+    # báo cáo đã chốt sai số liệu, sửa `made` xong cũng vô nghĩa.
+    if artist is not None:
+        artist.close()
+        actual_pages: dict[str, int] = {}
+        for row in artist.rows:
+            doc = row.get("document")
+            if doc:
+                actual_pages[doc] = max(actual_pages.get(doc, 0),
+                                        int(row.get("pages_in_document") or 1))
+        flipped = _reconcile_sheet_count(made, actual_pages)
+        for stem in flipped:
+            src = out / "html" / f"{stem}.html"
+            if src.is_file():
+                (out / "rejected").mkdir(parents=True, exist_ok=True)
+                src.rename(out / "rejected" / f"{stem}.html")
+        if flipped:
+            print(f"[trang] {len(flipped)} tờ qua cổng chữ nhưng dàn trang "
+                  f"thật thiếu hẳn -- chuyển sang rejected/: "
+                  + ", ".join(flipped[:5])
+                  + (" ..." if len(flipped) > 5 else ""))
+
     kept = [m for m in made if m["ok"]]
     wrong = sum(m.get("rows_wrong", 0) for m in made)
     total = sum(m.get("rows_total", 0) for m in made)
@@ -1508,8 +1586,10 @@ def run(want: int, out: Path, *, concurrency: int, seed: int,
     #
     # `draw_llm` vẽ cả `html/` lẫn `rejected/`, nên tờ trượt cũng có ảnh --
     # đó là cách đọc ra model hiểu sai chỗ nào.
+    #
+    # `artist.close()` đã gọi Ở TRÊN (trước khi tính `kept`/`report`) --
+    # không gọi lại ở đây, chỉ đọc `artist.why`/`artist.rows` nó để lại.
     if artist is not None:
-        artist.close()
         if artist.why:
             # `playwright` giờ nằm cùng môi trường với bộ sinh (xem
             # `requirements.txt`). Nếu vẫn thiếu thì nói thẳng cách cài, chứ

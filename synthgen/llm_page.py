@@ -550,7 +550,19 @@ class _Visible(HTMLParser):
 
 
 def visible_chars(html: str) -> int:
-    """Tổng ký tự chữ hiển thị trong mọi `.sheet` của trang này."""
+    """Tổng ký tự chữ hiển thị trong mọi `.sheet` của trang này.
+
+    KHÔNG dùng số này để GÁC theo một hằng số "ký tự mỗi tờ A4" -- đã thử
+    (Phase 8, `docs/ke-hoach-refactor-engine.md`) và đo trực tiếp trên
+    pilot16 thấy sai: một tài liệu kiểu key-value xếp dọc (`authorisation_
+    letter`, mỗi trường một dòng: "Năm sinh: 1952" chiếm nguyên một dòng
+    cao dù chỉ vài ký tự) đo được ~1 150 ký tự MỖI TỜ THẬT -- so với 8 000
+    ký tự/tờ ước lượng từ tài liệu văn xuôi/bảng dày. Cùng một trang, chênh
+    lệch bảy lần. Không có một hằng số nào đúng cho mọi kiểu bố cục mà
+    track 3 CỐ TÌNH đa dạng ra. Số tờ THẬT chỉ trình duyệt (`synthgen/
+    draw_llm.py`, cắt theo chiều cao A4 thật) mới biết chắc -- xem
+    `agent/compose_page.py::_reconcile_sheet_count`, chạy SAU khi dàn
+    trang, không phải ước lượng TRƯỚC."""
     parser = _Visible()
     try:
         parser.feed(str(html or ""))
@@ -558,46 +570,6 @@ def visible_chars(html: str) -> int:
     except Exception:                                         # noqa: BLE001
         return 0
     return parser.chars
-
-
-# Ký tự trung bình mỗi tờ A4 mà lời dặn hứa với model (`agent/compose_page.py
-# ::budget()` và `SAY["n_sheets"]` cùng dùng con số này). Ngưỡng CHẤP NHẬN cố
-# tình thấp hơn nhiều -- 0.5, không 0.8 như luật lấp trang đơn (mục 38.1
-# `page.md`) -- vì đây là phép đo XẤP XỈ trên TOÀN tài liệu nhiều tờ: mật độ
-# ký tự mỗi tờ dao động thật (một bảng dày hàng nhưng mỗi ô ít ký tự vẫn
-# chiếm nhiều chiều cao), và việc của cổng này là bắt ca THIẾU RÕ RỆT, không
-# phải chấm điểm từng tờ.
-CHARS_PER_SHEET = 8_000
-MIN_LENGTH_RATIO = 0.5
-
-
-def content_length_problems(html: str, sheets: int) -> list[str]:
-    """Trang có đủ chữ để lấp xấp xỉ số tờ đã xin không.
-
-    Đo trên pilot16 (Phase 8, `docs/ke-hoach-refactor-engine.md`): dù lời
-    nhờ đã nói rõ mục tiêu ký tự và yêu cầu `sheet_plan` cam kết đủ N tờ
-    (`agent/compose_page.py::SAY["n_sheets"]`), 7/9 trang trong lô vẫn cắt ra
-    ÍT tờ hơn xin khi dàn trang thật -- có ca xin 8 tờ chỉ cắt ra 1. `agent/
-    compose_page.py::sheet_plan_problems()` không bắt được kiểu này: nó chỉ
-    gác LỜI KHAI (`sheet_plan` model tự viết), không gác CHỮ THẬT SỰ có trên
-    trang. Cổng này đo trực tiếp trên `html`, không qua lời khai -- và chạy
-    được TRƯỚC khi dàn trang thật (không cần trình duyệt), nên bắt được ca
-    thiếu rõ rệt sớm, không phải đợi `synthgen/draw_llm.py` cắt xong mới
-    biết.
-
-    Tài liệu MỘT tờ không bị đòi -- một biên nhận ba dòng là tờ giấy thật,
-    không phải tờ viết thiếu (cùng lý do mục 38.1 chỉ ràng buộc tài liệu
-    NHIỀU tờ)."""
-    if sheets <= 1:
-        return []
-    expected = sheets * CHARS_PER_SHEET
-    minimum = int(expected * MIN_LENGTH_RATIO)
-    got = visible_chars(html)
-    if got < minimum:
-        return [f"chỉ {got} ký tự chữ hiển thị cho {sheets} tờ đã xin "
-                f"(mong đợi tối thiểu {minimum}) -- trang viết ngắn hơn "
-                "nhiều so với được giao"]
-    return []
 
 
 def path_coverage(html: str) -> dict:

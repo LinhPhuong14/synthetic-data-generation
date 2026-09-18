@@ -258,34 +258,6 @@ def test_visible_chars_counts_text_with_no_data_kind_too():
     assert visible_chars(html) > 0
 
 
-def test_a_single_sheet_document_is_never_flagged_short():
-    """Mục 38.1 chỉ ràng buộc tài liệu NHIỀU tờ -- một biên nhận ba dòng là
-    tờ giấy thật, không phải tờ viết thiếu."""
-    from synthgen.llm_page import content_length_problems
-
-    short = '<div class="sheet"><span data-kind="title">A</span></div>'
-    assert content_length_problems(short, 1) == []
-
-
-def test_a_multi_sheet_document_far_short_of_target_is_flagged():
-    """Đo trên pilot16 (Phase 8): xin 8 tờ, cắt ra 1 -- lời khai `sheet_plan`
-    lọt cổng cũ, chữ thật thì không đủ."""
-    from synthgen.llm_page import content_length_problems
-
-    short = '<div class="sheet"><span data-kind="title">A</span></div>'
-    found = content_length_problems(short, 8)
-    assert any("ký tự chữ hiển thị" in line for line in found)
-
-
-def test_a_multi_sheet_document_that_meets_the_target_passes():
-    from synthgen.llm_page import CHARS_PER_SHEET, content_length_problems
-
-    sheets = 2
-    filler = "x" * int(CHARS_PER_SHEET * sheets * 0.6)
-    long_enough = f'<div class="sheet"><span data-kind="note">{filler}</span></div>'
-    assert content_length_problems(long_enough, sheets) == []
-
-
 def test_path_coverage_counts_without_gating():
     mixed = (
         '<div class="sheet">'

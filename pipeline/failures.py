@@ -4,15 +4,19 @@
 
 `agent/compose_page.py::one()` rejects a page on the first non-empty `found`
 list, assembled from several free-text-string producers:
-`synthgen/llm_page.py::problems()` and `content_length_problems()`, and
-`agent/compose_page.py::plan_problems()`, `sheet_plan_problems()`, and
-`plan_conformance_problems()`. That is real, working signal -- `_why_tally()`
-already groups it by shape for reporting -- but it answers "generation
-failed" with a sentence, not a code a downstream script can `groupby`.
-`classify()` maps each reason string to one of the twelve codes from
-`docs/ke-hoach-refactor-engine.md` Phase 2 (mục 16 of the original design
-note) WITHOUT changing what any of those functions return -- every existing
-caller keeps working unchanged.
+`synthgen/llm_page.py::problems()`, and `agent/compose_page.py::
+plan_problems()`, `sheet_plan_problems()`, and `plan_conformance_problems()`.
+A separate, later producer -- `agent/compose_page.py::
+_reconcile_sheet_count()`, run in `run()` AFTER real A4 pagination, not
+inside `one()` -- can also flip an already-`ok` page back to rejected and
+append its own reason string; see that function's docstring for why this
+one check needed to move after rendering instead of joining the others
+above. That is real, working signal -- `_why_tally()` already groups it by
+shape for reporting -- but it answers "generation failed" with a sentence,
+not a code a downstream script can `groupby`. `classify()` maps each reason
+string to one of the twelve codes from `docs/ke-hoach-refactor-engine.md`
+Phase 2 (mục 16 of the original design note) WITHOUT changing what any of
+those functions return -- every existing caller keeps working unchanged.
 
 ## Scope
 
@@ -90,8 +94,8 @@ _PATTERNS: tuple[tuple[re.Pattern, str], ...] = (
     (re.compile(r"`sheet_plan` trống"), DENSITY_VIOLATION),
     (re.compile(r"`sheet_plan` chỉ khai"), DENSITY_VIOLATION),
     (re.compile(r"khai trong `sheet_plan` mà không mục nào"), DENSITY_VIOLATION),
-    # -- content_length_problems() ------------------------------------------
-    (re.compile(r"ký tự chữ hiển thị cho \d+ tờ đã xin"), DENSITY_VIOLATION),
+    # -- _reconcile_sheet_count() (đo SAU khi dàn trang thật) --------------
+    (re.compile(r"nhưng dàn trang thật chỉ ra \d+ tờ"), DENSITY_VIOLATION),
 )
 
 
