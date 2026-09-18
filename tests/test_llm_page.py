@@ -19,7 +19,7 @@ import pytest
 from synthgen import content as C
 from synthgen import design as D
 from synthgen import markup as M
-from synthgen.llm_page import kinds, problems
+from synthgen.llm_page import kinds, path_coverage, problems
 
 SHEET = ('<div class="sheet">'
          '<span data-kind="title">HOÁ ĐƠN</span>'
@@ -172,3 +172,65 @@ def test_a_run_outside_every_sheet_is_caught():
     assert outside_sheet(early) == 1
     assert any("NGOÀI" in why for why in problems(early))
     assert not any("NGOÀI" in why for why in problems(good))
+
+
+# ----------------------------------------------------------------- data-path
+
+
+def test_a_malformed_data_path_is_refused():
+    bad = ('<div class="sheet"><span data-kind="invoice.field" '
+          'data-path="Issuer TaxCode!">0312345678</span></div>')
+    assert any("không đúng dạng" in line for line in problems(bad))
+
+
+@pytest.mark.parametrize("path", [
+    "issuer.tax_code", "line_items[0].name", "items[].print_qty",
+    "recipient.address", "invoice.total",
+])
+def test_well_formed_data_paths_pass(path):
+    good = (f'<div class="sheet"><span data-kind="invoice.field" '
+           f'data-path="{path}">x</span></div>')
+    assert not any("data-path" in line for line in problems(good))
+
+
+def test_the_same_path_printing_two_different_values_is_refused():
+    """Cùng một danh tính mà in ra hai giá trị khác nhau là mâu thuẫn nội tại
+    của chính trang đó -- không phải một tỉ lệ cần đo trước rồi mới gác."""
+    conflict = (
+        '<div class="sheet">'
+        '<span data-kind="invoice.field" data-path="issuer.tax_code">0312345678</span>'
+        '<span data-kind="invoice.field" data-path="issuer.tax_code">0312345679</span>'
+        '</div>')
+    found = problems(conflict)
+    assert any("giá trị khác nhau" in line for line in found)
+
+
+def test_the_same_path_printing_the_same_value_twice_is_fine():
+    """Một trường được in nhiều lần (mục 48 `page.md`) không phải lỗi, miễn
+    cùng đường dẫn thì cùng chữ."""
+    repeated = (
+        '<div class="sheet">'
+        '<span data-kind="invoice.field" data-path="issuer.name">CÔNG TY ABC</span>'
+        '<span data-kind="invoice.field" data-path="issuer.name">CÔNG TY ABC</span>'
+        '</div>')
+    assert not any("data-path" in line for line in problems(repeated))
+
+
+def test_a_span_without_data_path_is_not_refused_for_that_alone():
+    """Đo trên `data/pilot10`+`data/pilot12` thật: chỉ 28% run mang
+    `data-path` dưới `page.md` cũ. Ép cổng theo một con số chưa đo lại cho
+    prompt mới là việc của Phase 2 (`docs/ke-hoach-refactor-engine.md`), sau
+    khi có số đo -- không phải ở đây."""
+    no_path = SHEET  # spans trong SHEET không có data-path
+    assert not any("data-path" in line for line in problems(no_path))
+
+
+def test_path_coverage_counts_without_gating():
+    mixed = (
+        '<div class="sheet">'
+        '<span data-kind="title" data-path="doc.title">A</span>'
+        '<span data-kind="note">B</span>'
+        '</div>')
+    cov = path_coverage(mixed)
+    assert cov == {"spans": 2, "with_path": 1, "coverage": 0.5}
+    assert problems(mixed) == []          # thiếu path một mình không loại trang

@@ -691,6 +691,60 @@ def declared_pairs_all(record: dict, markup: str) -> list[dict]:
     return out
 
 
+# AI THẮNG KHI HAI ĐƯỜNG CÙNG TRỎ VÀO MỘT Ô MỰC. Số nhỏ thắng.
+#
+# `declared` (đường dẫn model tự khai) đứng đầu vì đó là DANH TÍNH, không
+# phải đoán. `table` đứng ngay sau vì nó đọc CHỖ NGỒI THẬT từ markup trình
+# duyệt đã dàn -- cũng không đoán. `label`/`pair`/`family` đều là adjacency:
+# đoán bằng khoảng cách trên giấy, và tự thân đã đo sai 30%
+# (`pipeline/record.py::_bind_entities`). `implied` đứng cuối vì nó chỉ là
+# `kind` không có gì để đối chiếu.
+_SOURCE_PRIORITY = {"declared": 0, "table": 1, "label": 2, "pair": 3,
+                    "family": 3, "implied": 4}
+
+
+def _dedup_by_value(pairs: list[dict]) -> list[dict]:
+    """Một `value_entity_index` -- một cặp. Chữ in của kẻ thua vào `printed_header`.
+
+    ## Vì sao cần, dù `complete()` đã có hai lượt hợp nhất riêng
+
+    Lượt "đường khai đi trước" (dưới) chỉ hợp nhất NHÃN vào cặp ĐÃ KHAI, và
+    lượt "ô bảng" chỉ hợp nhất NHÃN vào cặp ĐÃ KHAI qua cùng con đường đó.
+    Cả hai đều so với `spoken`, tức TẬP ĐƯỜNG KHAI -- không so với nhau, và
+    không so với `extra_pairs` chạy sau cùng. Một ô bảng không có `data-path`
+    vẫn có thể bị một nhãn theo sau (`label`) hoặc một cặp `extra_pairs` tìm
+    ra sau đó (`pair`/`family`) tranh mất, và không lượt hợp nhất nào ở trên
+    thấy được việc ấy.
+
+    Đo trên `data/pilot10` + `data/pilot12` thật (16 tài liệu, 1337 thực thể,
+    đếm đúng theo `value_entity_index` -- một tiêu đề cột lặp ở nhiều dòng
+    KHÔNG phải trùng, nó là một khoá cho nhiều giá trị, đúng cấu trúc bảng):
+    4 thực thể còn bị hai trường nhận trước khi có hàm này, cả bốn cùng một
+    hình -- dòng TỔNG CỘNG của bảng (`table`) đứng ngay sau nhãn "TỔNG CỘNG:"
+    (`label`) hoặc bị `extra_pairs` khớp lại lần nữa (`pair`) với một chú
+    thích khác trên trang. Sau khi thêm hàm này: 0/1337.
+
+    Chạy sau `extra_pairs` -- tức sau khi MỌI nguồn đã góp mặt -- nên không
+    bỏ sót cặp nào tới muộn."""
+    groups: dict[int, list[dict]] = {}
+    for pair in pairs:
+        index = pair.get("value_entity_index")
+        if isinstance(index, int):
+            groups.setdefault(index, []).append(pair)
+    drop: set[int] = set()
+    for group in groups.values():
+        if len(group) <= 1:
+            continue
+        group.sort(key=lambda p: _SOURCE_PRIORITY.get(p.get("source", ""), 5))
+        winner, losers = group[0], group[1:]
+        for loser in losers:
+            printed = str(loser.get("key_text") or "").strip()
+            if printed:
+                winner.setdefault("printed_header", []).append(printed)
+            drop.add(id(loser))
+    return [p for p in pairs if id(p) not in drop]
+
+
 def complete(record: dict, markup: str = "") -> tuple[list[dict], dict]:
     """Danh sách cặp KIE ĐẦY ĐỦ cho cả tài liệu, và một bản đếm.
 
@@ -781,6 +835,8 @@ def complete(record: dict, markup: str = "") -> tuple[list[dict], dict]:
     pages = len(record.get("source_files") or [record.get("filename")]) or 1
     for page in range(1, pages + 1):
         pairs.extend(extra_pairs(record, page, used))
+
+    pairs = _dedup_by_value(pairs)
 
     seen: set[int] = set()
     for pair in pairs:

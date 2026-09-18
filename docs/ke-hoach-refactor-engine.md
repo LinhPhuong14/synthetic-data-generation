@@ -43,13 +43,32 @@ cơ chế này để "LLM tự quyết hoàn toàn" theo nghĩa đen của mục
 (density, table morphology, layout topology) thay vì thay thế nó bằng LLM tự
 do hoàn toàn hay bằng planner khoá cứng.
 
-### G3 — Hai cơ chế KIE đang chồng nhau, đã có bug thật đo được
+### G3 — Hai (thực ra ba) cơ chế KIE từng chồng nhau; **đã vá, và mất hai lần đo sai mới tìm đúng con số**
 
 `pipeline/record.py::entities_from_words`/`_bind_entities` (suy theo thứ tự
-DOM) và `synthgen/kie_full.py::declared_pairs` (đọc thẳng `data-path`) **cùng
-chạy** trên track 3. Đo trên `data/pilot10`: **57/77 entity bị đếm trùng hai
-lần** trên một tài liệu. Field Registry (Phase 1) phải giải quyết đúng xung
-đột này — không phải thêm một cơ chế thứ ba chồng lên.
+DOM), `synthgen/kie_full.py::declared_pairs` (đọc thẳng `data-path`), và
+`table_pairs`/`extra_pairs` (chỗ ngồi bảng, cặp muộn) từng cùng gán nhãn một
+entity — đo trên `data/pilot10`: **57/77 entity bị đếm trùng hai lần**
+(`docs/kie-cau-hoi-kiem-schema.md` dòng 357-404, 17-09 15:13).
+`synthgen/kie_full.py::complete()` (dòng 694-801) đã có logic hợp nhất
+("Chữa 3"), nhưng nó chỉ hợp nhất `declared` với `label`/`table` — không
+hợp nhất `table` với `label`/`pair` khi CẢ HAI đều không có `data-path`.
+
+Xác minh mất **ba lần đo**, không phải một (kể đầy đủ ở Phase 1, vì cách sai
+quan trọng không kém con số đúng): lần một dùng nhầm `record["html"]` (đã bị
+rút gọn, không còn span nào) → 0 trùng giả; lần hai đếm cả `key_entity_index`
+trùng (một tiêu đề cột dùng chung cho nhiều dòng — đúng cấu trúc bảng, không
+phải trùng) → 52/1337 giả; lần ba chỉ đếm `value_entity_index` → **4/1337**
+thật, tất cả cùng một hình (dòng TỔNG CỘNG của bảng trùng nhãn "TỔNG CỘNG:"
+đứng trước nó). Vá bằng `_dedup_by_value()` (xếp hạng nguồn, chạy sau
+`extra_pairs`): **0/1337** sau khi vá.
+
+Bài học giữ nguyên giá trị dù con số ban đầu (57/77) không còn đúng nguyên
+xi: **đừng tin một con số trong tài liệu lịch sử mà không chạy lại code hiện
+tại để xác minh còn tái hiện hay không** — và khi chạy lại, tự hỏi luôn
+phương pháp đo (nguồn dữ liệu đúng chưa, đếm đúng thứ chưa) trước khi tin số
+ra. Phase 1 đã xong — cả `FieldRecord`, cả bản vá `_dedup_by_value`, cả
+regression test. Xem Phase 1.
 
 ---
 
@@ -102,19 +121,61 @@ hoá thành sampler thay vì bị xoá — task 4.4 không đổi.
 
 ---
 
-## Phase 1 — Field Registry & hợp nhất KIE
+## Phase 1 — Field Registry & hợp nhất KIE — **XONG**
 
-**Vì sao làm trước:** có bug thật đã đo được (G3) để bám, và là nền tảng mọi
-phase sau đọc/ghi qua. Tương ứng mục 8, 9, 10, 11 trong tư duy gốc.
+**Vì sao làm trước:** tưởng có bug thật đã đo được (G3) để bám. Đúng là có
+bug thật, nhưng phải qua HAI lần đo sai trước khi tìm ra hình dạng thật của
+nó — kể lại dưới đây, vì cách tìm ra quan trọng không kém con số.
 
-| # | Task | File chính | DoD |
-|---|---|---|---|
-| 1.1 | Định nghĩa `FieldRecord` (path, kind, value, role: positive/ordinary/hard_negative/label) | file mới, có thể `pipeline/fields.py` | type hoặc dataclass, dùng được từ cả `pipeline/record.py` lẫn `synthgen/kie_full.py` |
-| 1.2 | Đọc lại chính xác vì sao `entities_from_words` và `declared_pairs` cùng gán nhãn một box trên pilot10 | `pipeline/record.py` dòng 1009-1224, `synthgen/kie_full.py` dòng 309, 690 | báo cáo root cause bằng file:line, không sửa vội |
-| 1.3 | Chọn chính sách hợp nhất: `data-path` có mặt → authoritative, adjacency chỉ lấp chỗ không có `data-path` (không chạy song song vô điều kiện) | `synthgen/derive.py`, `pipeline/record.py` | một box chỉ nhận đúng một entity |
-| 1.4 | `data`  JSON key hiện ghi ra `declared/*.json` rồi không ai đọc lại (`agent/compose_page.py` dòng 770) — quyết định: bỏ khỏi schema (giảm token, giảm nhầm lẫn với `data-path`) hay thật sự dùng để cross-check `data-path` | `agent/compose_page.py::schema()`, `one()` | có test cross-check hoặc field bị xoá khỏi schema |
-| 1.5 | Ràng buộc `data-path`: well-formed, duy nhất trong phạm vi hợp lý, có mặt khi `data-kind` có mặt | `synthgen/llm_page.py::problems()` | test hồi quy: path trùng/rỗng/sai dạng bị bắt trước render |
-| 1.6 | Regression test: cùng giá trị in hai lần → cùng `data-path`, hai box, một identity | `tests/` | test mới pass |
+**Lần đo thứ nhất (sai):** chạy `kie_full.complete()` trên `record["html"]`
+của `data/pilot10`/`data/pilot12` → 0/844 và 0/426 trùng. Kết luận vội "bug
+đã vá từ trước". **Sai vì lấy nhầm nguồn**: `record["html"]` trong
+`records/*.json` đã bị `derive.py` rút gọn thành văn bản thuần, không còn
+`<span data-kind>`/`data-path` nào để `declared_pairs` đọc — phép đo chưa
+từng chạm tới đường `data-path` nó tưởng đang kiểm.
+
+**Lần đo thứ hai (sai kiểu khác):** đổi sang HTML thật (`data/*/html/*.html`,
+có span) → 52/1337 "trùng". Vẫn sai: phép đếm coi `key_entity_index` bị dùng
+lại là trùng, trong khi một tiêu đề cột (`key_entity_index`) làm khoá chung
+cho NHIỀU dòng là đúng cấu trúc bảng, không phải hai trường nhận một ô.
+
+**Lần đo thứ ba (đúng):** chỉ đếm `value_entity_index` trùng → **4/1337**.
+Cả bốn cùng một hình: dòng TỔNG CỘNG của bảng (`source=table`) trùng với
+nhãn "TỔNG CỘNG:" đứng ngay trước nó (`source=label`), hoặc bị `extra_pairs`
+khớp lại lần nữa (`source=pair`/`family`) với một chú thích khác trên trang.
+`complete()`'s "Chữa 3" (dòng 694-801) đã hợp nhất đường KHAI
+(`declared`) với NHÃN/BẢNG, nhưng chỉ so với tập `spoken` gieo từ `declared`
+— không so `table` với `label`/`pair` khi CẢ HAI đều không có `data-path`.
+
+**Sửa:** thêm `synthgen/kie_full.py::_dedup_by_value()` — một lượt cuối, sau
+`extra_pairs`, xếp hạng nguồn (`declared` > `table` > `label` > `pair` >
+`implied`) và giữ đúng một cặp mỗi `value_entity_index`, gộp chữ in của kẻ
+thua vào `printed_header` của kẻ thắng. Kiểm lại trên chính 16 tài liệu:
+**0/1337**. Test hồi quy: `tests/test_kie_full_dedup.py`.
+
+Bài học giữ nguyên giá trị dù hai lần đầu đo sai: đọc đúng tài liệu lịch sử
+không thay được việc chạy lại code hiện tại — và ngay cả khi chạy lại,
+phương pháp đo (nguồn dữ liệu nào, đếm cái gì là "trùng") phải tự kiểm trước
+khi tin số ra.
+
+| # | Task | File chính | DoD | Trạng thái |
+|---|---|---|---|---|
+| 1.1 | Định nghĩa `FieldRecord` (path, kind, value, role: positive/ordinary/hard_negative/label) — không phải để sửa bug, mà để Phase 4/6 có một type thống nhất thay vì dict rời rạc | `pipeline/fields.py` | type hoặc dataclass, dùng được từ cả `pipeline/record.py` lẫn `synthgen/kie_full.py` | **Xong** — `registry()` gộp entity+pair; test `tests/test_fields.py` |
+| 1.2 | Đọc + CHẠY THẬT để xác minh vì sao/liệu `entities_from_words` và `declared_pairs` có cùng gán nhãn một box không | `pipeline/record.py` dòng 1009-1224, `synthgen/kie_full.py` dòng 309, 694-801 | báo cáo root cause bằng file:line + số đo thật | **Xong** — 4/1337 trước khi vá (xem kể lại ở trên), 0/1337 sau |
+| 1.3 | Sửa chính sách hợp nhất: KHÔNG chỉ `data-path` thắng nhãn, mà `table` cũng phải thắng `label`/`pair` khi cả hai không có `data-path` | `synthgen/kie_full.py::_dedup_by_value()` | một box chỉ nhận đúng một entity | **Xong** — xếp hạng nguồn, chạy sau `extra_pairs`, 0/1337 trên dữ liệu thật |
+| 1.4 | `data` JSON key hiện ghi ra `declared/*.json` rồi không ai đọc lại — quyết định: bỏ khỏi schema hay dùng để cross-check `data-path` | `agent/compose_page.py::resolve_path`/`data_path_mismatches` | có test cross-check hoặc field bị xoá khỏi schema | **Xong (giữ + cross-check, không gate)** — đo trên `data/pilot12` (4 tài liệu có `data` không rỗng — `pilot10` sinh trước khi việc đọc `data` ra được sửa, luôn `null`): 2/4 khớp hết, 2/4 lệch nhưng đều là khác biệt ĐỊNH DẠNG lành tính (`"1583000000"` so với `"1.583.000.000"`), không phải mâu thuẫn ngữ nghĩa — hàm ĐO cho Phase 2, không GATE |
+| 1.5 | Ràng buộc `data-path`: well-formed, cùng đường dẫn thì cùng giá trị | `synthgen/llm_page.py::problems()` | test hồi quy: path sai dạng/xung đột giá trị bị bắt trước render | **Xong (một phần có chủ đích)** — well-formed + same-path-same-value là gate cứng (luôn sai bất kể phiên bản prompt); "có mặt khi data-kind có mặt" HOÃN sang Phase 2 — đo trên dữ liệu thật: chỉ 28% span có `data-path` dưới `page.md` CŨ, ép gate theo số chưa đo lại cho prompt MỚI là đổi tỉ lệ chấp nhận mà không ai biết trước bao nhiêu. `path_coverage()` đo, không gate |
+| 1.6 | Regression test khoá lại hành vi hợp nhất đã đúng (1.3) chống hồi quy | `tests/` | test chạy trên record thật (pilot10/pilot12) hoặc fixture rút gọn, khẳng định 0 entity trùng | **Xong** — `tests/test_kie_full_dedup.py` (fixture tối giản + hồi quy trên 16 tài liệu thật, `skipif` khi thiếu `data/`) |
+
+**Kiểm tra live LLM:** người dùng cho phép gọi thẳng LLM để test (2026), nhưng
+`curl` tới `127.0.0.1:8000`/`127.0.0.1:11434` bị từ chối kết nối ngay (không
+phải treo/timeout) — dấu hiệu không có server nào đang chạy ở máy này lúc
+này, không phải sandbox chặn (chặn thường treo, không từ chối ngay). Chưa
+kiểm được toàn bộ pipeline với `page.md`/`SYSTEM_PROMPT.md` mới bằng dữ liệu
+thật sinh MỚI; mọi số đo Phase 1 ở trên đều trên dữ liệu CŨ (`pilot10`/`12`,
+sinh dưới `page.md` cũ). Cần người dùng khởi động server
+(`vllm serve ... --port 8000` hoặc `ollama serve`, xem `agent/README.md`)
+để chạy `python -m agent.compose_page --want N` thật cho Phase 2 trở đi.
 
 ---
 

@@ -164,7 +164,8 @@ class _Spans(HTMLParser):
             self.regions.append(str(at["data-region"]))
         if tag == "span" and at.get("data-kind") is not None:
             span = {"kind": str(at["data-kind"]), "text": "", "nested": False,
-                    "key": str(at.get("data-key") or "")}
+                    "key": str(at.get("data-key") or ""),
+                    "path": str(at.get("data-path") or "")}
             self.spans.append(span)
             self._stack.append(span)
             return
@@ -231,6 +232,22 @@ def printed_kinds(html: str) -> set[str]:
     except Exception:                                           # noqa: BLE001
         return set()
     return {str(s["kind"]) for s in scan.spans if s.get("kind")}
+
+
+def declared_paths(html: str) -> list[tuple[str, str]]:
+    """Mọi `(data-path, chữ đã in)` trang này khai -- span nào không có `data-path`
+    thì không xuất hiện ở đây.
+
+    Dùng để đối chiếu cây `data` model viết TRƯỚC html với chữ nó thực sự in
+    ra sau đó -- xem `agent/compose_page.py::data_path_mismatches`."""
+    scan = _Spans()
+    try:
+        scan.feed(str(html or ""))
+        scan.close()
+    except Exception:                                           # noqa: BLE001
+        return []
+    return [(str(s["path"]), _tight(s.get("text") or ""))
+           for s in scan.spans if s.get("path")]
 
 
 def _tight(text: str) -> str:
@@ -307,6 +324,14 @@ def _rooted(kind: str, known: frozenset[str]) -> str | None:
 
 _DIV = re.compile(r"<(/?)div\b", re.IGNORECASE)
 _SHEET_OPEN = re.compile(r'<div\b[^>]*\bclass="[^"]*\bsheet\b', re.IGNORECASE)
+
+# HÌNH DẠNG `data-path`. Đoạn nối bằng `.`, mỗi đoạn snake_case, mỗi đoạn có
+# thể mang `[N]` hoặc `[]` -- khớp cả `issuer.tax_code`, `line_items[0].name`,
+# và dạng không chỉ số `items[].print_qty` đã thấy trong
+# `docs/kie-cau-hoi-kiem-schema.md`. Không đòi biết TRƯỚC cây `data` có hình
+# gì -- chỉ đòi cái tên tự nó đọc được, cùng lý do `_rooted` không hỏi model
+# xem hai kind có cùng nghĩa: cổng là thứ duy nhất phải ổn định.
+_PATH = re.compile(r"^[a-z][a-z0-9_]*(\[\d*\])?(\.[a-z][a-z0-9_]*(\[\d*\])?)*$")
 
 
 def outside_sheet(html: str) -> int:
@@ -410,6 +435,40 @@ def problems(html: str, fields: dict | None = None) -> list[str]:
     if not parser.spans:
         found.append("không có run nào mang `data-kind`; trang không có nhãn nào")
 
+    # `data-path` ĐÚNG DẠNG, VÀ CÙNG ĐƯỜNG DẪN THÌ CÙNG GIÁ TRỊ.
+    #
+    # Không đòi MỌI `data-kind` phải có `data-path` -- đo trên
+    # `data/pilot10`+`data/pilot12` (HTML thật, không phải `record["html"]` đã
+    # rút gọn): chỉ 28% run mang thuộc tính ấy dưới `page.md` CŨ, và `page.md`
+    # mới (đã đổi ở Phase 5 trước đó trong `docs/ke-hoach-refactor-engine.md`)
+    # chưa được đo lại. Ép cổng theo một con số chưa đo là đổi tỉ lệ chấp nhận
+    # của cả hệ thống mà không ai biết trước bao nhiêu -- việc đó dành cho
+    # Phase 2 (tầng validation) sau khi có số đo thật, không phải ở đây. Xem
+    # `path_coverage()` dưới, hàm ĐO chứ không GÁC.
+    #
+    # Hai điều dưới đây thì khác: một `data-path` viết sai dạng, hoặc hai
+    # đoạn văn cùng khai một đường dẫn mà in ra hai giá trị khác nhau, LUÔN
+    # sai bất kể phiên bản prompt nào -- đây là mâu thuẫn nội tại của chính
+    # trang đó, không phải một tỉ lệ cần đo trước.
+    by_path: dict[str, set[str]] = {}
+    for span in parser.spans:
+        path = span.get("path") or ""
+        if not path:
+            continue
+        if not _PATH.match(path):
+            found.append(f'`data-path="{path}"` không đúng dạng (mong đợi kiểu '
+                         '`issuer.tax_code` hoặc `line_items[0].name`)')
+            continue
+        text = _tight(span.get("text") or "")
+        if text:
+            by_path.setdefault(path, set()).add(text)
+    for path, values in by_path.items():
+        if len(values) > 1:
+            shown = ", ".join(repr(v) for v in sorted(values)[:3])
+            found.append(f'`data-path="{path}"` in ra {len(values)} giá trị khác '
+                         f'nhau ({shown}); cùng một đường dẫn phải là cùng một '
+                         "trường")
+
     for region in parser.regions:
         if region not in REGIONS:
             found.append(f'`data-region="{region}"` không phải một trong 16 nhãn vùng')
@@ -433,4 +492,23 @@ def problems(html: str, fields: dict | None = None) -> list[str]:
     return found
 
 
-__all__ = ["FORBIDDEN", "REGIONS", "SAMPLE", "kinds", "problems"]
+def path_coverage(html: str) -> dict:
+    """Đo, KHÔNG gác: bao nhiêu phần `data-kind` cũng có `data-path`.
+
+    Tách khỏi `problems()` có chủ đích -- xem lời giải thích tại chỗ gọi
+    `_PATH` ở trên. Dùng cho thống kê corpus (Phase 2/8,
+    `docs/ke-hoach-refactor-engine.md`), không phải để loại trang."""
+    parser = _Spans()
+    try:
+        parser.feed(str(html or ""))
+        parser.close()
+    except Exception:                                             # noqa: BLE001
+        return {"spans": 0, "with_path": 0, "coverage": 0.0}
+    total = len(parser.spans)
+    with_path = sum(1 for s in parser.spans if s.get("path"))
+    return {"spans": total, "with_path": with_path,
+           "coverage": round(with_path / total, 4) if total else 0.0}
+
+
+__all__ = ["FORBIDDEN", "REGIONS", "SAMPLE", "declared_paths", "kinds",
+          "path_coverage", "printed_kinds", "problems"]

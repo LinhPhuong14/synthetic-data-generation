@@ -61,8 +61,8 @@ if __package__ in (None, ""):                   # `python compose_page.py`
 from agent.client import LLMError, from_env
 from agent.ollama import prompt
 from synthgen import design as D
-from synthgen.llm_page import (REGIONS, _rooted, kinds, printed_kinds,
-                               problems)
+from synthgen.llm_page import (REGIONS, _rooted, declared_paths, kinds,
+                               printed_kinds, problems)
 from synthgen.adorn import hands, seals
 from synthgen.repair import repair
 
@@ -569,6 +569,55 @@ def arithmetic(rows: list[dict]) -> tuple[int, int]:
         except (KeyError, TypeError, ValueError):
             bad += 1
     return bad, len(rows)
+
+
+_PATH_STEP = re.compile(r"([a-zA-Z_][a-zA-Z0-9_]*)|\[(\d+)\]")
+
+
+def resolve_path(data: dict, path: str) -> tuple[bool, object]:
+    """Đi theo một `data-path` (`issuer.tax_code`, `line_items[0].name`) vào
+    cây `data`. `(True, giá trị)` nếu đi hết đường; `(False, None)` nếu gãy
+    ở đâu đó -- đường dẫn có đoạn không khớp khoá/chỉ số nào trong cây."""
+    node: object = data
+    for match in _PATH_STEP.finditer(path):
+        name, index = match.group(1), match.group(2)
+        if name is not None:
+            if not isinstance(node, dict) or name not in node:
+                return False, None
+            node = node[name]
+        else:
+            if not isinstance(node, list) or int(index) >= len(node):
+                return False, None
+            node = node[int(index)]
+    return True, node
+
+
+def data_path_mismatches(data: dict, html: str) -> list[str]:
+    """Mỗi `data-path` HTML in ra, đối chiếu với chính cây `data` model đã
+    viết TRƯỚC đó -- cây ấy vào `schema()` từ bản sửa architecture cũ (suy
+    KIE từ toạ độ), giờ được ghi ra `declared/*.json` rồi không ai đọc lại
+    (xem `docs/ke-hoach-refactor-engine.md`, task 1.4). Đây là cách dùng nó:
+    không phải nguồn KIE thứ hai -- `data-path` trong HTML đã là nguồn --
+    mà một phép đối chiếu NỘI TẠI, bắt đúng lúc model tự mâu thuẫn với chính
+    mình giữa hai phần của cùng một câu trả lời.
+
+    KHÔNG gate -- cùng lý do `synthgen/llm_page.py::problems()` chưa ép
+    `data-path` phải có mặt: chưa đo được tỉ lệ khớp trên `page.md` mới, và
+    ép theo một con số chưa đo là đổi tỉ lệ chấp nhận mà không ai biết trước
+    bao nhiêu. Đây là hàm ĐO, để `thinking()`/Phase 2 dùng, không phải hàm
+    LOẠI."""
+    found: list[str] = []
+    for path, printed in declared_paths(html):
+        ok, value = resolve_path(data, path)
+        if not ok:
+            found.append(f'`data-path="{path}"` không tra được trong cây `data` '
+                         "model tự viết")
+            continue
+        wanted = " ".join(str(value).split())
+        if wanted and wanted != printed:
+            found.append(f'`data-path="{path}"`: `data` ghi {wanted!r}, HTML in '
+                         f"ra {printed!r}")
+    return found
 
 
 def _slug(text: str) -> str:
