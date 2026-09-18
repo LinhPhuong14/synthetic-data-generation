@@ -59,7 +59,8 @@ if __package__ in (None, ""):                   # `python compose_page.py`
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from agent.client import LLMError, from_env
-from agent.ollama import prompt
+from agent.promptbook import prompt
+from pipeline import failures
 from synthgen import design as D
 from synthgen.llm_page import (REGIONS, _rooted, declared_paths, kinds,
                                printed_kinds, problems)
@@ -1259,6 +1260,14 @@ def run(want: int, out: Path, *, concurrency: int, seed: int,
     report["timed_out"] = sum(1 for m in made if m.get("timed_out"))
     report["mended"] = _mend_tally(made)
     report["why_tally"] = _why_tally(made)
+    # MÃ, không chỉ CÂU. `why_tally` gộp theo câu (đã bỏ số) -- đọc được bằng
+    # mắt nhưng không `groupby` được giữa các lượt chạy nếu câu đổi chữ.
+    # `pipeline.failures.classify` gán mỗi câu một trong 12 mã cố định
+    # (`docs/ke-hoach-refactor-engine.md` Phase 2), nên script so sánh
+    # nhiều lượt chạy đọc `failure_codes`, người đọc bằng mắt vẫn đọc
+    # `why_tally`.
+    report["failure_codes"] = failures.tally(
+        [why for m in made for why in (m.get("why") or [])])
     (out / "compose_report.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     _write_performance(out, report, made)

@@ -167,15 +167,14 @@ khi tin số ra.
 | 1.5 | Ràng buộc `data-path`: well-formed, cùng đường dẫn thì cùng giá trị | `synthgen/llm_page.py::problems()` | test hồi quy: path sai dạng/xung đột giá trị bị bắt trước render | **Xong (một phần có chủ đích)** — well-formed + same-path-same-value là gate cứng (luôn sai bất kể phiên bản prompt); "có mặt khi data-kind có mặt" HOÃN sang Phase 2 — đo trên dữ liệu thật: chỉ 28% span có `data-path` dưới `page.md` CŨ, ép gate theo số chưa đo lại cho prompt MỚI là đổi tỉ lệ chấp nhận mà không ai biết trước bao nhiêu. `path_coverage()` đo, không gate |
 | 1.6 | Regression test khoá lại hành vi hợp nhất đã đúng (1.3) chống hồi quy | `tests/` | test chạy trên record thật (pilot10/pilot12) hoặc fixture rút gọn, khẳng định 0 entity trùng | **Xong** — `tests/test_kie_full_dedup.py` (fixture tối giản + hồi quy trên 16 tài liệu thật, `skipif` khi thiếu `data/`) |
 
-**Kiểm tra live LLM:** người dùng cho phép gọi thẳng LLM để test (2026), nhưng
-`curl` tới `127.0.0.1:8000`/`127.0.0.1:11434` bị từ chối kết nối ngay (không
-phải treo/timeout) — dấu hiệu không có server nào đang chạy ở máy này lúc
-này, không phải sandbox chặn (chặn thường treo, không từ chối ngay). Chưa
-kiểm được toàn bộ pipeline với `page.md`/`SYSTEM_PROMPT.md` mới bằng dữ liệu
-thật sinh MỚI; mọi số đo Phase 1 ở trên đều trên dữ liệu CŨ (`pilot10`/`12`,
-sinh dưới `page.md` cũ). Cần người dùng khởi động server
-(`vllm serve ... --port 8000` hoặc `ollama serve`, xem `agent/README.md`)
-để chạy `python -m agent.compose_page --want N` thật cho Phase 2 trở đi.
+**Kiểm tra live LLM:** `curl` tới `127.0.0.1:8000`/`127.0.0.1:11434` bị từ
+chối ngay (đúng -- không có gì chạy ở các cổng mặc định của máy này), nhưng
+server thật chạy ở một địa chỉ nội bộ khác (`VLM_LLM_URL`, model
+`Qwen/Qwen3.8-27B-FP8`) và người dùng xác nhận nó còn sống. Đã gọi
+`python -m agent.compose_page --want 3 --no-draw` thật với `page.md`/
+`SYSTEM_PROMPT.md` MỚI -- kết quả ghi ở đầu Phase 2 (mục 2.5) khi chạy xong,
+vì lượt gọi này đo trực tiếp cho taxonomy đang xây ở Phase 2, không phải
+Phase 1 nữa.
 
 ---
 
@@ -184,12 +183,73 @@ sinh dưới `page.md` cũ). Cần người dùng khởi động server
 **Vì sao làm sớm:** cần có trước để đo "trước/sau" cho mọi phase tiếp theo,
 không phải để trước cho đẹp. Tương ứng mục 15, 16.
 
-| # | Task | File chính | DoD |
-|---|---|---|---|
-| 2.1 | Liệt kê failure code hiện có (`synthgen/llm_page.py::problems`, `plan_problems`, `sheet_plan_problems`, `synthgen/check.py`) và map sang taxonomy mục 16 | các file trên | bảng đối chiếu code cũ ↔ taxonomy mới |
-| 2.2 | Thêm code còn thiếu: `MISSING_DATA_PATH`, `DUPLICATE_DATA_PATH`, `KIE_FALSE_POSITIVE`/`NEGATIVE`, `PLAN_VIOLATION`, `DIVERSITY_COLLAPSE` | `synthgen/llm_page.py`, nơi Field Registry (Phase 1) sống | mỗi lần reject có đúng một code, machine-readable |
-| 2.3 | Validation pre-LLM (plan hợp lệ trước khi gọi model) — hiện không tồn tại vì model tự nghĩ hết; chỉ áp dụng sau khi có Planner (Phase 3-4) | — | hoãn tới Phase 4, ghi chú ở đây để không quên |
-| 2.4 | Corpus-level stats: tần suất family/structure/table morphology/density/hard-negative, duplicate rate | script mới dưới `tools/` | chạy được trên một batch đã sinh, ra báo cáo |
+| # | Task | File chính | DoD | Trạng thái |
+|---|---|---|---|---|
+| 2.1 | Liệt kê failure code hiện có và map sang taxonomy mục 16 | `pipeline/failures.py` (docstring) | bảng đối chiếu code cũ ↔ taxonomy mới | **Xong** — xem bảng dưới |
+| 2.2 | Thêm code còn thiếu: `MISSING_DATA_PATH`, `DUPLICATE_DATA_PATH`, `KIE_FALSE_POSITIVE`/`NEGATIVE`, `PLAN_VIOLATION`, `DIVERSITY_COLLAPSE` | `pipeline/failures.py` | mỗi lần reject có đúng một code, machine-readable | **Xong** — `classify()` + `tally()`, nối vào `agent/compose_page.py::run()` (`report["failure_codes"]`), test `tests/test_failures.py` |
+| 2.3 | Validation pre-LLM (plan hợp lệ trước khi gọi model) — hiện không tồn tại vì model tự nghĩ hết; chỉ áp dụng sau khi có Planner (Phase 3-4) | — | hoãn tới Phase 4, ghi chú ở đây để không quên | Hoãn (đúng kế hoạch) |
+| 2.4 | Corpus-level stats: tần suất family, tỉ lệ qua cổng, mã lỗi, `data-path` coverage, tỉ lệ xin bảng | `tools/llm/corpus_stats.py` | chạy được trên một batch đã sinh, ra báo cáo | **Xong (phạm vi hiện đo được)** — table morphology/layout topology/density/hard-negative profile CHƯA đo được vì chưa tồn tại trong code (`not_measurable_yet` trong output nói rõ, không suy diễn số liệu giả); chạy thật trên lô 3 trang ở mục 2.5 dưới. Test `tests/test_corpus_stats.py` |
+
+**Bảng đối chiếu (2.1) — phạm vi CHỈ cổng sinh trang (`problems`/
+`plan_problems`/`sheet_plan_problems`), không gộp `synthgen/check.py`
+(công cụ audit CẢ KHO sau khi vẽ, đối tượng khác, đã có cách nhóm riêng bằng
+`Counter` trên nhãn tiếng Việt — trộn hai tầng vào một enum là trộn hai
+công cụ khác nhau, ngoài phạm vi Phase 2; xem docstring `pipeline/failures.py`
+cho từng nhãn của `check.py` sẽ về đâu NẾU việc gộp đó có ngày xảy ra):**
+
+| Câu lý do thật (rút gọn) | Nguồn | Mã |
+|---|---|---|
+| `N ô bảng thiếu \`data-cell\`` | `problems()` | `INVALID_TABLE_CELL` |
+| `` `data-path=...` không đúng dạng `` | `problems()` | `SCHEMA_VIOLATION` |
+| `` `data-path=...` in ra N giá trị khác nhau `` | `problems()` | `DUPLICATE_DATA_PATH` |
+| `` `data-region=...` không phải một trong 16 nhãn vùng `` | `problems()` | `WRONG_REGION_TYPE` |
+| `có thẻ lồng bên trong` | `problems()` | `MISSING_BOX` |
+| `run có nhãn nằm NGOÀI mọi <div class="sheet">` | `problems()` | `MISSING_BOX` |
+| `không có <div class="sheet">` / `HTML không đọc được` / `trang rỗng` / forbidden tags | `problems()` | `SCHEMA_VIOLATION` |
+| `` `data-kind=...` không có trong từ vựng `` / không có run nào mang `data-kind` | `problems()` | `SCHEMA_VIOLATION` |
+| `trường ... khai giá trị ... mà không run nào in ra` | `problems()` | `KIE_FALSE_NEGATIVE` |
+| `trường ... in ra N lần` | `problems()` | `DUPLICATE_DATA_PATH` |
+| `` `field_plan` đặt tên ... không có trong từ vựng `` | `plan_problems()` | `PLAN_VIOLATION` |
+| `trang bỏ N/M kind đã hứa trong kế hoạch` | `plan_problems()` | `PLAN_VIOLATION` |
+| `chữ ký mà plan.signers để trống` | `plan_problems()` | `PLAN_VIOLATION` |
+| `sheet_plan trống` / `chỉ khai N tờ` / `tờ ... không mục nào` | `sheet_plan_problems()` | `DENSITY_VIOLATION` |
+| *(chưa có producer)* | — | `TEXT_TABLE_CONFUSION` |
+| *(chưa có producer)* | — | `KIE_FALSE_POSITIVE` |
+| *(chỉ ở tầng corpus, không phải per-page)* | — | `DIVERSITY_COLLAPSE` |
+
+`TEXT_TABLE_CONFUSION` và `KIE_FALSE_POSITIVE` cần thông tin cấu trúc DOM mà
+các reason-string phẳng không mang theo — việc thật của chúng nằm ở Phase 6
+(hard negative — `KIE_FALSE_POSITIVE`) và cần một bộ phân biệt Table-thật
+khỏi Table-giả riêng (không thuộc phạm vi Phase 2, xem mục 11 tư duy gốc).
+
+### 2.5 — Lượt gọi LLM thật đầu tiên với `page.md`/`SYSTEM_PROMPT.md` mới
+
+Server sống ở một địa chỉ nội bộ khác các cổng mặc định (`VLM_LLM_URL`,
+`Qwen/Qwen3.8-27B-FP8`), không phải "không có server" như suy đoán ban đầu
+từ hai cổng mặc định rỗng. `python -m agent.compose_page --want 3 --no-draw`:
+
+```text
+0/3 qua cổng. Lý do:
+  academic_appeal_letter:   trang bỏ 5/10 kind đã hứa trong kế hoạch -> PLAN_VIOLATION
+  contract_decision:        `clause.body` có thẻ lồng bên trong      -> MISSING_BOX
+  patient_fees_statement:   trang bỏ 9/15 kind đã hứa trong kế hoạch -> PLAN_VIOLATION
+```
+
+`n=3` là quá nhỏ để kết luận tỉ lệ qua cổng chung, nhưng hai điều đáng ghi
+lại ngay:
+
+1. **Không có false positive nào từ luật `data-path` mới (1.5).** Một trong
+   ba trang bị bắt đúng một lỗi thật do chính luật ấy: `data-path` khai
+   trùng nhưng in ra hai giá trị khác nhau (`'QUẬN THANH XUÂN'` và
+   `'ỦY BAN NHÂN D...'`) -- không phải gate quá tay, mà bắt đúng một mâu
+   thuẫn model tự tạo ra.
+2. **`data-path` coverage dưới prompt MỚI dao động rất mạnh, không phải một
+   con số ổn định gần 28% (cũ):** `academic_appeal_letter` 0/38 (0%),
+   `contract_decision` 41/41 (100%), `patient_fees_statement` 12/20 (60%).
+   Xác nhận đúng lý do 1.5 CHƯA ép gate theo tỉ lệ: một gate "≥X% phải có
+   `data-path`" đặt ra từ ba mẫu này sẽ loại nhầm ít nhất một trang viết
+   đúng (100%) hoặc chấp nhận một trang không dùng cơ chế này chút nào (0%)
+   tuỳ chọn X ra sao -- cần nhiều mẫu hơn trước khi định X, đúng như đã ghi.
 
 ---
 
