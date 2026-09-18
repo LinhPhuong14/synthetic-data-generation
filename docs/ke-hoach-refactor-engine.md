@@ -575,6 +575,14 @@ implementation — record type, gate, test — không phải thiết kế lại 
 | 6.2 | `HardNegativeRecord` (target_kind, negative_kind, strategy, path) — role trong `FieldRecord` (Phase 1) phải phân biệt được `hard_negative` khỏi `positive`/`ordinary` | `pipeline/fields.py` | test: hard negative có box, không có mặt trong danh sách positive KIE |
 | 6.3 | Gate: không cho hard-negative bị gán cùng `data-kind` VÀ cùng vai trò positive như target thật trên cùng brief | `synthgen/llm_page.py::problems()` | test hồi quy mục "39 Hard-negative regression" |
 
+**Xong cả ba.**
+
+- **6.1** đã thoả từ Phase 5.1 (`describe_plan()` liệt kê `hard_negative_profile` khi khác rỗng) — không cần đổi gì thêm, chỉ xác nhận lại ở đây.
+- **6.2** — quy ước HTML mới: model tự khai mồi giả bằng `data-decoy-for="<target-kind>"` trên chính span mồi (cùng tinh thần `data-path` — model khai, không ai suy). `synthgen/kie_full.py::hard_negative_spans[_all]` đọc thuộc tính ấy, ghép với thực thể theo đúng khuôn `declared_pairs` (`zip`, thứ tự DOM). `pipeline/fields.py::HardNegativeRecord` (target_kind, negative_kind, strategy, path, value, entity_index) + `from_hard_negative()` đổi sang `FieldRecord(role=HARD_NEGATIVE, kind=target_kind, ...)`. `registry()` nhận thêm tham số `hard_negatives=` (mặc định `None`, không đổi hành vi cũ) — thứ tự ưu tiên theo hộp: pair KIE thật thắng mồi giả thắng entity suy thô, để một hộp lỡ mang cả hai không làm mất một giá trị KIE có thật. `strategy` lấy từ `DocumentPlan.hard_negative_profile` khi `target_kind` khớp, `""` nếu model khai một decoy engine không lường trước (vẫn hợp lệ).
+- **6.3** — gate mới trong `problems()`: từ chối một span vừa khai `data-decoy-for="X"` vừa tự mang `data-kind="X"` (mồi giả tự nhận luôn là chính target, tức chỉ còn là một positive khai hai lần). Không đụng `generators/html/page.py` (JS đo chung, không sửa) — toàn bộ nằm ở Python post-process, giống `data-path`.
+- `agent/prompts/page.md` mục 11.1 (mới) dạy model cách viết `data-decoy-for`; mục 60 cập nhật theo.
+- Test: `tests/test_hard_negatives.py` (9 test, kie_full + gate llm_page, dùng lại khuôn `monkeypatch` stub `kinds()` của `tests/test_plan_conformance.py` vì cùng bị Phase 5.5 chặn), `tests/test_fields.py` (+5 test cho `HardNegativeRecord`/`from_hard_negative`/`registry(hard_negatives=)`). Toàn bộ dependency-free suite (trừ `test_failures.py`, vẫn chặn bởi Phase 5.5, không phải lỗi Phase 6) chạy sạch.
+
 ---
 
 ## Phase 7 — Tách Document Diversity khỏi Dressing Diversity; mở rộng Distance

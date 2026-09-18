@@ -353,6 +353,18 @@ The hard negative must:
 - NOT be marked as the positive KIE target
 - not corrupt the ground-truth semantic identity
 
+## 11.1 How to mark a decoy in HTML
+
+Wrap the decoy value in a `<span>` carrying `data-decoy-for="<target-kind>"`, where `<target-kind>` is the exact `data-kind` of the real field it is impersonating.
+
+```html
+<span data-kind="doc.reference_code" data-decoy-for="store.tax_code">0312345678</span>
+```
+
+The decoy span's own `data-kind` (here `doc.reference_code`) must describe what the box actually IS, never the target it is impersonating. It must NOT equal `data-decoy-for`'s value -- a span cannot both claim to be `store.tax_code` and declare itself a decoy for `store.tax_code`; that is just a positive field declared twice, and the page is rejected for it.
+
+A decoy span never receives `data-path` for the target's path -- it has no real identity in the target's data tree. If it needs its own path (e.g. it is also an ordinary field of some other kind), that path belongs to its own kind, not the target's.
+
 Do not use artificial labels such as:
 
 - "fake code"
@@ -1738,11 +1750,11 @@ Do not mark hard negatives as target entities.
 
 A hard negative may still have:
 
-- `data-path`
-- a valid semantic kind
+- `data-decoy-for="<target-kind>"` (see 11.1)
+- a valid semantic kind of its own -- never the target's kind
 - a measurable box
 
-but it must not be included as the positive target for the target field.
+but it must not be included as the positive target for the target field, and it never carries the target's own `data-path`.
 
 ---
 

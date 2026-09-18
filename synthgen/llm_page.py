@@ -165,7 +165,8 @@ class _Spans(HTMLParser):
         if tag == "span" and at.get("data-kind") is not None:
             span = {"kind": str(at["data-kind"]), "text": "", "nested": False,
                     "key": str(at.get("data-key") or ""),
-                    "path": str(at.get("data-path") or "")}
+                    "path": str(at.get("data-path") or ""),
+                    "decoy_for": str(at.get("data-decoy-for") or "")}
             self.spans.append(span)
             self._stack.append(span)
             return
@@ -468,6 +469,23 @@ def problems(html: str, fields: dict | None = None) -> list[str]:
             found.append(f'`data-path="{path}"` in ra {len(values)} giá trị khác '
                          f'nhau ({shown}); cùng một đường dẫn phải là cùng một '
                          "trường")
+
+    # MỒI GIẢ KHÔNG ĐƯỢC TỰ NHẬN LÀ MỤC TIÊU CỦA CHÍNH NÓ.
+    #
+    # Phase 6.3 (`docs/ke-hoach-refactor-engine.md`): `data-decoy-for="X"`
+    # trên một span khai "tôi đang giả làm field X" -- một mồi lexical/format
+    # trông giống `store.tax_code` nhưng KHÔNG PHẢI nó. Nếu span đó cũng mang
+    # `data-kind="X"` (cùng X), nó vừa giả vừa THẬT SỰ tự nhận là target --
+    # không còn là mồi giả nào cả, chỉ là một positive khai hai lần. Gate này
+    # không đụng `synthgen/kie_full.py::hard_negative_spans` (đường đọc offline,
+    # không gác) -- đây là cổng chặn TRANG, trước khi trang được nhận.
+    for span in parser.spans:
+        decoy_for = span.get("decoy_for") or ""
+        if decoy_for and decoy_for == span["kind"]:
+            found.append(
+                f'run khai `data-decoy-for="{decoy_for}"` mà chính nó cũng '
+                f'mang `data-kind="{decoy_for}"` -- mồi giả không được trùng '
+                "kind với mục tiêu nó giả làm")
 
     for region in parser.regions:
         if region not in REGIONS:

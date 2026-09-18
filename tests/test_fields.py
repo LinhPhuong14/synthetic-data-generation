@@ -90,10 +90,52 @@ def test_every_entity_produces_exactly_one_field_record():
     assert len(out) == len(entities)
 
 
-def test_hard_negative_has_no_producer_yet():
-    """Chưa có cơ chế hard-negative nào trong code -- khai vai trước để
-    Phase 6 (docs/ke-hoach-refactor-engine.md) không phải đổi hình dạng."""
+def test_hard_negative_is_not_assigned_without_a_list():
+    """`hard_negatives=None` (mặc định) giữ hành vi trước Phase 6 y nguyên."""
     assert F.HARD_NEGATIVE in F.ROLES
     entities = [an_entity(0)]
     out = F.registry(entities, pairs=[])
     assert all(r.role != F.HARD_NEGATIVE for r in out)
+
+
+# ------------------------------------------------------------- hard negative
+
+
+def a_hard_negative(index, target="store.tax_code", negative="", strategy="lexical",
+                    path="", value="12-3456789"):
+    return F.HardNegativeRecord(target_kind=target, negative_kind=negative,
+                                strategy=strategy, path=path, value=value,
+                                entity_index=index)
+
+
+def test_from_hard_negative_uses_target_kind_as_the_field_kind():
+    rec = F.from_hard_negative(a_hard_negative(0, target="store.tax_code"))
+    assert rec.role == F.HARD_NEGATIVE
+    assert rec.kind == "store.tax_code"
+    assert "lexical" in rec.source
+
+
+def test_a_box_declared_as_decoy_gets_the_hard_negative_role():
+    entities = [an_entity(0, kind="note", text="12-3456789")]
+    out = F.registry(entities, pairs=[], hard_negatives=[a_hard_negative(0)])
+    assert len(out) == 1
+    assert out[0].role == F.HARD_NEGATIVE
+    assert out[0].kind == "store.tax_code"
+
+
+def test_hard_negative_box_is_absent_from_the_positive_list():
+    """Yêu cầu Phase 6.2: hard negative có box, không có mặt trong danh
+    sách positive KIE."""
+    entities = [an_entity(0, kind="note", text="12-3456789")]
+    out = F.registry(entities, pairs=[], hard_negatives=[a_hard_negative(0)])
+    positives = [r for r in out if r.role == F.POSITIVE]
+    assert positives == []
+
+
+def test_a_real_pair_wins_over_a_hard_negative_on_the_same_index():
+    """Nếu gate 6.3 lọt một hộp vừa có pair thật vừa khai decoy, pair thật
+    thắng -- không để mồi giả che một giá trị KIE có thật."""
+    entities = [an_entity(0, kind="store.tax_code", text="12-3456789")]
+    pairs = [a_pair(0, path="store.tax_code", kind="store.tax_code")]
+    out = F.registry(entities, pairs, hard_negatives=[a_hard_negative(0)])
+    assert out[0].role == F.POSITIVE

@@ -241,7 +241,11 @@ class _Spans(HTMLParser):
                              # ĐƯỜNG DẪN MODEL TỰ KHAI. Có nó thì KIE không
                              # phải suy trường nào đi với nhãn nào -- xem
                              # `declared_pairs`.
-                             "path": table.get("data-path", "")})
+                             "path": table.get("data-path", ""),
+                             # HARD NEGATIVE. `data-kind` của chính field
+                             # model GIẢ LÀM -- xem `hard_negative_spans`
+                             # dưới và `pipeline/fields.py::HardNegativeRecord`.
+                             "decoy_for": table.get("data-decoy-for", "")})
             self._open = self.out[-1]
 
     def handle_data(self, data):
@@ -688,6 +692,48 @@ def declared_pairs_all(record: dict, markup: str) -> list[dict]:
     out: list[dict] = []
     for page in range(1, pages + 1):
         out.extend(declared_pairs(record, markup, page))
+    return out
+
+
+def hard_negative_spans(record: dict, markup: str, page: int) -> list[dict]:
+    """Mọi span model tự khai là DECOY -- `data-decoy-for="<kind mục tiêu>"`.
+
+    Phase 6 (`docs/ke-hoach-refactor-engine.md`). Cùng cách ghép span-với-
+    thực-thể như `declared_pairs` (`zip`, theo đúng thứ tự DOM -- track 3
+    đã đo 60/60 khớp một-một, xem docstring `synthgen/kie_full.py::_Spans`),
+    và cùng lý do không cần đoán: model tự khai đường dẫn, chỗ này tự khai
+    "tôi đang giả làm field nào".
+
+    KHÔNG khai `strategy` ở đây -- `data-decoy-for` chỉ cần nói RÕ mục tiêu;
+    chiến lược (lexical/format/...) đã có sẵn ở `DocumentPlan.hard_negative_
+    profile` (Phase 4.1, engine tự rút trước khi hỏi model) và
+    `pipeline/fields.py::hard_negatives()` ghép hai nguồn lại -- không hỏi
+    model khai trùng thứ engine đã biết."""
+    spans = seats(markup)
+    ents = _on(record, page)
+    out = []
+    for span, entity in zip(spans, ents):
+        decoy_for = str(span.get("decoy_for") or "").strip()
+        if not decoy_for:
+            continue
+        out.append({
+            "target_kind": decoy_for,
+            "negative_kind": str(span.get("kind") or ""),
+            "path": str(span.get("path") or ""),
+            "text": str(entity.get("text") or ""),
+            "value_bbox": _box(entity["bbox"]),
+            "value_entity_index": entity["entity_index"],
+            "page_number": page,
+        })
+    return out
+
+
+def hard_negative_spans_all(record: dict, markup: str) -> list[dict]:
+    """`hard_negative_spans` cho mọi trang, gộp làm một."""
+    pages = len(record.get("source_files") or [record.get("filename")]) or 1
+    out: list[dict] = []
+    for page in range(1, pages + 1):
+        out.extend(hard_negative_spans(record, markup, page))
     return out
 
 
