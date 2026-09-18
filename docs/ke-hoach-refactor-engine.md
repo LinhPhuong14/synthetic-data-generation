@@ -453,9 +453,9 @@ fine    -- field composition, component morphology chi tiết, hard-negative pro
 | # | Task | File chính | DoD | Trạng thái |
 |---|---|---|---|---|
 | 4.1 | `DocumentPlan` là kết quả RÚT (sampled) qua grammar (Phase 3), không phải mẫu literal như YAML ví dụ mục 4 gốc — mỗi field trong plan có một phân bố, không một giá trị cố định cho cả family. **(điểm 4)** `hard_negative_profile` được rút TỪ danh sách compatibility mà grammar khai ở 3.4, không rút độc lập | `agent/document_plan.py` | Different plans must be reachable and sampled according to weighted distributions and coverage state; the sampler must not require every consecutive sample to be unique. "Plan sinh ra khác nhau giữa các lần gọi" nghĩa là **có khả năng** khác nhau qua weighted sampler + coverage memory ưu tiên vùng thiếu — KHÔNG phải ép mỗi lần gọi phải khác lần trước (forced novelty); rút lại một plan phổ biến vẫn hợp lệ nếu coverage/trọng số cho phép. hard-negative profile luôn tương thích với field/context đã rút | **Xong, đã kiểm 4 điểm review trước khi commit** — xem 4.1 dưới |
-| 4.2 | Fingerprint tài liệu PHÂN TẦNG như trên (mục 13 gốc: family, component_sequence, table_morphology, density, layout_topology, hard_negative_profile...) | file mới hoặc `agent/distance.py` (extend, không thay) | fingerprint trả về ba tầng riêng biệt (coarse/mid/fine), không phải một hash/tuple duy nhất; tính được từ một `DocumentPlan` + kết quả render | Còn cần — **dừng ở đây theo yêu cầu, review từng task trong Phase 4** |
-| 4.3 | Coverage memory hoạt động ở **cả ba tầng**: đếm riêng theo coarse/mid/fine, ưu tiên tổ hợp thiếu ở tầng đang lệch nhất — **không ép unique**, theo đúng mục 5 | file mới | test: hai plan trùng coarse+mid nhưng khác fine vẫn được coverage phân biệt; sampler ưu tiên đúng tầng đang thiếu, không chỉ tuple tổng | Còn cần |
-| 4.4 | Mở rộng round-robin rate-matching hiện có (G2: `wants_table`, `sheets`) thành một phần của sampler này thay vì cơ chế riêng lẻ — **giữ nguyên hành vi, không xoá** | `agent/compose_page.py` | `wants_table`/`sheets` logic chuyển vào sampler, hành vi rate-matching không đổi (test hồi quy tỉ lệ) | Còn cần |
+| 4.2 | Fingerprint tài liệu PHÂN TẦNG như trên (mục 13 gốc: family, component_sequence, table_morphology, density, layout_topology, hard_negative_profile...) | `agent/fingerprint.py` | fingerprint trả về ba tầng riêng biệt (coarse/mid/fine), không phải một hash/tuple duy nhất; tính được từ một `DocumentPlan` + kết quả render | **Xong** — `coarse`=(family, density, table/party_block có mặt hay không), `mid`=(table/header/signature_layout GIÁ TRỊ khi có mặt), `fine`=(toàn bộ assignment + hard_negative_profile, + `render_extra` khi có). `render_extra` là chỗ cắm sẵn cho tín hiệu sau vẽ — chưa có nguồn thật để gộp (Phase 5 mới có). Test: `tests/test_fingerprint.py` (8 test) |
+| 4.3 | Coverage memory hoạt động ở **cả ba tầng**: đếm riêng theo coarse/mid/fine, ưu tiên tổ hợp thiếu ở tầng đang lệch nhất — **không ép unique**, theo đúng mục 5 | `agent/coverage.py` | test: hai plan trùng coarse+mid nhưng khác fine vẫn được coverage phân biệt; sampler ưu tiên đúng tầng đang thiếu, không chỉ tuple tổng | **Xong (đơn giản hoá có ghi chú)** — `CoverageMemory` giữ 3 `Counter` riêng; `priority()` trả `(coarse_count, mid_count, fine_count)`, so sánh **lexicographic** (coarse quyết trước, mid/fine chỉ phá hoà) thay vì dò "tầng nào đang lệch nhất" bằng thống kê động — đơn giản hơn yêu cầu gốc, nói rõ trong docstring, vẫn thoả đúng test cụ thể DoD nêu (coarse+mid trùng, fine khác → vẫn phân biệt được, ưu tiên đúng). `sample_with_coverage()` rút N candidate, giữ candidate priority thấp nhất — không ép unique (test xác nhận một giá trị phổ biến vẫn CÓ THỂ được rút lại). Test: `tests/test_coverage.py` (9 test) |
+| 4.4 | Mở rộng round-robin rate-matching hiện có (G2: `wants_table`, `sheets`) thành một phần của sampler này thay vì cơ chế riêng lẻ — **giữ nguyên hành vi, không xoá** | `agent/rate_match.py` | `wants_table`/`sheets` logic chuyển vào sampler, hành vi rate-matching không đổi (test hồi quy tỉ lệ) | **Xong** — di chuyển byte-identical (không viết lại công thức), `agent/compose_page.py::wants_table` giờ là alias trỏ thẳng vào `agent/rate_match.wants_table` (`compose_page.wants_table is rate_match.wants_table`, test khoá lại). Test hồi quy so cả hai công thức cũ/mới trên 1000 index đầu — khớp tuyệt đối. Test: `tests/test_rate_match.py` (5 test) |
 
 ### 4.1 — Bốn điểm review kiểm trước khi commit
 
@@ -480,6 +480,13 @@ fine    -- field composition, component morphology chi tiết, hard-negative pro
 
 `tests/test_document_plan.py`: 14 test, cả 4 điểm trên đều có test khoá
 lại trực tiếp, không chỉ khẳng định bằng lời.
+
+**Phase 4 xong** — `agent/document_plan.py` (4.1), `agent/fingerprint.py`
+(4.2), `agent/coverage.py` (4.3), `agent/rate_match.py` (4.4). 46 test mới
+(14+8+9+5+... khớp tổng từng file). Chưa có gì trong bốn file này được GỌI
+từ `agent/compose_page.py::one()` — track 3 vẫn chạy y nguyên như trước
+Phase 1, LLM vẫn tự nghĩ cấu trúc dưới `page.md`. Nối `DocumentPlan` vào
+brief thật là việc của Phase 5.
 
 ---
 

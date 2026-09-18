@@ -60,6 +60,7 @@ if __package__ in (None, ""):                   # `python compose_page.py`
 
 from agent.client import LLMError, from_env
 from agent.promptbook import prompt
+from agent import rate_match
 from pipeline import failures
 from synthgen import design as D
 from synthgen.llm_page import (REGIONS, _rooted, declared_paths, kinds,
@@ -401,23 +402,12 @@ DOMAIN_STEMS = {
 }
 
 
-def wants_table(index: int) -> bool:
-    """Tờ này có bảng hay không -- quay vòng, 46% có.
-
-    Không hỏi phôi nào nữa: chính model quyết loại chứng từ, nên không ai biết
-    trước nó có bảng hay không. Cái quay vòng ở đây chỉ giữ TỈ LỆ của cả lượt
-    khớp với bộ engine vẽ (46% có bảng), để trộn hai nguồn là trộn hai thứ
-    cùng phân phối.
-
-    Bản trước viết `index % 10 < 6` -- tức 60%, trong khi chính docstring của
-    nó nói 46%. Người dùng thấy ngay: "các layout llm nghĩ đang bị nhiều
-    bảng". Và 97 phôi trong `rulebase/synthgen/` chỉ 18% BẮT BUỘC có bảng.
-
-    `(index * 46) % 100` thay cho `index % k`: dãy độ lệch thấp, nên tỉ lệ
-    đúng cả trên một lượt ngắn. `index % 50 < 23` cũng ra 46% nhưng lượt 24 tờ
-    sẽ nhận 23 tờ có bảng liền nhau rồi mới đến tờ không -- đúng tỉ lệ trên
-    giấy, sai hoàn toàn trên thực tế."""
-    return (index * 46) % 100 < 46
+# CHUYỂN VÀO `agent/rate_match.py` (Phase 4 task 4.4, docs/ke-hoach-refactor-
+# engine.md) -- cùng lý do `sheets` dưới `one()` cũng chuyển: sampler cần
+# gọi được hai hàm này mà không phải biết chúng từng sống ở callsite nào.
+# Alias giữ TÊN CŨ để không phải sửa mọi chỗ gọi trong file này, và để
+# không phá bất kỳ ai từng `from agent.compose_page import wants_table`.
+wants_table = rate_match.wants_table
 
 
 SAY = {
@@ -819,13 +809,10 @@ def one(client, index: int, made: list[str], seed: int,
         lang: str = "en") -> dict:
     """Một tờ: hỏi, đo, gác cổng. Không ném -- lỗi là một kết quả."""
     started = time.time()
-    # HAI TỚI TÁM TỜ. Vòng cũ `(1,1,1,2,2,3,2,4,1,6)` nặng về tờ đơn -- bốn
-    # trên mười là một tờ, và một bộ toàn tờ đơn không dạy được mô hình đọc
-    # tài liệu nhiều trang.
-    #
-    # Trải đều 2..8, xáo thứ tự để một lượt ngắn cũng gặp đủ cỡ thay vì gặp
-    # toàn tờ mỏng rồi mới tới tờ dày.
-    sheets = (2, 5, 3, 8, 2, 6, 4, 7, 3, 2, 8, 4, 6, 2, 5, 3)[index % 16]
+    # Cả hai hàm sống ở `agent/rate_match.py` (Phase 4 task 4.4) -- lý do
+    # đầy đủ (2..8 tờ trải đều, 46% có bảng khớp phân bố engine) nằm ở
+    # docstring của chính chúng, không lặp lại ở đây.
+    sheets = rate_match.sheet_count(index)
     table = wants_table(index)
     brief = ask_for(index, made, sheets, table, lang)
     try:
