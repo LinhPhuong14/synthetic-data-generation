@@ -450,12 +450,36 @@ mid     -- component sequence, table morphology, layout topology
 fine    -- field composition, component morphology chi tiết, hard-negative profile
 ```
 
-| # | Task | File chính | DoD |
-|---|---|---|---|
-| 4.1 | `DocumentPlan` là kết quả RÚT (sampled) qua grammar (Phase 3), không phải mẫu literal như YAML ví dụ mục 4 gốc — mỗi field trong plan có một phân bố, không một giá trị cố định cho cả family. **(điểm 4)** `hard_negative_profile` được rút TỪ danh sách compatibility mà grammar khai ở 3.4, không rút độc lập | file mới, ví dụ `agent/document_plan.py` | Different plans must be reachable and sampled according to weighted distributions and coverage state; the sampler must not require every consecutive sample to be unique. "Plan sinh ra khác nhau giữa các lần gọi" nghĩa là **có khả năng** khác nhau qua weighted sampler + coverage memory ưu tiên vùng thiếu — KHÔNG phải ép mỗi lần gọi phải khác lần trước (forced novelty); rút lại một plan phổ biến vẫn hợp lệ nếu coverage/trọng số cho phép. hard-negative profile luôn tương thích với field/context đã rút |
-| 4.2 | Fingerprint tài liệu PHÂN TẦNG như trên (mục 13 gốc: family, component_sequence, table_morphology, density, layout_topology, hard_negative_profile...) | file mới hoặc `agent/distance.py` (extend, không thay) | fingerprint trả về ba tầng riêng biệt (coarse/mid/fine), không phải một hash/tuple duy nhất; tính được từ một `DocumentPlan` + kết quả render |
-| 4.3 | Coverage memory hoạt động ở **cả ba tầng**: đếm riêng theo coarse/mid/fine, ưu tiên tổ hợp thiếu ở tầng đang lệch nhất — **không ép unique**, theo đúng mục 5 | file mới | test: hai plan trùng coarse+mid nhưng khác fine vẫn được coverage phân biệt; sampler ưu tiên đúng tầng đang thiếu, không chỉ tuple tổng |
-| 4.4 | Mở rộng round-robin rate-matching hiện có (G2: `wants_table`, `sheets`) thành một phần của sampler này thay vì cơ chế riêng lẻ — **giữ nguyên hành vi, không xoá** | `agent/compose_page.py` | `wants_table`/`sheets` logic chuyển vào sampler, hành vi rate-matching không đổi (test hồi quy tỉ lệ) |
+| # | Task | File chính | DoD | Trạng thái |
+|---|---|---|---|---|
+| 4.1 | `DocumentPlan` là kết quả RÚT (sampled) qua grammar (Phase 3), không phải mẫu literal như YAML ví dụ mục 4 gốc — mỗi field trong plan có một phân bố, không một giá trị cố định cho cả family. **(điểm 4)** `hard_negative_profile` được rút TỪ danh sách compatibility mà grammar khai ở 3.4, không rút độc lập | `agent/document_plan.py` | Different plans must be reachable and sampled according to weighted distributions and coverage state; the sampler must not require every consecutive sample to be unique. "Plan sinh ra khác nhau giữa các lần gọi" nghĩa là **có khả năng** khác nhau qua weighted sampler + coverage memory ưu tiên vùng thiếu — KHÔNG phải ép mỗi lần gọi phải khác lần trước (forced novelty); rút lại một plan phổ biến vẫn hợp lệ nếu coverage/trọng số cho phép. hard-negative profile luôn tương thích với field/context đã rút | **Xong, đã kiểm 4 điểm review trước khi commit** — xem 4.1 dưới |
+| 4.2 | Fingerprint tài liệu PHÂN TẦNG như trên (mục 13 gốc: family, component_sequence, table_morphology, density, layout_topology, hard_negative_profile...) | file mới hoặc `agent/distance.py` (extend, không thay) | fingerprint trả về ba tầng riêng biệt (coarse/mid/fine), không phải một hash/tuple duy nhất; tính được từ một `DocumentPlan` + kết quả render | Còn cần — **dừng ở đây theo yêu cầu, review từng task trong Phase 4** |
+| 4.3 | Coverage memory hoạt động ở **cả ba tầng**: đếm riêng theo coarse/mid/fine, ưu tiên tổ hợp thiếu ở tầng đang lệch nhất — **không ép unique**, theo đúng mục 5 | file mới | test: hai plan trùng coarse+mid nhưng khác fine vẫn được coverage phân biệt; sampler ưu tiên đúng tầng đang thiếu, không chỉ tuple tổng | Còn cần |
+| 4.4 | Mở rộng round-robin rate-matching hiện có (G2: `wants_table`, `sheets`) thành một phần của sampler này thay vì cơ chế riêng lẻ — **giữ nguyên hành vi, không xoá** | `agent/compose_page.py` | `wants_table`/`sheets` logic chuyển vào sampler, hành vi rate-matching không đổi (test hồi quy tỉ lệ) | Còn cần |
+
+### 4.1 — Bốn điểm review kiểm trước khi commit
+
+1. **`DocumentPlan` không chứa hidden template.** `grep` xác nhận: không có
+   `INVOICE_PLANS = [...]` hay literal list plan nào trong
+   `agent/document_plan.py`/`agent/grammar.py`. `sample()` dựng `assignment`
+   branch-theo-branch qua `valid_options()`, theo thứ tự tô-pô
+   (`_topological_order()`) — test `test_sample_builds_the_assignment_it_
+   returns_not_a_literal`.
+2. **Weight thuộc sampler, không thuộc grammar.** `Branch.__dataclass_
+   fields__` chỉ có `name`/`options` — không có `weights=`. `weight_fn` là
+   tham số của `sample()`, sống hoàn toàn trong `agent/document_plan.py`.
+   Test khoá lại: `test_a_branch_carries_no_weight_field`.
+3. **6 000 lần sample (30 family × 200) chỉ chứng minh sampler sinh plan
+   hợp lệ, KHÔNG chứng minh coverage memory.** Không claim gì hơn thế —
+   4.2/4.3 (fingerprint, coverage) chưa làm, đúng như review yêu cầu.
+4. **"Different plans reachable" không phải forced novelty.** `grep` xác
+   nhận không có `while ... == previous: resample()` nào trong
+   `sample()`. Test `test_repetition_is_reachable_not_forbidden`: grammar
+   2 lựa chọn, rút 30 lần, khẳng định CÓ lặp lại (`len(set(seen)) <
+   len(seen)`) — nếu sampler cố tránh lặp, test này sẽ fail.
+
+`tests/test_document_plan.py`: 14 test, cả 4 điểm trên đều có test khoá
+lại trực tiếp, không chỉ khẳng định bằng lời.
 
 ---
 
