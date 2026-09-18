@@ -904,6 +904,41 @@ Do not combine every visual device in one document.
 
 Visual variation must remain plausible for the document family.
 
+## 27.1 Color is part of visual diversity, not an exception to it
+
+A batch of real generated pages was measured and found almost entirely
+monochrome: body text colored `#000` on every single page, headings and
+borders black on every single page, `font-family` reduced to "Times New
+Roman" on every single page, background tints (when present at all) limited
+to a few shades of light gray. That is not what a shelf of real Vietnamese
+paperwork looks like -- a bank's letterhead is in the bank's brand color, a
+hospital's header band is often tinted, a government form's national
+emblem area may carry red or a dark institutional blue, an internal memo
+may be plain black-on-white. All of these are correct; ALL-BLACK-ALL-THE-TIME
+is not.
+
+For every document, make a deliberate color decision instead of defaulting
+to black:
+
+- a primary ink color for headings/rules (a dark blue, a deep red, a dark
+  green, a charcoal that is not pure black, or plain black when the
+  document type calls for plain black -- but decide it, don't default to
+  it);
+- an accent color used sparingly (a colored rule under the letterhead, a
+  tinted section-header background, a colored stamp/seal, a colored logo
+  block);
+- a body-text color that need not be pure `#000` (`#1a1a1a`, `#222`, a dark
+  brown for an aged-paper look) unless the document family specifically
+  calls for stark black (legal forms, photocopies);
+- typography that varies with the document: serif is not the only correct
+  choice for a Vietnamese business document -- a modern invoice, an
+  internal report, or a utility bill may plausibly use a sans-serif body
+  font.
+
+Same rule as every other diversity dimension in this document: vary across
+the corpus, stay plausible within one document. A single page should still
+look coherent -- two or three colors used with intent, not a rainbow.
+
 ---
 
 # 28. LETTERHEAD
@@ -919,6 +954,39 @@ Possible forms include:
 Do not always use the same form.
 
 The selected letterhead should influence the rest of the visual hierarchy.
+
+## 28.1 The letterhead is not exempt from section 6-11 -- it is the block most often left unboxed
+
+Measured directly: across a batch of real generated pages, the single most
+common source of unboxed visible text was the letterhead/masthead block --
+the organization name, address, tax code, and phone number printed at the
+top of the page. On the worst page in that batch, 87% of all visible text
+had no `data-span` at all, and nearly all of it was the letterhead. On the
+best page, the letterhead was fully boxed and the page was otherwise
+identical in structure -- so this is not a case where the letterhead
+resists annotation, it is a case of it being forgotten.
+
+Every letterhead field is a semantic field like any other, and section 6-11
+apply to it exactly the way they apply to a customer name or an invoice
+total:
+
+```html
+<div class="hdr">
+  <span data-kind="store.name" data-path="issuer.name">CÔNG TY TNHH ABC</span>
+  <span data-kind="store.address" data-path="issuer.address">
+    123 Nguyễn Huệ, Q.1, TP.HCM
+  </span>
+  <span data-kind="store.tax_code" data-path="issuer.tax_code">0312345678</span>
+  <span data-kind="store.phone" data-path="issuer.phone">028 3xxx xxxx</span>
+</div>
+```
+
+Do not write the letterhead as plain text, a bare `<div>`, or a `<p>` with
+no semantic spans just because it sits in a visually distinct block at the
+top of the page. Before returning the page, specifically check the
+letterhead block for unwrapped text -- it is the block most likely to have
+been typed as an afterthought after the rest of the document was already
+annotated correctly.
 
 ---
 
@@ -1124,6 +1192,35 @@ Do not leave large accidental blank areas when the target is dense.
 
 Do not cram content merely to hit an arbitrary count.
 
+## 38.1 Every sheet of a multi-sheet document must fill at least 80% of the page
+
+This is a hard number, not a suggestion, and it is enforced downstream
+(`synthgen/check.py`'s `MIN_FILL = 0.8`, checked on every rendered page of
+every multi-sheet document in the corpus): **when a document runs to more
+than one A4 sheet, each of those sheets -- including the last one -- must
+be filled to at least 80% of the printable page height.**
+
+This does not apply to a genuinely single-sheet document -- a three-line
+receipt is realistic and must not be padded. It applies once you have
+committed to `n_sheets > 1`: at that point, every sheet you write content
+for is a real sheet of paper, and a real multi-page document does not end
+its last page a third of the way down.
+
+The most common way this rule is broken is not writing too little overall
+-- it is writing a `sheet_plan` that promises `n` sheets and then
+distributing content unevenly, front-loading detail onto the early sheets
+and leaving the final sheet mostly whitespace after a short closing
+paragraph or a signature block. If the closing material (signatures,
+notes, appendix) is short, either fold it onto the last content-bearing
+sheet instead of opening a new mostly-empty one, or add legitimate
+additional content (more clauses, more line items, more detail sections)
+to reach 80% on that final sheet -- do not leave it sparse and do not
+invent a page break the content does not need. Re-read section 38: filling
+a page with meaningless repetition is still wrong even when the target is
+"reach 80%" -- the fill must come from real information density, planned
+for from the start the way section 6 describes, not padding added at the
+end.
+
 ---
 
 # 39. MULTI-PAGE DOCUMENTS
@@ -1135,7 +1232,8 @@ If multiple sheets are requested:
 - distribute content naturally;
 - do not simply duplicate the same structure on every sheet;
 - vary page composition when appropriate;
-- do not manually create artificial page breaks unless the caller explicitly requires them.
+- do not manually create artificial page breaks unless the caller explicitly requires them;
+- **every sheet, including the last, must reach the 80% fill rule in section 38.1.**
 
 The caller controls the sheet count.
 
@@ -1603,6 +1701,13 @@ The most important rendering rule is:
 
 Avoid:
 
+- **meaningful text with no `<span data-kind>` at all** -- the single most
+  common cause, measured directly: a real batch of generated pages averaged
+  71% of visible text wrapped in a labelled span and 29% not, and nearly
+  every unwrapped run was organization identity text (name, address, tax
+  code, phone) sitting in a plain `<div>` or `<p>` at the top of the page,
+  not some exotic markup trick. This is not a subtle failure mode to guard
+  against -- it is the default failure mode. See section 28.1.
 - text hidden only in pseudo-elements
 - important text inside unsupported SVG unless explicitly supported
 - labels generated by CSS
@@ -1612,7 +1717,10 @@ Avoid:
 - arbitrary absolute-positioned text detached from logical DOM structure
 - content inserted through JavaScript
 
-If a field matters to training, it must exist as ordinary measurable HTML text.
+If a field matters to training, it must exist as ordinary measurable HTML
+text, inside a `<span data-kind="..." data-path="...">`. Before returning
+the page, scan every block of the document -- the letterhead first -- and
+confirm each one is not plain text.
 
 ---
 

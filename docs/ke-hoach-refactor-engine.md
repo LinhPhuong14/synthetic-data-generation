@@ -251,6 +251,45 @@ lại ngay:
    đúng (100%) hoặc chấp nhận một trang không dùng cơ chế này chút nào (0%)
    tuỳ chọn X ra sao -- cần nhiều mẫu hơn trước khi định X, đúng như đã ghi.
 
+### 2.6 — Lô 20 trang (vẽ đầy đủ): phát hiện missing-box thật, vá `page.md` ngay tại chỗ
+
+Chạy `--want 20` (có vẽ, không `--no-draw`) để kiểm `_dedup_by_value` trên dữ
+liệu MỚI -- dừng ở giữa chừng (11/20) theo yêu cầu người dùng sau khi một
+phát hiện quan trọng hơn xuất hiện, không chạy tiếp cho hết. Đo trực tiếp
+trên 10 trang đã vẽ xong: **71% chữ hiển thị trong `.sheet` có
+`<span data-kind>`, 29% thì không** (dao động 13%-100% tuỳ trang). Mẫu lặp
+lại: gần như luôn là khối letterhead/masthead (tên đơn vị, địa chỉ, MST,
+điện thoại) bị bỏ ngoài span -- không phải bug đo lường (JS đo hộp hoạt
+động đúng), model đơn giản không bọc span quanh khối ấy dù `page.md` đã
+dặn. Cổng gác hiện tại (`problems()`) **không bắt được lỗi này** -- nó chỉ
+kiểm span ĐÃ có, không kiểm chữ hoàn toàn không có span nào; hai trang thiếu
+15% và 8% nội dung vẫn qua cổng (✓).
+
+Đo thêm: 100% trang dùng `color: #000` cho chữ thân, viền toàn màu đen,
+100% `font-family: 'Times New Roman'` -- không có biến thiên màu sắc/kiểu
+chữ nào giữa các trang dù `page.md` mục 27 đã liệt "border density, line
+weight..." là những trục nên biến thiên.
+
+**Vá ngay** (theo yêu cầu người dùng, không chờ Phase 5 viết lại toàn bộ
+`page.md`):
+
+- mục 27.1 mới: bắt buộc một quyết định màu có chủ đích cho mỗi tài liệu
+  (không mặc định `#000`), có số đo làm bằng chứng ngay trong prompt;
+- mục 28.1 mới: letterhead phải tuân mục 6-11 như mọi trường khác, kèm ví
+  dụ HTML cụ thể và số đo (87% chữ không span trên trang tệ nhất);
+- mục 58 (MISSING-BOX PREVENTION) thêm "chữ có nghĩa không có
+  `<span data-kind>` nào" làm nguyên nhân ĐẦU DANH SÁCH, kèm số đo 71%/29%;
+- mục 38.1 mới: **luật 80%** -- mọi trang của tài liệu nhiều tờ (kể cả tờ
+  cuối) phải lấp ít nhất 80% khổ giấy, cùng ngưỡng `synthgen/check.py::MIN_FILL`
+  đã dùng ở tầng audit corpus -- nay nói thẳng ra trong prompt thay vì chỉ
+  nằm im ở tầng kiểm sau. Nguyên nhân hay gặp nhất được nêu rõ: dồn chi tiết
+  vào các tờ đầu, tờ cuối cùng chỉ có chữ ký rồi bỏ trắng.
+
+**Chưa làm** (do dừng lô sớm theo yêu cầu): đo lại `page.md` mới có thực sự
+giảm tỉ lệ chữ-không-span và tăng đa dạng màu hay không. Cần một lô nhỏ mới
+sau khi các mục còn lại của kế hoạch được làm tiếp, đúng yêu cầu "sửa nốt
+các mục ... rồi check lại sau".
+
 ---
 
 ## Phase 3 — Archetype/Grammar thành compositional constraint space (KHÔNG code vội)
