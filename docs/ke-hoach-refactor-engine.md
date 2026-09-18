@@ -364,8 +364,73 @@ hai ràng buộc `signature_layout` mới), `contract` 972→560 (cắt 412, 42%
 số lượng option. 14 test cũ vẫn qua nguyên (không phải viết lại, vì
 interface `Branch`/`Constraint` không đổi, chỉ nội dung 3 family đổi).
 
-**Trạng thái tổng:** 3 family đã đối chiếu, đã đo lại, đã test. **Dừng ở
-đây để duyệt trước khi viết thành 30 family** (task 3.1 mở rộng, chưa làm).
+### 3.6 — Mở rộng lên 30 family (theo yêu cầu, sau khi duyệt 3.5)
+
+30 tên thật lấy từ `rulebase/documents/*.yaml` (bộ tham số nội dung track 1,
+44 file có sẵn — chọn 30 loại khác biệt nhất về cấu trúc, bỏ các biến thể
+gần trùng: `resort_stay`≈`hotel_stay`, `convenience_store`≈`retail_vat_
+invoice`, `form_checklist_table`≈`form_checklist`, `bakery_order` không có
+`sections:` để đối chiếu). Gồm:
+
+- **2 family giữ nguyên từ 3.5** (`invoice_detailed`, `insurance_property_
+  contract`) — đổi tên từ nhãn chung "invoice"/"contract" sang đúng tên
+  thật trong `rulebase/documents/`, vì không có file `invoice.yaml` hay
+  `contract.yaml` chung chung nào ở đó. "certificate" chung chung của bản
+  thí điểm bị bỏ hẳn — tách thành 5 loại cụ thể (`insurance_auto/fire/
+  health/moto/travel_certificate`) nằm trong 28 family mới.
+- **28 family mới**, dựng bằng `agent/grammar.py::_family()` từ hai con số
+  đọc thẳng từ dữ liệu, không suy luận:
+  - `sig = len(signature_labels)` trong chính `rulebase/documents/<tên>.yaml`;
+  - `table`/`parties` = có mặt `table`/`parties` trong `sections:` của
+    layout khớp nhất (`_SOURCE` trong `agent/grammar.py` ghi rõ ánh xạ tên
+    document → tên layout, vì hai bên không phải lúc nào cũng trùng tên —
+    ví dụ `utility_power` dựng bằng `invoice_power.yaml`).
+
+**Cố tình KHÔNG viết 30 câu chuyện ràng buộc khác nhau** (30 lần suy luận
+tay còn tệ hơn 1 lần, đúng bài học từ 3.5) — `_family()` sinh ràng buộc
+GENERIC nhưng đúng logic đã dùng ở hai family thí điểm: bảng phức tạp
+(`table == "grouped"`) → header phải nhường chỗ (`two_column`/`compact`);
+nhiều chữ ký (`signature_count >= 3`) → layout phải xếp chồng (`stacked`/
+`approval_chain`), nhánh `signature_layout` chỉ xuất hiện khi có ít nhất
+một family-instance đạt ngưỡng đó. `party_block`/`table` chỉ xuất hiện khi
+dữ liệu thật xác nhận block ấy có mặt — một family không có `table` trong
+`sections:` thật thì KHÔNG có nhánh `table` (không phải nhánh có option
+`"none"`, đúng bài học từ lỗi #1 ở 3.5).
+
+**Số đo (task 3.2's DoD) — cả 30 family đều `cut > 0`:**
+
+| Family | Thô | Sau ràng buộc | Cắt |
+|---|---:|---:|---:|
+| `invoice_detailed` | 1296 | 435 | 861 (66%) |
+| `insurance_property_contract` | 972 | 560 | 412 (42%) |
+| `hospital_bill`, `hotel_stay`, `insurance_application_form`, `insurance_fire_certificate`, `insurance_life_schedule`, `utility_power`, `utility_water`, `handover_record` | 432 | 288 | 144 (33%) |
+| `export_invoice`, `form_sectioned`, `insurance_health_certificate`, `insurance_travel_certificate` | 216 | 144 | 72 (33%) |
+| `authorisation_letter`, `cash_receipt_voucher`, `form_symmetric`, `leave_application`, `meeting_minutes` | 216 | 198 | 18 (8%) |
+| `form_activity`, `form_roster` | 144 | 108 | 36 (25%) |
+| `retail_vat_invoice` | 144 | 108 | 36 (25%) |
+| `tax_invoice_en` | 144 | 96 | 48 (33%) |
+| `dispatch_letter`, `form_checklist`, `form_dense`, `insurance_auto_certificate`, `insurance_cargo_policy`, `insurance_moto_certificate` | 108 | 99 | 9 (8%) |
+| `insurance_health_id_card` | 72 | 66 | 6 (8%) |
+
+Không family nào `cut == 0`. Test khoá lại toàn bộ:
+`tests/test_grammar.py::test_every_family_has_a_real_not_decorative_constraint`
+(chạy trên tất cả 30, không riêng 2 family cũ).
+
+**Test mới** (7 test, cộng vào 14 test cũ, tổng 21):
+`test_thirty_family_pass_plus_the_two_hand_reasoned_pilots`,
+`test_every_family_traces_to_a_real_rulebase_source`,
+`test_a_family_with_no_signature_data_gets_a_zero_floor_not_negative`,
+`test_a_family_without_a_table_in_its_source_has_no_table_branch`,
+`test_a_family_with_a_table_in_its_source_has_one`,
+`test_a_family_with_no_parties_section_has_no_party_block_branch`,
+`test_high_signature_count_families_get_a_layout_branch`,
+`test_low_signature_count_families_skip_the_layout_branch`.
+
+**Trạng thái tổng Phase 3:** 30 family — 2 hand-reasoned (đối chiếu ở 3.5)
++ 28 dựng từ dữ liệu (`_family()`, 3.6). Tất cả đã đo `space_size`, tất cả
+`cut > 0`, tất cả có nguồn đối chiếu ghi trong `_SOURCE`. **Xong Phase 3.**
+Task 2.3 ("validation pre-LLM: plan hợp lệ trước khi gọi model") giờ có đủ
+điều kiện để làm ở Phase 4, đúng như đã hoãn.
 
 ---
 

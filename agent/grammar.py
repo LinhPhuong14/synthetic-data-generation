@@ -27,29 +27,39 @@ narrowing is real by counting raw vs. constrained size; a family whose
 constrained count equals its raw count has decorative constraints, not
 real ones, and should not be considered done.
 
-## Scope of this pilot
+## Scope
 
-Three families (`invoice`, `contract`, `certificate`), deliberately not all
-twelve `DOMAINS` industries -- the point of a pilot is to find out whether
-this shape generalizes before writing thirty of them.
+Started as three families (a generic "invoice"/"contract"/"certificate"),
+deliberately not all twelve `DOMAINS` industries -- the point of a pilot
+was to find out whether this shape generalizes before writing thirty of
+them. It did, so there are thirty now: two hand-reasoned families kept from
+the pilot (`invoice_detailed`, `insurance_property_contract` -- renamed
+from the generic pilot labels once cross-checking showed no
+`rulebase/documents/invoice.yaml` or `contract.yaml` exists, only specific
+document names) plus twenty-eight more built by `_family()` from real
+signature counts and section presence read out of `rulebase/`. Five of the
+thirty are the specific certificate types that used to be one generic
+"certificate" pilot family -- see `_SOURCE` and the long comment above the
+family definitions for exactly what was read from where.
 
-**Cross-checked against `rulebase/layouts/*.yaml`, not left as hand-written
-guesses.** A first draft of these three families was written from plausible
-reasoning alone; checked against real layout files before scaling up (see
-the long comment above the family definitions below), which is exactly how
-it caught two real errors -- invoices coded as sometimes having no table
-(23/23 real invoice layouts have one) and as always having a signature
-(6/23 real layouts have none) -- neither guessable from "plausible
-reasoning" alone. `rulebase/layouts/` answers presence/absence of a whole
-section reliably (its `sections:` list); it does not describe a discrete
-decision tree the way this module does, so the finer options *inside* a
-present block (how many `header` variants, what they are named) are still
-this module's own vocabulary, not something transcribed from rulebase --
-noted at each such branch. Widen or replace any of it as real generated
-output disagrees -- the mechanism (branches + constraints + measured
-narrowing + cross-checked against a second, independently-built source of
-domain knowledge) is what this pilot validates, not that every rule here
-is final.
+**Cross-checked against `rulebase/layouts/*.yaml` and
+`rulebase/documents/*.yaml`, not left as hand-written guesses.** The first
+draft of the three pilot families was written from plausible reasoning
+alone; checked against real layout files before scaling up, which is
+exactly how it caught two real errors -- invoices coded as sometimes having
+no table (23/23 real invoice layouts have one) and as always having a
+signature (6/23 real layouts have none) -- neither guessable from
+"plausible reasoning" alone. The same two numbers (`sections:` presence,
+`len(signature_labels)`) drove all twenty-eight `_family()` grammars too.
+`rulebase/` answers presence/absence of a whole section reliably; it does
+not describe a discrete decision tree the way this module does, so the
+finer options *inside* a present block (how many `header` variants, what
+they are named) are still this module's own vocabulary, not something
+transcribed from rulebase -- noted at each such branch. Widen or replace
+any of it as real generated output disagrees -- the mechanism (branches +
+constraints + measured narrowing + cross-checked against a second,
+independently-built source of domain knowledge) is what this pilot
+validated, not that every rule here is final.
 """
 
 from __future__ import annotations
@@ -196,14 +206,18 @@ def space_size(grammar: Grammar) -> dict[str, int]:
     return {"raw": raw, "constrained": constrained, "cut": raw - constrained}
 
 
-# ------------------------------------------------------------- pilot families
+# ------------------------------------------- two hand-reasoned pilot families
 
-# ĐỐI CHIẾU VỚI `rulebase/layouts/*.yaml`, không suy luận tay.
+# ĐỐI CHIẾU VỚI `rulebase/layouts/*.yaml` VÀ `rulebase/documents/*.yaml`,
+# không suy luận tay -- áp dụng cho cả hai family thí điểm dưới đây
+# (`invoice_detailed`, `insurance_property_contract`) và cho cả 30 family
+# ở phần dưới file này.
 #
-# Bản đầu của ba family này (trước khi đối chiếu) viết ra từ suy luận hợp
-# lý, và người dùng đúng khi không tin điều đó ở quy mô 30 family -- so với
-# `rulebase/layouts/invoice_*.yaml` (23 layout gốc, không tính biến thể
-# `_part`/`_note`/`_titl`/`_word` chỉ đè một phần) lộ ra hai chỗ sai thật:
+# Bản đầu của hai family này (trước khi đối chiếu, khi còn tên chung
+# "invoice"/"contract") viết ra từ suy luận hợp lý, và người dùng đúng khi
+# không tin điều đó ở quy mô 30 family -- so với `rulebase/layouts/
+# invoice_*.yaml` (23 layout gốc, không tính biến thể `_part`/`_note`/
+# `_titl`/`_word` chỉ đè một phần) lộ ra hai chỗ sai thật:
 #
 # 1. Bản đầu cho `table` của invoice có lựa chọn `"none"` -- SAI. **23/23**
 #    layout hoá đơn thật đều có `table` trong `sections:`. Không có invoice
@@ -214,18 +228,20 @@ def space_size(grammar: Grammar) -> dict[str, int]:
 #    minimalist`, `invoice_tax_en`) KHÔNG có `signatures` trong
 #    `sections:`. Thêm `0` vào `signature_count`.
 #
-# Certificate: đối chiếu `rulebase/layouts/insurance_*_certificate.yaml` (5
-# layout gốc) lộ ra ràng buộc "sparse -> không bảng" bản đầu PHÓNG ĐẠI mức
-# hiếm của bảng -- **3/5** (`fire`, `health`, `travel`) CÓ `table`, chỉ
-# `auto`/`moto` không có. Bảng ở certificate không hiếm, nó gắn với việc
-# certificate có xác nhận NHIỀU khoản mục (quyền lợi, hạng mục bảo hiểm) hay
-# chỉ MỘT sự việc đơn (xác nhận một xe, một người) -- đổi tên trục cho đúng
-# nghĩa thay vì mượn "density".
-#
 # Contract: đối chiếu `rulebase/layouts/insurance_property_contract.yaml`
 # (đại diện gần nhất trong rulebase cho "hợp đồng có phụ lục bảng") lộ ra
 # bản đầu THIẾU HẲN nhánh `table` -- layout thật có `table` + `totals`
 # (bảng hạng mục/mức trách nhiệm). Thêm nhánh này.
+#
+# Sau đối chiếu, đổi TÊN family từ nhãn chung ("invoice", "contract") sang
+# đúng tên tài liệu thật trong `rulebase/documents/` -- không có
+# `rulebase/documents/invoice.yaml` hay `contract.yaml` chung chung nào cả,
+# chỉ có `invoice_detailed.yaml`/`invoice_plain.yaml` (đại diện bởi
+# `invoice_detailed` dưới đây) và `insurance_property_contract.yaml`. Tám
+# loại certificate cụ thể (`insurance_auto_certificate`,
+# `insurance_fire_certificate`, ...) đã tách riêng trong phần 30 family bên
+# dưới, nên "certificate" chung chung của bản thí điểm không còn cần nữa --
+# gộp về đúng tên thật, không giữ một nhãn hư cấu song song với tên thật.
 #
 # Vẫn còn giới hạn thật: `rulebase/layouts/` mô tả layout do ENGINE vẽ
 # (track 1, tham số liên tục -- `width: [88, 100]`, `name_scale: [1.25,
@@ -238,8 +254,8 @@ def space_size(grammar: Grammar) -> dict[str, int]:
 # chiếu hết.
 
 
-INVOICE = Grammar(
-    family="invoice",
+INVOICE_DETAILED = Grammar(
+    family="invoice_detailed",
     branches=(
         Branch("header", ("centered", "left_aligned", "two_column", "compact")),
         Branch("customer_info", ("horizontal", "vertical", "boxed", "mixed")),
@@ -276,8 +292,8 @@ INVOICE = Grammar(
     ),
 )
 
-CONTRACT = Grammar(
-    family="contract",
+INSURANCE_PROPERTY_CONTRACT = Grammar(
+    family="insurance_property_contract",
     branches=(
         Branch("header", ("national_heading", "corporate_masthead", "compact_corner")),
         Branch("party_block", ("side_by_side", "stacked", "single_block")),
@@ -323,41 +339,159 @@ CONTRACT = Grammar(
     ),
 )
 
-CERTIFICATE = Grammar(
-    family="certificate",
-    branches=(
-        Branch("header", ("centered", "national_heading", "seal_top")),
-        Branch("layout", ("single_column", "centered_hierarchy")),
-        Branch("table", ("none", "simple")),
-        # THAY "density" bằng trục đúng nghĩa hơn sau đối chiếu:
-        # `insurance_fire/health/travel_certificate.yaml` (3/5 layout thật)
-        # CÓ bảng -- bảng gắn với "xác nhận nhiều khoản mục" (quyền lợi,
-        # hạng mục), không gắn với sparse/dense. `insurance_auto/moto_
-        # certificate.yaml` (2/5, không bảng) xác nhận một sự việc đơn.
-        Branch("confirms", ("single_fact", "itemized_list")),
-        Branch("signature_count", (1, 2)),
-    ),
-    constraints=(
-        # Xác nhận một sự việc đơn (một xe, một người) không có gì để liệt
-        # kê thành bảng -- bảng tồn tại để xếp NHIỀU khoản mục.
-        Constraint(when=("confirms", "==", "single_fact"),
-                  then=("table", "==", "none")),
-        # Two signers (issuer + witness, or two co-signing officials) is
-        # the case a centered hierarchy exists to arrange; a plain single
-        # column reads as one voice, which fits one signer better.
-        Constraint(when=("signature_count", "==", 2),
-                  then=("layout", "==", "centered_hierarchy")),
-    ),
-    field_compat=(
-        FieldCompat("doc_title", ()),
-        FieldCompat("meta.value", ("lexical", "format")),
-        FieldCompat("sign.name", ()),
-    ),
-)
+# ------------------------------------------- remaining 28, built from data
 
-FAMILIES: dict[str, Grammar] = {g.family: g for g in (INVOICE, CONTRACT, CERTIFICATE)}
+# CÙNG CÁCH ĐỐI CHIẾU với hai family thí điểm ở trên, mở rộng ra 30 tên
+# thật lấy từ `rulebase/documents/*.yaml` (bộ tham số nội dung track 1 --
+# 44 file, chọn 30 loại khác biệt nhất về cấu trúc, bỏ các biến thể gần
+# trùng: `resort_stay`≈`hotel_stay`, `convenience_store`≈`retail_vat_
+# invoice`, `form_checklist_table`≈`form_checklist`, `bakery_order` không
+# có layout khớp để đối chiếu `sections:`).
+#
+# Với mỗi family, hai con số đọc trực tiếp từ dữ liệu thật, không suy luận:
+#
+# - `sig`: `len(signature_labels)` trong chính `rulebase/documents/<tên>.yaml`.
+# - `table`/`parties`: đọc `sections:` của layout khớp nhất trong
+#   `rulebase/layouts/` (ánh xạ tên ghi trong `_SOURCE` dưới, vì tên file
+#   layout không phải lúc nào cũng trùng tên file document -- ví dụ
+#   `utility_power` (document) dựng bằng `invoice_power.yaml` (layout)).
+#
+# `_family()` dựng Grammar từ hai con số ấy cộng branch chung (`header`,
+# `density`) -- KHÔNG viết 30 câu chuyện khác nhau cho từng family (30 lần
+# suy luận tay còn tệ hơn 1 lần, đúng bài học vừa học được với 3 family
+# đầu). Ràng buộc sinh ra generic nhưng đúng cùng logic đã dùng ở hai family
+# thí điểm (bảng phức tạp cần header nhường chỗ; nhiều chữ ký cần layout
+# xếp chồng) -- áp lại có chủ đích, không phải áp bừa.
+#
+# `sig_center` cho khoảng `signature_count` bằng `{center-1, center, center+1}`
+# (sàn ở 0) -- biến thiên thật quanh con số đã đo, không bịa một khoảng
+# rộng hơn dữ liệu cho phép.
+
+_SOURCE: dict[str, dict[str, object]] = {
+    "authorisation_letter": {"sig": 4, "table": False, "parties": True,
+                             "doc": "authorisation_letter.yaml",
+                             "layout": "authorisation_letter.yaml"},
+    "cash_receipt_voucher": {"sig": 5, "table": False, "parties": True,
+                             "doc": "cash_receipt_voucher.yaml",
+                             "layout": "form_cash_voucher.yaml"},
+    "dispatch_letter": {"sig": 1, "table": False, "parties": True,
+                        "doc": "dispatch_letter.yaml",
+                        "layout": "form_dispatch_letter.yaml"},
+    "export_invoice": {"sig": 1, "table": True, "parties": True,
+                       "doc": "export_invoice.yaml", "layout": "invoice_export.yaml"},
+    "form_activity": {"sig": 2, "table": True, "parties": False,
+                      "doc": "form_activity.yaml",
+                      "layout": "form_activity_signature.yaml"},
+    "form_checklist": {"sig": 1, "table": False, "parties": True,
+                       "doc": "form_checklist.yaml",
+                       "layout": "form_checkbox_heavy.yaml"},
+    "form_dense": {"sig": 1, "table": False, "parties": True,
+                  "doc": "form_dense.yaml", "layout": "form_dense_registration.yaml"},
+    "form_roster": {"sig": 3, "table": True, "parties": False,
+                    "doc": "form_roster.yaml", "layout": "form_timesheet_grid.yaml"},
+    "form_sectioned": {"sig": 1, "table": True, "parties": True,
+                       "doc": "form_sectioned.yaml", "layout": "form_multi_section.yaml"},
+    "form_symmetric": {"sig": 2, "table": False, "parties": True,
+                       "doc": "form_symmetric.yaml", "layout": "form_two_column.yaml"},
+    "handover_record": {"sig": 3, "table": True, "parties": True,
+                        "doc": "handover_record.yaml",
+                        "layout": "form_handover_record.yaml"},
+    "hospital_bill": {"sig": 4, "table": True, "parties": True,
+                      "doc": "hospital_bill.yaml", "layout": "medical_statement.yaml"},
+    "hotel_stay": {"sig": 2, "table": True, "parties": True,
+                  "doc": "hotel_stay.yaml", "layout": "invoice_hotel_stay.yaml"},
+    "insurance_application_form": {"sig": 2, "table": True, "parties": True,
+                                   "doc": "insurance_application_form.yaml",
+                                   "layout": "insurance_application_form.yaml"},
+    "insurance_auto_certificate": {"sig": 1, "table": False, "parties": True,
+                                   "doc": "insurance_auto_certificate.yaml",
+                                   "layout": "insurance_auto_certificate.yaml"},
+    "insurance_cargo_policy": {"sig": 1, "table": False, "parties": True,
+                               "doc": "insurance_cargo_policy.yaml",
+                               "layout": "insurance_cargo_policy.yaml"},
+    "insurance_fire_certificate": {"sig": 2, "table": True, "parties": True,
+                                   "doc": "insurance_fire_certificate.yaml",
+                                   "layout": "insurance_fire_certificate.yaml"},
+    "insurance_health_certificate": {"sig": 1, "table": True, "parties": True,
+                                     "doc": "insurance_health_certificate.yaml",
+                                     "layout": "insurance_health_certificate.yaml"},
+    "insurance_health_id_card": {"sig": 0, "table": False, "parties": True,
+                                 "doc": "insurance_health_id_card.yaml",
+                                 "layout": "insurance_health_id_card.yaml"},
+    "insurance_life_schedule": {"sig": 2, "table": True, "parties": True,
+                                "doc": "insurance_life_schedule.yaml",
+                                "layout": "insurance_life_schedule.yaml"},
+    "insurance_moto_certificate": {"sig": 1, "table": False, "parties": True,
+                                   "doc": "insurance_moto_certificate.yaml",
+                                   "layout": "insurance_moto_certificate.yaml"},
+    "insurance_travel_certificate": {"sig": 1, "table": True, "parties": True,
+                                     "doc": "insurance_travel_certificate.yaml",
+                                     "layout": "insurance_travel_certificate.yaml"},
+    "leave_application": {"sig": 3, "table": False, "parties": True,
+                          "doc": "leave_application.yaml",
+                          "layout": "form_leave_application.yaml"},
+    "meeting_minutes": {"sig": 2, "table": False, "parties": True,
+                        "doc": "meeting_minutes.yaml",
+                        "layout": "form_meeting_minutes.yaml"},
+    # market_vat.yaml has no `sections:` list (till-receipt family uses a
+    # different, row-oriented layout schema) -- table=True is read from its
+    # own docstring instead ("dòng đầu... tên; dòng thứ hai... số lượng,
+    # đơn giá, thành tiền" is an item table by definition), not from
+    # `sections:`. `parties=False`: a retail till slip has no buyer/seller
+    # block, just a header and an item list.
+    "retail_vat_invoice": {"sig": 2, "table": True, "parties": False,
+                           "doc": "retail_vat_invoice.yaml", "layout": "market_vat.yaml"},
+    "tax_invoice_en": {"sig": 0, "table": True, "parties": True,
+                       "doc": "tax_invoice_en.yaml", "layout": "invoice_tax_en.yaml"},
+    "utility_power": {"sig": 2, "table": True, "parties": True,
+                      "doc": "utility_power.yaml", "layout": "invoice_power.yaml"},
+    "utility_water": {"sig": 2, "table": True, "parties": True,
+                      "doc": "utility_water.yaml", "layout": "invoice_water.yaml"},
+}
 
 
-__all__ = ["CERTIFICATE", "CONTRACT", "FAMILIES", "INVOICE", "STRATEGIES",
-          "Branch", "Condition", "Constraint", "FieldCompat", "Grammar",
-          "space_size", "valid_options"]
+def _sig_options(center: int) -> tuple[int, ...]:
+    return tuple(sorted({max(0, center - 1), center, center + 1}))
+
+
+def _family(name: str) -> Grammar:
+    info = _SOURCE[name]
+    branches = [
+        Branch("header", ("centered", "left_aligned", "two_column", "compact")),
+        Branch("density", ("sparse", "medium", "dense")),
+    ]
+    constraints = []
+    if info["parties"]:
+        branches.append(Branch("party_block", ("side_by_side", "stacked", "single_block")))
+        # Same reasoning as `insurance_property_contract`/`invoice_detailed`
+        # above: a compact header claims the width a side-by-side party
+        # block needs.
+        constraints.append(Constraint(when=("header", "==", "compact"),
+                                     then=("party_block", "!=", "side_by_side")))
+    if info["table"]:
+        branches.append(Branch("table", ("simple", "grouped")))
+        constraints.append(Constraint(when=("table", "==", "grouped"),
+                                     then=("header", "in", ("two_column", "compact"))))
+    sig_center = int(info["sig"])
+    sig_options = _sig_options(sig_center)
+    branches.append(Branch("signature_count", sig_options))
+    if max(sig_options) >= 3:
+        branches.append(Branch("signature_layout", ("stacked", "approval_chain")))
+        many = tuple(n for n in sig_options if n >= 3)
+        constraints.append(Constraint(when=("signature_count", "in", many),
+                                     then=("signature_layout", "in",
+                                           ("stacked", "approval_chain"))))
+    return Grammar(family=name, branches=tuple(branches), constraints=tuple(constraints))
+
+
+_THIRTY = tuple(_family(name) for name in _SOURCE)
+
+
+FAMILIES: dict[str, Grammar] = {
+    g.family: g for g in (INVOICE_DETAILED, INSURANCE_PROPERTY_CONTRACT) + _THIRTY
+}
+
+
+__all__ = ["FAMILIES", "INSURANCE_PROPERTY_CONTRACT", "INVOICE_DETAILED",
+          "STRATEGIES", "Branch", "Condition", "Constraint", "FieldCompat",
+          "Grammar", "space_size", "valid_options"]
