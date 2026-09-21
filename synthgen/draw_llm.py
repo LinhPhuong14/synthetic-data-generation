@@ -649,12 +649,30 @@ class Drawer:
         # lượt. Người xem cần thấy mũi tên khoá->giá trị của MỘT tờ ngay khi
         # tờ ấy vừa xong -- đợi hết lượt (có thể hàng chục phút) mới có ảnh
         # đầu tiên là đúng cái giá `Artist` (lớp gọi hàm này) sinh ra để né.
-        # Bản rút gọn: không đổi giọng mô tả, không dựng schema -- những việc
-        # đó là việc của `finish()`/`derive.py` chạy một lần cho cả lô.
+        # Bản rút gọn: không đổi giọng mô tả, không dựng lại `kie.schema` --
+        # những việc đó vẫn là việc của `finish()`/`derive.py` chạy một lần
+        # cho cả lô, khi nó chạy.
         try:
-            full_pairs, _counts = kie_complete(record, source)
+            full_pairs, kie_counts = kie_complete(record, source)
         except Exception:                                    # noqa: BLE001
-            full_pairs = []
+            full_pairs, kie_counts = [], {}
+        # GHI LẠI VÀO CHÍNH `record`, không chỉ dùng để vẽ. Trước đây
+        # `full_pairs` chỉ tồn tại trong bộ nhớ cho một tấm ảnh rồi mất --
+        # `records/*.json` ghi ra đĩa vẫn giữ `kie.pairs` NGHÈO của `pipeline/
+        # record.py::build()` (label-kề-nhau, bỏ sót toàn bộ ô bảng) cho tới
+        # khi `derive.py` chạy. Một lượt không tới lượt `derive` (`--no-draw`
+        # rồi vẽ tay bằng `draw_llm` đơn, batch bị ngắt giữa chừng, hay
+        # `finish(skip_derive=True)`) thì JSON nằm lại mãi ở dạng nghèo đó --
+        # đo được đúng ca này trên `data/rerun-unwrap`: `kie.pairs` chỉ 4 cặp
+        # (MST/ĐT/Số hiệu/Ngày), không cặp nào cho bảng, dù bảng có `data-row`/
+        # `data-col` đầy đủ và `complete()` chạy tay ra đúng 153 cặp kể cả
+        # `tc1_r1` khớp thẳng dòng "Nguyễn Văn Hùng". Ghi thẳng ở đây thì JSON
+        # trên đĩa ĐÚNG NGAY TỪ ĐẦU, không phụ thuộc có chạy `derive` sau hay
+        # không -- `derive.py` vẫn ghi đè lại bằng bản đổi giọng mô tả nếu nó
+        # chạy, không xung đột.
+        record.setdefault("kie", {})["pairs"] = full_pairs
+        if kie_counts:
+            record["kie"]["coverage"] = kie_counts
         for num, img in enumerate(got["images"], start=1):
             name = stem if num == 1 else f"{stem}_p{num}"
             cv2.imwrite(str(root / "images" / kind / f"{name}.jpg"), img,
