@@ -54,6 +54,8 @@ from pipeline import record as R  # noqa: E402
 from synthgen import content as C  # noqa: E402
 from synthgen import design as D  # noqa: E402
 from synthgen import markup as M  # noqa: E402
+from synthgen.kie_full import complete as kie_complete  # noqa: E402
+from synthgen.phrasing import voice_record  # noqa: E402
 from synthgen import overlay as O  # noqa: E402
 from synthgen import paginate as P  # noqa: E402
 
@@ -83,19 +85,23 @@ MEASURE_JS = """() => {
       if (box.height <= 0 && box.width <= 0) continue;
       if (box.bottom > bottom) bottom = box.bottom;
     }
-    const table = sheet.querySelector('table.items');
-    const thead = table ? table.querySelector('thead') : null;
-    const rows = [...sheet.querySelectorAll('tr.itemrow')]
-        .map(tr => tr.getBoundingClientRect().height);
+    // KHỐI CHẢY, tra bằng `data-flow` chứ bằng tên một khối cụ thể. Câu
+    // truy vấn cũ là `table.items` + `tr.itemrow`, nên khối chảy thứ hai đo
+    // ra sức chứa bằng không và `paginate.py` im lặng in một tờ.
+    // `markup.FLOW_BUILDERS` là chỗ gắn hai thuộc tính ấy.
+    const flow = sheet.querySelector('[data-flow]');
+    const head = flow ? flow.querySelector('thead') : null;
+    const rows = [...sheet.querySelectorAll('[data-flow-item]')]
+        .map(el => el.getBoundingClientRect().height);
     out.push({
       paper: paper,
       used: (bottom - rect.top) + padBottom,
       height: rect.height,
       rows: rows,
-      thead: thead ? thead.getBoundingClientRect().height : 0,
+      flowHead: head ? head.getBoundingClientRect().height : 0,
       padTop: padTop, padBottom: padBottom,
-      tableTop: table ? table.getBoundingClientRect().top - rect.top : 0,
-      tableBottom: table ? table.getBoundingClientRect().bottom - rect.top : 0,
+      flowTop: flow ? flow.getBoundingClientRect().top - rect.top : 0,
+      flowBottom: flow ? flow.getBoundingClientRect().bottom - rect.top : 0,
     });
   }
   return out;
@@ -181,8 +187,15 @@ class Studio:
     def __init__(self, *, scale: float = 2.0,
                  short_size: tuple[int, int] = (980, 1560),
                  jpeg_quality: int = 92, augment: str = "off",
-                 handwriting: str = "off", hand_share: float = 1.0):
+                 handwriting: str = "off", hand_share: float = 1.0,
+                 pages: tuple[int, int] | None = None):
         self.scale = scale
+        # Khoảng số tờ lượt chạy này nhắm tới, `run.py --pages LO-HI`. Đi qua
+        # hàm dựng chứ không qua biến môi trường: một shard là một tiến trình
+        # con, và `unique_seeds()` ở tiến trình CHA phải tính chữ ký dáng bằng
+        # đúng khoảng ấy -- lệch nhau thì hai bên khử trùng trên hai không
+        # gian dáng khác nhau mà không ai báo.
+        self.pages = pages
         self.short_size = short_size
         self.jpeg_quality = jpeg_quality
         # `off` (mặc định) vẽ giấy sạch, y như trước khi có dòng này. Bật lên
@@ -318,11 +331,16 @@ class Studio:
         return recipe_for(document, 0, self._rules)
 
     def document(self, seed: int, index: int, naming: str) -> Drawn:
-        design = D.draw(random.Random(seed), seed)
+        design = D.draw(random.Random(seed), seed, pages=self.pages)
         rng = random.Random(seed ^ CONTENT_SALT)
         arch = design.archetype
 
-        probe = max(min(8, arch.rows[1]), 1) if design.has("table") else 0
+        # Sàn và trần số MỤC của khối chảy -- dòng hàng nếu là bảng, điều
+        # khoản nếu là điều khoản. Đọc `design.flow` chứ không đọc `arch.rows`
+        # thẳng: `arch.rows` là sức chứa của riêng cái bảng, và dùng nó cho
+        # một tài liệu chảy bằng điều khoản là hỏi sai câu hỏi.
+        flow_floor, flow_ceiling = D.flow_span(design.flow, arch)
+        probe = max(min(8, flow_ceiling), 1) if design.flow else 0
         doc = C.build(design, rng, probe)
 
         # `drawn` là thứ trình duyệt ĐANG hiển thị, không phải thứ vừa được
@@ -367,14 +385,14 @@ class Studio:
                               design.paper.id)
             raw = self._page.evaluate(MEASURE_JS)
             return [P.Sheet(paper=s["paper"], used=s["used"], height=s["height"],
-                            rows=list(s["rows"]), thead=s["thead"],
+                            rows=list(s["rows"]), flow_head=s["flowHead"],
                             pad_top=s["padTop"], pad_bottom=s["padBottom"],
-                            table_top=s["tableTop"], table_bottom=s["tableBottom"])
+                            flow_top=s["flowTop"], flow_bottom=s["flowBottom"])
                     for s in raw]
 
         plan = P.plan(measure, rows_probe=probe,
                       target_pages=design.target_pages,
-                      rows_floor=arch.rows[0], rows_ceiling=arch.rows[1],
+                      rows_floor=flow_floor, rows_ceiling=flow_ceiling,
                       refill=refill, set_boost=set_boost, set_paper=set_paper)
 
         # Trang đang nạp có đúng là trang của kế hoạch không. Thường là có --
@@ -463,6 +481,18 @@ class Studio:
             filename=names[0], width=pages[0]["width"], height=pages[0]["height"],
             parser="html", ink="print", extracted=_extracted(doc),
             seed=seed, layout=arch.id, sheets=pages)
+        # ĐỔI GIỌNG MÔ TẢ KIE, ngay đây -- không đợi `derive.py`.
+        #
+        # `rulebase/kie_phrasings.json` có 967 cách nói cho 237 câu gốc, nhưng
+        # `pipeline/kie.py` tra MỘT bảng dùng chung cho mọi loại chứng từ, nên
+        # trước dòng này mọi trường `dia_chi` trên cả bộ mang y hệt một câu --
+        # đo được: 88/88 tên trường dùng chung nhiều file có đúng MỘT cách
+        # viết, 100% trùng.
+        #
+        # Đổi giọng KHÔNG còn ở đây: `write()` gọi `phrasing.voice_record`
+        # cùng lúc dựng KIE đầy đủ, và bản ở đây thiếu phép ÉP DUY NHẤT trong
+        # một trang -- hai trường khác nhau trên cùng tờ vẫn bốc trúng cùng
+        # một câu, 20% số tờ mắc. Một luật, một chỗ.
         if state.get("hand"):
             # Một tờ giấy nói mình được điền tay mà chỉ có ba ô có mực là một
             # sự thật về cái bút, không phải sai số -- nên nó nằm trong NHÃN,
@@ -526,6 +556,26 @@ def write(drawn: Drawn, out: Path, *, indent: int | None = None) -> list[dict]:
     rows: list[dict] = []
     record = drawn.record
     kind = str(record.get("extracted", {}).get("doc_type") or "khac")
+    # KIE ĐẦY ĐỦ NGAY LÚC VẼ, cùng lẽ `draw_llm.py` đã làm ở `d14df8e`.
+    #
+    # `pipeline/record.py::build()` chỉ ghép được cặp có nhãn in kề nhau, và
+    # `records/*.json` ra đĩa mang đúng bản nghèo ấy cho tới khi `derive.py`
+    # chạy. Một lượt không tới lượt `derive` -- batch đứt, `--no-derive`, hay
+    # vẽ tay một tờ -- thì bản ghi nằm lại mãi thiếu toàn bộ ô bảng, điều
+    # khoản, bảng hỏi và khối chữ ký. Đường LLM đã được chữa; đường phôi thì
+    # chưa, nên hai đường sinh ra hai chất lượng nhãn khác nhau từ cùng một
+    # bộ luật.
+    #
+    # Hỏng lặng lẽ thì lùi về bản nghèo, không làm hỏng cả lượt vẽ: nhãn thiếu
+    # còn `derive.py` vá được, chứ ảnh không vẽ ra thì mất hẳn.
+    try:
+        full_pairs, counts = kie_complete(record, drawn.markup)
+        voice_record(record, full_pairs, stem=drawn.stem)
+        record.setdefault("kie", {})["pairs"] = full_pairs
+        if counts:
+            record["kie"]["coverage"] = counts
+    except Exception:                                        # noqa: BLE001
+        pass
     kie = O.kie_index(record)
     for number, name in enumerate(drawn.names, start=1):
         stem = Path(name).stem

@@ -61,10 +61,12 @@ def test_pages_is_an_array_so_the_schema_has_no_dynamic_keys():
     assert doc["doc_type"] == "hoa_don"
     assert isinstance(doc["pages"], list)
     assert doc["pages"][0]["page"] == 1
-    # Bốn khoang của một trang, LUÔN có mặt kể cả rỗng -- cùng lý do khiến
+    # Sáu khoang của một trang, LUÔN có mặt kể cả rỗng -- cùng lý do khiến
     # `pages` là mảng: hình dạng cố định thì bộ sinh có ràng buộc đi theo được.
-    assert set(doc["pages"][0]) == {"page", "size", "fields",
-                                    "tables", "signatures", "marks"}
+    assert set(doc["pages"][0]) == {"page", "size", "fields", "tables",
+                                    "lists", "signatures", "marks"}
+    assert set(doc["pages"][0]["lists"]) == {"clauses", "questions",
+                                             "legal_basis"}
     assert doc["pages"][0]["tables"] == []
     assert doc["pages"][0]["signatures"] == []
     assert doc["pages"][0]["marks"] == []
@@ -328,10 +330,11 @@ def test_printed_furniture_is_a_mark_not_a_value():
 
 
 def test_a_signature_block_keeps_the_title_with_the_name():
-    """Chức danh và tên là MỘT khối. Rời nhau thì "ai ký chức danh X" vô nghĩa.
+    """CHỨC DANH là khoá của khối chữ ký, tên người ký là giá trị.
 
-    Cặp `family` của `kie_full` đã nối sẵn; ở đây chỉ gói lại và đánh số theo
-    thứ tự đọc."""
+    Rời nhau thì "ai ký chức danh X" vô nghĩa, và ba người ký trên một tờ
+    không có gì tách họ ra ngoài vị trí. Khoá tên `signer_role`, không phải
+    `title`: nó là VAI của khối, và vai thì đọc được ở mọi tờ."""
     pairs = [a_pair(source="family", key_text="KẾ TOÁN TRƯỞNG",
                     key_box=[10, 700, 120, 715], value="Trần Văn Hải",
                     box=[10, 760, 120, 775],
@@ -343,10 +346,12 @@ def test_a_signature_block_keeps_the_title_with_the_name():
     page = document(a_record(pairs, entities), "cong_van")["pages"][0]
     assert "signer_name" not in page["fields"]
     assert [b["index"] for b in page["signatures"]] == [1, 2]
-    assert page["signatures"][0]["title"]["value"] == "KẾ TOÁN TRƯỞNG"
-    assert page["signatures"][0]["name"]["value"] == "Trần Văn Hải"
+    assert page["signatures"][0]["signer_role"]["value"] == "KẾ TOÁN TRƯỞNG"
+    assert page["signatures"][0]["signer_name"]["value"] == "Trần Văn Hải"
     assert page["signatures"][0]["signed"] is True
-    assert "title" not in page["signatures"][1]
+    # Khối không có chức danh in kèm vẫn mang khoá ấy, rỗng: hình dạng cố định
+    # quan trọng hơn việc tiết kiệm một khoá.
+    assert page["signatures"][1]["signer_role"] == {}
 
 
 def test_two_columns_the_lookup_cannot_name_keep_their_printed_headers():

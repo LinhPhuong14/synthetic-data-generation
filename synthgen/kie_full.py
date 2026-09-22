@@ -38,7 +38,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from pipeline.kie import FURNITURE, slug  # noqa: E402
+from pipeline.kie import FURNITURE, describe as say, slug  # noqa: E402
 from synthgen.design import COLUMNS  # noqa: E402
 
 # `kind` của một cột KHÔNG phải cứ `menu.` + tên cột: cột `discount` in ra
@@ -91,10 +91,14 @@ def implied_for(kind: str) -> tuple[str, str] | None:
 
     `None` chỉ cho những thứ thật sự không phải trường."""
     kind = str(kind or "")
-    if not kind or kind in NEVER or kind.startswith("menu."):
-        return None
+    # BẢNG TRA ĐI TRƯỚC CỔNG `menu.`. Ô bảng nói chung đã vào `line_items` nên
+    # cổng ấy đúng, nhưng `menu.barcode` và `menu.detail` có mục riêng trong
+    # `IMPLIED` mà không bao giờ với tới được vì cổng chặn trước -- đo trên
+    # `data/thu1k`: 100 mã vạch có hộp mà không vào một cặp KIE nào.
     if kind in IMPLIED:
         return IMPLIED[kind]
+    if not kind or kind in NEVER or kind.startswith("menu."):
+        return None
     parts = [w for w in re.split(r"[._]+", kind) if w]
     words = [_WORDS.get(w, w.replace("_", " ")) for w in parts]
     phrase = " ".join(w for w in words if w).strip() or kind
@@ -108,6 +112,8 @@ IMPLIED: dict[str, tuple[str, str]] = {
     "footer": ("footer", "Footer line printed at the bottom of the page."),
     "period": ("period", "Billing or reporting period this document covers."),
     "masthead": ("masthead", "National heading printed above the title."),
+    "masthead.motto": ("masthead_motto",
+                       "Motto line printed under the national heading."),
     "store.name": ("org_name",
                    "Legal name of the organisation that issued this document."),
     "store.branch": ("org_branch",
@@ -162,6 +168,7 @@ class _Spans(HTMLParser):
         self.head_row = -1
         self.cell: dict | None = None
         self.out: list[dict] = []
+        self.cells: list[dict] = []
         # LƯỚI TỰ TÍNH, cho trang model viết.
         #
         # `markup.py` của engine phát `data-row`/`data-col` lên từng ô, nên chỗ
@@ -218,6 +225,9 @@ class _Spans(HTMLParser):
             rows = _int(table.get("rowspan")) or 1
             at = self._seat(span, rows)
             self.cell = {
+                # Chữ của chính ô, gom ở `handle_data`. Chỉ `table_structures`
+                # đọc; `table_pairs` vẫn ghép qua span như cũ.
+                "text": "",
                 "kind": table.get("data-cell"),
                 # Thuộc tính THẮNG khi có: engine biết chỗ ngồi thật của nó,
                 # kể cả khi bảng bị cắt sang tờ sau và chỉ số hàng đánh lại.
@@ -234,7 +244,13 @@ class _Spans(HTMLParser):
                 # trên pilot9: cột "Loại hình" nhận key "Mã hồ sơ" của bảng
                 # dưới. Cột số 1 của hai bảng khác nhau là hai cột khác nhau.
                 "table": self._table,
+                "page": self.sheet,
             }
+            # MỘT con trỏ lưới, hai người đọc. `table_structures` cần MỌI ô,
+            # `table_pairs` chỉ cần ô có span -- nhưng dựng con trỏ cột thứ
+            # hai cho người đọc thứ hai là đúng lỗi nặng nhất kho này có: một
+            # luật mà chỉ một chỗ biết. Ghi chung vào đây, cùng một phép tính.
+            self.cells.append(self.cell)
         elif tag == "span" and "data-kind" in table:
             self.out.append({"page": self.sheet, "cell": self.cell,
                              "kind": table["data-kind"], "text": "",
@@ -253,6 +269,10 @@ class _Spans(HTMLParser):
         # lượng. Xem `table_pairs`.
         if getattr(self, "_open", None) is not None:
             self._open["text"] += data
+        # Chữ của Ô. Một ô chứa span thì cả hai cùng cộng -- đúng: chữ của ô
+        # LÀ chữ các span trong nó, và `table_structures` cần ô, không cần span.
+        if self.cell is not None:
+            self.cell["text"] += data
 
     def handle_endtag(self, tag):
         if tag == "thead":
@@ -291,6 +311,102 @@ def seats(markup: str) -> list[dict]:
     parser.feed(markup)
     parser.close()
     return parser.out
+
+
+# Ngưỡng gọi một bảng KHÔNG có `<thead>` là bảng dữ liệu. Đọc từ hình lưới,
+# không từ chữ: một luật dò "TỔNG"/"STT" trong nội dung là luật đọc tiếng Việt
+# bằng danh sách từ, và nó trượt ngay ở một tờ tiếng Anh.
+DATA_TABLE_MIN_COLS = 2
+DATA_TABLE_MIN_ROWS = 3
+
+
+def table_structures(markup: str) -> list[dict]:
+    """Khai CẤU TRÚC của từng bảng trên trang: vai, hình lưới, và từng ô.
+
+    ## Vì sao cần
+
+    `table_pairs` trả về QUAN HỆ (ô nào dưới tiêu đề nào) nhưng không trả về
+    cái BẢNG. Không có bảng thì không chấm được TEDS/GriTS -- cả hai đều so
+    hai lưới với nhau, và bên phải phải có một lưới để so.
+
+    ## Vì sao KHÔNG canonicalize như PubTables-1M
+
+    PubTables-1M phải gộp ô vì họ SUY NGƯỢC cấu trúc từ PDF đã in: một ô tiêu
+    đề trải bốn cột hiện ra thành bốn ô lưới với ba ô trống, và nhiều cách đọc
+    cùng hợp lệ -- ground truth tự mâu thuẫn. Ở đây cấu trúc do chính markup
+    khai và Chromium dàn theo, nên không có gì để suy.
+
+    Đo để chắc, trên 400 trang nhánh luật và 118 trang nhánh LLM: **0** ô tiêu
+    đề trống, **0** ô tiêu đề `colspan>1`, **0** chuỗi "có chữ rồi trống" cùng
+    tầng. Oversegmentation không xảy ra ở kho này.
+
+    ## Cái mập mờ THẬT
+
+    Không phải ô gộp, mà là BẢNG NÀO LÀ BẢNG. Đo bằng chính hàm này trên 400
+    trang nhánh luật: **1.877 bảng, 4,7 mỗi trang**, và chỉ **52,2%** có
+    `<thead>`. Còn lại **46,9%** là mảnh nối tiếp của một bảng bị cắt trang --
+    không có `<thead>` vì tiêu đề nằm ở mảnh trước -- và **1,0%** là bảng dàn
+    trang. Chấm TEDS một bảng dàn trang, hay chấm một mảnh nối tiếp như thể
+    nó là bảng không tiêu đề, đều cho một con số vô nghĩa.
+
+    Nên mỗi bảng khai `role` KÈM `role_basis` -- chứng cứ dẫn tới kết luận ấy.
+    Người đọc không đồng ý với phép phân loại vẫn lọc lại được theo chứng cứ,
+    thay vì phải tin một chữ `role` không truy được về đâu.
+    """
+    parser = _Spans()
+    parser.feed(markup)
+    parser.close()
+
+    grouped: dict[tuple, list[dict]] = {}
+    for cell in parser.cells:
+        grouped.setdefault((cell["page"], cell["table"]), []).append(cell)
+
+    out: list[dict] = []
+    # Bảng có tiêu đề gần nhất, theo bề rộng: một mảnh nối tiếp giữ nguyên số
+    # cột của bảng nó nối tiếp, nên bề rộng là dấu nhận biết rẻ và đúng.
+    last_head_by_width: dict[int, str] = {}
+    for (page, number), cells in sorted(grouped.items()):
+        n_cols = max(c["col"] + c["colspan"] for c in cells)
+        n_rows = len({c["row"] for c in cells})
+        heads = [c for c in cells if c["head"]]
+        if heads:
+            role, basis = "data", "thead"
+        elif n_cols >= DATA_TABLE_MIN_COLS and n_rows >= DATA_TABLE_MIN_ROWS:
+            # Bảng dữ liệu mà tiêu đề ở đâu đó khác -- gần như luôn là mảnh
+            # nối tiếp sau khi cắt trang. Vẫn là `data`: mực của nó là dữ
+            # liệu, và bỏ nó đi là bỏ phần thân của mọi bảng dài.
+            role, basis = "data", "grid"
+        else:
+            role, basis = "layout", "small"
+        table_id = f"t{number}"
+        # MẢNH NỐI TIẾP TRỎ VỀ MẢNH MANG TIÊU ĐỀ.
+        #
+        # Chấm thì chấm TỪNG MẢNH: một ảnh là một trang, và model đọc trang 2
+        # không nhìn thấy tiêu đề in ở trang 1 -- phạt nó vì thiếu tiêu đề là
+        # phạt một thứ không có trong ảnh. Nhưng ai muốn dựng lại cả bảng dài
+        # ở mức TÀI LIỆU thì phải có đường đi ngược, nếu không thông tin ấy
+        # mất hẳn. Khai liên kết, để cả hai cách đọc cùng làm được.
+        continues = last_head_by_width.get(n_cols) if basis == "grid" else None
+        if basis == "thead":
+            last_head_by_width[n_cols] = table_id
+        out.append({
+            "table_id": table_id,
+            "page": page,
+            "role": role,
+            "role_basis": basis,
+            "continues": continues,
+            "header_tiers": (max(c["tier"] for c in heads) + 1) if heads else 0,
+            "n_rows": n_rows,
+            "n_cols": n_cols,
+            "cells": [{
+                "row": c["row"], "col": c["col"],
+                "colspan": c["colspan"], "rowspan": c["rowspan"],
+                "is_header": bool(c["head"]),
+                "tier": c["tier"],
+                "text": _tight(c["text"]),
+            } for c in sorted(cells, key=lambda c: (c["row"], c["col"]))],
+        })
+    return out
 
 
 def _overlap(a1: float, a2: float, b1: float, b2: float) -> float:
@@ -440,6 +556,41 @@ def table_pairs(record: dict, markup: str) -> list[dict]:
         elif not cell["head"] and cell["col"] is not None:
             cells.append((page, cell, entity))
 
+    # NHÃN CỦA TỪNG DÒNG, để câu tả của một ô nói được nó nằm ở dòng nào.
+    #
+    # Mọi ô của một cột dùng chung một câu tả là đúng cho CỘT nhưng sai cho Ô:
+    # đo trên `data/thu1k`, 3 861 trên 3 915 ô bảng (99%) trùng câu với một ô
+    # khác cùng trang, và đó là toàn bộ phần lặp còn lại của cả bộ nhãn. Thứ
+    # phân biệt hai ô cùng cột đã in sẵn trên giấy: dòng của chúng.
+    #
+    # Nhãn dòng là ô có CHỮ, không phải số, ở cột trái nhất -- tức cột "tên
+    # hàng"/"nội dung" mà mắt người cũng dùng để tìm dòng. Không có ô chữ nào
+    # thì lùi về số thứ tự dòng, và cuối cùng là chỉ số.
+    label_of: dict[tuple, str] = {}
+    for page, cell, entity in cells:
+        seat = (page, cell.get("table", 0), cell["row"])
+        text = " ".join(str(entity.get("text") or "").split())
+        if not text:
+            continue
+        wordy = any(c.isalpha() for c in text)
+        old = label_of.get(seat)
+        if old is None or (wordy and not any(c.isalpha() for c in old)):
+            label_of[seat] = text
+    # HAI DÒNG TRÙNG TÊN trong cùng một bảng là chuyện thường -- "Máy khoan bê
+    # tông" mua hai lần. Khi ấy tên một mình không chỉ được dòng nào, nên nó
+    # kèm số thứ tự. Chỉ kèm ở chỗ VA CHẠM: dòng có tên riêng vẫn đọc tự nhiên.
+    crowd: dict[tuple, list[tuple]] = {}
+    for seat, text in label_of.items():
+        crowd.setdefault((seat[0], seat[1], text), []).append(seat)
+    # `where` chứ không phải `seats`: `seats()` là HÀM cấp module đọc chỗ ngồi
+    # từ markup, và một biến cùng tên trong hàm này che mất nó -- `table_pairs`
+    # gọi `seats(markup)` ở ngay trên.
+    for (_, _, text), where in crowd.items():
+        if len(where) < 2:
+            continue
+        for seat in where:
+            label_of[seat] = f"{text} (dòng {int(seat[2]) + 1})"
+
     out = []
     for page, cell, entity in cells:
         column = cell["col"]
@@ -462,6 +613,7 @@ def table_pairs(record: dict, markup: str) -> list[dict]:
         if (cell.get("colspan") or 1) > 1:
             name = BY_KIND.get(str(entity["kind"])) or _slug_col(
                 str(entity["text"])) or "row_label"
+            table_id = f"t{int(cell.get('table', 1) or 1)}"
             out.append({
                 "field": f"{name}_r{cell['row']}",
                 "column": None, "row": cell["row"],
@@ -471,6 +623,15 @@ def table_pairs(record: dict, markup: str) -> list[dict]:
                 "key_entity_index": None,
                 "value_entity_index": entity["entity_index"],
                 "page_number": page, "source": "table",
+                "table_id": table_id,
+                "colspan": cell.get("colspan") or 1,
+                "rowspan": cell.get("rowspan") or 1,
+                "tier": cell.get("tier", -1),
+                # Nhãn trải cả dòng KHÔNG phải một ô hàng hoá. Nó đặt tên cho
+                # nhóm dòng bên dưới, nên nó không mang `line_item_id`: gộp nó
+                # vào một dòng hàng là khai một món hàng không có thật.
+                "row_kind": "label",
+                "line_item_id": None,
                 "description": "Label that runs across the row, naming what "
                                "the figures beside it add up to.",
             })
@@ -501,7 +662,9 @@ def table_pairs(record: dict, markup: str) -> list[dict]:
             "key_text": str(head_entity["text"]) if head_entity else "",
             "value_text": str(entity["text"]),
             "key_bbox": _box(head_entity["bbox"]) if head_entity else None,
+            "key_bbox_px": _px_of(head_entity),
             "value_bbox": _box(entity["bbox"]),
+            "value_bbox_px": _px_of(entity),
             "key_entity_index": head_entity["entity_index"] if head_entity else None,
             "value_entity_index": entity["entity_index"],
             "page_number": page,
@@ -512,17 +675,109 @@ def table_pairs(record: dict, markup: str) -> list[dict]:
             # `data/pilot13`, tờ `insurance_partner_cert_application` mất 69
             # trên 273 cặp đúng vì thế, im lặng.
             "table_id": f"t{int(cell.get('table', 1) or 1)}",
-            "description": spec.get("describe") or f"Table column {key}.",
+            # CHỖ NGỒI ĐẦY ĐỦ. `row`/`column_index` một mình chưa đủ tả một ô:
+            # `tier` nói ô tiêu đề nào ở tầng nào, `colspan`/`rowspan` nói ô
+            # chiếm mấy chỗ. Không có ba khoá này thì người đọc nhãn không
+            # dựng lại được cái lưới, và TEDS/GriTS thì so lưới với lưới.
+            "tier": cell.get("tier", -1),
+            "colspan": cell.get("colspan") or 1,
+            "rowspan": cell.get("rowspan") or 1,
+            "row_kind": "data",
+            # LINE ITEM, theo lối DocILE (arXiv 2302.05658): mọi trường của
+            # cùng một dòng hàng hoá mang cùng một id, và việc "gom trường
+            # thành dòng hàng" (LIR) chấm được bằng chính id ấy. Ở đây id suy
+            # ra từ chỗ ngồi -- không cần ai đặt tên, và hai bảng trên cùng
+            # một trang không đụng nhau vì `table_id` đã nằm trong id.
+            "line_item_id": f"t{int(cell.get('table', 1) or 1)}#r{cell['row']}",
+            "description": _cell_says(spec.get("describe") or f"Table column {key}.",
+                                     str(head_entity["text"]) if head_entity else "",
+                                     label_of.get((page, cell.get("table", 0),
+                                                   cell["row"])),
+                                     cell["row"]),
             "description_source": "column",
             "source": "table",
         })
     return out
 
 
+def _unique_says(pairs: list[dict]) -> int:
+    """Ép MỖI CÂU TẢ CHỈ TẢ MỘT CHỖ, trong phạm vi một trang. Số câu đã sửa.
+
+    Luật bảo đảm cuối, chạy sau mọi đường dựng cặp. Từng đường đã cố đặt câu
+    riêng -- ô bảng kèm dòng, ô tích kèm lựa chọn, điều khoản kèm tiêu đề --
+    nhưng chỗ nào sót thì sót im lặng, và một câu tả tả hai chỗ là một câu
+    không chỉ được chỗ nào. Đặt ở đây thì không đường nào đi vòng qua được.
+
+    Thứ phân biệt hai chỗ mực mang cùng một câu là CHÍNH CHỮ CỦA CHÚNG, nên
+    câu tả trích chữ ấy -- cùng cách `survey_pairs` và `clause_pairs` làm. Chữ
+    trùng nhau nốt thì mới tới số thứ tự.
+
+    Đo trên `data/thu1k` trước khi có hàm này: 59 câu trên 11 131 còn tả hai
+    chỗ (0,53%), hầu hết là trường in nhiều lần trên một trang -- `store.branch`
+    hai dòng, `colhdr` ba cái."""
+    by_page: dict[int, list[dict]] = {}
+    for pair in pairs:
+        by_page.setdefault(int(pair.get("page_number", 1) or 1), []).append(pair)
+    fixed = 0
+    for on_page in by_page.values():
+        crowd: dict[str, list[dict]] = {}
+        for pair in on_page:
+            crowd.setdefault(str(pair.get("description") or ""), []).append(pair)
+        for says, group in crowd.items():
+            if len(group) < 2 or not says:
+                continue
+            for at, pair in enumerate(group, start=1):
+                text = " ".join(str(pair.get("value_text") or "").split())[:60]
+                tail = f" “{text}”" if text else ""
+                if sum(1 for other in group
+                       if " ".join(str(other.get("value_text") or "").split())[:60]
+                       == text) > 1:
+                    tail += f" (thứ {at})"
+                pair["description"] = (f"{says[:-1]}:{tail}." if says.endswith(".")
+                                       else f"{says}:{tail}")
+                fixed += 1
+    return fixed
+
+
+def _cell_says(column_says: str, header: str, row_label: str | None,
+               row: int) -> str:
+    """Câu tả của MỘT Ô bảng: nghĩa của cột, cộng dòng nó nằm.
+
+    Cột nói ô ấy LÀ GÌ ("Đơn giá dùng để tính dòng này"), dòng nói ô ấy LÀ CỦA
+    AI ("Phụ phí mùa cao điểm"). Thiếu vế sau thì bốn mươi ô của một cột mang
+    y hệt một câu và câu ấy không chỉ được ô nào.
+
+    Dòng không có nhãn chữ -- bảng toàn số -- thì lùi về số thứ tự: kém hơn một
+    cái tên, nhưng vẫn tách được ô này khỏi ô kia."""
+    where = (f"dòng “{row_label}”" if row_label
+             else f"dòng thứ {int(row) + 1}")
+    if header:
+        return f"{column_says} Ô này ở cột “{header}”, {where}."
+    return f"{column_says} Ô này ở {where}."
+
+
 def _box(bbox) -> dict:
     x1, y1, x2, y2 = (float(v) for v in bbox)
     return {"x1": int(round(x1)), "y1": int(round(y1)),
             "x2": int(round(x2)), "y2": int(round(y2))}
+
+
+def _px_of(entity) -> dict | None:
+    """Bản PIXEL của hộp thực thể, hoặc `None` khi không có.
+
+    `entity["bbox"]` đã ở hệ 0..1000 kể từ `pipeline/record.py::to_per_mille`;
+    số pixel nằm ở `bbox_px` bên cạnh. Cặp KIE phải mang CẢ HAI, vì hai bên
+    đọc nó hỏi hai câu khác nhau: bộ huấn luyện cần hệ chuẩn hoá, còn mọi thứ
+    vẽ đè lên chính tấm ảnh -- `synthgen/overlay.py` -- cần pixel.
+
+    Thiếu nó thì `overlay.py` lùi về `bbox` và vẽ số hệ 1000 như pixel: đo
+    trên `bang_cau_hoi_benh_00078`, toàn bộ hộp dồn vào 1000 pixel trên cùng
+    của một trang cao 1592. Nhãn vẫn đúng, chỉ tấm ảnh kiểm tra là sai -- và
+    đó là tấm ảnh người ta nhìn để tin vào nhãn."""
+    if not isinstance(entity, dict):
+        return None
+    raw = entity.get("bbox_px")
+    return _box(raw) if raw else None
 
 
 def _stacked(key_box, value_box) -> bool:
@@ -537,11 +792,618 @@ def _stacked(key_box, value_box) -> bool:
             and min(kx2, vx2) - max(kx1, vx1) > 0)
 
 
-def extra_pairs(record: dict, page: int, used: set[int] | None = None) -> list[dict]:
+# Bảng hỏi: một khối là `number, question, (tick, option)*, prompt|answer`,
+# phát ra theo đúng thứ tự ấy trong DOM. `SURVEY_UNDER` là những `kind` thuộc
+# về câu hỏi gần nhất đứng TRƯỚC chúng.
+SURVEY_QUESTION = "survey.question"
+SURVEY_UNDER = {
+    "survey.tick": "Ô tích",
+    "survey.option": "Lựa chọn",
+    "survey.answer": "Câu trả lời",
+    "survey.prompt": "Lời nhắc",
+    "survey.number": "Số thứ tự",
+    "survey.colhdr": "Tiêu đề cột",
+    "survey.rowhdr": "Tiêu đề dòng",
+    "survey.cell": "Ô",
+    "survey.char": "Ô ký tự",
+}
+
+
+def survey_pairs(ents: list[dict], page: int,
+                 used: set[int] | None = None) -> list[dict]:
+    """Ô tích, lựa chọn và câu trả lời, KHOÁ LÀ CÂU HỎI của chúng.
+
+    ## Vì sao cần
+
+    Trước luật này mọi `survey.tick` đi đường `implied` và nhận cùng một câu
+    tả suy từ `kind`: đo trên `data/thu1k`, `"Questionnaire tick box printed
+    on the document."` xuất hiện **5 477 lần**, và một trang bảng hỏi có 84 ô
+    tích chỉ đọc lên được ~38 câu khác nhau -- trần của bảng biến thể. Thứ
+    phân biệt hai ô tích không phải giọng văn, mà là **câu hỏi in trên chúng
+    và lựa chọn in bên cạnh**; cả hai đều đã có mặt trên giấy.
+
+    ## Ghép theo THỨ TỰ PHÁT, không theo toạ độ
+
+    Một tờ bảng hỏi chia ba cột: câu 5 ở x=102, câu 8 ở x=390, câu 11 ở x=679,
+    cả ba cùng y=52. Phép đo hình học phải đoán cột, và `kie_full` đã thử lối
+    ấy hai lần rồi hỏng cả hai. Nhưng `entity_index` thì giữ nguyên thứ tự DOM,
+    và markup phát trọn một khối câu hỏi rồi mới sang khối sau:
+
+        47 number '5.' · 48 question 'Hình thức điều trị' · 49 tick '☐'
+        50 option 'Nội khoa' · 51 tick '☒' · 52 option 'Vật lý trị liệu' ...
+
+    Nên "câu hỏi gần nhất đứng trước" là một phép đọc, không phải một phỏng
+    đoán -- cùng tín hiệu `pipeline/kie.py` dùng cho nhãn-kề-giá-trị.
+
+    ## Ô tích lấy TÊN từ lựa chọn bên cạnh
+
+    Khoá là câu hỏi, nhưng năm ô tích của một câu hỏi thì cùng khoá. Cái tách
+    chúng là lựa chọn in ngay sau mỗi ô -- `☒` + "Vật lý trị liệu" -- nên tên
+    trường và câu tả mang cả hai. Không có lựa chọn kề thì lùi về số thứ tự
+    trong câu hỏi: thà một cái tên yếu còn hơn năm trường trùng tên.
+    """
+    used = set(used or ())
+    out: list[dict] = []
+    question: dict | None = None
+    columns: list[str] = []            # `survey.colhdr` của câu hỏi đang mở
+    row = ""                           # `survey.rowhdr` gần nhất
+    at_column = 0                      # ô tích thứ mấy trong dòng ấy
+    rank: dict[int, int] = {}
+    numbered: dict | None = None       # `survey.number` chờ câu hỏi của nó
+    deferred: set[int] = set()         # số đã được xếp lại, đừng giữ lần nữa
+
+    order = sorted(ents, key=lambda e: int(e.get("entity_index") or 0))
+    kinds = [str(e.get("kind") or "") for e in order]
+
+    # Lựa chọn của một ô tích là `survey.option` phát NGAY SAU nó -- hình dạng
+    # DANH SÁCH. Ma trận thì không có, và chỗ ngồi của ô tích ở đó là
+    # (dòng, cột); xem vòng dưới.
+    beside = {int(e["entity_index"]): str(order[i + 1].get("text") or "")
+              for i, e in enumerate(order)
+              if kinds[i] == "survey.tick" and i + 1 < len(order)
+              and kinds[i + 1] == "survey.option"}
+
+    # MỘT vòng, và số thứ tự được phát ngay lúc câu hỏi của nó mở -- không hàng
+    # đợi, vì bối cảnh (cột, dòng, con trỏ) thuộc về câu hỏi đang mở và một
+    # hàng đợi xử sau sẽ dùng bối cảnh của câu hỏi CUỐI CÙNG cho tất cả.
+    todo: list[dict] = list(order)
+    at = 0
+    while at < len(todo):
+        entity = todo[at]
+        at += 1
+        kind = str(entity.get("kind") or "")
+        index = int(entity.get("entity_index") or 0)
+        if kind == SURVEY_QUESTION:
+            # Câu hỏi mới đóng lại mọi bối cảnh của câu trước: cột của bảng ma
+            # trận này không phải cột của bảng kia.
+            question, columns, row, at_column = entity, [], "", 0
+            if numbered is not None:
+                # Chèn ngay sau đây, để nó chạy với bối cảnh của CHÍNH câu hỏi
+                # vừa mở. `deferred` để vòng sau đừng giữ lại nó lần nữa --
+                # không có dấu ấy thì nhánh `survey.number` bắt lại chính nó và
+                # số thứ tự không bao giờ ra: đo được 0/11 câu hỏi có số.
+                todo.insert(at, numbered)
+                deferred.add(int(numbered["entity_index"]))
+                numbered = None
+            continue
+        if kind == "survey.number" and index not in deferred:
+            # SỐ THỨ TỰ IN TRƯỚC CÂU HỎI CỦA NÓ: "5." rồi mới tới "Hình thức
+            # điều trị đã áp dụng". Gán theo câu hỏi đang mở thì nó rơi vào câu
+            # TRƯỚC -- đo được: câu hỏi thứ hai của một tờ đội số "3.".
+            numbered = entity
+            continue
+        if kind not in SURVEY_UNDER or question is None:
+            continue
+        if kind == "survey.colhdr":
+            columns.append(str(entity.get("text") or ""))
+        elif kind == "survey.rowhdr":
+            row, at_column = str(entity.get("text") or ""), 0
+
+        asked = str(question.get("text") or "").strip()
+        qi = int(question["entity_index"])
+        rank[qi] = rank.get(qi, 0) + 1
+
+        # CHỖ NGỒI của ô tích, hai hình dạng:
+        #   danh sách  -- lựa chọn in ngay sau nó ("☒ Vật lý trị liệu")
+        #   ma trận    -- dòng `survey.rowhdr` × cột `survey.colhdr` thứ mấy
+        # Cả hai đều đọc từ thứ tự phát, không đoán theo toạ độ.
+        seat, where = "", ""
+        if kind == "survey.tick":
+            seat = beside.get(index, "")
+            if not seat and row:
+                column = (columns[at_column] if at_column < len(columns)
+                          else str(at_column + 1))
+                at_column += 1
+                seat, where = f"{row}__{column}", f" ở dòng “{row}”, cột “{column}”"
+        elif kind == "survey.char":
+            # Ô KÝ TỰ: một ô một chữ, "2|7|0|9|2|0|2|6". Thứ phân biệt chúng là
+            # CHỖ ĐỨNG, không phải chữ bên trong -- ba ô cùng in "0" thì lấy
+            # chữ làm tên là ba trường trùng tên, đo được 102 ca trên bộ.
+            at_column += 1
+            seat, where = str(at_column), f" thứ {at_column}"
+        elif kind == "survey.cell" and row:
+            seat = row
+        if not seat and kind != "survey.tick":
+            seat = str(entity.get("text") or "")
+        if seat and not where:
+            # Hai lựa chọn in cùng một chữ dưới cùng một câu hỏi ("Đã kiểm" hai
+            # lần) thì chữ ấy không tách được chúng -- kèm thứ tự ở ĐÚNG chỗ va
+            # chạm, chứ không kèm cho mọi lựa chọn.
+            twice = sum(1 for other in beside.values() if other == seat) > 1
+            where = f" “{seat}”" + (f" (thứ {rank[qi]})" if twice else "")
+
+        # Ô TÍCH giữ tên trần; mọi thứ khác đeo đuôi VAI của nó. Không có đuôi
+        # ấy thì `☒` và chữ "Bảo vệ thu nhập" đứng cạnh nó ra cùng một tên
+        # `muc_dich__bao_ve_thu_nhap` -- hai chỗ mực, một trường, và một cái
+        # đè cái kia lúc xuất ra `json/`. Ô tích là CÂU TRẢ LỜI nên nó được
+        # giữ tên gọn; lựa chọn và tiêu đề là chữ in sẵn của câu hỏi.
+        tail = slug(seat)[:28] or str(rank[qi])
+        if kind != "survey.tick":
+            tail = f"{tail}__{kind.split('.')[-1]}"
+        out.append({
+            "field": (f"{slug(asked)[:34]}__{tail}" if asked
+                      else f"{slug(kind)}_{rank[qi]}"),
+            "key_text": asked,
+            "value_text": str(entity.get("text") or ""),
+            "key_bbox": _box(question["bbox"]),
+            "key_bbox_px": _px_of(question),
+            "value_bbox": _box(entity["bbox"]),
+            "value_bbox_px": _px_of(entity),
+            "key_entity_index": question["entity_index"],
+            "value_entity_index": index,
+            "page_number": page,
+            "description": f"{SURVEY_UNDER[kind]}{where} của câu hỏi “{asked}”.",
+            "description_source": "survey",
+            "source": "survey",
+            # CHỖ NGỒI KHAI RA, không để bên đọc suy ngược từ tên trường.
+            # `synthgen/export.py` gom những cặp này thành mảng
+            # `questions[].options[]`, và nó chỉ làm được thế nếu biết cặp nào
+            # thuộc câu hỏi nào (`group`), đóng vai gì (`role`) và ngồi ở đâu
+            # (`seat`). Tách chuỗi từ `field` để lấy lại ba thứ ấy là dựng luật
+            # lần thứ hai ở một chỗ khác -- đúng kiểu lỗi kho này hay dính.
+            "group": int(question["entity_index"]),
+            "role": kind.split(".")[-1],
+            "seat": seat,
+            "rank": rank[qi],
+        })
+        used.add(index)
+    return out
+
+
+# Đoạn văn có TIÊU ĐỀ RIÊNG in ngay trước nó: `(kind tiêu đề, kind thân, lời tả)`.
+# Cùng hình với `survey.question`, chỉ là một tiêu đề ăn đúng một thân.
+HEADED = (("clause.head", "clause.body", "Nội dung điều khoản"),
+          # Mục lục: tên mục rồi số trang của nó, phát liền nhau.
+          ("toc.title", "toc.page", "Số trang của mục"))
+
+# Đoạn văn TỰ ĐẶT TÊN: không có tiêu đề riêng, nhưng chữ của chính nó đủ phân
+# biệt. "Căn cứ Luật Đất đai 2024" khác "Căn cứ Nghị định 43/2014" ngay ở dòng
+# đầu, nên tên trường lấy từ đó chứ không phải `legal_basis_2`, `legal_basis_3`.
+SELF_NAMED = {"legal.basis": "Căn cứ pháp lý"}
+
+
+def clause_pairs(ents: list[dict], page: int,
+                 used: set[int] | None = None) -> list[dict]:
+    """Thân điều khoản, KHOÁ LÀ TIÊU ĐỀ của chính nó.
+
+    Trước luật này `clause.head` và `clause.body` đều đi đường `implied` và
+    nhận tên trường suy từ `kind`: mọi điều khoản của mọi tờ đều tên
+    `clause_head`/`clause_body`, và câu tả giống hệt nhau. Đo trên `data/thu1k`
+    sau khi đã chữa bảng hỏi, hai câu ấy vẫn là hai câu lặp nhiều nhất còn lại
+    -- **904 lần mỗi câu**. Một tờ có hai mươi hai điều khoản thì hai mươi hai
+    trường trùng tên, và bản xuất giữ lại đúng một.
+
+    Thứ phân biệt chúng đã in sẵn trên giấy: "Điều 1. Thông báo sự kiện bảo
+    hiểm" đứng ngay trên thân của nó. Đo trên cả bộ: **584 `clause.head`, mỗi
+    cái theo sau đúng một `clause.body`** -- không một ca lệch. Nên phép ghép
+    là đọc thứ tự phát, cùng tín hiệu `survey_pairs` dùng, không phải đo toạ độ.
+
+    Tiêu đề KHÔNG thành trường riêng: nó đã nằm trong `key_text` của chính cặp
+    này, và dựng thêm một trường cho nó là đếm một chỗ chữ hai lần -- luật
+    `pipeline/kie.py` đã đặt cho `meta.label`, `invoice.field.label`.
+    """
+    used = set(used or ())
+    out: list[dict] = []
+    order = sorted(ents, key=lambda e: int(e.get("entity_index") or 0))
+    kinds = [str(e.get("kind") or "") for e in order]
+    taken: set[str] = set()
+
+    def unique(base: str, fallback: str) -> str:
+        name = base or fallback
+        at = 2
+        while name in taken:
+            name, at = f"{base or fallback}_{at}", at + 1
+        taken.add(name)
+        return name
+
+    for head_kind, body_kind, label in HEADED:
+        for i, kind in enumerate(kinds):
+            if kind != head_kind or i + 1 >= len(order):
+                continue
+            head, body = order[i], order[i + 1]
+            if kinds[i + 1] != body_kind:
+                continue
+            if int(body["entity_index"]) in used:
+                continue
+            title = str(head.get("text") or "").strip()
+            out.append({
+                "field": unique(slug(title)[:44], slug(body_kind)),
+                "key_text": title,
+                "value_text": str(body.get("text") or ""),
+                "key_bbox": _box(head["bbox"]),
+                "key_bbox_px": _px_of(head),
+                "value_bbox": _box(body["bbox"]),
+                "value_bbox_px": _px_of(body),
+                "key_entity_index": head["entity_index"],
+                "value_entity_index": body["entity_index"],
+                "page_number": page,
+                "description": f"{label} “{title}”." if title else f"{label}.",
+                "description_source": "clause",
+                "source": "clause",
+                # Cùng lẽ với `survey_pairs`: khai chỗ ngồi để `export.py` gom
+                # thành `clauses[]` mà không phải tách chuỗi từ tên trường.
+                "group": int(head["entity_index"]),
+                "role": "body",
+            })
+            used.add(int(body["entity_index"]))
+            used.add(int(head["entity_index"]))
+
+    for entity in order:
+        kind = str(entity.get("kind") or "")
+        if kind not in SELF_NAMED or int(entity["entity_index"]) in used:
+            continue
+        text = str(entity.get("text") or "").strip()
+        out.append({
+            "field": unique(slug(text)[:44], slug(kind)),
+            "key_text": "",
+            "value_text": text,
+            "key_bbox": None,
+            "key_bbox_px": None,
+            "value_bbox": _box(entity["bbox"]),
+            "value_bbox_px": _px_of(entity),
+            "key_entity_index": None,
+            "value_entity_index": int(entity["entity_index"]),
+            "page_number": page,
+            "description": f"{SELF_NAMED[kind]}: “{text[:80]}”." if text
+                           else f"{SELF_NAMED[kind]} in trên tờ giấy.",
+            "description_source": "clause",
+            "source": "clause",
+            "group": int(entity["entity_index"]),
+            "role": "basis",
+        })
+        used.add(int(entity["entity_index"]))
+    return out
+
+
+def label_pairs(ents: list[dict], page: int,
+                used: set[int] | None = None, layout_id: str = "") -> list[dict]:
+    """Nhãn in `X.label` đứng NGAY TRƯỚC giá trị `X` của nó.
+
+    `pipeline/kie.py` ghép cặp này qua `key_entity_index` mà
+    `entities_from_words` tính -- nhưng khi phép ấy không nối được thì nhãn
+    thành mồ côi và giá trị vào KIE không kèm chữ in trên giấy. Đo trên
+    `data/thu1k`: 43 nhãn mồ côi, và mọi ca đều cùng một hình --
+
+        3 store.address.label 'Địa chỉ:'   ·  4 store.address '386 Nguyễn Trãi...'
+        5 store.phone.label   'Điện thoại:' ·  6 store.phone   '0894306424'
+
+    Luật đọc từ chính `kind`: nhãn của `store.address` là `store.address.label`,
+    không phải một bảng tra. Đòi hai điều kiện cùng lúc -- ĐÚNG KIND và KỀ NHAU
+    trong thứ tự phát -- nên một nhãn không có giá trị đi kèm thì không vớ
+    nhầm run kế tiếp, đúng lỗi `80f69a6e` đã chữa cho đường khác."""
+    used = set(used or ())
+    out: list[dict] = []
+    order = sorted(ents, key=lambda e: int(e.get("entity_index") or 0))
+    for at, entity in enumerate(order[:-1]):
+        kind = str(entity.get("kind") or "")
+        if not kind.endswith(".label"):
+            continue
+        value = order[at + 1]
+        if str(value.get("kind") or "") != kind[: -len(".label")]:
+            continue
+        if int(value["entity_index"]) in used or int(entity["entity_index"]) in used:
+            continue
+        printed = str(entity.get("text") or "").strip()
+        # CÂU TẢ ĐI QUA `pipeline.kie.describe`, không lấy thẳng `implied_for`.
+        #
+        # `describe` tra bốn nguồn theo thứ tự: file `VLM_KIE_DESCRIPTIONS`
+        # (`kie_descriptions.json` mà `synthgen/run.py` ghi đầu mỗi lượt), rồi
+        # `rulebase/kie_glossary`, rồi chính chữ in, rồi nhãn lớp. Lấy thẳng
+        # `implied_for` là bỏ qua hai nguồn đầu -- đo được: file khai
+        # `dia_chi -> "Registered address of the seller."` trong khi cặp thật
+        # nhận một câu suy từ `kind`. Một bảng mô tả viết ra rồi không ai đọc.
+        named = implied_for(str(value.get("kind") or "")) or ("field", "")
+        field_name = slug(printed.rstrip(":：")) or named[0]
+        says, whence = say(field_name, caption=printed,
+                           kind=str(value.get("kind") or ""),
+                           layout=layout_id)
+        out.append({
+            "field": field_name,
+            "key_text": printed,
+            "value_text": str(value.get("text") or ""),
+            "key_bbox": _box(entity["bbox"]),
+            "key_bbox_px": _px_of(entity),
+            "value_bbox": _box(value["bbox"]),
+            "value_bbox_px": _px_of(value),
+            "key_entity_index": entity["entity_index"],
+            "value_entity_index": int(value["entity_index"]),
+            "page_number": page,
+            "description": says or named[1] or f"Giá trị in cạnh nhãn “{printed}”.",
+            "description_source": whence or "label",
+            "source": "label",
+        })
+    return out
+
+
+def sign_pairs(ents: list[dict], page: int,
+               used: set[int] | None = None) -> list[dict]:
+    """Khối chữ ký: CHỨC DANH là khoá, tên người ký là giá trị.
+
+    ## Vì sao không dùng phép ghép theo họ
+
+    `extra_pairs` có sẵn một luật ghép `sign.title ↔ sign.name` theo họ `kind`,
+    nhưng nó đòi HAI BÊN BẰNG NHAU. Một tờ bảng lương có bốn ô ký mà mới ba
+    người ký thì luật ấy từ chối cả bốn, và cả ba cái tên rơi xuống đường
+    `implied` -- thành ba trường cùng tên `signer_name`, không cái nào biết
+    mình là kế toán hay giám đốc. Đo trên `data/thu1k`: mọi khối chữ ký trong
+    bản xuất đều chỉ có `name`, không một `title` nào.
+
+    ## Thứ tự phát đã nói đủ
+
+    `markup.py` phát trọn một ô ký rồi mới sang ô sau:
+
+        79 sign.title 'NGƯỜI LẬP BẢNG' · 80 sign.note · 81 sign.name 'Nguyễn Văn Hùng'
+        82 sign.title 'PHÒNG NHÂN SỰ'  · 83 sign.note · 84 sign.name 'Ngô Thị Hồng Nhung'
+        88 sign.title 'GIÁM ĐỐC'       · 89 sign.note            <- chưa ai ký
+
+    Nên một khối là "từ `sign.title` này tới `sign.title` kế tiếp". Số chức
+    danh không cần bằng số tên: ô chưa ký đơn giản là khối không có `sign.name`,
+    và đó là một sự thật của tờ giấy chứ không phải một ca phải bỏ qua.
+
+    `sign.note` -- "(Ký, ghi rõ họ tên)" -- không vào đây: nó in giống hệt dưới
+    mọi ô ký nên mang đúng không bit thông tin nào, và `FURNITURE` đã nhận nó.
+    """
+    used = set(used or ())
+    out: list[dict] = []
+    order = sorted(ents, key=lambda e: int(e.get("entity_index") or 0))
+    blocks: list[tuple[dict, list[dict]]] = []
+    for entity in order:
+        kind = str(entity.get("kind") or "")
+        if kind == "sign.title":
+            blocks.append((entity, []))
+        elif kind == "sign.name" and blocks:
+            blocks[-1][1].append(entity)
+
+    taken: set[str] = set()
+    for title, names in blocks:
+        role = str(title.get("text") or "").strip()
+        base = slug(role)[:40] or "signer"
+        for at, name in enumerate(names):
+            if int(name["entity_index"]) in used:
+                continue
+            field, suffix = base, 2
+            while field in taken:
+                field, suffix = f"{base}_{suffix}", suffix + 1
+            taken.add(field)
+            out.append({
+                "field": field,
+                "key_text": role,
+                "value_text": str(name.get("text") or ""),
+                "key_bbox": _box(title["bbox"]),
+                "key_bbox_px": _px_of(title),
+                "value_bbox": _box(name["bbox"]),
+                "value_bbox_px": _px_of(name),
+                "key_entity_index": title["entity_index"],
+                "value_entity_index": int(name["entity_index"]),
+                "page_number": page,
+                "description": (f"Họ tên người ký ở ô “{role}”." if role
+                                else "Họ tên người ký."),
+                "description_source": "sign",
+                "source": "sign",
+                "group": int(title["entity_index"]),
+                "role": "name",
+                "rank": at + 1,
+            })
+        if names:
+            continue
+        # Ô KÝ CHƯA CÓ NGƯỜI KÝ vẫn là một khối trên giấy: chức danh có in,
+        # có hộp. Bỏ nó đi thì bản xuất khai tờ này có ba ô ký trong khi mắt
+        # người đếm được bốn.
+        if int(title["entity_index"]) in used:
+            continue
+        field, suffix = base, 2
+        while field in taken:
+            field, suffix = f"{base}_{suffix}", suffix + 1
+        taken.add(field)
+        out.append({
+            "field": field,
+            "key_text": "",
+            "value_text": role,
+            "key_bbox": None,
+            "key_bbox_px": None,
+            "value_bbox": _box(title["bbox"]),
+            "value_bbox_px": _px_of(title),
+            "key_entity_index": None,
+            "value_entity_index": int(title["entity_index"]),
+            "page_number": page,
+            "description": f"Ô ký mang chức danh “{role}”, chưa có tên người ký.",
+            "description_source": "sign",
+            "source": "sign",
+            "group": int(title["entity_index"]),
+            "role": "role_only",
+            "rank": 1,
+        })
+    return out
+
+
+
+# Nguồn cặp nào gom thành MẢNG thay vì thành trường phẳng.
+GROUPED = {"clause", "survey", "sign"}
+
+# Ký tự nói ô ĐÃ ĐƯỢC TÍCH. Đọc từ chính chữ in ra, không từ một cờ bên ngoài:
+# mô hình nhìn tờ giấy cũng chỉ có ngần ấy để đọc.
+TICKED_MARKS = frozenset("☒☑✔✓x✗X")
+
+# Vai nào trong một câu hỏi bảng hỏi đi vào đâu. `tick` và `option` ghép thành
+# MỘT lựa chọn (ô tích + nhãn của nó), nên chúng không có mục riêng ở đây.
+SURVEY_SLOT = {"number": "number", "answer": "answers", "prompt": "prompts",
+               "colhdr": "columns", "rowhdr": "rows", "cell": "cells",
+               "char": "chars"}
+
+
+def group_lists(pairs: list[dict], render) -> dict[str, list]:
+    """Những thứ LẶP LẠI trên một tờ, gom thành mảng có cấu trúc.
+
+    ## Vì sao không phải trường phẳng
+
+    Hai mươi hai điều khoản trên một tờ từng thành hai mươi hai trường tên
+    `clause_body`, rồi -- sau khi lấy tiêu đề làm khoá -- thành hai mươi hai
+    trường tên `dieu_1_thong_bao_su_kien_bao_hiem`, `dieu_2_tam_ung`, ... Cái
+    sau đã phân biệt được, nhưng TÊN TRƯỜNG LÀ CHÍNH NỘI DUNG: khoá JSON đổi
+    theo từng tờ giấy, nên không mô hình nào học được một hình dạng cố định,
+    và một bộ sinh có ràng buộc không biết trước khoá nào sẽ tới.
+
+    Mảng tách hai thứ ấy ra: **tên khoá là VAI** (`title`, `body`, `label`,
+    `ticked`) -- đóng, cố định, giống nhau ở mọi tờ -- còn **nội dung nằm ở
+    giá trị**. Đúng hình `line_items` đã dùng cho bảng, và đúng luật "lặp thì
+    thành mảng" của `docs/kie-schema-v2.md`.
+
+    ## MỘT luật, hai người vẽ
+
+    `render(pair, side)` quyết định một ô trông như thế nào: `synthgen/export.py`
+    vẽ `{value, bbox}`, còn `synthgen/kie_schema.py` chỉ lấy chữ -- schema không
+    mang toạ độ. Phép GOM thì chỉ có ở đây.
+
+    ## Chỗ ngồi đọc từ nhãn, không tách từ tên trường
+
+    Chính file này khai sẵn `group` (thuộc câu hỏi / điều khoản nào),
+    `role` (đóng vai gì) và `seat` (ngồi ở đâu trong câu hỏi ấy). Ở đây chỉ
+    còn việc xếp chúng lại.
+    """
+    out: dict[str, list] = {"clauses": [], "questions": [], "legal_basis": [],
+                            "signatures": []}
+    groups: dict[tuple, list[dict]] = {}
+    for pair in pairs:
+        groups.setdefault((str(pair.get("source")), pair.get("group")),
+                          []).append(pair)
+
+    for (source, _), members in groups.items():
+        if source == "clause":
+            basis = [p for p in members if p.get("role") == "basis"]
+            for pair in basis:
+                # Khoá có TÊN (`ground`), không bung ô ra thẳng phần tử:
+                # `render` trả dict ở bản xuất nhưng trả chuỗi ở schema, và
+                # `**` trên một chuỗi thì vỡ. Mọi mảng khác ở đây đã đặt tên
+                # cho ô của nó; chỗ này là chỗ duy nhất quên.
+                out["legal_basis"].append({
+                    "index": len(out["legal_basis"]) + 1,
+                    "ground": render(pair, "value"),
+                    "description": str(pair.get("description", "")),
+                })
+            body = next((p for p in members if p.get("role") == "body"), None)
+            if body:
+                out["clauses"].append({
+                    "index": len(out["clauses"]) + 1,
+                    "title": render(body, "key"),
+                    "body": render(body, "value"),
+                    "description": str(body.get("description", "")),
+                })
+            continue
+
+        if source == "sign":
+            # KHỐI CHỮ KÝ. `role_only` là ô ký chưa ai ký -- chức danh nằm ở
+            # nửa GIÁ TRỊ của cặp ấy vì không có tên nào để làm giá trị; ô đã
+            # ký thì chức danh là khoá. Không tách hai ca này thì "NGƯỜI LẬP
+            # BẢNG" rơi vào `questions` và thành một câu hỏi.
+            for pair in sorted(members, key=lambda p: int(p.get("rank") or 0)):
+                alone = pair.get("role") == "role_only"
+                out["signatures"].append({
+                    "index": len(out["signatures"]) + 1,
+                    "signer_role": render(pair, "value" if alone else "key"),
+                    "signer_name": None if alone else render(pair, "value"),
+                    "signed": not alone,
+                    "description": str(pair.get("description", "")),
+                })
+            continue
+
+        # BẢNG HỎI. Ô tích và nhãn của nó cùng một `seat`, nên chúng ghép lại
+        # thành MỘT lựa chọn: `{label, ticked, checked}`. `checked` là thứ
+        # người ta thật sự hỏi tờ giấy, và nó đọc được từ chính ký tự in ra --
+        # `☒` là đã tích, `☐` là chưa.
+        question = {"index": len(out["questions"]) + 1,
+                    "question": render(members[0], "key"),
+                    "options": []}
+        seats: dict[str, dict] = {}
+        for pair in sorted(members, key=lambda p: int(p.get("rank") or 0)):
+            role = str(pair.get("role") or "")
+            cell = render(pair, "value")
+            if role in ("tick", "option"):
+                seat = seats.setdefault(str(pair.get("seat") or len(seats)),
+                                        {"index": len(seats) + 1})
+                if role == "tick":
+                    seat["ticked"] = cell
+                    # `render` vẽ ô theo cách của người gọi -- dict `{value,
+                    # bbox}` ở bản xuất, chuỗi trần ở schema. Đọc dấu tích phải
+                    # chịu được cả hai.
+                    mark = cell.get("value") if isinstance(cell, dict) else cell
+                    seat["checked"] = bool(TICKED_MARKS.intersection(str(mark or "")))
+                else:
+                    seat["label"] = cell
+                continue
+            slot = SURVEY_SLOT.get(role)
+            if not slot:
+                continue
+            if slot == "number":
+                question["number"] = cell
+            else:
+                question.setdefault(slot, []).append(cell)
+        question["options"] = list(seats.values())
+        out["questions"].append(question)
+
+    out["questions"].sort(key=lambda q: q["index"])
+    return out
+
+
+
+def extra_pairs(record: dict, page: int, used: set[int] | None = None,
+                layout_id: str = "") -> list[dict]:
     """Cặp `pipeline/kie.py` chưa biết mặt, và trường không có nhãn in."""
     ents = _on(record, page)
     used = set(used or ())
     out: list[dict] = []
+
+    # BẢNG HỎI ĐI TRƯỚC đường `implied`: ô tích nào đã có câu hỏi làm khoá thì
+    # không rơi xuống nhánh suy-từ-`kind` để nhận một câu tả dùng chung nữa.
+    asked = survey_pairs(ents, page, used)
+    for pair in asked:
+        used.add(int(pair["value_entity_index"]))
+    out.extend(asked)
+
+    # ĐIỀU KHOẢN cũng đi trước đường `implied`, cùng lẽ: thân nào đã có tiêu đề
+    # của chính nó làm khoá thì thôi nhận cái tên `clause_body` dùng chung.
+    # Tiêu đề bị đánh dấu `used` luôn -- nó là nửa khoá, không phải trường.
+    headed = clause_pairs(ents, page, used)
+    for pair in headed:
+        used.add(int(pair["value_entity_index"]))
+        if isinstance(pair.get("key_entity_index"), int):
+            used.add(int(pair["key_entity_index"]))
+    out.extend(headed)
+
+    # KHỐI CHỮ KÝ đi trước phép ghép theo họ ở dưới: luật kia đòi số chức danh
+    # bằng số tên và từ chối cả tờ khi lệch, còn luật này đọc từng khối nên một
+    # ô chưa ký không làm hỏng ba ô đã ký.
+    beside = label_pairs(ents, page, used, layout_id)
+    for pair in beside:
+        used.add(int(pair["value_entity_index"]))
+        used.add(int(pair["key_entity_index"]))
+    out.extend(beside)
+
+    signed = sign_pairs(ents, page, used)
+    for pair in signed:
+        used.add(int(pair["value_entity_index"]))
+        if isinstance(pair.get("key_entity_index"), int):
+            used.add(int(pair["key_entity_index"]))
+    out.extend(signed)
 
     for key_kind, value_kind, name, description in PAIRED:
         keys = [e for e in ents if e["kind"] == key_kind]
@@ -554,11 +1416,18 @@ def extra_pairs(record: dict, page: int, used: set[int] | None = None) -> list[d
                 "key_text": str(k["text"]),
                 "value_text": str(v["text"]),
                 "key_bbox": _box(k["bbox"]),
+                "key_bbox_px": _px_of(k),
                 "value_bbox": _box(v["bbox"]),
+                "value_bbox_px": _px_of(v),
                 "key_entity_index": k["entity_index"],
                 "value_entity_index": v["entity_index"],
                 "page_number": page,
-                "description": description,
+                # Câu tả TRÍCH CHỮ IN, cùng lẽ `survey_pairs`/`clause_pairs`:
+                # một câu cố định thì mọi cặp `checks` của một trang mang y hệt
+                # nhau và không câu nào chỉ được cặp nào.
+                "description": (f"{description[:-1]} — “{str(k['text']).strip()}”."
+                                if str(k.get("text") or "").strip()
+                                and description.endswith(".") else description),
                 "description_source": "rule",
                 "source": "pair",
             })
@@ -577,7 +1446,9 @@ def extra_pairs(record: dict, page: int, used: set[int] | None = None) -> list[d
             "key_text": "",
             "value_text": str(entity["text"]),
             "key_bbox": None,
+            "key_bbox_px": None,
             "value_bbox": _box(entity["bbox"]),
+            "value_bbox_px": _px_of(entity),
             "key_entity_index": None,
             "value_entity_index": entity["entity_index"],
             "page_number": page,
@@ -639,7 +1510,9 @@ def extra_pairs(record: dict, page: int, used: set[int] | None = None) -> list[d
                 "key_text": str(k["text"]),
                 "value_text": str(v["text"]),
                 "key_bbox": _box(k["bbox"]),
+                "key_bbox_px": _px_of(k),
                 "value_bbox": _box(v["bbox"]),
+                "value_bbox_px": _px_of(v),
                 "key_entity_index": k["entity_index"],
                 "value_entity_index": v["entity_index"],
                 "page_number": page,
@@ -675,7 +1548,9 @@ def extra_pairs(record: dict, page: int, used: set[int] | None = None) -> list[d
             "key_text": "",
             "value_text": str(entity["text"]),
             "key_bbox": None,
+            "key_bbox_px": None,
             "value_bbox": _box(entity["bbox"]),
+            "value_bbox_px": _px_of(entity),
             "key_entity_index": None,
             "value_entity_index": entity["entity_index"],
             "page_number": page,
@@ -688,6 +1563,7 @@ def extra_pairs(record: dict, page: int, used: set[int] | None = None) -> list[d
 
 def declared_pairs_all(record: dict, markup: str) -> list[dict]:
     """`declared_pairs` cho mọi trang của tài liệu, gộp làm một."""
+    layout_id = str((record.get("extracted") or {}).get("doc_type") or "")
     pages = len(record.get("source_files") or [record.get("filename")]) or 1
     out: list[dict] = []
     for page in range(1, pages + 1):
@@ -722,6 +1598,7 @@ def hard_negative_spans(record: dict, markup: str, page: int) -> list[dict]:
             "path": str(span.get("path") or ""),
             "text": str(entity.get("text") or ""),
             "value_bbox": _box(entity["bbox"]),
+            "value_bbox_px": _px_of(entity),
             "value_entity_index": entity["entity_index"],
             "page_number": page,
         })
@@ -730,6 +1607,7 @@ def hard_negative_spans(record: dict, markup: str, page: int) -> list[dict]:
 
 def hard_negative_spans_all(record: dict, markup: str) -> list[dict]:
     """`hard_negative_spans` cho mọi trang, gộp làm một."""
+    layout_id = str((record.get("extracted") or {}).get("doc_type") or "")
     pages = len(record.get("source_files") or [record.get("filename")]) or 1
     out: list[dict] = []
     for page in range(1, pages + 1):
@@ -791,6 +1669,42 @@ def _dedup_by_value(pairs: list[dict]) -> list[dict]:
     return [p for p in pairs if id(p) not in drop]
 
 
+def _reseat(pairs: list[dict], record: dict) -> int:
+    """Lấy lại hộp của mỗi cặp TỪ CHÍNH THỰC THỂ nó trỏ tới. Số hộp đã sửa.
+
+    Hộp của một cặp là dữ liệu DẪN XUẤT: thực thể mới là chỗ đo được. Giữ một
+    bản chép riêng bên cạnh là cách chắc chắn hai bản trôi khỏi nhau, và ở đây
+    chúng đã trôi.
+
+    Đo trên `data/thu1k`, tờ `sao_ke_tai_khoan_00072`: ba cặp `source="label"`
+    ghi lúc vẽ mang `value_bbox` là PHẦN NGHÌN CỦA PHẦN NGHÌN (chia hai lần),
+    còn `value_bbox_px` mang chính con số phần nghìn -- trong khi thực thể của
+    chúng vẫn đúng cả hai hệ. `complete()` bê nguyên cặp nhãn làm nền nên con
+    số sai đi thẳng ra `json/`, và `synthgen/overlay.py` vẽ ba cái hộp ấy lên
+    giữa bảng thay vì dưới chân trang.
+
+    Sửa ở đây chứ không ở chỗ ghi: mọi bộ đã sinh cũng được chữa khi chạy lại
+    `derive.py`, và đường vẽ lẫn đường dựng lại dùng chung đúng một luật.
+
+    Cặp nào không trỏ tới thực thể nào -- `key_entity_index` rỗng ở nhánh
+    `implied` là chuyện thường -- thì giữ nguyên: không có chỗ nào đúng hơn để
+    lấy."""
+    seats = {e.get("entity_index"): e
+             for e in record.get("entity_annotations") or []}
+    fixed = 0
+    for pair in pairs:
+        for side in ("key", "value"):
+            entity = seats.get(pair.get(f"{side}_entity_index"))
+            if not entity or not entity.get("bbox"):
+                continue
+            box = _box(entity["bbox"])
+            if pair.get(f"{side}_bbox") != box:
+                fixed += 1
+            pair[f"{side}_bbox"] = box
+            pair[f"{side}_bbox_px"] = _px_of(entity)
+    return fixed
+
+
 def complete(record: dict, markup: str = "") -> tuple[list[dict], dict]:
     """Danh sách cặp KIE ĐẦY ĐỦ cho cả tài liệu, và một bản đếm.
 
@@ -817,6 +1731,19 @@ def complete(record: dict, markup: str = "") -> tuple[list[dict], dict]:
               if isinstance(p.get("value_entity_index"), int)}
     label_pairs = [dict(p) for p in (record.get("kie") or {}).get("pairs") or []
                    if p.get("source", "label") == "label"]
+    # CÂU TẢ CỦA NỀN CŨNG PHẢI LÀM MỚI. Nền là cặp `label` mà bản ghi đã mang
+    # sẵn; giữ nó để khỏi dựng hai lần, nhưng giữ luôn câu tả cũ thì một bộ
+    # derive lại không bao giờ nhận `kie_descriptions.json` vừa ghi -- đo
+    # được: `dia_chi` giữ câu suy từ `kind` trong khi file khai
+    # "Registered address of the seller.".
+    for pair in label_pairs:
+        fresh, whence = say(str(pair.get("field") or ""),
+                            caption=str(pair.get("key_text") or ""),
+                            kind=str(pair.get("key_kind") or ""),
+                            layout=str((record.get("extracted") or {}).get("doc_type") or ""))
+        if fresh:
+            pair["description"] = fresh
+            pair["description_source"] = whence
     for pair in label_pairs:
         index = pair.get("value_entity_index")
         if index in spoken:
@@ -827,6 +1754,7 @@ def complete(record: dict, markup: str = "") -> tuple[list[dict], dict]:
                         owner.setdefault("printed_header", []).append(printed)
                         owner["key_text"] = printed
                         owner["key_bbox"] = pair.get("key_bbox")
+                        owner["key_bbox_px"] = pair.get("key_bbox_px")
                         owner["key_entity_index"] = pair.get("key_entity_index")
                     break
     pairs = claimed + [p for p in label_pairs
@@ -841,6 +1769,7 @@ def complete(record: dict, markup: str = "") -> tuple[list[dict], dict]:
                         where.get(pair.get("key_entity_index"))
                         or where.get(pair.get("value_entity_index")) or 1)
         pair.setdefault("source", "label")
+    _reseat(pairs, record)
 
     table = table_pairs(record, markup) if markup else []
     # CÙNG LUẬT CHO Ô BẢNG. Một ô đã có `data-path` thì tiêu đề cột của nó là
@@ -860,6 +1789,7 @@ def complete(record: dict, markup: str = "") -> tuple[list[dict], dict]:
                         owner.setdefault("printed_header", []).append(head)
                         owner.setdefault("key_text", head)
                         owner.setdefault("key_bbox", cell.get("key_bbox"))
+                        owner.setdefault("key_bbox_px", cell.get("key_bbox_px"))
                     for carry in ("column", "column_index", "column_path",
                                   "row", "table_id"):
                         if cell.get(carry) is not None:
@@ -878,11 +1808,16 @@ def complete(record: dict, markup: str = "") -> tuple[list[dict], dict]:
     used = {p[k] for p in pairs for k in ("key_entity_index",
                                           "value_entity_index")
             if isinstance(p.get(k), int)}
+    layout_id = str((record.get("extracted") or {}).get("doc_type") or "")
     pages = len(record.get("source_files") or [record.get("filename")]) or 1
     for page in range(1, pages + 1):
-        pairs.extend(extra_pairs(record, page, used))
+        # `layout` là khoá tra của `kie_descriptions.json`: file khai
+        # `{phôi: {trường: câu tả}}`, nên không có nó thì tra trượt mọi lần.
+        pairs.extend(extra_pairs(record, page, used, layout_id))
 
     pairs = _dedup_by_value(pairs)
+
+    _unique_says(pairs)
 
     seen: set[int] = set()
     for pair in pairs:
@@ -900,7 +1835,19 @@ def complete(record: dict, markup: str = "") -> tuple[list[dict], dict]:
     for pair in pairs:
         counts["by_source"][pair.get("source", "label")] = \
             counts["by_source"].get(pair.get("source", "label"), 0) + 1
+
+    # CẤU TRÚC BẢNG GHI THẲNG VÀO BẢN GHI, ở đây chứ không ở hai chỗ gọi.
+    #
+    # `derive.py` và `draw_llm.py` đều gọi hàm này và đều tự gán
+    # `record["kie"]["pairs"]`. Bắt cả hai cùng nhớ gán thêm `tables` là dựng
+    # một luật mà hai chỗ phải biết -- đúng lỗi kho này hay bị cắn. Hàm tên là
+    # `complete(record, ...)`, nên hoàn thiện bản ghi là việc của nó.
+    #
+    # Markup rỗng thì KHÔNG ghi khoá: một lượt dựng lại không có markup không
+    # được phép xoá cấu trúc mà lượt vẽ đã ghi đúng.
+    if markup:
+        record.setdefault("kie", {})["tables"] = table_structures(markup)
     return pairs, counts
 
 
-__all__ = ["complete", "extra_pairs", "table_pairs"]
+__all__ = ["complete", "extra_pairs", "table_pairs", "table_structures"]

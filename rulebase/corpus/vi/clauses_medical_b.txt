@@ -1,0 +1,26 @@
+# CLAUSES_MEDICAL_B — mẻ thứ hai của hồ sơ này, cùng định dạng `clauses_chung.txt`.
+#
+# Tách file thay vì nối vào mẻ đầu: `corpus.CLAUSE_FILES` gộp các file của một
+# hồ sơ lại, nên thêm một file là hồ sơ ấy dài thêm được mấy tờ mà không phải
+# đọc lại file cũ để tránh trùng.
+
+Phân loại ưu tiên cấp cứu	Người bệnh đến cấp cứu được phân loại mức độ ưu tiên ngay khi tiếp nhận.	Trường hợp nguy kịch được xử trí trước, không phụ thuộc thứ tự đến.
+Hội chẩn	Hội chẩn được tổ chức khi chẩn đoán chưa rõ hoặc điều trị không tiến triển như dự kiến.	Kết luận hội chẩn được ghi vào hồ sơ bệnh án và có chữ ký của các thành viên.
+Kê đơn thuốc	Đơn thuốc ghi rõ tên thuốc, hàm lượng, liều dùng, đường dùng và thời gian sử dụng.	Không kê đơn thuốc theo yêu cầu của người bệnh khi không có chỉ định chuyên môn.
+Chỉ định xét nghiệm	Xét nghiệm chỉ được chỉ định khi cần cho chẩn đoán hoặc theo dõi điều trị.	Kết quả xét nghiệm được trả đúng thời gian đã hẹn và lưu trong hồ sơ bệnh án.
+Quản lý thuốc phải kiểm soát đặc biệt	Thuốc gây nghiện, hướng thần được bảo quản trong tủ riêng có khoá và ghi sổ theo dõi từng lần xuất nhập.	Phần thuốc còn thừa sau sử dụng được huỷ có chứng kiến và lập biên bản.
+Truyền máu	Máu và chế phẩm máu chỉ được truyền sau khi định nhóm và làm phản ứng hoà hợp.	Người bệnh được theo dõi sát trong mười lăm phút đầu của mỗi đơn vị máu.
+Phẫu thuật và thủ thuật	Mỗi ca phẫu thuật có kiểm tra an toàn trước rạch da, xác nhận đúng người, đúng vị trí, đúng phương pháp.	Dụng cụ và gạc được đếm trước và sau ca, ghi vào biên bản phẫu thuật.
+Vô cảm và gây mê	Người bệnh được khám tiền mê và đánh giá nguy cơ trước khi gây mê.	Trong quá trình gây mê, các chỉ số sinh tồn được theo dõi liên tục và ghi chép.
+Theo dõi sau can thiệp	Người bệnh sau phẫu thuật được theo dõi tại phòng hồi tỉnh cho đến khi đạt tiêu chuẩn chuyển khoa.	Biến chứng phát hiện trong thời gian theo dõi được xử trí ngay và ghi vào hồ sơ.
+Dinh dưỡng người bệnh	Người bệnh nội trú được đánh giá tình trạng dinh dưỡng và chỉ định chế độ ăn phù hợp.	Chế độ ăn bệnh lý do khoa dinh dưỡng cung cấp theo chỉ định của bác sĩ điều trị.
+Ra viện và hẹn tái khám	Khi ra viện, người bệnh được cấp giấy ra viện ghi chẩn đoán, quá trình điều trị và hướng dẫn theo dõi.	Lịch tái khám được hẹn rõ ngày và ghi trên giấy ra viện.
+Giấy chứng nhận nghỉ việc hưởng bảo hiểm	Giấy chứng nhận nghỉ việc chỉ cấp cho người bệnh có chỉ định nghỉ của bác sĩ điều trị.	Số ngày nghỉ ghi trên giấy không vượt quá quy định cho từng loại bệnh.
+Người bệnh tử vong	Trường hợp tử vong được lập biên bản, thông báo cho thân nhân và hoàn tất hồ sơ trong hai mươi bốn giờ.	Việc khám nghiệm chỉ thực hiện khi có yêu cầu của cơ quan có thẩm quyền hoặc đồng ý của thân nhân.
+Người bệnh không hợp tác	Người bệnh từ chối điều trị được giải thích rõ nguy cơ và ký cam kết vào hồ sơ.	Trường hợp tự ý rời cơ sở, nhân viên y tế ghi nhận thời điểm và báo cáo người phụ trách.
+Bảo vệ trẻ em và người yếu thế	Người bệnh là trẻ em, người cao tuổi, người khuyết tật được ưu tiên khám và bố trí người hỗ trợ.	Nghi ngờ bạo hành phải báo cáo theo quy định về bảo vệ trẻ em.
+Nghiên cứu y sinh	Nghiên cứu có sự tham gia của người bệnh phải được hội đồng đạo đức phê duyệt trước khi triển khai.	Người tham gia nghiên cứu ký bản đồng ý sau khi được giải thích đầy đủ và được rút lui bất kỳ lúc nào.
+Thiết bị y tế	Thiết bị y tế được kiểm định, bảo dưỡng định kỳ và có nhật ký sử dụng.	Thiết bị hỏng phải dán nhãn ngừng sử dụng và báo bộ phận vật tư trong ca làm việc.
+Báo cáo nhiễm khuẩn bệnh viện	Ca nhiễm khuẩn liên quan đến chăm sóc y tế được báo cáo cho bộ phận kiểm soát nhiễm khuẩn.	Số liệu nhiễm khuẩn được tổng hợp và công bố nội bộ hằng quý.
+Vận chuyển cấp cứu	Người bệnh chuyển viện trong tình trạng nặng phải có nhân viên y tế đi cùng và đủ phương tiện cấp cứu.	Cơ sở tiếp nhận được liên hệ và xác nhận trước khi chuyển.
+Bảo hiểm y tế và đồng chi trả	Phần chi phí thuộc phạm vi chi trả của quỹ bảo hiểm y tế được thanh toán theo mức hưởng của người bệnh.	Người bệnh được thông báo phần đồng chi trả trước khi thực hiện dịch vụ kỹ thuật cao.

@@ -66,10 +66,16 @@ nhau cho cùng một chỗ mực**. Số trong ngoặc là một tờ biên bả
 | tầng | hạt | một phần tử là | có gì về hình học |
 | --- | ---: | --- | --- |
 | `layout_annotations` | 13 | một **vùng** (19 nhãn lớp: Text, Table, Watermark…) | `bbox` |
-| `blocks` | 54 | một **dòng** của một run | `bbox`, `quad`, `bbox_1000` |
-| `word_annotations` | 404 | một **từ** | `bbox`, `polygon` (4 góc, đã theo warp), `bbox_1000` |
+| `blocks` | 54 | một **dòng** của một run | `bbox`, `quad` |
+| `word_annotations` | 404 | một **từ** | `bbox`, `polygon` (4 góc, đã theo warp) |
 | `entity_annotations` | 45 | **cả run** — trường là chuỗi trọn vẹn | `bbox` (bao ngoài), **`lines`** (hộp từng dòng), `key_entity_index` |
 | `kie.pairs` | 17 | một **cặp khoá–giá trị** | `key_bbox`, `value_bbox` — *mỗi bên đúng một hình chữ nhật* |
+
+> **Hệ toạ độ: 0..1000.** Mọi `bbox`, `polygon`, `quad`, `lines` và khoá
+> `*_bbox` là PHẦN NGHÌN của cạnh tờ giấy (`bbox_mode: "xyxy_per_mille"`).
+> Số pixel đo được nằm ở khoá `*_px` bên cạnh. Phép chuyển ở đúng một chỗ:
+> `pipeline/record.py::to_per_mille`. Khoá `bbox_1000` của bản cũ đã bỏ —
+> `bbox` chính là nó.
 
 Hai điều đáng nhớ trước khi bàn:
 

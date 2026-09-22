@@ -1,0 +1,62 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+#
+# QUY CHẾ NỘI BỘ — phôi nhiều tờ, không bảng, hồ sơ hành chính.
+#
+# Cặp với `hop_dong_dich_vu_dai.yaml` và khác nó ở kho chữ: `profile: admin`
+# nên `corpus.clauses` đọc `clauses_admin.txt` — chế độ hội họp, con dấu, báo
+# cáo, kỷ luật — chứ không đọc điều khoản mua bán. Cùng một khối chảy, hai
+# giọng văn khác hẳn nhau, và đó là lý do kho điều khoản chia theo hồ sơ.
+#
+# `legal_basis` trong `always`: mọi quy chế của cơ quan nhà nước mở đầu bằng
+# một chuỗi "Căn cứ ...;" — nhãn `Bibliography`, khối hiếm nhất của bộ.
+id: quy_che_noi_bo
+profile: admin
+org_kind: state
+national: 0.9
+titles:
+- QUY CHẾ LÀM VIỆC
+- QUY CHẾ QUẢN LÝ NỘI BỘ
+- NỘI QUY LAO ĐỘNG
+- QUY CHẾ CHI TIÊU NỘI BỘ
+- QUY ĐỊNH VỀ CÔNG TÁC VĂN THƯ LƯU TRỮ
+subtitles:
+- (Ban hành kèm theo Quyết định số ...../QĐ ngày .... tháng .... năm ....)
+- ''
+- 'Số: ...../QC'
+fields:
+- seller_name
+- object
+- period
+field_span:
+- 1
+- 3
+columns: []
+totals: none
+words: false
+sign_sets:
+- - NƠI NHẬN
+  - TM. THỦ TRƯỞNG ĐƠN VỊ
+- - NƠI NHẬN
+  - KT. GIÁM ĐỐC
+- - TM. BAN GIÁM ĐỐC
+notes:
+- Quy chế này có hiệu lực kể từ ngày ký và thay thế các quy định trước đây trái với quy chế này.
+- Trong quá trình thực hiện, nếu có vướng mắc, các đơn vị phản ánh về bộ phận hành chính để tổng hợp.
+rows:
+- 0
+- 0
+always:
+- letterhead
+- doctitle
+- legal_basis
+- clauses
+- signatures
+optional:
+- meta
+- fields
+- notes
+- footer
+- footnote
+- toc
+- figure
+en_ok: false

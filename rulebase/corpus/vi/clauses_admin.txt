@@ -1,0 +1,36 @@
+# CLAUSES_ADMIN — điều khoản đánh số, mỗi dòng MỘT điều.
+#
+# Cột 1 là tiêu đề điều ("Điều N." do bộ dựng tự đánh số, không viết ở đây).
+# Các cột sau là các KHOẢN của chính điều ấy, mỗi khoản một cột, ngăn bằng TAB.
+# Bộ dựng lấy từ một đến hết số khoản có, nên một điều in ra ngắn dài khác nhau
+# mà chữ vẫn thuộc về đúng cái tiêu đề của nó — khác hẳn ghép tiêu đề của điều
+# này với nội dung của điều kia.
+#
+# Đây là thứ cho một tờ giấy KHÔNG CÓ BẢNG tràn sang tờ sau: trước khi có file
+# này, `synthgen/paginate.py` chỉ cắt được theo dòng bảng, nên mọi tài liệu
+# nhiều trang trong bộ đều là một cái bảng. Xem `synthgen/corpus.py::clauses`.
+#
+# Tên riêng đều là tên tự đặt theo lệ "Mẫu" của kho, không trùng pháp nhân thật.
+
+Căn cứ ban hành	Quy định này được ban hành trên cơ sở chức năng, nhiệm vụ và cơ cấu tổ chức hiện hành của đơn vị.	Các văn bản trước đây trái với quy định này đều bãi bỏ.
+Nguyên tắc làm việc	Đơn vị làm việc theo chế độ thủ trưởng, bảo đảm dân chủ, công khai và đúng thẩm quyền.	Mỗi công việc chỉ giao cho một đầu mối chủ trì và chịu trách nhiệm chính.	Cấp dưới phục tùng sự chỉ đạo của cấp trên; trường hợp có ý kiến khác vẫn phải chấp hành và được bảo lưu ý kiến bằng văn bản.
+Chế độ hội họp	Cuộc họp giao ban toàn đơn vị tổ chức định kỳ vào ngày làm việc đầu tiên của tuần.	Tài liệu họp được gửi trước ít nhất một ngày làm việc; người chủ trì có quyền hoãn cuộc họp nếu tài liệu chưa đủ.	Mọi cuộc họp đều phải lập biên bản và lưu tại bộ phận hành chính.
+Thời giờ làm việc	Thời giờ làm việc là tám giờ một ngày, bốn mươi giờ một tuần, từ thứ Hai đến thứ Sáu.	Người lao động có mặt tại nơi làm việc trước giờ bắt đầu ít nhất năm phút.	Việc làm thêm giờ phải có đề nghị của bộ phận và được người có thẩm quyền phê duyệt trước.
+Chế độ nghỉ	Người lao động được nghỉ hằng tuần, nghỉ lễ, tết theo quy định của pháp luật lao động.	Đơn xin nghỉ phép từ ba ngày trở lên phải gửi trước ít nhất năm ngày làm việc.	Trường hợp nghỉ đột xuất, người lao động phải báo cho người quản lý trực tiếp ngay trong buổi làm việc đầu tiên.
+Quản lý và sử dụng con dấu	Con dấu do bộ phận hành chính quản lý và chỉ được đóng lên văn bản đã có chữ ký của người có thẩm quyền.	Không đóng dấu khống lên giấy trắng hoặc văn bản chưa có nội dung.	Việc mang con dấu ra khỏi trụ sở phải được người đứng đầu đơn vị đồng ý bằng văn bản.
+Soạn thảo và ban hành văn bản	Văn bản ban hành phải đúng thể thức, đúng thẩm quyền và đúng quy trình.	Đơn vị chủ trì soạn thảo chịu trách nhiệm về nội dung; bộ phận hành chính chịu trách nhiệm về thể thức.	Văn bản có nội dung liên quan đến nhiều bộ phận phải lấy ý kiến trước khi trình ký.
+Chế độ báo cáo	Các bộ phận gửi báo cáo tháng trước ngày hai mươi lăm hằng tháng.	Báo cáo quý và báo cáo năm gửi chậm nhất năm ngày làm việc sau khi kết thúc kỳ báo cáo.	Báo cáo phải có số liệu, đánh giá và kiến nghị cụ thể, không báo cáo chung chung.
+Quản lý hồ sơ, tài liệu	Hồ sơ công việc được lập theo danh mục và nộp lưu trữ trong thời hạn một năm kể từ khi công việc kết thúc.	Người được giao giữ hồ sơ chịu trách nhiệm về tính đầy đủ và nguyên vẹn của hồ sơ.	Việc tiêu huỷ tài liệu hết giá trị phải có hội đồng và lập biên bản.
+Quản lý tài sản	Tài sản giao cho cá nhân sử dụng phải có biên bản bàn giao và ghi vào sổ theo dõi.	Người sử dụng có trách nhiệm bảo quản; làm mất hoặc hư hỏng do lỗi chủ quan thì phải bồi thường.	Kiểm kê tài sản được thực hiện mỗi năm một lần vào cuối năm tài chính.
+Tiếp nhận và giải quyết hồ sơ	Hồ sơ của tổ chức, công dân được tiếp nhận tại bộ phận một cửa trong giờ hành chính.	Người tiếp nhận có trách nhiệm kiểm tra thành phần hồ sơ và viết giấy biên nhận ghi rõ ngày hẹn trả.	Hồ sơ chưa đủ thành phần được hướng dẫn bổ sung một lần bằng văn bản.
+Thời hạn giải quyết	Thời hạn giải quyết được tính bằng ngày làm việc kể từ ngày nhận đủ hồ sơ hợp lệ.	Trường hợp phải xác minh, thời hạn được kéo dài nhưng không quá mười ngày làm việc và phải thông báo cho người nộp hồ sơ.	Hồ sơ quá hạn phải có văn bản xin lỗi và nêu rõ thời hạn trả kết quả.
+Tiếp công dân	Người đứng đầu đơn vị tiếp công dân định kỳ ít nhất một ngày trong tháng.	Nội dung tiếp công dân được ghi vào sổ và chuyển đến bộ phận có trách nhiệm xử lý.	Kết quả xử lý được thông báo cho công dân trong thời hạn theo quy định.
+Phối hợp giữa các bộ phận	Bộ phận chủ trì có trách nhiệm gửi đề nghị phối hợp bằng văn bản, nêu rõ nội dung và thời hạn.	Bộ phận được đề nghị trả lời trong ba ngày làm việc; quá hạn không trả lời thì coi như thống nhất.	Trường hợp còn ý kiến khác nhau, bộ phận chủ trì báo cáo người đứng đầu quyết định.
+Khen thưởng	Tập thể, cá nhân hoàn thành xuất sắc nhiệm vụ được xét khen thưởng định kỳ hằng năm.	Sáng kiến làm lợi cho đơn vị được xét thưởng đột xuất theo mức do người đứng đầu quyết định.
+Xử lý vi phạm	Người vi phạm quy định này, tuỳ theo tính chất và mức độ, bị nhắc nhở, khiển trách hoặc xử lý kỷ luật theo quy định.	Việc xử lý kỷ luật phải có hội đồng, có giải trình của người vi phạm và lập thành biên bản.	Trường hợp gây thiệt hại về tài sản thì ngoài hình thức kỷ luật còn phải bồi thường.
+Chế độ bảo mật nội bộ	Thông tin về nhân sự, tài chính và phương án công tác thuộc danh mục thông tin nội bộ.	Không phát tán thông tin nội bộ lên mạng xã hội hoặc cung cấp cho báo chí khi chưa được phép.	Người phát ngôn của đơn vị do người đứng đầu chỉ định bằng văn bản.
+An toàn lao động và phòng cháy	Người lao động phải được huấn luyện an toàn trước khi bố trí vào vị trí làm việc.	Lối thoát nạn, phương tiện chữa cháy phải luôn trong tình trạng sẵn sàng và không bị che chắn.	Đơn vị tổ chức diễn tập phương án chữa cháy ít nhất một lần trong năm.
+Sử dụng hệ thống thông tin	Mỗi người được cấp một tài khoản riêng và chịu trách nhiệm về mọi thao tác thực hiện dưới tài khoản đó.	Không cài đặt phần mềm ngoài danh mục cho phép lên máy tính của đơn vị.	Dữ liệu công việc phải lưu trên thư mục dùng chung, không lưu riêng trên máy cá nhân.
+Trách nhiệm của người đứng đầu bộ phận	Phân công công việc rõ người, rõ việc, rõ thời hạn và theo dõi đến kết quả cuối cùng.	Chịu trách nhiệm liên đới đối với vi phạm của người lao động thuộc quyền quản lý.	Định kỳ đánh giá mức độ hoàn thành nhiệm vụ của từng vị trí.
+Hiệu lực và tổ chức thực hiện	Quy định này có hiệu lực kể từ ngày ký và được phổ biến đến toàn thể người lao động.	Trong quá trình thực hiện, nếu có vướng mắc, các bộ phận phản ánh về bộ phận hành chính để tổng hợp, trình sửa đổi.	Bộ phận hành chính chịu trách nhiệm theo dõi, đôn đốc và kiểm tra việc thực hiện.
+Rà soát, sửa đổi định kỳ	Quy định này được rà soát ít nhất hai năm một lần hoặc khi có thay đổi về tổ chức, pháp luật.	Đề nghị sửa đổi phải nêu rõ điều khoản cần sửa và lý do.

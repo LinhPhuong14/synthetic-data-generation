@@ -108,9 +108,29 @@ def check_record(record: dict, image_path: Path, row: dict,
         if isinstance(index, int) and not (0 <= index < len(entities)):
             fail('word.entity_index trỏ ra ngoài', f'{stem}: {index}')
         index = word.get('layout_region_index')
-        if isinstance(index, int) and not (0 <= index < len(
-                record.get('layout_annotations') or [])):
+        all_regions = record.get('layout_annotations') or []
+        if isinstance(index, int) and not (0 <= index < len(all_regions)):
             fail('word.layout_region_index trỏ ra ngoài', f'{stem}: {index}')
+        elif isinstance(index, int):
+            # TRỎ ĐÚNG CHỖ, không chỉ trỏ TRONG MẢNG.
+            #
+            # Một chỉ số nằm trong mảng vẫn có thể là chỉ số của vùng khác:
+            # `record.py::_unwrap` bỏ vùng rồi đánh số lại, và con trỏ của từ
+            # từng giữ nguyên số cũ. Đo lúc tìm ra: 30 trên 1105 bản ghi
+            # trong `data/` (3%) và 4231 từ (0,6%) trỏ vào một vùng không
+            # chứa chúng -- phép kiểm cũ không thấy một cái nào, vì mọi chỉ
+            # số đều hợp lệ.
+            #
+            # Xét theo TÂM hộp từ, cùng phép xét `regions_from_words` dùng để
+            # gán vùng. Nới một điểm ảnh vì hộp vùng làm tròn về số nguyên.
+            host = all_regions[index].get('bbox') or []
+            if len(host) == 4:
+                cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
+                if not (host[0] - 1 <= cx <= host[2] + 1
+                        and host[1] - 1 <= cy <= host[3] + 1):
+                    fail('word.layout_region_index trỏ vào vùng không chứa nó',
+                         f'{stem}: từ {word.get("text")!r} {box} -> vùng #{index} '
+                         f'{all_regions[index].get("layout_class")} {host}')
 
     for region in regions:
         box = region.get('bbox') or []

@@ -58,6 +58,22 @@ glyph backend draws those, and `tools/check_boxes.py` reads them. So both are
 written: `label`/`bbox`/`content` for a converter-shaped consumer, and
 `kind`/`text`/`quad` for everything in this repository. `label` is derived from
 `kind` by `label_for`, once, here.
+
+**HỆ TOẠ ĐỘ: 0..1000, không phải pixel.** `bbox`, `polygon`, `quad`, `lines`
+và mọi khoá `*_bbox` là PHẦN NGHÌN của cạnh tờ giấy (`bbox_mode:
+"xyxy_per_mille"`). Số pixel đo được vẫn còn, ở khoá `*_px` bên cạnh.
+
+Vì sao chiều ấy: thứ một mô hình thị giác - ngôn ngữ đọc và sinh ra là hệ
+chuẩn hoá -- một hộp pixel chỉ có nghĩa khi kèm kích thước ảnh, mà `--scale`,
+phép thu theo `short_size` và phép làm cũ đều đổi kích thước ấy.
+`synthgen/export.py` đã xuất hệ 1000 từ lâu, nên trước thay đổi này kho có
+HAI hệ toạ độ cho cùng một tờ giấy.
+
+Pixel không bỏ được -- `synthgen/overlay.py` vẽ hộp lên ảnh và
+`synthgen/augment.py` chiếu lại từng góc khi làm cong giấy -- nên đổi tên chứ
+không xoá. Phép chuyển nằm ở ĐÚNG MỘT CHỖ (`to_per_mille`, gọi trong
+`build()`): mọi phép đo hình học trong file này -- gom vùng, đo khoảng hở, xét
+kề nhau -- chạy bằng pixel và phải chạy bằng pixel.
 """
 
 from __future__ import annotations
@@ -509,6 +525,50 @@ DOCSYNTH_LABEL_FOR_KIND: dict[str, str] = {
 }
 
 
+# ---------------------------------------------------------------- KHỐI -> VÙNG
+#
+# Một SECTION của phôi được phép mang nhãn vùng nào. Bảng này không khai lại
+# nhãn -- nó chỉ nói section ấy in ra họ `data-kind` nào, rồi tra ngược
+# `DOCSYNTH_LABEL_FOR_KIND` ở trên. Nhờ thế đổi nhãn của một họ kind là cổng
+# đi theo, không phải nhớ sửa hai chỗ.
+#
+# Vì sao có bảng này, bằng một ca thật: `rulebase/layouts/
+# gen_dispatch_letter_02.compose.json` khai `{"section": "signatures",
+# "region": "Form"}`, trong khi bảng trên đã chốt `sign.` là `Text` và viết
+# hẳn lý do ("KHỐI CHỮ KÝ LÀ CHỮ, KHÔNG PHẢI BIỂU MẪU"). Một luật đúng mà chỉ
+# một chỗ biết thì chỗ kia vẫn sinh ra dữ liệu sai -- và chỗ kia là một model,
+# nên sửa tay file ấy chỉ đúng tới lần sinh sau.
+#
+# Chỉ khai section nào có họ kind RÕ RÀNG. `footer` in cả chữ chạy lẫn số
+# trang nên không khai; khai bừa là dựng một cổng chặn nhầm thứ đúng.
+SECTION_KIND: dict[str, str] = {
+    "signatures": "sign.",
+    "table": "cell",
+    "totals": "cell",
+}
+
+
+def region_for_section(section: str) -> str | None:
+    """Nhãn vùng đúng cho `section`, hoặc None khi bảng không nói gì."""
+    kind = SECTION_KIND.get(str(section or "").strip())
+    return DOCSYNTH_LABEL_FOR_KIND.get(kind) if kind else None
+
+
+def region_conflict(section: str, region: str) -> str | None:
+    """Câu giải thích khi `section` không được mang `region`, hoặc None.
+
+    Trả về CÂU chứ không phải bool: cổng gọi nó in thẳng ra cho model đọc, và
+    "sai" không dạy được gì, "chữ ký là chữ chạy, không phải biểu mẫu" thì
+    có."""
+    want = region_for_section(section)
+    if not want or not region or region == want:
+        return None
+    return (f'khối `{section}` khai `region="{region}"` mà `data-kind` của nó '
+            f'({SECTION_KIND[section]}...) là `{want}` -- xem bảng '
+            f'`DOCSYNTH_LABEL_FOR_KIND` trong pipeline/record.py')
+
+
+
 def layout_class_for(kind: str) -> str:
     """The `docsynth.annotations.v1` label for one of this repository's field
     kinds, chosen directly against the 19-label vocabulary -- see
@@ -602,6 +662,97 @@ def job_id(parser: str, layout: str, seed: Any, filename: str) -> str:
 
 
 # --------------------------------------------------------------------- blocks
+
+
+# ------------------------------------------------------- HỆ TOẠ ĐỘ 0..1000
+#
+# Mọi `bbox`/`polygon` trong bản ghi là PHẦN NGHÌN của cạnh tờ giấy, không
+# phải pixel. Pixel vẫn còn, ở `bbox_px`/`polygon_px`.
+#
+# Vì sao đổi chiều ấy chứ không thêm một trường thứ ba: thứ người đọc bản ghi
+# dùng để huấn luyện là hệ chuẩn hoá -- một hộp ở pixel chỉ có nghĩa khi kèm
+# kích thước ảnh, và `--scale`, phép thu nhỏ theo `short_size`, rồi phép làm
+# cũ đều đổi kích thước ấy. `synthgen/export.py` đã xuất hệ 1000 từ lâu
+# (`bbox_unit: per_mille_of_size`), nên trước thay đổi này một kho có HAI hệ
+# toạ độ: bản ghi theo pixel, bản xuất theo phần nghìn.
+#
+# Pixel KHÔNG bỏ được: `synthgen/overlay.py` vẽ hộp đè lên ảnh và
+# `synthgen/augment.py` chiếu lại từng góc khi làm cong giấy -- cả hai cần
+# pixel thật. Nên đổi tên chứ không xoá, và đổi ở ĐÚNG MỘT CHỖ: phép gom
+# vùng, phép đo khoảng hở, phép xét kề nhau bên dưới đều tính bằng pixel và
+# phải giữ nguyên như thế. Chuyển sớm hơn là bắt chúng tính trên số đã làm
+# tròn hai lần.
+GRID = 1000
+
+
+def _per_mille(value: float, size: float) -> int:
+    """Một toạ độ pixel -> hệ 0..1000, cắt vào khoảng.
+
+    Cắt chứ không để tràn, cùng lẽ `synthgen/export.py::to_grid`: một hộp lệch
+    ra ngoài mép giấy vài pixel vì làm tròn là chuyện có thật, còn một toạ độ
+    1003 trong hệ 1000 thì mọi thứ đọc nó đều phải tự đoán có nên tin không."""
+    if size <= 0:
+        return 0
+    return max(0, min(GRID, int(round(float(value) / float(size) * GRID))))
+
+
+def to_per_mille(node: Any, width: float, height: float) -> Any:
+    """Đổi mọi `bbox`/`polygon` trong `node` sang hệ 1000, giữ pixel ở `*_px`.
+
+    Đi ĐỆ QUY trên chính cấu trúc đã lắp xong chứ không sửa từng chỗ ghi hộp:
+    bản ghi có bốn tầng hạt (`blocks`, `word_annotations`,
+    `entity_annotations`, `layout_annotations`) cộng các hộp lồng trong `kie`,
+    và một danh sách chỗ-phải-sửa viết tay thì sót đúng cái tầng vừa thêm.
+
+    `bbox` có hai dạng trong file này -- danh sách `[x1,y1,x2,y2]` và dict
+    `{x1..y2}` -- nên cả hai đều phải đọc được. Dạng nào vào thì dạng ấy ra.
+    """
+    if isinstance(node, list):
+        return [to_per_mille(item, width, height) for item in node]
+    if not isinstance(node, dict):
+        return node
+
+    out: dict[str, Any] = {}
+    for key, value in node.items():
+        # Theo HẬU TỐ, không theo danh sách tên: bản ghi mang `bbox`,
+        # `polygon`, `key_bbox`, `value_bbox`, và cặp KIE còn thêm tên nữa.
+        # Một danh sách tên viết tay sót đúng cái tên vừa thêm, và sót ở đây
+        # nghĩa là một trường lẻ loi mang pixel giữa một bản ghi phần nghìn.
+        is_box = key == "bbox" or key.endswith("_bbox")
+        # `quad` là bốn góc đo được, cùng hình dạng `polygon`. `lines` là một
+        # DANH SÁCH hộp -- mỗi dòng của một thực thể nhiều dòng.
+        #
+        # Hai khoá này không theo hậu tố nào nên phải gọi tên, và cả hai đều
+        # đã lọt bản đầu: đo trên một trang thật, `entity.lines[0]` bằng đúng
+        # `entity.bbox_px` trong khi `entity.bbox` đã là phần nghìn. Một bản
+        # ghi mang hai hệ toạ độ không báo lỗi -- nó chỉ dạy sai.
+        is_poly = key in ("polygon", "quad") or key.endswith("_polygon")
+        if key == "lines" and isinstance(value, (list, tuple)) and value and all(
+                isinstance(v, (list, tuple)) and len(v) == 4 for v in value):
+            out["lines_px"] = [[float(c) for c in line] for line in value]
+            out[key] = [[_per_mille(line[0], width), _per_mille(line[1], height),
+                         _per_mille(line[2], width), _per_mille(line[3], height)]
+                        for line in value]
+            continue
+        if is_box and isinstance(value, (list, tuple)) and len(value) == 4:
+            out[f"{key}_px"] = [float(v) for v in value]
+            out[key] = [_per_mille(value[0], width), _per_mille(value[1], height),
+                        _per_mille(value[2], width), _per_mille(value[3], height)]
+        elif is_box and isinstance(value, dict) and "x1" in value:
+            out[f"{key}_px"] = dict(value)
+            out[key] = {"x1": _per_mille(value["x1"], width),
+                        "y1": _per_mille(value["y1"], height),
+                        "x2": _per_mille(value["x2"], width),
+                        "y2": _per_mille(value["y2"], height)}
+        elif is_poly and isinstance(value, (list, tuple)) and value:
+            out[f"{key}_px"] = [[float(x), float(y)] for x, y in value]
+            out[key] = [[_per_mille(x, width), _per_mille(y, height)]
+                        for x, y in value]
+        elif key == "bbox_mode":
+            out[key] = "xyxy_per_mille"
+        else:
+            out[key] = to_per_mille(value, width, height)
+    return out
 
 
 def bbox_of(quad: Any) -> dict[str, int]:
@@ -1263,6 +1414,42 @@ def graphic_label(mark: dict[str, Any]) -> str:
     return STAMP_LABEL if (kind in STAMP_GRAPHICS or head in STAMP_GRAPHICS
                            or "seal" in kind or "stamp" in kind) else GRAPHIC_LABEL
 
+# Nhãn của MỰC ĐÈ: vùng nằm chồng lên nội dung chứ không chứa nội dung.
+#
+# Phép gán chữ vào vùng ở `regions_from_words` là phép chứa HÌNH HỌC, và với
+# mọi vùng khác thì đó đúng là câu hỏi cần hỏi. Với chữ chìm thì không: nó in
+# đè lên tờ giấy, nên mọi từ nằm dưới nó đều lọt vào khung của nó. Vùng phủ
+# chỉ nhận những từ MANG CHÍNH NHÃN ẤY.
+OVERLAY_LABELS = frozenset({"Watermark"})
+
+
+# Nhãn được phép chứa vùng khác: định nghĩa của chúng LÀ "một khối gồm nhiều
+# thứ nhỏ hơn". `Figure` ôm `Caption`, `Table` ôm bảng lồng, `Complex-Block` ôm
+# nhiều khối nhãn-giá trị.
+#
+# MỘT bản, đọc từ hai chỗ. Trước đây đây là hai `frozenset` giống hệt nhau --
+# một cái tên `GROUPING` nằm trong thân `regions_from_words`, một cái tên
+# `GROUPING_LABELS` ở tầng module -- và thêm một nhãn vào một bên là để bên kia
+# cũ đi lặng lẽ, đúng cái bệnh `pipeline/tags.py` được viết ra để chữa.
+GROUPING_LABELS = frozenset({"Complex-Block", "Table", "Figure"})
+
+# Hộp ngoài có bao TRỌN hộp trong, và có rộng hơn hẳn không.
+#
+# `slack` là mức "rộng hơn hẳn": 1.0 nghĩa là chỉ cần lớn hơn, 1.05 đòi lớn
+# hơn 5%. Hai chỗ gọi đòi hai mức khác nhau và cả hai đều có lý -- xem chỗ gọi
+# -- nhưng phép xét thì phải là MỘT, vì hai bản chép của cùng một bất đẳng
+# thức bốn vế là hai cơ hội gõ nhầm một dấu.
+def _encloses(outer: tuple[float, float, float, float],
+              inner: tuple[float, float, float, float],
+              slack: float = 1.0) -> bool:
+    if not (outer[0] <= inner[0] and outer[1] <= inner[1]
+            and outer[2] >= inner[2] and outer[3] >= inner[3]):
+        return False
+    wide = (outer[2] - outer[0]) * (outer[3] - outer[1])
+    small = (inner[2] - inner[0]) * (inner[3] - inner[1])
+    return wide > small * slack
+
+
 # How many word-heights of vertical gap end a region and start the next one,
 # when grouping by `layout_class` -- see `regions_from_words`.
 REGION_GAP_HEIGHTS = 1.6
@@ -1475,26 +1662,19 @@ def regions_from_words(words: list[dict[str, Any]], *,
             return 0.0
         return abs(q[2][0] - q[0][0]) * abs(q[2][1] - q[0][1])
 
-    # NHÃN ĐƯỢC PHÉP GỘP VÙNG KHÁC. Ba cái này định nghĩa của chúng là "một
-    # khối chứa nhiều thứ nhỏ hơn", nên chứa vùng con là đúng bản chất.
-    GROUPING = {"Complex-Block", "Table", "Figure"}
+    def _span(zone: dict[str, Any]) -> tuple[float, float, float, float] | None:
+        q = zone.get("quad") or []
+        return (q[0][0], q[0][1], q[2][0], q[2][1]) if len(q) == 4 else None
 
     def _wraps(outer: dict, others: list[dict]) -> int:
-        """Đếm vùng khác nằm TRỌN trong `outer`."""
-        q = outer.get("quad") or []
-        if len(q) != 4:
+        """Đếm vùng khác nằm TRỌN trong `outer`. Phép xét là `_encloses` ở
+        tầng module -- cùng bất đẳng thức `_unwrap` dùng."""
+        box = _span(outer)
+        if box is None:
             return 0
-        ox1, oy1, ox2, oy2 = q[0][0], q[0][1], q[2][0], q[2][1]
-        n = 0
-        for other in others:
-            r = other.get("quad") or []
-            if other is outer or len(r) != 4:
-                continue
-            if (ox1 <= r[0][0] and oy1 <= r[0][1]
-                    and ox2 >= r[2][0] and oy2 >= r[2][1]
-                    and (ox2 - ox1) * (oy2 - oy1) > (r[2][0] - r[0][0]) * (r[2][1] - r[0][1])):
-                n += 1
-        return n
+        return sum(1 for other in others
+                   if other is not outer and _span(other) is not None
+                   and _encloses(box, _span(other)))
 
     # KHUNG GÓI KHÔNG PHẢI MỘT VÙNG.
     #
@@ -1511,12 +1691,12 @@ def regions_from_words(words: list[dict[str, Any]], *,
     # nhưng vẫn còn 55 ca `Page-Header ⊃ Text`, `Text ⊃ Text` -- khung chỉ gói
     # đúng một vùng. Gói một vẫn là gói.
     #
-    # Ba nhãn trong `GROUPING` miễn trừ, vì định nghĩa của chúng LÀ chứa thứ
+    # Ba nhãn trong `GROUPING_LABELS` miễn trừ, vì định nghĩa của chúng LÀ chứa thứ
     # nhỏ hơn: `Figure` ôm `Caption`, `Table` ôm bảng lồng, `Complex-Block` ôm
     # nhiều khối nhãn-giá trị.
     all_zones = [z for z in (zones or []) if len(z.get("quad") or []) == 4]
     wrappers = {id(z) for z in all_zones
-                if str(z.get("label") or "") not in GROUPING
+                if str(z.get("label") or "") not in GROUPING_LABELS
                 and _wraps(z, all_zones) >= 1}
 
     for zone in sorted(list(zones or []), key=_area):
@@ -1529,14 +1709,30 @@ def regions_from_words(words: list[dict[str, Any]], *,
         zx2, zy2 = quad[2][0], quad[2][1]
         # MỌI chữ trong khung, kể cả chữ vùng con đã nhận: một vùng bọc có nội
         # dung thì nó tồn tại, dù nội dung ấy thuộc về vùng con.
+        #
+        # TRỪ VÙNG PHỦ. `Watermark` là MỰC ĐÈ lên tờ giấy, không phải một
+        # khung chứa chữ: phép chứa hình học ở đây đúng cho mọi vùng khác,
+        # nhưng với chữ chìm nó gán cho watermark mọi từ nằm DƯỚI nó. Đo trên
+        # `so_lien_lac_00007`: vùng `Watermark` mang chữ
+        # `'BẢN SAO quy Lao Điều 5. Các bên thi hành định kỳ. cấp đầu'` --
+        # "BẢN SAO" là của nó, phần còn lại là điều khoản bị nó nằm chồng lên.
+        #
+        # Chữ của vùng phủ nhận ra bằng chính `layout_class` của từ: mỗi từ đã
+        # mang nhãn suy từ `data-kind` của nó (`watermark` -> `Watermark`), và
+        # đó là sự thật về từ ấy THUỘC VỀ ai, không phải về nó NẰM Ở ĐÂU.
+        label_here = str(zone.get("label") or "")
+        overlay = label_here in OVERLAY_LABELS
         inside, fresh = [], []
         for i, word in enumerate(words):
             cx = (word["bbox"][0] + word["bbox"][2]) / 2
             cy = (word["bbox"][1] + word["bbox"][3]) / 2
-            if zx1 <= cx <= zx2 and zy1 <= cy <= zy2:
-                inside.append(i)
-                if not covered[i]:
-                    fresh.append(i)
+            if not (zx1 <= cx <= zx2 and zy1 <= cy <= zy2):
+                continue
+            if overlay and str(word.get("layout_class") or "") != label_here:
+                continue
+            inside.append(i)
+            if not covered[i]:
+                fresh.append(i)
         if not inside:
             continue
         # VÙNG BỌC KHÔNG PHẢI MỘT VÙNG.
@@ -1565,6 +1761,16 @@ def regions_from_words(words: list[dict[str, Any]], *,
         #
         # Model khai tay là model NÓI RÕ khối này là gì. Một phép suy từ tên
         # thẻ không được quyền ghi đè lời ấy.
+        #
+        # Nhãn nào có phép đo RIÊNG (`Table`/`Image`/`Stamp`, `pipeline/
+        # tags.py::MEASURED_ELSEWHERE`) không bao giờ tới được vòng lặp này để
+        # mà cần một ngoại lệ nữa -- `generators/html/page.py::ZONE_REGIONS_JS`
+        # đã lọc chúng khỏi `zones` từ trước khi hàm này nhận được danh sách,
+        # dù model khai `data-region` trực tiếp lên đúng phần tử phép đo riêng
+        # ấy đo (`<table data-region="Table">`). Từng có một ngoại lệ vá ở
+        # đây cho riêng `Table`, đo trên `llm_export_invoice_0003.json`
+        # (bốn vùng `Table` thay vì hai) -- bỏ đi sau khi sửa tận gốc ở JS,
+        # để một sự thật chỉ nằm ở một chỗ.
         if not fresh and str(zone.get("from") or "declared") != "declared":
             continue
         label = str(zone.get("label") or "Text")
@@ -1650,16 +1856,11 @@ def regions_from_words(words: list[dict[str, Any]], *,
         regions.append(_region_entry(len(regions), graphic_label(mark), "",
                                      (min(xs), min(ys), max(xs), max(ys)),
                                      "dom_element_perimeter", page_size))
-    return _unwrap(regions)
+    return _unwrap(regions, words)
 
 
-# Nhãn được phép chứa vùng khác: định nghĩa của chúng LÀ "một khối gồm nhiều
-# thứ nhỏ hơn". `Figure` ôm `Caption`, `Table` ôm bảng lồng, `Complex-Block` ôm
-# nhiều khối nhãn-giá trị.
-GROUPING_LABELS = frozenset({"Complex-Block", "Table", "Figure"})
-
-
-def _unwrap(regions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _unwrap(regions: list[dict[str, Any]],
+            words: Iterable[dict[str, Any]] = ()) -> list[dict[str, Any]]:
     """Bỏ vùng chỉ đóng vai cái KHUNG bọc vùng khác.
 
     ## Vì sao ở cuối, không ở lúc đọc `zones`
@@ -1682,7 +1883,25 @@ def _unwrap(regions: list[dict[str, Any]]) -> list[dict[str, Any]]:
     nhãn tranh nhau cùng một điểm ảnh -- và cái đáng giữ là cái ôm sát mực.
 
     Chỉ bỏ khi bao TRỌN và RỘNG HƠN hẳn: hai hộp trùng khít là chuyện khác,
-    và bỏ một trong hai thì mất thật."""
+    và bỏ một trong hai thì mất thật.
+
+    ## Vì sao cần `words`
+
+    Hai việc, và cả hai đều về CON TRỎ `layout_region_index`, thứ bản trước
+    không hề biết tới:
+
+    1. **Vùng có chữ của riêng nó không phải cái khung.** Luật bỏ-cái-ngoài
+       chỉ xét hình học, nên một đoạn văn bị con dấu đóng đè lên giữa trang
+       cũng "bao trọn" cái dấu và bị vứt -- đoạn văn mất hộp, còn chữ của nó
+       thì không còn vùng nào. Đo trên `data/`: 592 từ mang nhãn `List-Group`
+       trỏ vào một vùng `Stamp`, đúng cái ca ấy.
+    2. **Đánh số lại thì phải đổi cả con trỏ.** `region_index` được đánh lại
+       từ 0 sau khi bỏ, nhưng `word["layout_region_index"]` đã ghi số CŨ, và
+       không ai ánh xạ nó. Đo trên 1105 bản ghi trong `data/`: 30 tờ (3%) và
+       4231 từ (0,6%) trỏ vào một vùng không chứa chúng; 66% số ấy có một
+       vùng khác thật sự chứa chúng, tức trỏ nhầm chứ không phải không có
+       vùng nào. `synthgen/check.py` chỉ kiểm chỉ số có nằm trong mảng hay
+       không, nên lỗi này im lặng suốt."""
     if len(regions) < 2:
         return regions
 
@@ -1705,10 +1924,11 @@ def _unwrap(regions: list[dict[str, Any]]) -> list[dict[str, Any]]:
         for j, inner in enumerate(boxes):
             if i == j or inner is None or j in drop:
                 continue
-            if (outer[0] <= inner[0] and outer[1] <= inner[1]
-                    and outer[2] >= inner[2] and outer[3] >= inner[3]
-                    and (outer[2] - outer[0]) * (outer[3] - outer[1])
-                    > (inner[2] - inner[0]) * (inner[3] - inner[1]) * 1.05):
+            # `1.05`: hai hộp trùng khít là chuyện khác, và bỏ một trong
+            # hai thì mất thật. Bộ lọc khung ở `regions_from_words` xét cùng
+            # phép này với `slack=1.0` -- ở đó hai vùng KHAI TAY trùng khít
+            # vẫn là hai vùng khai tay, không phải một cái khung.
+            if _encloses(outer, inner, 1.05):
                 # KHAI TAY THẮNG SUY TỪ THẺ.
                 #
                 # `ZONE_REGIONS_JS` phát cả phần tử `[data-region]` lẫn thẻ
@@ -1728,11 +1948,80 @@ def _unwrap(regions: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     continue
                 drop.add(i)
                 break
+
+    # CHỮ CỦA RIÊNG NÓ THÌ NÓ KHÔNG PHẢI CÁI KHUNG.
+    #
+    # Luật trên chỉ nhìn hình học, và hình học không phân biệt "cái khung bọc
+    # một khối" với "một đoạn văn bị đóng dấu đè lên giữa". Cả hai đều bao
+    # trọn một vùng nhỏ hơn. Bỏ cái thứ hai là bỏ đúng cái hộp ôm sát mực --
+    # ngược hẳn với lý do luật này tồn tại.
+    #
+    # Phân biệt được vì không cần đoán: chữ nào thuộc vùng nào đã gán xong ở
+    # trên. Vùng nào còn chữ không vùng SỐNG SÓT nào chứa thì nó có nội dung
+    # của riêng nó, và nó ở lại.
+    #
+    # Vùng bọc do model khai đã bị `wrappers` lọc từ bước 1b nên không tới
+    # đây; thứ tới đây phần lớn là vùng gom-từ sinh sau. Một vùng gom-từ
+    # không bao giờ rỗng, nên phép xét này chỉ giữ lại đúng những vùng mà
+    # việc bỏ đi sẽ để chữ mồ côi.
+    held: dict[int, list[dict[str, Any]]] = {}
+    for word in words or ():
+        where = word.get("layout_region_index")
+        if isinstance(where, int):
+            held.setdefault(where, []).append(word)
+
+    def _homed(word: dict[str, Any], among: list[int]) -> bool:
+        """Có vùng nào trong `among` chứa tâm hộp của từ này không."""
+        bbox = word.get("bbox") or []
+        if len(bbox) != 4:
+            return True
+        cx, cy = (bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2
+        return any(boxes[k] is not None
+                   and boxes[k][0] <= cx <= boxes[k][2]
+                   and boxes[k][1] <= cy <= boxes[k][3] for k in among)
+
+    for i in sorted(drop):
+        mine = held.get(int(regions[i].get("region_index", i)) , ())
+        if not mine:
+            continue
+        others = [k for k in range(len(regions)) if k != i and k not in drop]
+        if not all(_homed(word, others) for word in mine):
+            drop.discard(i)
+
     if not drop:
         return regions
-    kept = [r for k, r in enumerate(regions) if k not in drop]
+    survivors = [k for k in range(len(regions)) if k not in drop]
+    # Số CŨ -> số MỚI, dựng trước khi đánh lại: sau khi `region_index` bị ghi
+    # đè thì không còn đường nào tìm lại con trỏ của từ.
+    remap = {int(regions[k].get("region_index", k)): number
+             for number, k in enumerate(survivors)}
+    kept = [regions[k] for k in survivors]
     for number, region in enumerate(kept):
         region["region_index"] = number
+
+    kept_boxes = [box(r) for r in kept]
+
+    def _host(word: dict[str, Any]) -> int | None:
+        """Vùng còn lại NHỎ NHẤT chứa từ này -- cùng lẽ với thứ tự xếp vùng
+        theo diện tích ở `regions_from_words`: nhỏ nhất là sát nó nhất."""
+        bbox = word.get("bbox") or []
+        if len(bbox) != 4:
+            return None
+        cx, cy = (bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2
+        inside = [(( rb[2] - rb[0]) * (rb[3] - rb[1]), number)
+                  for number, rb in enumerate(kept_boxes)
+                  if rb is not None and rb[0] <= cx <= rb[2] and rb[1] <= cy <= rb[3]]
+        return min(inside)[1] if inside else None
+
+    for word in words or ():
+        where = word.get("layout_region_index")
+        if not isinstance(where, int):
+            continue
+        # Vùng còn sống thì chỉ đổi số. Vùng đã bỏ thì tìm nhà mới, và phép
+        # xét ngay trên đã bảo đảm có nhà -- `None` chỉ xảy ra với từ không
+        # có hộp, thứ `words_from_boxes` không sinh ra.
+        word["layout_region_index"] = (remap[where] if where in remap
+                                       else _host(word))
     return kept
 
 
@@ -1890,8 +2179,13 @@ def build(*, filename: str, width: int, height: int, parser: str,
 
     for number, sheet in enumerate(sheets, start=1):
         page_width, page_height = int(sheet["width"]), int(sheet["height"])
-        blocks.extend(blocks_from_boxes(sheet.get("boxes") or (),
-                                        page_number=number))
+        # `blocks` cũng phải chuyển, và nó gom SỚM hơn ba tầng kia nên dễ
+        # sót đúng ở đây -- bản đầu của thay đổi này sót thật, và một tầng
+        # mang pixel lẫn giữa ba tầng mang phần nghìn là bản ghi tự nói hai
+        # chuyện về cùng một tờ giấy.
+        blocks.extend(to_per_mille(
+            blocks_from_boxes(sheet.get("boxes") or (), page_number=number),
+            page_width, page_height))
         page_words = words_from_boxes(sheet.get("words") or (), ink)
         # Before the regions, because it MUTATES `page_words`: an entity owns
         # the role, and its words inherit it so one record cannot say two
@@ -1993,6 +2287,15 @@ def build(*, filename: str, width: int, height: int, parser: str,
         for region in page_regions:
             region["region_index"] += region_offset
             region["page_number"] = number
+        # CHUYỂN HỆ TOẠ ĐỘ, ở đây và chỉ ở đây. Mọi phép đo hình học bên
+        # trên -- gom vùng, đo khoảng hở, xét kề nhau -- chạy bằng pixel và
+        # phải chạy bằng pixel; chuyển sớm hơn là bắt chúng tính trên số đã
+        # làm tròn. `page_width/page_height` là cạnh của CHÍNH tờ này, nên
+        # tài liệu nhiều tờ khổ khác nhau vẫn đúng từng tờ.
+        page_words = to_per_mille(page_words, page_width, page_height)
+        page_entities = to_per_mille(page_entities, page_width, page_height)
+        page_regions = to_per_mille(page_regions, page_width, page_height)
+
         word_annotations.extend(page_words)
         entity_annotations.extend(page_entities)
         layout_annotations.extend(page_regions)

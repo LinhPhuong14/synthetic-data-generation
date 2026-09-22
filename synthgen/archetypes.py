@@ -7,7 +7,7 @@
 `synthgen/design.py::ARCHETYPES` là 34 phôi viết thẳng bằng Python. Đó là chỗ
 duy nhất quyết "bộ này vẽ được những loại chứng từ nào", và vì nó là mã nguồn
 nên **chỉ người sửa mã mới thêm được một loại**. Một model không sửa mã --
-`agent/ollama.py` viết rõ vì sao nó không được phép -- nên bao lâu ngữ pháp còn
+ranh giới ấy là cố ý -- nên bao lâu ngữ pháp còn
 nằm trong Python thì LLM còn không với tới dáng của bộ sinh này, dù nó đã viết
 được bố cục cho pipeline chính từ lâu.
 
@@ -247,6 +247,12 @@ def load(directory: Path | None = None) -> tuple[list, list[str]]:
     taken = {a.id for a in _design().ARCHETYPES}
     out, errors = [], []
     for path in sorted(directory.glob("*.yaml")):
+        # Gạch dưới đầu tên = không phải một phôi. `_blocks.yaml` là bảng xác
+        # suất khối, đọc ở `design.py`; đọc nó như một phôi thì mỗi lượt chạy
+        # in ra một trang lỗi cho một file hoàn toàn đúng. Cùng lệ
+        # `rulebase/rules/_order.yaml`.
+        if path.name.startswith("_"):
+            continue
         try:
             spec = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
         except yaml.YAMLError as error:

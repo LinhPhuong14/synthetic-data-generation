@@ -1,0 +1,79 @@
+# CATALOGUE_MEDICAL_B — mẻ thứ hai, cùng định dạng mẻ đầu: tên<TAB>giá tối thiểu<TAB>giá tối đa.
+#
+# Vì sao có mẻ này, bằng số. `corpus.sample()` lặp lại mặt hàng khi bảng dài
+# hơn kho, và điều đó đúng với một hoá đơn bốn dòng. Nhưng bảng dài nhất của
+# hồ sơ này là 240 dòng trong khi mẻ đầu chỉ có ít mặt hàng — mỗi thứ
+# in lại nhiều lần trên CÙNG MỘT tờ giấy, và một mô hình đọc tờ ấy học rằng
+# bảng tiếng Việt là một danh sách lặp.
+#
+# Tên viết CÓ DẤU; bố cục nào cần chữ không dấu thì `rulebase.text.ascii_fold`
+# bỏ dấu lúc render.
+
+Chụp cộng hưởng từ khớp gối có thuốc	2400000	4800000
+Chụp cộng hưởng từ cột sống thắt lưng	2200000	4200000
+Chụp cắt lớp vi tính lồng ngực	1400000	3200000
+Chụp cắt lớp vi tính ổ bụng có cản quang	1800000	3800000
+Chụp X quang khớp háng hai tư thế	180000	420000
+Chụp X quang phổi thẳng nghiêng	145000	320000
+Siêu âm Doppler mạch máu chi dưới	320000	680000
+Siêu âm tim qua thành ngực	280000	620000
+Siêu âm tuyến giáp	180000	380000
+Nội soi dạ dày gây mê	1200000	2600000
+Nội soi đại tràng gây mê	1800000	3800000
+Đo điện tim thường quy	85000	185000
+Đo điện não đồ	320000	680000
+Đo mật độ xương DEXA	420000	920000
+Test kích thích phế quản	620000	1400000
+Xét nghiệm công thức máu toàn phần	85000	185000
+Xét nghiệm đông máu cơ bản	145000	320000
+Xét nghiệm chức năng gan	185000	420000
+Xét nghiệm chức năng thận	165000	380000
+Xét nghiệm mỡ máu bốn chỉ số	220000	480000
+Xét nghiệm đường huyết đói	42000	95000
+Xét nghiệm HbA1c	185000	420000
+Xét nghiệm acid uric máu	62000	145000
+Xét nghiệm CRP định lượng	145000	320000
+Xét nghiệm yếu tố dạng thấp RF	165000	380000
+Xét nghiệm kháng thể kháng nhân ANA	420000	920000
+Xét nghiệm tổng phân tích nước tiểu	62000	145000
+Xét nghiệm cấy nước tiểu định danh	320000	720000
+Xét nghiệm vi sinh đờm	280000	620000
+Xét nghiệm HIV sàng lọc	145000	320000
+Xét nghiệm viêm gan B định lượng	420000	980000
+Xét nghiệm viêm gan C	480000	1100000
+Xét nghiệm tuyến giáp ba chỉ số	320000	720000
+Xét nghiệm nội tiết tố sinh dục	420000	920000
+Xét nghiệm dấu ấn ung thư CEA	280000	620000
+Xét nghiệm PSA toàn phần	320000	720000
+Giường bệnh nội trú phòng bốn	180000	420000
+Giường bệnh nội trú phòng đôi	420000	980000
+Giường hồi sức tích cực	1800000	4200000
+Phẫu thuật nội soi khớp gối	12000000	32000000
+Phẫu thuật thay khớp háng toàn phần	42000000	120000000
+Phẫu thuật cắt túi mật nội soi	8600000	24000000
+Phẫu thuật kết hợp xương cẳng chân	14000000	38000000
+Thủ thuật tiêm khớp dưới siêu âm	620000	1600000
+Thủ thuật chọc hút dịch khớp	420000	980000
+Thủ thuật đặt catheter tĩnh mạch trung tâm	1400000	3600000
+Vật lý trị liệu vận động trị liệu	120000	280000
+Vật lý trị liệu siêu âm điều trị	85000	185000
+Vật lý trị liệu điện xung giảm đau	75000	165000
+Kéo giãn cột sống bằng máy	145000	320000
+Thuốc giảm đau kháng viêm không steroid	3200	18000
+Thuốc giãn cơ đường uống	4200	22000
+Thuốc bảo vệ dạ dày ức chế bơm proton	2800	16000
+Thuốc kháng sinh nhóm cephalosporin	12000	68000
+Thuốc kháng sinh nhóm quinolon	8600	46000
+Dịch truyền natri clorid 0,9%	12000	42000
+Dịch truyền glucose 5%	14000	46000
+Vật tư bơm kim tiêm dùng một lần	1200	4800
+Vật tư dây truyền dịch	4200	14000
+Vật tư gạc vô khuẩn	2600	12000
+Vật tư băng dính lụa y tế	8600	32000
+Vật tư nẹp cố định chi	185000	820000
+Vật tư đai lưng cột sống	320000	1400000
+Vật tư nạng nách nhôm	280000	980000
+Khám chuyên khoa cơ xương khớp	150000	350000
+Khám chuyên khoa nội tiết	165000	380000
+Khám tư vấn dinh dưỡng	145000	320000
+Hội chẩn chuyên gia đầu ngành	620000	1800000

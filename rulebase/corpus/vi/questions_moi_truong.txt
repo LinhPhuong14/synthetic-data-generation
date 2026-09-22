@@ -1,0 +1,36 @@
+# QUESTIONS_MOI_TRUONG — một chủ đề câu hỏi của khối biểu mẫu (`Form`).
+#
+# Cột 1 là DẠNG, cột 2 là câu hỏi, các cột sau là tham số của chính dạng ấy:
+#
+#   blank         (không tham số) — một dòng kẻ để điền
+#   yesno         (không tham số) — hai ô Có/Không
+#   options       lựa chọn | lựa chọn | ...
+#   boxchar       số ô           — dãy ô vuông mỗi ô một ký tự (CCCD, MST)
+#   date_boxes    (không tham số) — ngày / tháng / năm, mỗi chữ số một ô
+#   grid          hàng|hàng|...  cột|cột|...   — ma trận tích chéo
+#   scale         nhãn thấp      nhãn cao      số mức
+#   rank          mục|mục|...    — xếp thứ tự ưu tiên
+#   inline_blank  (câu hỏi mang dấu … ở mỗi chỗ trống)
+#   subquestion   ý|ý|...        — câu chính rồi các ý a) b) c)
+#   table_form    cột|cột|...    số dòng      — bảng người ta điền tay
+#   attachment    mục|mục|...    — danh mục hồ sơ kèm theo, mỗi mục một ô tích
+#   answer        (cột 2 là một câu trả lời tự do của chủ đề này)
+#
+# Ra file thay vì nằm trong `synthgen/content.py`: thêm một chủ đề là thêm một
+# file, không phải sửa mã — cùng lệ `clauses_*.txt` và `rulebase/` nói chung.
+
+grid	Mức độ tuân thủ an toàn tại vị trí làm việc	Trang bị bảo hộ|Biển cảnh báo|Lối thoát nạn|Phương tiện chữa cháy	Đầy đủ|Thiếu|Không có
+yesno	Đơn vị đã tổ chức huấn luyện an toàn trong 12 tháng qua chưa?
+date_boxes	Ngày kiểm tra
+attachment	Tài liệu kiểm tra kèm theo	Sổ theo dõi huấn luyện|Phiếu kiểm định thiết bị|Hồ sơ chất thải|Biên bản diễn tập
+table_form	Nguồn phát thải	Tên nguồn|Loại chất thải|Khối lượng/tháng	3
+options	Hình thức xử lý chất thải	Thuê đơn vị chức năng|Tự xử lý|Tái chế|Chưa xử lý
+scale	Mức độ rủi ro môi trường	Rất thấp	Rất cao	5
+subquestion	Người phụ trách an toàn	a) Họ và tên|b) Chức danh|c) Chứng chỉ
+inline_blank	Kiểm tra tại … ngày …, người kiểm tra …
+blank	Kiến nghị của đoàn kiểm tra
+boxchar	Số giấy phép môi trường	10
+answer	đã trang bị đầy đủ bảo hộ
+answer	cần bổ sung biển cảnh báo
+answer	hợp đồng xử lý còn hiệu lực
+answer	chưa phát hiện vi phạm

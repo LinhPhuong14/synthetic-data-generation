@@ -55,6 +55,7 @@ from render import (  # noqa: E402
 from pipeline import record as R  # noqa: E402
 from synthgen import overlay as O  # noqa: E402
 from synthgen.kie_full import complete as kie_complete  # noqa: E402
+from synthgen.phrasing import voice_record  # noqa: E402
 from synthgen.llm_page import problems  # noqa: E402
 
 JPEG_QUALITY = 92
@@ -670,6 +671,20 @@ class Drawer:
         # trên đĩa ĐÚNG NGAY TỪ ĐẦU, không phụ thuộc có chạy `derive` sau hay
         # không -- `derive.py` vẫn ghi đè lại bằng bản đổi giọng mô tả nếu nó
         # chạy, không xung đột.
+        # ĐỔI GIỌNG MÔ TẢ NGAY Ở ĐÂY, cùng lẽ với `full_pairs` ở trên. Câu tả
+        # gốc do `design.py`/`kie_full.py` sinh ra là MỘT câu cho mỗi kind, nên
+        # nó lặp: đo trên `data/thu1k` (bộ vẽ trước thay đổi này) 8 564 câu tả
+        # chỉ có 171 câu khác nhau -- 2,0% -- và "Questionnaire tick box
+        # printed on the document." một mình 671 lần. Một mô hình học trên bộ
+        # ấy học thuộc câu chứ không học nghĩa.
+        #
+        # Luật nằm ở `phrasing.voice_record`, không chép lại ở đây: `derive.py`
+        # gọi đúng hàm ấy, và hàm ấy luỹ đẳng nên chạy cả hai lần vẫn ra một
+        # kết quả. Hỏng lặng lẽ thì thôi đa dạng, không thôi mô tả.
+        try:
+            voice_record(record, full_pairs, stem=stem)
+        except Exception:                                    # noqa: BLE001
+            pass
         record.setdefault("kie", {})["pairs"] = full_pairs
         if kie_counts:
             record["kie"]["coverage"] = kie_counts

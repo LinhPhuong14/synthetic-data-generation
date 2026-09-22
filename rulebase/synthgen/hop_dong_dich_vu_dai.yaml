@@ -1,0 +1,66 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+#
+# HỢP ĐỒNG DỊCH VỤ DÀI — phôi NHIỀU TỜ mà KHÔNG CÓ BẢNG.
+#
+# `columns: []` và `rows: [0, 0]` là cố ý, và là cả điểm của phôi này: không
+# có dòng hàng nào thì khối chảy không thể là bảng, nên `design.pick_flow`
+# chỉ còn `clauses` để chọn. Tài liệu dài ra bằng số ĐIỀU, và phép cắt trang
+# của `synthgen/paginate.py` cắt giữa hai điều thay vì giữa hai dòng bảng.
+#
+# Số tờ với tới được: trần là số điều `rulebase/corpus/vi/clauses_chung*.txt`
+# + `clauses_invoice.txt` có (98), chia cho ~11 điều một tờ A4 — tám tờ. Phần
+# còn lại của khoảng `--pages 2-10` do phôi có bảng dài gánh.
+id: hop_dong_dich_vu_dai
+profile: invoice
+org_kind: company
+national: 0.15
+titles:
+- HỢP ĐỒNG CUNG CẤP DỊCH VỤ
+- HỢP ĐỒNG DỊCH VỤ
+- HỢP ĐỒNG NGUYÊN TẮC CUNG CẤP DỊCH VỤ
+- HỢP ĐỒNG THUÊ DỊCH VỤ THƯỜNG XUYÊN
+subtitles:
+- 'Số: ...../HĐDV'
+- ''
+- SERVICE AGREEMENT
+fields:
+- seller_name
+- seller_tax
+- seller_addr
+- buyer_name
+- buyer_tax
+- buyer_addr
+- period
+field_span:
+- 4
+- 7
+columns: []
+totals: none
+words: false
+sign_sets:
+- - ĐẠI DIỆN BÊN A
+  - ĐẠI DIỆN BÊN B
+- - BÊN CUNG CẤP DỊCH VỤ
+  - BÊN SỬ DỤNG DỊCH VỤ
+- - ĐẠI DIỆN BÊN A
+  - ĐẠI DIỆN BÊN B
+  - NGƯỜI LÀM CHỨNG
+notes:
+- Hợp đồng được lập thành 04 bản có giá trị pháp lý như nhau, mỗi bên giữ 02 bản.
+- Các phụ lục đính kèm là bộ phận không tách rời của hợp đồng này.
+rows:
+- 0
+- 0
+always:
+- letterhead
+- doctitle
+- meta
+- clauses
+- signatures
+optional:
+- fields
+- notes
+- footer
+- footnote
+- toc
+en_ok: true

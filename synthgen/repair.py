@@ -27,6 +27,12 @@ cái hộp không có. Thứ ấy để cổng gác loại, và để `enum` tro
 
 from __future__ import annotations
 
+from pipeline.tags import kind_by_tag as _kind_by_tag
+from pipeline.tags import OPEN_CLOSE as _OPEN_CLOSE
+from pipeline.tags import VOID_TAGS as _VOID_TAGS
+from pipeline.tags import declared_region as _declared_region
+from pipeline.tags import region_by_tag as _region_by_tag
+
 import re
 
 # `<td>`/`<th>` chưa có `data-cell`. Bắt cả thẻ không thuộc tính (`<td>`) lẫn
@@ -167,6 +173,81 @@ def airy(html: str) -> tuple[str, int]:
     return html + _AIR, 1
 
 
+REGION_BY_TAG = _region_by_tag()
+
+def zoned(html: str) -> tuple[str, int]:
+    """Gắn `data-region` lên thẻ ngữ nghĩa chưa khai vùng.
+
+    ## Vì sao việc này chuyển từ phép đo sang đây
+
+    `generators/html/page.py::ZONE_REGIONS_JS` từng có hai nhánh: vùng KHAI
+    TAY, và vùng SUY TỪ THẺ (`<ul>` LÀ một danh sách, nên không bắt model khai
+    thêm lần nữa). Hai nhánh nghĩa là hai đường tạo ra vùng, và một cái hộp
+    không ai biết đến từ đường nào là một cái hộp không sửa được.
+
+    Đưa phép suy về đây thì nó thành **một phép sửa HTML**, không còn là một
+    phép đo song song: sau bước này, mọi vùng trên trang đều đến từ đúng một
+    chỗ -- thuộc tính `data-region` nằm trong chính markup. Trang sửa xong
+    đọc lên giống hệt trang model viết đủ ngay từ đầu, và `data/*/html/` lưu
+    lại đúng thứ đã được đo.
+
+    ## Nhãn đã có ở tổ tiên thì KHÔNG khai lại
+
+    `<ul>` trong `<div data-region="List-Group">` là cùng một vùng nói hai
+    lần. Nhánh suy-từ-thẻ cũ đã giữ đúng luật ấy; giữ nguyên nó ở đây, không
+    phải vì tương thích mà vì nó đúng -- và vì đổi luật cùng lúc với đổi chỗ
+    là hai thay đổi trong một, không tách được cái nào gây ra cái gì.
+
+    ## Vá được bao nhiêu
+
+    Đo trên 40 tờ model viết (`data/kind-mo3`, `kind-mo-vllm`, `pilot16`):
+    926 run không nằm trong vùng nào, và **337 (36%) có tổ tiên là thẻ ngữ
+    nghĩa** -- `<p>` 113, `<section>` 94, `<header>` 46, `<ol>` 28. Đó là
+    phần hàm này lấy về.
+
+    589 run còn lại (64%) nằm trong `<div class="field-row">`,
+    `"checklist-item"`, `"field-value"` -- tên class do model tự đặt. Suy
+    nhãn vùng từ những cái tên ấy là ĐOÁN, và file này không đoán: một cái
+    hộp mang nhãn đoán còn tệ hơn một cái hộp không có nhãn. Phần ấy phải do
+    model khai, và do cổng gác đòi."""
+    stack: list[str] = []
+    inserts: list[tuple[int, str]] = []
+    for match in _OPEN_CLOSE.finditer(html):
+        closing, tag = match.group(1), match.group(2).lower()
+        attrs, selfclose = match.group(3), match.group(4)
+        if tag in _VOID_TAGS:
+            continue
+        if closing:
+            while stack:
+                if stack.pop() == f"/{tag}":
+                    break
+            continue
+        if selfclose:
+            continue
+        declared = _declared_region(attrs)
+        label = REGION_BY_TAG.get(tag, "")
+        if not declared and label and label not in stack:
+            # Chèn ngay sau tên thẻ: `<ul class="x">` -> `<ul data-region=.. class="x">`.
+            # Không chèn trước `>` cuối, vì một thẻ tự đóng viết `<x/>` sẽ
+            # thành `<x data-region=".."/>` ở chỗ khác mất dấu gạch.
+            inserts.append((match.start() + 1 + len(match.group(2)),
+                            f' data-region="{label}"'))
+            declared = label
+        stack.append(f"/{tag}")
+        if declared:
+            stack.append(declared)
+    if not inserts:
+        return html, 0
+    out = []
+    at = 0
+    for where, text in inserts:
+        out.append(html[at:where])
+        out.append(text)
+        at = where
+    out.append(html[at:])
+    return "".join(out), len(inserts)
+
+
 def repair(html: str) -> tuple[str, dict[str, int]]:
     """Chữa hết những gì chữa được. `(html mới, {việc: số lần})`."""
     from synthgen.llm_page import kinds                        # noqa: PLC0415
@@ -175,6 +256,7 @@ def repair(html: str) -> tuple[str, dict[str, int]]:
     # ấy phải có mặt trước khi `dress` bóc thẻ trang trí và `vocabulary` ánh xạ
     # tên lạ -- ngược thứ tự thì hai bước sau không thấy chúng.
     html, n_tagged = tagged(html)
+    html, n_zoned = zoned(html)
     html, n_cells = cells(html)
     html, n_breaks = breaks(html)
     html, n_kinds = vocabulary(html, kinds())
@@ -183,7 +265,8 @@ def repair(html: str) -> tuple[str, dict[str, int]]:
     html, n_air = breathe(html)
     html, n_gap = airy(html)
     return html, {"khoảng trắng trả lại giữa hai thẻ dính": n_air,
-                  "khe tối thiểu giữa hai run": n_gap,"run dựng từ thẻ HTML": n_tagged, "data-cell thêm": n_cells, "span tách khỏi <br>": n_breaks,
+                  "khe tối thiểu giữa hai run": n_gap,"run dựng từ thẻ HTML": n_tagged,
+                  "vùng khai từ thẻ HTML": n_zoned, "data-cell thêm": n_cells, "span tách khỏi <br>": n_breaks,
                   "kind lạ ánh xạ về thật": n_kinds,
                   "thẻ trang trí bóc khỏi span": n_dress,
                   "ô bảng được đánh số hàng/cột": n_grid}
@@ -217,13 +300,29 @@ def settle(kind: str, known: frozenset[str]) -> str:
     -- `menu.qty` chẳng hạn -- là đoán, và một cái hộp mang nhãn đoán còn tệ
     hơn một cái hộp mang nhãn rộng.
 
+    ## Từ vựng đã mở -- hàm này còn làm gì
+
+    Cổng (`llm_page.problems`) không còn đòi kind nằm trong từ vựng: một tên
+    tự đặt đúng ngữ pháp `họ.trường` được nhận nguyên văn, vì đó chính là
+    model đặt tên cho khái niệm engine chưa có. Nên việc còn lại ở đây hẹp
+    hơn hẳn: **chuẩn hoá HÌNH THỨC**, không đổi NGHĨA.
+
+    `Hoa_Don.So` và `hoa-don.so` là cùng một cái tên viết sai kiểu chữ; ép
+    chúng về `hoa_don.so` giữ nguyên ý model muốn nói. Chỉ cái tên vẫn không
+    đọc được sau khi chuẩn hoá -- một đoạn duy nhất, không họ, hoặc có ký tự
+    ngoài bảng chữ -- mới về hai kind chung, vì khi ấy không còn gì để giữ.
+
     Thứ tự: tên thật giữ nguyên; tên có gốc thật (`_rooted`, ví dụ
-    `sign.name2`) giữ nguyên để cổng tự nhận; còn lại về một trong hai."""
-    from synthgen.llm_page import _rooted                      # noqa: PLC0415
+    `sign.name2`) giữ nguyên để cổng tự nhận; tên tự đặt đọc được thì giữ
+    nguyên hình đã chuẩn hoá; còn lại về một trong hai."""
+    from synthgen.llm_page import _COINED, _rooted              # noqa: PLC0415
 
     name = str(kind or "").strip()
     if not name or name in known or _rooted(name, known):
         return name
+    tidy = re.sub(r"[\s-]+", "_", name).lower()
+    if _COINED.match(tidy):
+        return tidy
     tail = name.rsplit(".", 1)[-1].lower()
     if any(word in tail for word in _LABELLISH):
         return "invoice.field.label"
@@ -386,7 +485,8 @@ def grid(html: str) -> tuple[str, int]:
     return _TABLE.sub(one_table, html), marked
 
 
-# THẺ HTML NÓI NÓ LÀ GÌ. Ánh xạ từ thẻ ngữ nghĩa sang `data-kind` thật.
+# THẺ HTML NÓI NÓ LÀ GÌ -- và câu trả lời sống ở `pipeline/tags.py`, một bảng
+# cho cả hai trục.
 #
 # Vì sao cần: từ vựng `data-kind` nhặt từ chính HTML engine dựng, nên nó chỉ
 # biết những gì engine biết vẽ. Model viết thứ engine không có -- tiêu đề mục,
@@ -402,13 +502,11 @@ def grid(html: str) -> tuple[str, int]:
 # Đây cũng đúng cách bộ tham chiếu `pair_prompt100` gán nhãn vùng: `h1` 548
 # lần, `p` 443, `li` 221, `h2` 193, `h3` 144, `footer` 87 -- không một
 # `data-kind` nào trong cả trăm tờ.
-BY_TAG = {
-    "h1": "title", "h2": "section", "h3": "section", "h4": "section",
-    "h5": "section", "h6": "section",
-    "caption": "caption.table", "figcaption": "caption.figure",
-    "th": "colhdr", "li": "clause.body", "blockquote": "note", "p": "note",
-    "dt": "invoice.field.label", "dd": "invoice.field", "footer": "footer",
-}
+#
+# Bảng này TỪNG là một bản chép riêng ở đây, và bản chép kia -- trong chuỗi JS
+# của `generators/html/page.py` -- phủ một tập thẻ khác. Chỗ hở giữa hai bản
+# là một lỗi im lặng theo cả hai chiều; xem số đo trong `pipeline/tags.py`.
+BY_TAG = _kind_by_tag()
 
 _BARE = {tag: re.compile(
     rf"<{tag}(?![a-z])((?:[^>\"']|\"[^\"]*\"|'[^']*')*)>((?:(?!<{tag}[\s>])[^<]|<(?!/{tag}>))*?)</{tag}>",

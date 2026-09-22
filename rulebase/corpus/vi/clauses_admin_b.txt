@@ -1,0 +1,28 @@
+# CLAUSES_ADMIN_B — mẻ thứ hai của hồ sơ này, cùng định dạng `clauses_chung.txt`.
+#
+# Tách file thay vì nối vào mẻ đầu: `corpus.CLAUSE_FILES` gộp các file của một
+# hồ sơ lại, nên thêm một file là hồ sơ ấy dài thêm được mấy tờ mà không phải
+# đọc lại file cũ để tránh trùng.
+
+Phân cấp và uỷ quyền	Người đứng đầu được uỷ quyền cho cấp phó giải quyết công việc trong phạm vi ghi tại văn bản uỷ quyền.	Người được uỷ quyền không được uỷ quyền lại cho người khác.	Văn bản uỷ quyền nêu rõ nội dung, thời hạn và chấm dứt khi hết thời hạn.
+Tuyển dụng	Việc tuyển dụng thực hiện công khai, căn cứ vị trí việc làm và chỉ tiêu biên chế được duyệt.	Thông báo tuyển dụng đăng tối thiểu mười lăm ngày trước ngày nhận hồ sơ.
+Đánh giá cán bộ	Cán bộ được đánh giá mức độ hoàn thành nhiệm vụ mỗi năm một lần, có ý kiến tự đánh giá.	Kết quả đánh giá là căn cứ xét nâng lương, quy hoạch và bố trí công việc.
+Đào tạo, bồi dưỡng	Đơn vị xây dựng kế hoạch đào tạo hằng năm và ưu tiên vị trí thiếu hụt kỹ năng.	Người được cử đi đào tạo dài hạn cam kết làm việc tiếp tại đơn vị theo thời hạn quy định.
+Chế độ công tác phí	Công tác phí được thanh toán theo định mức hiện hành và chứng từ hợp lệ.	Đề nghị công tác phải được duyệt trước khi đi; đi trước duyệt sau chỉ chấp nhận trong trường hợp khẩn cấp.
+Quản lý xe công	Xe của đơn vị chỉ dùng cho công việc, có lệnh điều xe và ghi sổ nhật trình.	Lái xe chịu trách nhiệm về tình trạng kỹ thuật và giấy tờ phương tiện trước mỗi chuyến.
+Văn hoá công sở	Cán bộ đeo thẻ khi làm việc, trang phục lịch sự, giao tiếp đúng mực với đồng nghiệp và công dân.	Không sử dụng rượu bia trong giờ làm việc và tại nơi làm việc.
+Phát ngôn và cung cấp thông tin	Chỉ người được giao nhiệm vụ phát ngôn mới được cung cấp thông tin cho báo chí.	Thông tin cung cấp phải chính xác, trong phạm vi được phép công bố.
+Tiếp nhận đơn thư	Đơn thư gửi đến được vào sổ và chuyển đến bộ phận có trách nhiệm trong một ngày làm việc.	Đơn nặc danh không đủ điều kiện xử lý vẫn được lưu để theo dõi.
+Giải quyết khiếu nại, tố cáo	Khiếu nại lần đầu được giải quyết trong thời hạn theo quy định của pháp luật về khiếu nại.	Người giải quyết không phải là người có liên quan đến nội dung bị khiếu nại.	Kết quả giải quyết được thông báo bằng văn bản cho người khiếu nại.
+Công khai, minh bạch	Đơn vị công khai quy chế chi tiêu, kết quả tuyển dụng và kế hoạch mua sắm theo quy định.	Hình thức công khai gồm niêm yết tại trụ sở và đăng trên trang thông tin của đơn vị.
+Quản lý ngân sách	Dự toán được lập theo nhiệm vụ được giao và chỉ chi trong phạm vi đã được duyệt.	Điều chỉnh dự toán phải có văn bản của cấp có thẩm quyền.
+Mua sắm công	Việc mua sắm thực hiện theo quy định về đấu thầu, bảo đảm cạnh tranh và công bằng.	Người tham gia quá trình lựa chọn nhà thầu phải kê khai xung đột lợi ích.
+Quản lý dự án đầu tư	Mỗi dự án có ban quản lý và người chịu trách nhiệm chính được giao bằng quyết định.	Tiến độ và giải ngân được báo cáo định kỳ hằng quý.
+Lưu trữ điện tử	Tài liệu điện tử được lưu theo danh mục, có bản sao dự phòng và kiểm tra khả năng đọc lại hằng năm.	Tài liệu điện tử có giá trị như bản giấy khi có chữ ký số hợp lệ.
+Chữ ký số	Chữ ký số được cấp cho cá nhân và không được cho người khác sử dụng.	Mất hoặc lộ khoá bí mật phải báo ngay để thu hồi chứng thư số.
+Họp trực tuyến	Cuộc họp trực tuyến có giá trị như họp trực tiếp khi bảo đảm nhận diện người dự và ghi biên bản.	Nội dung thuộc danh mục bảo mật không được họp trên nền tảng chưa được phê duyệt.
+Quản lý trang thông tin điện tử	Nội dung đăng tải phải được người có thẩm quyền duyệt trước khi công bố.	Thông tin sai sót được gỡ hoặc đính chính trong hai mươi bốn giờ kể từ khi phát hiện.
+Bảo vệ bí mật nhà nước	Tài liệu mật được quản lý theo độ mật, giao nhận có ký nhận và lưu trong tủ có khoá.	Không sao chụp, không mang tài liệu mật ra khỏi trụ sở khi chưa được phép bằng văn bản.
+Phòng chống dịch bệnh tại cơ quan	Đơn vị bố trí phương án làm việc linh hoạt khi có dịch theo khuyến cáo của cơ quan y tế.	Người có triệu chứng bệnh truyền nhiễm không đến nơi làm việc và báo cho người quản lý trực tiếp.
+Thi đua	Phong trào thi đua được phát động theo năm công tác, có tiêu chí đánh giá cụ thể.	Kết quả thi đua được bình xét công khai tại hội nghị cán bộ.
+Chế độ trực cơ quan	Đơn vị bố trí trực ngoài giờ, ngày nghỉ và ngày lễ theo lịch được duyệt.	Người trực ghi sổ trực và bàn giao đầy đủ cho ca sau.

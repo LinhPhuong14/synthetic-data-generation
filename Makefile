@@ -16,12 +16,24 @@ N       ?= auto
 TABLES  ?= 60
 PROFILE ?= data/profile
 PROFILE_N ?= 8
+# synthgen: bộ soạn mới, khác `dataset` ở chỗ nó không đọc `rulebase/layouts/`.
+# 5000 CHỨNG TỪ, không phải 5000 ảnh -- ở khoảng 2-10 tờ thì ra khoảng mười tám
+# nghìn ảnh.
+SYNTH   ?= data/synth5k
+SYNTH_N ?= 5000
+PAGES   ?= 2-10
+# Hình dạng HAI CỤM cho `synth-multipage`: phần lớn tài liệu vài tờ, một phần
+# tư rất dày. Một khoảng phẳng `2-10` rải đều và không dựng được hình dạng ấy.
+SYNTH_MULTI ?= data/synth-multi
+PAGES_MIX   ?= 2-5:75,7-10:25
+BALANCE_N ?= 1500
 LAYOUT  ?=
 
 .DEFAULT_GOAL := help
 .PHONY: help setup setup-html setup-writevit setup-blender \
         textures patterns handwriting signatures \
         preview-grid visualize dataset dataset-clean proof showcase \
+        synth synth-plan synth-balance synth-multipage \
         ornaments templates \
         preflight check-rules check-corpus check-boxes migrate-metadata \
         distribution monitor \
@@ -54,6 +66,14 @@ signatures:      ## Regenerate samples/signatures: the style grid and two signed
 
 # ------------------------------------------------------------ generation
 
+synth:           ## synthgen: 5000 chứng từ 2-10 TỜ, bố cục soạn mới (SYNTH=, N=, PAGES=)
+	$(TASKS) synth -o $(SYNTH) -n $(SYNTH_N) --pages $(PAGES)
+synth-plan:      ## Cùng lượt ấy nhưng chỉ in phân bố: loại giấy, khối, số tờ
+	@$(TASKS) synth-plan -o $(SYNTH) -n $(SYNTH_N) --pages $(PAGES)
+synth-multipage: ## CHỈ tài liệu nhiều tờ: 75% 2-5 tờ, 25% 7-10 tờ (SYNTH_N=, PAGES=)
+	$(TASKS) synth-multipage -o $(SYNTH_MULTI) -n $(SYNTH_N) --pages $(PAGES_MIX)
+synth-balance:   ## Bộ có cân không: nhãn vùng cả bộ VÀ trên tờ giữa (N=1500)
+	@$(TASKS) synth-balance -n $(BALANCE_N) --pages $(PAGES)
 dataset:         ## Build a labelled dataset with the html renderer (N=auto)
 	$(TASKS) dataset -o $(DATASET) -n $(N)
 dataset-clean:   ## The same dataset with no ageing and no distortion at all

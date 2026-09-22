@@ -1,0 +1,31 @@
+# ITEMS_DAO_TAO — cột `name` của bảng cho những tờ giấy nói về ĐÀO TẠO: danh sách học viên, phiếu đăng ký khoá học.
+#
+# Vì sao có file này: `corpus.catalogue()` chọn kho hàng theo `profile`, tức
+# theo NGÀNH. Học bạ, bảng điểm, thời khoá biểu, bảng lương đều là `admin`,
+# nên cả bốn lấy chung `items_admin.txt` — và một tờ HỌC BẠ liệt kê "Ấm siêu
+# tốc inox", "Bình chữa cháy bột ABC". Đo được trên bản vẽ thật.
+#
+# Ngành nói tờ giấy thuộc về ai; TÊN tờ giấy mới nói nó liệt kê cái gì. Luật
+# ghép nằm ở `rulebase/synthgen/_blocks.yaml::items`, cùng lối `allow`.
+#
+# Cột giá giữ cho đúng định dạng `priced`; bảng nào không in cột tiền thì hai
+# số ấy không ra giấy.
+
+An toàn lao động và vệ sinh lao động	300000	2500000
+Phòng cháy chữa cháy cơ bản	300000	2000000
+Nghiệp vụ văn thư lưu trữ	800000	4500000
+Tin học văn phòng nâng cao	900000	5000000
+Kỹ năng giao tiếp và thuyết trình	700000	4000000
+Quản lý dự án cơ bản	1500000	9000000
+Nghiệp vụ kế toán doanh nghiệp	1800000	12000000
+Kỹ năng bán hàng và chăm sóc khách hàng	900000	5500000
+Tiếng Anh giao tiếp thương mại	1200000	8000000
+Nghiệp vụ đấu thầu	1500000	7000000
+Kiểm soát nội bộ	1600000	8500000
+Quản trị nhân sự	1400000	8000000
+Sơ cấp cứu tại nơi làm việc	400000	2200000
+Vận hành thiết bị nâng	1000000	6000000
+Nghiệp vụ kho vận	900000	5000000
+Bảo mật thông tin cho người dùng cuối	700000	3800000
+Kỹ năng làm việc nhóm	600000	3200000
+Đào tạo nội quy và văn hoá doanh nghiệp	200000	1500000

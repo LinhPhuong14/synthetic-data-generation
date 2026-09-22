@@ -33,9 +33,14 @@ sign_sets:
 notes:
 - Đề nghị đại biểu đến đúng giờ và mang theo giấy mời.
 - Trường hợp không tham dự được, đề nghị báo lại trước 01 ngày.
+# Sức chứa nới ra để phôi này với tới hai tờ: giấy mời ở tờ đầu, CHƯƠNG TRÌNH hội nghị theo giờ ở tờ sau.
+# Trần cũ quá thấp nên `--multipage-only` loại sạch mọi seed của nó
+# (đo được 0% seed nhắm >=2 tờ), và loại chứng từ này biến mất khỏi
+# bộ nhiều trang. Xem `design.FLOW_PER_PAGE`: hai tờ cần trần >= 30
+# dòng bảng.
 rows:
-- 0
-- 8
+- 6
+- 40
 always:
 - letterhead
 - doctitle

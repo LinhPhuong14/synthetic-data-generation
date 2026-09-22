@@ -44,7 +44,7 @@ from agent.document_distance import corpus_diversity        # noqa: E402
 from agent.document_plan import DocumentPlan                # noqa: E402
 from agent.fingerprint import fingerprint                   # noqa: E402
 from pipeline import failures as F                         # noqa: E402
-from synthgen.llm_page import path_coverage                 # noqa: E402
+from synthgen.llm_page import coined, path_coverage         # noqa: E402
 
 
 def _family_counts(pages: list[dict]) -> Counter:
@@ -112,6 +112,36 @@ def _path_coverage_stats(html_files: list[str]) -> dict:
            "mean": round(sum(covered) / len(covered), 3)}
 
 
+def _coined_kinds(html_files: list[str]) -> dict:
+    """Tên `data-kind` model TỰ ĐẶT: bao nhiêu tên, bao nhiêu trang, tên nào.
+
+    Từ vựng kind đã mở (`synthgen/llm_page.py::_COINED`), và mở là một quyết
+    định có giá: `synthgen/kie_schema.groups()` khoá theo TIỀN TỐ kind, nên
+    hai tờ gọi cùng một khái niệm bằng hai cái tên sẽ nằm ở hai nhóm schema.
+    Không đếm thì không ai biết điều ấy đang tới đâu.
+
+    Đọc ngược lại: một danh sách dài toàn tên dùng ĐÚNG MỘT LẦN là dấu hiệu
+    model đang đặt tên tuỳ hứng; vài tên lặp lại nhiều trang là nó đang đặt
+    tên cho khái niệm thật mà từ vựng engine thiếu -- và đó là lúc thêm chúng
+    vào `rulebase/kie_groups.json`."""
+    from collections import Counter                              # noqa: PLC0415
+
+    tally: Counter = Counter()
+    pages_with = 0
+    for path in html_files:
+        fresh = coined(Path(path).read_text(encoding="utf-8", errors="replace"))
+        if fresh:
+            pages_with += 1
+        tally.update(fresh)
+    return {
+        "pages": len(html_files),
+        "pages_with_coined_kinds": pages_with,
+        "distinct": len(tally),
+        "used_once": sum(1 for n in tally.values() if n == 1),
+        "top": dict(tally.most_common(15)),
+    }
+
+
 def stats(out: Path) -> dict:
     report_path = out / "compose_report.json"
     if not report_path.exists():
@@ -136,6 +166,8 @@ def stats(out: Path) -> dict:
             sorted(glob.glob(str(out / "html" / "*" / "*.html")))),
         "data_path_coverage_on_rejected_pages": _path_coverage_stats(
             sorted(glob.glob(str(out / "rejected" / "*.html")))),
+        "coined_kinds": _coined_kinds(
+            sorted(glob.glob(str(out / "html" / "*" / "*.html")))),
         # PHASE 7.3: hai bảng số RIÊNG -- "dressing diversity" là việc của
         # `agent/distance.py` (track 1, hình học, không chạy được trên track
         # 3 -- xem Phase 7.1) nên không có mặt ở đây. Bảng dưới đây CHỈ đo

@@ -38,8 +38,8 @@ if str(REPO_ROOT) not in sys.path:
 from synthgen import overlay as O  # noqa: E402
 from synthgen.kie_full import complete  # noqa: E402
 from synthgen.kie_schema import build as build_schema, merge as merge_schema  # noqa: E402
-from synthgen.export import to_grid  # noqa: E402
-from synthgen.phrasing import describe as rephrase, variants_of  # noqa: E402
+from pipeline import record as R  # noqa: E402
+from synthgen.phrasing import ordinal_of, voice_record  # noqa: E402
 from synthgen.plain import sheet_html  # noqa: E402
 
 # Dấu vết của từng kiểu bảng phức trong markup. Đọc từ markup chứ không dựng
@@ -57,7 +57,21 @@ SHAPES = {
 
 
 def grid_record(record: dict) -> None:
-    """Thêm hộp hệ 1000 vào mọi chú giải của bản ghi, tại chỗ.
+    """Bù hộp hệ 1000 cho bản ghi CŨ. Bản ghi mới thì không làm gì.
+
+    `pipeline/record.py::to_per_mille` chuyển cả bản ghi sang hệ 0..1000 ngay
+    lúc lắp, và để lại pixel ở `*_px`. Nên hàm này giờ chỉ còn một việc: một
+    bộ dữ liệu vẽ TRƯỚC thay đổi ấy vẫn mang `bbox` pixel và không có `*_px`
+    -- chuyển tại chỗ cho nó, để mọi thứ đọc bản ghi chỉ phải biết một hệ.
+
+    Bản trước hàm này ghi vào một khoá RIÊNG là `bbox_1000`, nên một bản ghi
+    mang ba cách nói về cùng một cái hộp: `bbox` pixel, `bbox_1000`, rồi
+    `synthgen/export.py` chia lần nữa lúc xuất. Bỏ khoá ấy -- `bbox` đã là hệ
+    1000, và một tên thứ hai cho cùng một số là một tên sẽ lệch.
+
+    Nhận ra bản ghi mới bằng SỰ CÓ MẶT của `bbox_px`, không bằng cách đoán
+    theo độ lớn con số: một trang rộng 1000 pixel thì hai hệ trùng khoảng giá
+    trị, và mọi phép đoán theo độ lớn đều sai đúng trên những trang ấy.
 
     Kích thước lấy theo TỪNG TỜ, không lấy tờ một áp cho cả tài liệu: một
     chứng từ cắt trang có thể đổi khổ giấy giữa chừng (`paginate.py` leo thang
@@ -70,28 +84,56 @@ def grid_record(record: dict) -> None:
     def on(item) -> tuple[float, float]:
         return sizes.get(int(item.get("page_number", 1) or 1), (0.0, 0.0))
 
-    for key in ("word_annotations", "layout_annotations", "entity_annotations"):
+    for key in ("word_annotations", "layout_annotations", "entity_annotations",
+                "blocks"):
         for item in record.get(key) or []:
+            if "bbox_px" in item:
+                continue                      # bản ghi mới -- đã ở hệ 1000
             width, height = on(item)
             box = item.get("bbox")
-            if box and width and height:
-                item["bbox_1000"] = to_grid(box, width, height)
-    for block in record.get("blocks") or []:
-        width, height = on(block)
-        box = block.get("bbox")
-        if box and width and height:
-            block["bbox_1000"] = to_grid(
-                [box["x1"], box["y1"], box["x2"], box["y2"]]
-                if isinstance(box, dict) else box, width, height)
+            if not (box and width and height):
+                continue
+            item.update(R.to_per_mille({"bbox": box}, width, height))
+    # HỘP CỦA CẶP ĐẶT LẠI TỪ CHÍNH THỰC THỂ NÓ TRỎ TỚI.
+    #
+    # Một cặp KIE không đo hộp -- nó chỉ trỏ vào hai thực thể và chép hộp của
+    # chúng. Hai bản chép của cùng một con số thì sớm muộn lệch nhau, và ở đây
+    # đã lệch: đo trên `data/thu1k`, cặp `doc_title` mang `value_bbox_px`
+    # {333,197,665,225} -- chính là `entity.bbox` PHẦN NGHÌN bị gọi là pixel --
+    # rồi `value_bbox` {221,101,442,116} là phần nghìn của phần nghìn. Pixel
+    # thật của thực thể ấy là {501,383,1002,436}. 685/966 hộp trường của cả bộ
+    # (71%) dồn về góc trên-trái vì thế, và không gì báo: một hộp 221 vẫn là
+    # một hộp hợp lệ.
+    #
+    # Nên không đoán hộp đang ở hệ nào: chép lại từ thực thể, thứ mang cả hai
+    # hệ và khai rõ hệ nào là hệ nào (`bbox`, `bbox_px`). Cặp nào không trỏ
+    # được vào thực thể -- bản ghi cũ dựng từ `blocks` -- thì giữ luật cũ.
+    entities = {e.get("entity_index"): e
+                for e in record.get("entity_annotations") or []}
     for pair in (record.get("kie") or {}).get("pairs") or []:
         width, height = on(pair)
-        if not (width and height):
-            continue
-        for name in ("value_bbox", "key_bbox"):
-            box = pair.get(name)
-            if isinstance(box, dict):
-                pair[f"{name}_1000"] = to_grid(
-                    [box["x1"], box["y1"], box["x2"], box["y2"]], width, height)
+        for name, index in (("value_bbox", pair.get("value_entity_index")),
+                            ("key_bbox", pair.get("key_entity_index"))):
+            entity = entities.get(index) if isinstance(index, int) else None
+            if entity and entity.get("bbox"):
+                pair[name] = _as_box(entity["bbox"])
+                if entity.get("bbox_px"):
+                    pair[f"{name}_px"] = _as_box(entity["bbox_px"])
+                continue
+            if not (width and height):
+                continue
+            if f"{name}_px" in pair or not pair.get(name):
+                continue
+            pair.update(R.to_per_mille({name: pair[name]}, width, height))
+
+
+def _as_box(box) -> dict:
+    """`[x1,y1,x2,y2]` của thực thể thành `{x1..y2}` mà cặp KIE vẫn dùng."""
+    if isinstance(box, dict):
+        return {k: int(round(float(box[k]))) for k in ("x1", "y1", "x2", "y2")}
+    x1, y1, x2, y2 = (float(v) for v in box)
+    return {"x1": int(round(x1)), "y1": int(round(y1)),
+            "x2": int(round(x2)), "y2": int(round(y2))}
 
 
 def _pages_of_entity(record: dict) -> dict[int, int]:
@@ -124,8 +166,11 @@ def _one(job: dict) -> dict | None:
     record = json.loads(record_path.read_text(encoding="utf-8"))
 
     # HTML trần mang luôn hộp: `markdown/` không được là một bản chỉ có chữ.
-    # Hộp lấy từ `entity_annotations` theo thứ tự -- cùng hệ toạ độ pixel với
-    # `word_boxes/` và `layout_boxes/`, nên ba file nói về cùng một tấm ảnh.
+    # Hộp lấy từ `entity_annotations` theo thứ tự -- cùng HỆ 0..1000 với
+    # `word_boxes/` và `layout_boxes/`, nên ba file nói về cùng một tấm ảnh
+    # bằng cùng một hệ. (Câu này trước đây nói "cùng hệ toạ độ pixel"; hệ đã
+    # đổi ở `pipeline/record.py`, và một chú thích nói hệ cũ còn tệ hơn không
+    # có chú thích nào.)
     plain = sheet_html(markup, page,
                        [e.get("bbox") for e in record.get("entity_annotations") or []])
     if plain.strip():
@@ -139,85 +184,18 @@ def _one(job: dict) -> dict | None:
     # chính bản ghi, nên ai đọc `json/` cũng thấy.
     full, counts = complete(record, markup)
 
-    # Mỗi mô tả có bốn cách nói -- hai tiếng Anh, hai tiếng Việt -- và tờ giấy
-    # này lấy cách nào là hàm thuần của seed. Trước đó cả hai mươi nghìn trang
-    # dùng chung ĐÚNG MỘT câu cho mỗi trường ("Name of the goods or service
-    # listed on this line." xuất hiện 7 920 lần trong 250 file), và một mô
-    # hình học trên bộ ấy học thuộc câu chứ không học nghĩa.
-    # `job_id` là UUID suy ra từ chính seed của tờ giấy: ổn định, khác nhau
-    # giữa các tài liệu, và giống nhau ở mọi tờ của cùng một tài liệu -- nên
-    # ba tờ của một hoá đơn đọc lên cùng một giọng.
-    seed = record.get("job_id") or record.get("filename", "")
-    # SỐ THỨ TỰ của tài liệu trong loại của nó, đọc từ chính tên file
-    # (`hoa_don_gtgt_00014` -> 14). Nhờ nó phép chọn thành QUAY VÒNG: tài liệu
-    # thứ n và n+1 của cùng một loại lệch nhau đúng một bước nên không bao giờ
-    # trùng, thay vì bốc độc lập và trùng một phần mười số lần.
+    # Đổi giọng mô tả: luật nằm ở `synthgen/phrasing.py::voice_record`, một
+    # chỗ duy nhất, vì `draw_llm.py` cũng phải gọi nó ngay lúc vẽ. Một lượt
+    # không tới lượt `derive` thì bản ghi trên đĩa nằm lại với câu tả gốc, và
+    # câu gốc thì lặp -- đo trên `data/thu1k`: 8 564 câu tả, 171 câu khác nhau.
     #
-    # Mọi tờ của MỘT tài liệu có cùng số ấy -- `_p2`, `_p3` cắt ra từ cùng cái
-    # tên gốc -- nên ba tờ của một hoá đơn vẫn cùng giọng. Đó là một tờ giấy bị
-    # cắt, không phải ba chứng từ.
+    # `rank` của job thắng số đọc từ tên file khi có: nó là hạng THẬT trong
+    # lượt chạy, còn tên file chỉ là chỗ đỡ.
     ordinal = job.get("rank")
     if ordinal is None:
-        ordinal = _ordinal_of(stem)
-    voice: dict[int, str] = {}
-    for pair in full:
-        # Khoá theo CỘT chứ không theo ô: `qty_r1` và `qty_r7` là cùng một cột
-        # nên phải cùng một giọng trong một tờ giấy. Khoá theo ô thì bảng bốn
-        # mươi dòng đọc lên như bốn mươi người khác nhau cùng tả một cột.
-        pair["description"] = rephrase(pair.get("description", ""), seed,
-                                       str(pair.get("column")
-                                           or pair.get("field", "")),
-                                       ordinal=ordinal)
-    # MỖI TRƯỜNG MỘT CÂU RIÊNG, trong phạm vi một trang.
-    #
-    # Đổi giọng theo hạng tài liệu làm hai TÀI LIỆU khác nhau, không làm hai
-    # TRƯỜNG trên cùng một tờ khác nhau: `nguoi_khai` và `chuyen_vien_tu_van`
-    # cùng gốc "chức danh người ký", bảng bốn cách nói, nên một phần tư số lần
-    # chúng bốc trúng cùng một câu. Khi ấy mô tả mang zero thông tin để phân
-    # biệt hai cái hộp -- đo được: 84% số trang có ít nhất hai trường cùng mô
-    # tả.
-    #
-    # Ô BẢNG thì KHÔNG áp: mọi ô của một cột phải cùng giọng, và `column` là
-    # thứ phân biệt chúng với các cột khác.
-    used: dict[int, set[str]] = {}
-    for pair in full:
-        if pair.get("source") == "table":
-            continue
-        page_no = int(pair.get("page_number", 1) or 1)
-        taken = used.setdefault(page_no, set())
-        text = str(pair.get("description") or "")
-        if text and text in taken:
-            for other in variants_of(text):
-                if other not in taken:
-                    pair["description"] = other
-                    text = other
-                    break
-        if text:
-            taken.add(text)
-
-    # Bảng giọng dựng SAU khi đã ép duy nhất, không phải trước. Lần đầu tôi
-    # dựng nó trong vòng đổi giọng rồi mới ép duy nhất, nên `entity_annotations`
-    # giữ câu CŨ còn `kie.pairs` mang câu mới -- một file tự nói hai chuyện về
-    # cùng một trường. Phép kiểm `check.py` bắt đúng 436 ca ấy.
-    for pair in full:
-        index = pair.get("value_entity_index")
-        if isinstance(index, int):
-            voice[index] = str(pair.get("description") or "")
+        ordinal = ordinal_of(stem)
+    voice_record(record, full, stem=stem, ordinal=ordinal)
     record.setdefault("kie", {})["pairs"] = full
-
-    # `entity_annotations` mang mô tả của RIÊNG nó, do `pipeline/kie.py` ghi
-    # lúc vẽ trang, và đổi giọng cho `kie.pairs` mà bỏ nó lại thì một file tự
-    # nói hai câu khác nhau về cùng một trường -- tệ hơn là không đa dạng.
-    # Ghép theo CHỈ SỐ THỰC THỂ, không theo tên trường: ô bảng có `field_name`
-    # là `qty_r7` trong khi cặp khoá theo cột `qty`, nên so tên là lệch.
-    for entity in record.get("entity_annotations") or []:
-        index = entity.get("entity_index")
-        if index in voice:
-            entity["description"] = voice[index]
-        elif entity.get("description"):
-            entity["description"] = rephrase(str(entity["description"]), seed,
-                                             str(entity.get("field_name", "")),
-                                             ordinal=ordinal)
     record["kie"]["coverage"] = counts
 
     # Cùng một KIE, hai cách nói. `pairs` có HỘP -- để chấm định vị. `schema`
@@ -359,17 +337,6 @@ def write_sample(root: Path, chosen: list[dict], out: Path) -> int:
         "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in chosen),
         encoding="utf-8")
     return written
-
-
-def _ordinal_of(stem: str) -> int:
-    """Số thứ tự của tài liệu, đọc từ tên file. `hoa_don_gtgt_00014_p2` -> 14.
-
-    Bỏ đuôi `_pN` trước: các tờ của một tài liệu phải ra CÙNG một số, nếu không
-    tờ hai đọc lên một giọng khác tờ một. Không có số thì 0 -- mất quay vòng,
-    không mất mô tả."""
-    name = re.sub(r"_p\d+$", "", str(stem or ""))
-    found = re.findall(r"(\d+)$", name)
-    return int(found[0]) if found else 0
 
 
 def _migrate_layout(root: Path, manifest: Path) -> int:

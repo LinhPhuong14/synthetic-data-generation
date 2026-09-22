@@ -28,8 +28,10 @@ Bốn luật còn lại, mỗi luật một cách trang bị hỏng mà nhìn �
 * **Mọi giá trị đã khai phải in ra đúng một lần.** Model viết JSON nội dung rồi
   viết HTML; hai thứ ấy lệch nhau là bộ dữ liệu dạy mô hình đọc ra thứ không có
   trên giấy. Kiểm bằng cách so chữ, không tin lời hứa.
-* **`data-kind` phải nằm trong từ vựng.** Một kind lạ không tra được nhãn bố
-  cục, nên đoạn chữ ấy rơi về nhãn mặc định và không ai biết.
+* **`data-kind` phải đọc được.** Từ vựng engine là GỢI Ý, không phải hàng rào:
+  model được đặt tên mới cho khái niệm engine chưa có, miễn cái tên theo ngữ
+  pháp `họ.trường[.label]`. Xem `_COINED` bên dưới -- ngữ pháp ấy là thứ giữ
+  cho mọi trục suy diễn còn chạy trên một cái tên chưa ai từng thấy.
 * **Không tài nguyên ngoài.** `<script>`, `<img src="http…">`, `@import` --
   trang phải vẽ được trên máy không có mạng, và một request ra ngoài là một
   trang vẽ ra khác nhau tuỳ lúc.
@@ -342,6 +344,40 @@ _SHEET_OPEN = re.compile(r'<div\b[^>]*\bclass="[^"]*\bsheet\b', re.IGNORECASE)
 # đúng nội dung, chỉ vì chọn `.1.` thay vì `[0].` là phạt nhầm hình thức --
 # `resolve_path()` (`agent/compose_page.py`) đọc được cả hai hình, nên cổng
 # không cần đòi một hình duy nhất nữa.
+# NGỮ PHÁP CỦA MỘT `data-kind` MODEL TỰ ĐẶT.
+#
+# ## Vì sao mở từ vựng
+#
+# `kinds()` nhặt từ chính engine, nên nó chỉ biết những khái niệm engine biết
+# vẽ. Model viết loại giấy engine chưa có -- hợp đồng xây dựng, biên bản giám
+# định, đơn xin cấp phép -- và những tờ ấy có trường mà không phôi nào của kho
+# từng in. Đo trên 30 trang lượt đầu: 103 lần trượt cổng vì từ vựng, và 98% là
+# một kind thật cộng hậu tố (`_rooted` nhận chúng từ lâu). Nhưng 2% còn lại là
+# tên MỚI THẬT SỰ, và mỗi lần như thế cổng vứt cả tờ giấy đúng mọi luật khác
+# chỉ vì model gọi tên một khái niệm kho chưa đặt tên.
+#
+# ## Vì sao vẫn có ngữ pháp
+#
+# Mở tuỳ tiện thì mất hết những trục KHÔNG tra bảng mà đọc HÌNH DẠNG cái tên:
+#
+#   `record._word_field_role`  hậu tố `.label`/`.title` -> vai `key`
+#   `record.regions_from_words` đoạn ĐẦU (`họ`) -> cắt cụm vùng
+#   `synthgen/kie_schema.groups` tiền tố -> nhóm trường trong schema
+#   `synthgen/kie_full` họ `kind` -> ghép khoá mồ côi với giá trị mồ côi
+#
+# Cả bốn chạy được trên một cái tên chưa ai từng thấy, MIỄN LÀ nó có họ và
+# giữ quy ước hậu tố. Nên cổng đòi đúng chừng ấy: hai tới bốn đoạn snake_case
+# nối bằng dấu chấm. Tên một đoạn (`title`, `note`, `colhdr`) vẫn qua vì
+# chúng nằm trong từ vựng engine; một tên MỚI một đoạn thì không, vì nó không
+# nói được nó thuộc cụm nào.
+#
+# ĐOẠN THUẦN SỐ hợp lệ ở mọi chỗ trừ đoạn đầu -- `clause.1.body`,
+# `section.4`. Cùng lý lẽ đã viết cho `_PATH` ngay dưới: đo trên pilot16, một
+# tờ đánh số điều khoản bằng `.1.` thay vì `[0].` bị cổng cũ loại nguyên tờ,
+# và phạt hình thức khi nội dung đúng là phạt nhầm. Đoạn ĐẦU thì phải là chữ,
+# vì nó là họ và một con số không đặt tên được cho cụm nào.
+_COINED = re.compile(r"^[a-z][a-z0-9_]*(\.([a-z][a-z0-9_]*|\d+)){1,3}$")
+
 _PATH = re.compile(
     r"^[a-z][a-z0-9_]*(\[\d*\])?"
     r"(\.([a-z][a-z0-9_]*(\[\d*\])?|\d+))*$")
@@ -441,9 +477,12 @@ def problems(html: str, fields: dict | None = None) -> list[str]:
                 f'run `{span["kind"]}` có thẻ lồng bên trong; phép đo lấy '
                 "`span.firstElementChild || span` nên thẻ ấy THÀNH cái hộp "
                 "được ghi -- run có nhãn phải chỉ chứa chữ")
-        if span["kind"] not in known and not _rooted(span["kind"], known):
-            found.append(f'`data-kind="{span["kind"]}"` không có trong từ vựng, '
-                         "và không có tiền tố nào là một kind thật")
+        if (span["kind"] not in known and not _rooted(span["kind"], known)
+                and not _COINED.match(span["kind"])):
+            found.append(
+                f'`data-kind="{span["kind"]}"` không đọc được: một tên tự đặt '
+                "phải là `họ.trường` hoặc `họ.trường.gì_đó`, chữ thường, "
+                "snake_case, 2-4 đoạn")
         seen_kind[span["kind"]] = seen_kind.get(span["kind"], 0) + 1
     if not parser.spans:
         found.append("không có run nào mang `data-kind`; trang không có nhãn nào")
@@ -549,6 +588,138 @@ class _Visible(HTMLParser):
             self.chars += len(data.strip())
 
 
+# Thẻ mà chữ bên trong nó ĐÃ có vùng, dù không `data-region` nào khai.
+# `<table>`: `CELL_REGIONS_JS` gộp các ô thành đúng một vùng `Table`.
+# `<img>`/`<svg>`/`[data-graphic]`: `GRAPHIC_RECTS_JS` đo chúng thành
+# `Image`/`Stamp`. Hai phép đo ấy có thật và chạy trên mọi trang, nên đếm chữ
+# trong chúng là mồ côi thì con số ra sai theo chiều bi quan.
+_SHELTERED_TAGS = frozenset({"table", "img", "svg"})
+
+# Chỉ phần tử `.sheet` được chụp. Run ngoài nó vẫn vẽ trên trình duyệt mà
+# KHÔNG vào ảnh và KHÔNG có hộp -- `outside_sheet()` ngay dưới đã báo riêng
+# chúng, nên đếm lại ở đây là báo một lỗi hai lần và thổi phồng tỉ lệ mồ
+# côi. Đo chéo với phép đo DOM (`'.sheet span[data-kind]'`) trên 40 tờ:
+# không lọc thì lệch 184 run và 70 mồ côi; lọc rồi thì khớp.
+_SHEET_CLASS = re.compile(r"\bclass\s*=\s*(\"[^\"]*\bsheet\b[^\"]*\"|'[^']*\bsheet\b[^']*'|[^\s>]*\bsheet\b[^\s>]*)", re.IGNORECASE)
+
+
+def orphan_runs(html: str) -> list[str]:
+    """Những run có `data-kind` mà KHÔNG tổ tiên nào khai vùng.
+
+    ## Vì sao đếm cái này
+
+    Một trang có thể qua sạch mọi phép kiểm khác mà phần lớn chữ của nó không
+    thuộc vùng bố cục nào. Khi ấy `pipeline/record.py` dựng vùng cho chúng
+    bằng cách gom từ theo ngưỡng khe -- và bộ gom cắt ở chỗ hở ngang, mà máng
+    giữa nhãn và giá trị thường rộng hơn ngưỡng. Một khối "nhãn ... giá trị"
+    ra hai vùng, một khối tổng tám dòng ra tám vùng. Nhãn vẫn có, hộp vẫn có,
+    chỉ là chúng mô tả những mảnh không ai vẽ ra.
+
+    Đo trên 40 tờ model viết, SAU `repair.zoned()`, chia theo kết cục cổng:
+
+        đã QUA cổng    trung vị 10,5%   phân vị 75: 41,1%   phân vị 90: 83,3%
+        đã trượt cổng  trung vị  4,1%   phân vị 75: 66,3%   phân vị 90: 83,8%
+
+    Trang QUA cổng còn tệ hơn trang trượt. Nghĩa là không phép kiểm nào đang
+    chạy có tương quan với lỗi này -- nó lọt hoàn toàn, và lọt vào đúng tập
+    được đem đi huấn luyện.
+
+    ## Phép đo chuỗi so với phép đo DOM
+
+    Cổng chạy TRƯỚC khi dàn trang, nên nó chỉ có chuỗi. Đo chéo với phép đo
+    thật (`'.sheet span[data-kind]'` trên DOM đã dàn) trên 40 tờ: **27 tờ
+    (68%) khớp chính xác**, và cả sáu tờ lệch nhiều nhất đều là trang HTML
+    hỏng mà Chromium tự nắn lại -- một tờ chiếm 104 trong 184 run lệch.
+
+    Lệch luôn về phía ĐẾM DƯ, tức cổng nghiêm hơn thực tế chứ không lỏng
+    hơn; và những tờ ấy vốn đã trượt vì lỗi cấu trúc. Không nắn lại con số:
+    nắn là đoán xem trình duyệt sẽ nắn thế nào, và đoán đúng chuyện ấy thì
+    đã chẳng cần trình duyệt.
+
+    ## Hàm này KHÔNG quyết định loại hay giữ
+
+    Nó trả danh sách. Ngưỡng nằm ở `rulebase/synthgen/_blocks.yaml::gate`, và
+    `agent/compose_page.py` là chỗ so. Nhốt một con số vào đây là bắt người
+    muốn siết dần phải sửa mã -- đúng ranh giới `rulebase/` sinh ra để xoá."""
+    from pipeline.tags import (OPEN_CLOSE, VOID_TAGS,                # noqa: PLC0415
+                               declared_region, has_kind)
+
+    stack: list[str] = []
+    loose: list[str] = []
+    for match in OPEN_CLOSE.finditer(html):
+        closing, tag = match.group(1), match.group(2).lower()
+        attrs, selfclose = match.group(3), match.group(4)
+        if tag in VOID_TAGS or selfclose:
+            continue
+        if closing:
+            while stack:
+                if stack.pop() == f"/{tag}":
+                    break
+            continue
+        if has_kind(attrs) and _in_sheet(stack) and not stack_shelters(stack) \
+                and not declared_region(attrs):
+            # Run có nhãn chỉ chứa chữ (luật số một của tệp này), nên chữ của
+            # nó là đoạn tới dấu `<` kế tiếp. Run rỗng thì bỏ qua: một span
+            # không có chữ thì không có hộp, nên nó không có nhãn để mà sai.
+            rest = html[match.end():]
+            cut = rest.find("<")
+            text = (rest if cut < 0 else rest[:cut]).strip()
+            if text:
+                kind = re.search(r"data-kind\s*=\s*[\"']?([^\"'\s>]+)", attrs)
+                loose.append(f"{kind.group(1) if kind else '?'}: {text[:40]!r}")
+        stack.append(f"/{tag}")
+        if _SHEET_CLASS.search(attrs):
+            stack.append(_SHEET)
+        label = declared_region(attrs)
+        if label or tag in _SHELTERED_TAGS or "data-graphic" in attrs.lower():
+            stack.append(label or f"«{tag}»")
+    return loose
+
+
+# Dấu `.sheet` trong ngăn xếp. Không phải một cái che: chữ trong `.sheet` mà
+# ngoài mọi vùng vẫn là mồ côi -- nó chỉ nói "run này có vào ảnh".
+_SHEET = "«.sheet»"
+
+
+def _in_sheet(stack: list[str]) -> bool:
+    return _SHEET in stack
+
+
+def stack_shelters(stack: list[str]) -> bool:
+    """Ngăn xếp này có tổ tiên nào che cho run bên trong không.
+
+    Mục nào không bắt đầu bằng `/` là một cái che -- hoặc nhãn vùng đã khai,
+    hoặc dấu `«table»`/`«img»` của một phép đo riêng."""
+    return any(not item.startswith("/") and item != _SHEET for item in stack)
+
+
+def orphan_share(html: str) -> tuple[int, int]:
+    """`(số run mồ côi, tổng số run có chữ)`. Chia lấy tỉ lệ."""
+    from pipeline.tags import (OPEN_CLOSE, VOID_TAGS, has_kind)      # noqa: PLC0415
+
+    total, stack = 0, []
+    for match in OPEN_CLOSE.finditer(html):
+        closing, tag, attrs = match.group(1), match.group(2).lower(), match.group(3)
+        if tag in VOID_TAGS or match.group(4):
+            continue
+        if closing:
+            while stack:
+                if stack.pop() == f"/{tag}":
+                    break
+            continue
+        in_sheet = _in_sheet(stack)
+        stack.append(f"/{tag}")
+        if _SHEET_CLASS.search(attrs):
+            stack.append(_SHEET)
+        if not has_kind(attrs) or not in_sheet:
+            continue
+        rest = html[match.end():]
+        cut = rest.find("<")
+        if (rest if cut < 0 else rest[:cut]).strip():
+            total += 1
+    return len(orphan_runs(html)), total
+
+
 def visible_chars(html: str) -> int:
     """Tổng ký tự chữ hiển thị trong mọi `.sheet` của trang này.
 
@@ -572,6 +743,28 @@ def visible_chars(html: str) -> int:
     return parser.chars
 
 
+def coined(html: str) -> list[str]:
+    """Những `data-kind` trang này tự đặt -- không có trong từ vựng engine và
+    không có gốc nào trong đó.
+
+    ĐO, không gác. Từ vựng mở là một quyết định có giá: nếu hai tờ nói về
+    cùng một khái niệm mà đặt hai tên, `kie_schema.groups()` (khoá theo tiền
+    tố) xếp chúng vào hai nhóm và schema phân mảnh. Không có cách nào biết
+    điều ấy đang xảy ra tới đâu ngoài việc đếm, nên hàm này tồn tại để
+    `tools/llm/corpus_stats.py` và các phép đo bộ dữ liệu gọi được.
+    """
+    known = kinds()
+    parser = _Spans()
+    try:
+        parser.feed(str(html or ""))
+        parser.close()
+    except Exception:                                             # noqa: BLE001
+        return []
+    fresh = {s["kind"] for s in parser.spans
+             if s["kind"] not in known and not _rooted(s["kind"], known)}
+    return sorted(fresh)
+
+
 def path_coverage(html: str) -> dict:
     """Đo, KHÔNG gác: bao nhiêu phần `data-kind` cũng có `data-path`.
 
@@ -590,5 +783,5 @@ def path_coverage(html: str) -> dict:
            "coverage": round(with_path / total, 4) if total else 0.0}
 
 
-__all__ = ["FORBIDDEN", "REGIONS", "SAMPLE", "declared_paths", "kinds",
-          "path_coverage", "printed_kinds", "problems"]
+__all__ = ["FORBIDDEN", "REGIONS", "SAMPLE", "coined", "declared_paths",
+          "kinds", "path_coverage", "printed_kinds", "problems"]

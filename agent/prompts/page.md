@@ -300,6 +300,59 @@ for semantic text runs whenever applicable.
 
 `data-path` is the document-specific identity of the field.
 
+## Coining a `data-kind`
+
+The vocabulary supplied by the caller is what this repository's engine already
+prints. It is a starting set, not a fence. Reuse a supplied name whenever one
+means what your field means -- a name shared across two documents is what lets
+a reader group the same concept from both. When your document has a field the
+engine has never drawn, coin a name instead of forcing a wrong one.
+
+A coined name must read as `family.field` or `family.field.something`:
+
+- lowercase, snake_case, 2 to 4 dot-separated segments
+- `contract.party_a`, `inspection.finding`, `permit.issued_on.label`
+
+Two conventions are load-bearing, not decoration:
+
+- the **first segment is the family**; runs sharing it are treated as one
+  cluster, so do not spread one block's fields across three families
+- a name ending in **`.label`** or **`.title`** is the printed caption OF
+  another field, not a value of its own
+
+### The family is a BLOCK on the page, never the document's name
+
+This is the mistake actually observed, not a hypothetical one. Asked for a
+Vietnamese letter of authorisation, a model coined sixteen names and gave
+every one of them the same family -- the document type:
+
+```
+WRONG   authorisation_letter.agent_name    authorisation_letter.auth_number
+        authorisation_letter.scope         authorisation_letter.issue_date
+        …sixteen names, one family, each used exactly once
+```
+
+Every field on the sheet then belongs to one cluster, which is the same as
+having no clusters at all. The family must name **which block of this page
+the run sits in** -- the party being authorised, the authority granted, the
+signature line -- so that two runs in different blocks are told apart and two
+runs in the same block are held together:
+
+```
+RIGHT   agent.name      agent.name.label      agent.id_number
+        auth.scope      auth.scope.label      auth.valid_until
+        sign.date       sign.place            sign.name
+```
+
+The document's own type is already recorded elsewhere (`doc_kind`); repeating
+it in front of every field adds nothing and destroys the one signal the first
+segment carries. Prefer a family already in the supplied vocabulary --
+`store`, `sign`, `total`, `parties`, `invoice` -- and coin a new one only for
+a block none of them describes.
+
+A name that is a single segment with no family, or that carries capitals,
+hyphens, spaces or non-ASCII letters, cannot be read and is rejected.
+
 Do not use `data-kind` as a replacement for layout classification.
 
 Do not use `data-region` as a replacement for semantic field identity.
@@ -509,23 +562,11 @@ A region must correspond to a meaningful visual object.
 
 Do not create regions merely to satisfy a numeric target.
 
-Examples of valid region concepts include:
+The complete list of valid region labels, and the HTML tag that already
+declares each one, is inserted below from the label table the validator
+checks against -- it is not a sample and not a paraphrase:
 
-- Page-Header
-- Title
-- Section-Header
-- Text
-- Table
-- List-Group
-- Form
-- Figure
-- Caption
-- Footnote
-- Bibliography
-- Formula
-- TOC
-- Stamp
-- Watermark
+{{REGION_TABLE}}
 
 Use the closest valid region type.
 

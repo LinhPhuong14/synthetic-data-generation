@@ -36,9 +36,14 @@ sign_sets:
 notes:
 - Kích thước ghi trên bản vẽ tính bằng milimét.
 - Không đo trực tiếp trên bản vẽ.
+# Sức chứa nới ra để phôi này với tới hai tờ: bản vẽ ở tờ đầu, BẢNG THỐNG KÊ VẬT LIỆU ở tờ sau — đúng bộ bản vẽ thi công.
+# Trần cũ quá thấp nên `--multipage-only` loại sạch mọi seed của nó
+# (đo được 0% seed nhắm >=2 tờ), và loại chứng từ này biến mất khỏi
+# bộ nhiều trang. Xem `design.FLOW_PER_PAGE`: hai tờ cần trần >= 30
+# dòng bảng.
 rows:
-- 0
-- 20
+- 6
+- 60
 always:
 - letterhead
 - doctitle

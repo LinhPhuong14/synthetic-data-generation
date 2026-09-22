@@ -38,9 +38,14 @@ sign_sets:
   - THỦ QUỸ
 notes:
 - Biên lai là chứng từ duy nhất xác nhận việc đã nộp học phí.
+# Sức chứa nới ra để khối chảy BẢNG cũng với tới hai tờ: biên lai ở tờ đầu, BẢNG CHI TIẾT các khoản thu theo kỳ ở tờ sau.
+# Trần cũ thấp hơn một tờ (3..? < 15 dòng/tờ) nên mỗi lần
+# `pick_flow` bốc trúng bảng là phôi này tụt về một tờ và
+# `--multipage-only` loại nó — đo được chỉ 30-33% seed sống sót,
+# dù khối điều khoản của nó với tới mười sáu tờ.
 rows:
-- 1
-- 12
+- 3
+- 36
 always:
 - letterhead
 - doctitle

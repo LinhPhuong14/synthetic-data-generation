@@ -25,7 +25,8 @@ if str(REPO_ROOT) not in sys.path:
 from rulebase.text import money, words_vi  # noqa: E402
 from synthgen import corpus  # noqa: E402
 from synthgen.design import (COL_SUPERS, COLUMNS, ROW_GROUP_NAMES,  # noqa: E402
-                             Design, FieldDef, groups_in, super_in)
+                             Design, FieldDef, groups_in, item_rules,
+                             super_in)
 
 CITIES = ('Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng', 'Hải Phòng', 'Cần Thơ', 'Huế', 'Nha Trang', 'Biên Hoà', 'Vũng Tàu', 'Buôn Ma Thuột', 'Quy Nhơn', 'Vinh', 'Thanh Hoá', 'Nam Định', 'Thái Nguyên', 'Hạ Long', 'Bắc Ninh', 'Hải Dương', 'Long Xuyên', 'Rạch Giá', 'Mỹ Tho', 'Bến Tre', 'Pleiku', 'Đà Lạt', 'Phan Thiết', 'Tuy Hoà', 'Quảng Ngãi', 'Tam Kỳ', 'Đồng Hới', 'Lào Cai')
 
@@ -409,27 +410,78 @@ QUESTION_THEMES: dict[str, dict] = {
 # "PHIẾU ĐĂNG KÝ ĐÀO TẠO" ra câu hỏi đánh giá nhân sự -- đo được, đúng hai phôi
 # hoán chỗ nhau. Khớp theo tên thì một phôi mới tự rơi vào đúng nhóm mà không
 # ai phải thêm một dòng bảng.
+# Gộp chủ đề khai bằng FILE (`rulebase/corpus/vi/questions_*.txt`) vào bảy chủ
+# đề viết thẳng ở trên. Cùng lối `design.ARCHETYPES + _declared()`: file làm
+# giàu, không thay thế -- mất thư mục corpus thì bảy chủ đề cũ vẫn chạy.
+#
+# File THẮNG khi trùng tên chủ đề: người sửa file là người vừa quyết, còn
+# bảng trong mã là cái có sẵn.
+def _as_item(entry) -> dict:
+    """Một câu hỏi, MỘT hình dạng dữ liệu.
+
+    Bảy chủ đề viết trong file này khai câu hỏi bằng tuple
+    `(câu, dạng, lựa chọn)`; chủ đề khai bằng corpus khai bằng dict, vì mười
+    hai dạng mới mang tham số khác nhau và một tuple ba ô không chở nổi. Quy
+    về dict ngay lúc gộp: để hai hình dạng chạy song song thì mọi hàm phía
+    sau phải biết cả hai, và cái quên biết sẽ là cái viết sau."""
+    if isinstance(entry, dict):
+        return dict(entry)
+    prompt, shape, options = entry
+    item = {"shape": shape, "prompt": prompt}
+    if options:
+        item["options"] = tuple(options)
+    return item
+
+
+for _name, _theme in list(QUESTION_THEMES.items()):
+    QUESTION_THEMES[_name] = {
+        "items": tuple(_as_item(i) for i in _theme["items"]),
+        "answers": tuple(_theme.get("answers") or ()),
+    }
+
+QUESTION_THEMES.update(corpus.question_themes())
+
 THEME_WORDS: dict[str, tuple[str, ...]] = {
     'nhan_su': ('đánh giá nhân sự', 'đánh giá cán bộ', 'nhận xét cuối kỳ',
                 'đánh giá công chức', 'nhận xét đánh giá'),
     'dao_tao': ('đào tạo', 'khoá học', 'bồi dưỡng', 'tập huấn', 'học viên'),
     'dich_te': ('y tế', 'dịch tễ', 'khai báo y tế'),
-    'bao_hiem': ('thẩm định', 'bảo hiểm nhân thọ', 'yêu cầu bảo hiểm'),
+    'bao_hiem': ('thẩm định', 'giám định', 'bảo hiểm nhân thọ',
+                 'yêu cầu bảo hiểm', 'bồi thường'),
     'benh_khop': ('bệnh khớp', 'cơ xương khớp'),
     'tien_su_benh': ('tiền sử', 'bệnh án', 'khám sức khoẻ', 'sức khoẻ'),
     'dich_vu': ('khảo sát', 'đánh giá chất lượng', 'lấy ý kiến', 'góp ý'),
+    # Bảy chủ đề khai bằng file. Từ khoá đọc TÊN tài liệu, cùng lối bảy chủ
+    # đề trên: tên một tờ giấy nói nó hỏi về chuyện gì.
+    'hanh_chinh': ('hành chính', 'một cửa', 'thủ tục', 'công dân', 'cư trú',
+                   'hộ khẩu', 'uỷ quyền', 'biên nhận hồ sơ'),
+    'tai_chinh': ('tín dụng', 'vay', 'ngân hàng', 'sao kê', 'uỷ nhiệm chi',
+                  'thanh toán', 'tài khoản'),
+    'giao_duc': ('nhập học', 'dự thi', 'học bạ', 'tuyển sinh', 'học phí',
+                 'sinh viên', 'điểm', 'tốt nghiệp'),
+    'lao_dong': ('lao động', 'hợp đồng lao động', 'thôi việc', 'chấm công',
+                 'lương', 'bổ nhiệm', 'nhân sự'),
+    'giao_thong': ('điều xe', 'vận đơn', 'phương tiện', 'giao hàng', 'gửi xe',
+                   'vận chuyển'),
+    # 'giám định' KHÔNG ở đây: `bien_ban_giam_dinh` là giấy BẢO HIỂM trong kho
+    # này (`profile: insurance`), và từ khoá ấy kéo nó sang chủ đề xây dựng --
+    # đo được, một trang hỏi "Kết luận nghiệm thu" rồi hỏi tiếp về khớp gối.
+    'xay_dung': ('nghiệm thu', 'công trình', 'bản vẽ', 'nhật ký', 'bàn giao',
+                 'kiểm kê', 'kỹ thuật'),
+    'moi_truong': ('an toàn', 'môi trường', 'vi phạm', 'kiểm tra', 'phòng cháy'),
 }
 
 THEMES_BY_PROFILE: dict[str, tuple[str, ...]] = {
     'medical': ('benh_khop', 'tien_su_benh', 'dich_te'),
-    'insurance': ('bao_hiem', 'benh_khop', 'tien_su_benh'),
-    'admin': ('dich_vu', 'nhan_su', 'dao_tao'),
-    'invoice': ('dich_vu',),
-    'market': ('dich_vu',),
+    'insurance': ('bao_hiem', 'benh_khop', 'tien_su_benh', 'tai_chinh'),
+    'admin': ('dich_vu', 'nhan_su', 'dao_tao', 'hanh_chinh', 'lao_dong',
+              'giao_duc', 'xay_dung', 'moi_truong'),
+    'invoice': ('dich_vu', 'tai_chinh', 'giao_thong'),
+    'market': ('dich_vu', 'giao_thong'),
     'menu': ('dich_vu',),
-    'hotel': ('dich_vu',),
-    'power': ('dich_vu',),
-    'water': ('dich_vu',),
+    'hotel': ('dich_vu', 'hanh_chinh'),
+    'power': ('dich_vu', 'moi_truong'),
+    'water': ('dich_vu', 'moi_truong'),
 }
 
 
@@ -704,7 +756,9 @@ def _rows(rng: random.Random, design: Design, count: int,
     Số tiền do đây tính hết: `amount = qty x unit_price`, và tổng là tổng của
     cột `amount`. Không cột nào lấy số từ nơi khác."""
     arch = design.archetype
-    catalogue = corpus.catalogue(arch.profile)
+    # Kho hàng theo PHÔI, không chỉ theo ngành -- xem `_blocks.yaml::items`
+    # về việc một tờ học bạ từng liệt kê bình chữa cháy.
+    catalogue = corpus.items_for(arch, item_rules())
     picked = corpus.sample(rng, catalogue, count)
     pool = UNITS_BY_PROFILE.get(arch.profile, UNITS)
     units = list(pool) if len(pool) <= 4 else rng.sample(list(pool), 4)
@@ -782,6 +836,269 @@ def _rows(rng: random.Random, design: Design, count: int,
         }
         rows.append(Row(values))
     return rows, total, units
+
+
+# Muối riêng cho điều khoản. Cùng lý do `draw.CONTENT_SALT` có muối riêng:
+# hai thứ bốc từ cùng một seed mà không muối thì chúng đi cùng nhau, và ở đây
+# thứ đi cùng sẽ là "tài liệu nào dài thì tài liệu ấy cũng chọn điều khoản
+# giống nhau".
+CLAUSE_SALT = 0x0C1A11EF
+
+
+def clauses_of(seed: int, design: Design, count: int) -> list[tuple[str, str]]:
+    """`count` điều khoản của tài liệu ấy: `(tiêu đề, thân)`.
+
+    Bốc TỪ CHÍNH `seed` chứ không từ `rng` đang chạy, và lấy TIỀN TỐ của một
+    hoán vị cố định. Nhờ thế `refill(n)` là đơn điệu: xin thêm một điều thì
+    được đúng các điều cũ cộng một điều mới, không phải một bộ điều khác
+    hẳn. `paginate.py` đo rồi chỉnh số mục vài vòng, và một bộ nội dung đổi
+    hẳn sau mỗi vòng thì phép đo vòng trước không nói gì về vòng sau -- nó
+    dao động thay vì hội tụ. Dòng hàng của bảng không có tính chất này và đó
+    là một điểm yếu sẵn có, không phải một điều đáng bắt chước.
+
+    Số KHOẢN mỗi điều cũng chốt theo chỉ số điều, cùng lý do: điều thứ ba in
+    ra hai khoản thì lần đo nào nó cũng hai khoản.
+    """
+    pool = corpus.clauses(design.archetype.profile)
+    if not pool:
+        return []
+    order = list(range(len(pool)))
+    random.Random(seed ^ CLAUSE_SALT).shuffle(order)
+    out: list[tuple[str, str]] = []
+    for rank in order[:max(int(count), 0)]:
+        span = pool[rank]
+        head, khoan = span[0], list(span[1:])
+        if not khoan:
+            out.append((head, ''))
+            continue
+        # Hạt giống theo CHỈ SỐ trong kho, không theo vị trí trong tài liệu:
+        # cùng một điều thì cùng số khoản dù nó rơi vào điều 3 hay điều 17.
+        take = random.Random(seed ^ CLAUSE_SALT ^ (rank * 2654435761)).randint(
+            1, len(khoan))
+        out.append((head, ' '.join(khoan[:take])))
+    return out
+
+
+QUESTION_SALT = 0x5178E31
+
+
+def questions_of(seed: int, design: Design, count: int) -> list[dict]:
+    """`count` câu hỏi của tờ khai ấy, dựng theo cùng lối `clauses_of`.
+
+    Hai chỗ khác bản cũ, và cả hai để khối này CHẢY được qua nhiều tờ:
+
+    * bốc qua NHIỀU chủ đề khi một chủ đề không đủ câu. Một chủ đề có tám
+      đến mười hai câu, đủ cho một tờ; một tờ khai y tế bốn trang thì không.
+      Chủ đề hợp nhất đứng trước, nên câu đầu tờ vẫn là câu đúng ngành, và
+      các chủ đề sau chỉ vào khi đã cạn câu;
+    * bốc từ `seed` và lấy TIỀN TỐ của một hoán vị cố định, nên `refill(n)`
+      đơn điệu -- xem `clauses_of` về việc vì sao `paginate.py` cần thế.
+    """
+    arch = design.archetype
+    first = _theme_for(arch, random.Random(seed ^ QUESTION_SALT))
+    # TRÀN SANG CHỦ ĐỀ HỌ HÀNG TRƯỚC, không sang bất kỳ chủ đề nào.
+    #
+    # Bản trước nối `first` với MỌI chủ đề còn lại theo thứ tự từ điển, nên
+    # một tờ khai dài cạn câu ở chủ đề của nó rồi hỏi tiếp câu của chủ đề
+    # khác. Đo trên một trang thật: `bien_ban_giam_dinh` hỏi "Kết luận
+    # nghiệm thu" xong hỏi ngay "Quý khách bị ảnh hưởng các khớp nào?" --
+    # hai câu không cùng một tờ giấy nào trên đời.
+    #
+    # `THEMES_BY_PROFILE` đã nói chủ đề nào hợp với hồ sơ nào; dùng chính nó
+    # làm vòng thứ hai, rồi mới tới phần còn lại làm vòng cuối. Một tờ khai
+    # phải rất dài mới chạm tới vòng cuối, và khi ấy có câu lạc đề vẫn hơn
+    # có một trang trắng.
+    kin = [n for n in THEMES_BY_PROFILE.get(arch.profile, ())
+           if n != first and n in QUESTION_THEMES]
+    rest = [n for n in QUESTION_THEMES if n != first and n not in kin]
+    names = [first] + kin + rest
+    # Kho câu trả lời đi THEO TỪNG CÂU, không gộp chung.
+    #
+    # Bản trước nối `answers` của mọi chủ đề đã lấy vào một rổ, nên một câu
+    # của chủ đề xây dựng bốc trúng câu trả lời của chủ đề bệnh khớp. Đo
+    # được trên một trang thật: "Nghiệm thu hạng mục *đã tiêm đủ ba mũi*
+    # thuộc gói thầu *đã tiêm đủ ba mũi*". Nhãn KIE vẫn đúng chỗ, nhưng chữ
+    # trên giấy là chữ không tờ nào in ra -- và đó là thứ mô hình đọc.
+    pool: list[dict] = []
+    pool_answers: list[tuple[str, ...]] = []
+    for name in names:
+        theme = QUESTION_THEMES[name]
+        own = tuple(theme['answers']) or ('',)
+        pool.extend(theme['items'])
+        pool_answers.extend([own] * len(theme['items']))
+        if len(pool) >= count:
+            break
+    if not pool:
+        return []
+    order = list(range(len(pool)))
+    # Xáo TRONG chủ đề đầu trước, rồi mới tới phần thêm: giữ được "câu đầu tờ
+    # là câu đúng ngành" mà vẫn không in theo đúng thứ tự khai trong mã.
+    head = len(QUESTION_THEMES[first]['items'])
+    rng_head = random.Random(seed ^ QUESTION_SALT)
+    first_part, rest = order[:head], order[head:]
+    rng_head.shuffle(first_part)
+    rng_head.shuffle(rest)
+    order = first_part + rest
+
+    out: list[dict] = []
+    for rank in order[:max(int(count), 0)]:
+        # Hạt giống theo CHỈ SỐ trong kho: cùng một câu thì lần đo nào cũng
+        # cùng một dáng trả lời, nên chiều cao của nó không nhảy giữa hai
+        # vòng đo của `paginate.py`.
+        rng = random.Random(seed ^ QUESTION_SALT ^ (rank * 2654435761))
+        out.append(_filled(pool[rank], rng, list(pool_answers[rank])))
+    return out
+
+
+def _spread(rng: random.Random, free: list[str], count: int) -> list[str]:
+    """`count` câu trả lời KHÁC NHAU khi kho đủ dài, lặp lại khi không."""
+    pool = [x for x in free if x]
+    if not pool or count <= 0:
+        return [''] * max(count, 0)
+    if count <= len(pool):
+        return rng.sample(pool, count)
+    return [rng.choice(pool) for _ in range(count)]
+
+
+# Tên cột nói CỘT ẤY CHỨA GÌ. Bảng điền tay trên giấy thật có cột "Họ tên",
+# "Năm sinh", "Số điện thoại" -- đổ một chuỗi bất kỳ vào mọi cột thì ra những
+# ô như `Chức danh: 3853`, đo được trên một trang vẽ thật.
+#
+# So khớp trên tên cột không dấu-hoá, và tiền tố dài hơn không cần ở đây vì
+# các mẫu không lồng nhau. Cột không khớp mẫu nào rơi về câu trả lời tự do --
+# đúng thứ một cột "Ghi chú" hay "Nội dung" chứa.
+COLUMN_KINDS: tuple[tuple[tuple[str, ...], str], ...] = (
+    (('họ tên', 'họ và tên', 'người', 'chủ hộ'), 'person'),
+    (('năm sinh',), 'year'),
+    (('ngày', 'thời gian', 'thời hạn'), 'date'),
+    (('số điện thoại', 'điện thoại'), 'phone'),
+    (('số giấy tờ', 'số hiệu', 'mã số', 'số sổ', 'số'), 'digits'),
+    (('quan hệ',), 'relation'),
+    (('chức danh', 'chức vụ', 'vị trí'), 'position'),
+    (('đơn vị', 'trường', 'cơ quan'), 'org'),
+    (('giá trị', 'khối lượng', 'số lượng', 'thu nhập'), 'amount'),
+    (('xếp loại', 'kết quả'), 'grade'),
+    (('loại', 'tên'), 'noun'),
+)
+
+RELATIONS = ('Con', 'Vợ', 'Chồng', 'Cha', 'Mẹ', 'Anh', 'Chị', 'Em')
+GRADES = ('Giỏi', 'Khá', 'Trung bình', 'Đạt', 'Xuất sắc')
+
+
+def _column_value(name: str, rng: random.Random, free: list[str]) -> str:
+    """Giá trị hợp với CỘT `name` trong một bảng người ta điền tay."""
+    low = str(name or '').strip().lower()
+    kind = next((k for words, k in COLUMN_KINDS
+                 if any(w in low for w in words)), 'free')
+    if kind == 'person':
+        return rng.choice(corpus.people() or ('Nguyễn Văn An',))
+    if kind == 'year':
+        return str(rng.randint(1955, 2020))
+    if kind == 'date':
+        return f'{rng.randint(1, 28):02d}/{rng.randint(1, 12):02d}/{rng.randint(2018, 2026)}'
+    if kind == 'phone':
+        return '0' + _digits_of(rng, 9)
+    if kind == 'digits':
+        return _digits_of(rng, rng.choice((8, 10, 12)))
+    if kind == 'relation':
+        return rng.choice(RELATIONS)
+    if kind == 'position':
+        return rng.choice(POSITIONS)
+    if kind == 'org':
+        shops = corpus.shops('admin')
+        return rng.choice(shops)[0] if shops else 'Đơn vị trực thuộc'
+    if kind == 'amount':
+        return f'{rng.randint(1, 900):,}'.replace(',', '.')
+    if kind == 'grade':
+        return rng.choice(GRADES)
+    if kind == 'noun':
+        return rng.choice(free) if free else ''
+    return rng.choice(free) if free else ''
+
+
+def _digits_of(rng: random.Random, n: int) -> str:
+    """`n` chữ số, không bắt đầu bằng 0 -- số giấy tờ thật không thế."""
+    if n <= 0:
+        return ''
+    return str(rng.randint(1, 9)) + ''.join(str(rng.randrange(10))
+                                            for _ in range(n - 1))
+
+
+def _filled(spec: dict, rng: random.Random, free: list[str]) -> dict:
+    """Một câu hỏi ĐÃ ĐIỀN: thêm ô nào tích, số nào viết vào.
+
+    Tách khỏi `questions_of` vì hai việc đổi theo hai thứ khác nhau: định
+    dạng câu hỏi là DỮ LIỆU trong `rulebase/corpus/vi/questions_*.txt`, còn
+    trạng thái điền là chuyện của từng tờ giấy. Thêm một dạng là thêm một
+    nhánh ở đây và một nhánh ở `markup._shape_rows` -- hai chỗ, và chúng phải
+    khớp; không có chỗ thứ ba.
+    """
+    item = dict(spec)
+    shape = item.get('shape', 'blank')
+
+    if shape == 'blank':
+        item['answer'] = rng.choice(free)
+        item.setdefault('options', ())
+    elif shape == 'yesno':
+        ticked = rng.choice(('Có', 'Không'))
+        follow = rng.random() < 0.65
+        item.update(ticked=ticked, options=('Có', 'Không'),
+                    sub='Nếu có, vui lòng mô tả chi tiết' if follow else '',
+                    answer=rng.choice(free) if follow and ticked == 'Có' else '')
+    elif shape == 'options':
+        options = list(item.get('options') or ())
+        item['picked'] = set(rng.sample(options, min(rng.randint(1, 2), len(options)))) if options else set()
+        item['sub'] = rng.choice(OPTION_FOLLOWS)
+        item['answer'] = rng.choice(free)
+    elif shape == 'boxchar':
+        cells = max(int(item.get('cells') or 0), 1)
+        # Điền THIẾU đôi khi, không phải luôn đầy: tờ khai thật in đủ số ô mà
+        # người viết dừng ở đâu là dừng, và một mô hình phải học được ô trống
+        # cuối dãy cũng là ô.
+        used = cells if rng.random() < 0.75 else rng.randint(max(cells - 4, 1), cells)
+        item['value'] = _digits_of(rng, used)
+    elif shape == 'date_boxes':
+        item.update(day=f'{rng.randint(1, 28):02d}',
+                    month=f'{rng.randint(1, 12):02d}',
+                    year=str(rng.randint(1960, 2026)))
+    elif shape == 'grid':
+        cols = list(item.get('cols') or ())
+        rows = list(item.get('rows') or ())
+        item['picked'] = {i: rng.randrange(len(cols)) for i in range(len(rows))} if cols else {}
+    elif shape == 'scale':
+        levels = max(int(item.get('levels') or 5), 2)
+        item['levels'] = levels
+        item['picked'] = rng.randint(1, levels)
+    elif shape == 'rank':
+        items = list(item.get('items') or ())
+        order = list(range(1, len(items) + 1))
+        rng.shuffle(order)
+        item['order'] = order
+    elif shape == 'inline_blank':
+        blanks = str(item.get('prompt') or '').count('…')
+        # KHÔNG lặp lại: ba chỗ trống trong một câu mà điền cùng một chuỗi là
+        # một câu không ai viết ra. Hết kho thì mới cho lặp.
+        item['answers'] = _spread(rng, free, blanks)
+    elif shape == 'subquestion':
+        labels = list(item.get('subs') or ())
+        item['subs'] = list(zip(labels, _spread(rng, free, len(labels))))
+    elif shape == 'table_form':
+        cols = list(item.get('cols') or ())
+        lines = max(int(item.get('lines') or 2), 1)
+        # Dòng CUỐI để trống: bảng điền tay trên giấy thật luôn thừa dòng, và
+        # dòng thừa ấy là thứ phân biệt một bảng ĐỂ ĐIỀN với một bảng số liệu.
+        body = []
+        for line in range(lines):
+            if line == lines - 1 and rng.random() < 0.7:
+                body.append([''] * len(cols))
+                continue
+            body.append([_column_value(name, rng, free) for name in cols])
+        item['rows'] = body
+    elif shape == 'attachment':
+        items = list(item.get('items') or ())
+        want = rng.randint(1, len(items)) if items else 0
+        item['picked'] = set(rng.sample(items, want)) if items else set()
+    return item
 
 
 def _regroup(doc: Doc) -> None:
@@ -927,28 +1244,9 @@ def build(design: Design, rng: random.Random, rows_wanted: int) -> Doc:
     # hay bệnh án trông như, và là dáng cả hai bộ sinh chưa có.
     questions = []
     if design.has('questions'):
-        theme = QUESTION_THEMES[_theme_for(design.archetype, rng)]
-        pool, free = theme['items'], theme['answers']
-        for item in rng.sample(list(pool), rng.randint(6, min(11, len(pool)))):
-            prompt, shape, options = item
-            if shape == 'blank':
-                questions.append({'prompt': prompt, 'shape': 'blank',
-                                  'answer': rng.choice(free), 'options': []})
-            elif shape == 'yesno':
-                ticked = rng.choice(('Có', 'Không'))
-                follow = rng.random() < 0.65
-                questions.append({
-                    'prompt': prompt, 'shape': 'yesno', 'ticked': ticked,
-                    'options': ['Có', 'Không'],
-                    'sub': 'Nếu có, vui lòng mô tả chi tiết' if follow else '',
-                    'answer': (rng.choice(free)
-                               if follow and ticked == 'Có' else '')})
-            else:
-                picked = set(rng.sample(list(options), rng.randint(1, 2)))
-                questions.append({'prompt': prompt, 'shape': 'options',
-                                  'options': list(options), 'picked': picked,
-                                  'sub': rng.choice(OPTION_FOLLOWS),
-                                  'answer': rng.choice(free)})
+        want = (rows_wanted if design.flow == 'questions'
+                else rng.randint(6, 11))
+        questions = questions_of(design.seed, design, want)
 
     # ------------------------------------------- khối không phải bảng, mới
     # Sáu nhãn bố cục chưa từng xuất hiện trong bộ này, mà giấy tờ Việt Nam
@@ -960,7 +1258,12 @@ def build(design: Design, rng: random.Random, rows_wanted: int) -> Doc:
         legal_basis = rng.sample(list(LEGAL_BASIS), rng.randint(2, 5))
     clauses = []
     if design.has('clauses'):
-        clauses = rng.sample(list(CLAUSES), rng.randint(3, 7))
+        # Là khối CHẢY thì số điều do `paginate.py` đặt, qua `rows_wanted` --
+        # cùng đường mà số dòng bảng đi. Không phải khối chảy thì nó chỉ là
+        # một khối chữ giữa trang, ba đến bảy điều như trước.
+        want = (rows_wanted if design.flow == 'clauses'
+                else rng.randint(3, 7))
+        clauses = clauses_of(design.seed, design, want)
     # Theo `profile`; ngành nào không khai thì lùi về công thức hoá đơn --
     # nó là loại công thức chung nhất trên giấy tờ có tiền.
     formula = ''
@@ -1060,7 +1363,14 @@ def refill(doc: Doc, rng: random.Random, rows_wanted: int) -> Doc:
     đầy tới 80%. Sinh lại cả `Doc` từ đầu thì mất đúng tờ giấy đang đo (tên
     công ty, số hiệu, ngày tháng đều đổi theo), nên nó chỉ được đổi phần
     duy nhất quyết định chiều cao."""
-    if not doc.design.has('table'):
+    flow = doc.design.flow
+    if flow == 'clauses':
+        doc.clauses = clauses_of(doc.seed, doc.design, max(rows_wanted, 1))
+        return doc
+    if flow == 'questions':
+        doc.questions = questions_of(doc.seed, doc.design, max(rows_wanted, 1))
+        return doc
+    if flow != 'table' or not doc.design.has('table'):
         return doc
     rows, total, _units = _rows(rng, doc.design, max(rows_wanted, 1),
                                 doc.issued_date)

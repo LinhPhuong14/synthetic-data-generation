@@ -36,9 +36,14 @@ sign_sets:
 notes:
 - Giấy xác nhận có giá trị 06 tháng kể từ ngày cấp.
 - Thông tin trích xuất từ Cơ sở dữ liệu quốc gia về dân cư.
+# Sức chứa nới ra để phôi này với tới hai tờ: phần xác nhận ở tờ đầu, BẢNG THÀNH VIÊN hộ ở tờ sau.
+# Trần cũ quá thấp nên `--multipage-only` loại sạch mọi seed của nó
+# (đo được 0% seed nhắm >=2 tờ), và loại chứng từ này biến mất khỏi
+# bộ nhiều trang. Xem `design.FLOW_PER_PAGE`: hai tờ cần trần >= 30
+# dòng bảng.
 rows:
-- 0
-- 8
+- 5
+- 40
 always:
 - letterhead
 - doctitle

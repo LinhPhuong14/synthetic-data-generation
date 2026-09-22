@@ -24,8 +24,10 @@ qua các tờ. `paginate.py` quyết định các lát ấy sau khi ĐO trong tr
 from __future__ import annotations
 
 import html as _html
+import random
 from pathlib import Path
 
+from synthgen import design as D
 from synthgen.content import Doc, fmt_date
 from synthgen.design import COLUMNS, Design
 
@@ -40,7 +42,8 @@ def _t(text) -> str:
     return _html.escape(str(text), quote=True)
 
 
-def _span(kind: str, text, cls: str = "", role: str = "", key: str = "") -> str:
+def _span(kind: str, text, cls: str = "", role: str = "", key: str = "",
+          region: str = "") -> str:
     """Một dòng chữ đo được. Rỗng thì không in gì -- một span rỗng là một hộp
     không có chữ, và nhãn của nó sẽ mô tả khoảng trắng."""
     text = "" if text is None else str(text)
@@ -53,6 +56,8 @@ def _span(kind: str, text, cls: str = "", role: str = "", key: str = "") -> str:
         attrs.append(f'data-role="{_t(role)}"')
     if key:
         attrs.append(f'data-key="{_t(key)}"')
+    if region:
+        attrs.append(f'data-region="{_t(region)}"')
     return f"<span {' '.join(attrs)}>{_t(text)}</span>"
 
 
@@ -315,10 +320,20 @@ table.items tbody td.tightest,table.items tfoot td.tightest{{
    đo được chính là đường ngoài của dấu. Xoay NHẸ: bản trước xoay 14 độ và một
    con dấu chữ nhật xoay chừng ấy đọc ra hình thoi, không ra con dấu. */
 .seal{{position:absolute;opacity:.78;transform:rotate(-4deg);}}
-.barcode{{display:block;height:9mm;
+/* Mã vạch RỘNG BAO NHIÊU. `display:block` không kèm bề rộng thì nó kéo hết
+   chiều ngang khối -- trên khổ A4 là 19cm, trong khi EAN-13 in thật rộng
+   37,3mm và Code-128 trên phiếu kho hiếm khi quá 60mm. Một mô hình học trên
+   bộ cũ học rằng mã vạch là một dải chạy suốt trang.
+   Bề rộng theo seed (`--bw`), nên hai tờ khác nhau không cùng một dải. */
+.barcode{{display:block;height:9mm;width:{d.seed % 22 + 38}mm;max-width:100%;
   background:repeating-linear-gradient(90deg,{pal.ink} 0 0.35mm,
     transparent 0.35mm 0.7mm,{pal.ink} 0.7mm 1.2mm,transparent 1.2mm 1.9mm);
-  margin-bottom:0.8mm;}}
+  margin:0 auto 0.8mm;}}
+/* Góc trên bên phải: phiếu gửi xe, vé, thẻ in mã QR ở đây. `position:absolute`
+   trong `.sheet` (đã `position:relative`), nên nó không đẩy khối nào xuống. */
+.markcorner{{position:absolute;top:{max(d.margins[0] * 0.45, 4):.1f}mm;
+  right:{max(d.margins[1] * 0.5, 5):.1f}mm;text-align:center;z-index:2;}}
+.markcorner .barcode{{width:32mm;height:7mm;}}
 .qr{{display:block;width:16mm;height:16mm;
   background:repeating-conic-gradient({pal.ink} 0 25%,transparent 0 50%)
     0 0/3.2mm 3.2mm;}}
@@ -344,8 +359,12 @@ table.items tbody td.tightest,table.items tfoot td.tightest{{
 .fml{{text-align:center;margin:{gap * 0.4:.2f}mm 0;
   padding:{gap * 0.35:.2f}mm 0;border-top:{rule} solid {pal.rule};
   border-bottom:{rule} solid {pal.rule};font-style:italic;}}
+/* `color` là cả cách hình SVG đi theo bảng màu của tờ giấy: mọi nét trong
+   `textures/figure/*.svg` dùng `currentColor`, nên đặt màu ở đây là đổi cả
+   hình mà không sửa một file SVG nào. */
 .fig{{display:flex;gap:3mm;justify-content:center;align-items:flex-end;
-  height:26mm;margin-bottom:1mm;}}
+  height:26mm;margin-bottom:1mm;color:{pal.rule};}}
+.fig svg{{height:100%;width:auto;max-width:100%;}}
 .fig .fbox{{display:block;width:16mm;border:{rule} solid {pal.rule};
   background:{pal.zebra};}}
 .fig .fbox:nth-child(1){{height:60%;}}
@@ -373,6 +392,39 @@ table.items tbody td.tightest,table.items tfoot td.tightest{{
 .survey .qsub{{margin-left:5mm;font-style:italic;color:{pal.soft};}}
 .survey .qans{{margin:0.4mm 0 0 5mm;border-bottom:{rule} solid {pal.rule};
   min-height:{_px(base_pt * 1.25)};}}
+/* CHÍN DẠNG BIỂU MẪU THÊM VÀO. Hình dựng bằng div và CSS grid, không bằng
+   `<table>`: `pipeline/tags.py` gắn `<table>` thành vùng `Table`, nên một ma
+   trận ô tích in bằng thẻ bảng sẽ đổi nhãn cả cụm từ `Form` sang `Table` --
+   mà thứ người ta làm với nó là ĐIỀN, không phải đọc số. */
+.survey .qboxes{{display:flex;flex-wrap:wrap;gap:1.4mm 3mm;margin:0.6mm 0 0 5mm;
+  align-items:center;}}
+.survey .bx{{display:inline-block;min-width:{_px(base_pt * 1.15)};
+  height:{_px(base_pt * 1.35)};border:{rule} solid {pal.rule};
+  text-align:center;line-height:{_px(base_pt * 1.35)};margin-right:0.5mm;}}
+.survey .dgrp{{display:inline-flex;align-items:center;gap:1.2mm;}}
+.survey .dlab{{color:{pal.soft};}}
+.survey .qgrid{{margin:0.8mm 0 0 5mm;}}
+.survey .grow{{display:grid;grid-template-columns:1.6fr repeat(var(--gcols), 1fr);
+  align-items:center;border-bottom:{rule} solid {pal.rule};}}
+.survey .qtform .grow{{grid-template-columns:repeat(var(--gcols), 1fr);}}
+.survey .ghead{{font-weight:700;border-bottom:{max(d.rule_px, 0.3):.2f}mm solid {pal.rule};}}
+.survey .gh,.survey .gc,.survey .gv{{text-align:center;padding:0.5mm 0.8mm;}}
+.survey .gr{{padding:0.5mm 1.2mm 0.5mm 0;}}
+.survey .qtform .gv{{min-height:{_px(base_pt * 1.5)};}}
+.survey .qscale{{display:flex;flex-wrap:wrap;align-items:center;gap:1.2mm 2.4mm;
+  margin:0.6mm 0 0 5mm;}}
+.survey .sc{{display:inline-flex;gap:0.8mm;align-items:baseline;}}
+.survey .sl{{color:{pal.soft};font-style:italic;}}
+.survey .qrank{{display:flex;flex-wrap:wrap;gap:1mm 4mm;margin:0.6mm 0 0 5mm;}}
+.survey .rk{{display:inline-flex;gap:1.2mm;align-items:center;}}
+.survey .qinline{{margin:0 0 0 5mm;}}
+.survey .iblank{{display:inline-block;min-width:24mm;
+  border-bottom:{rule} solid {pal.rule};text-align:center;}}
+.survey .qsubq{{display:flex;gap:1.6mm;align-items:baseline;margin:0.4mm 0 0 8mm;}}
+.survey .sa{{flex:1;border-bottom:{rule} solid {pal.rule};
+  min-height:{_px(base_pt * 1.2)};}}
+.survey .qatt{{margin:0.6mm 0 0 5mm;}}
+.survey .att{{display:flex;gap:1.2mm;align-items:baseline;}}
 /* Trang nhiều cột. `break-inside:avoid` trên `.blk` là dòng quan trọng nhất
    ở đây: không có nó, trình duyệt cắt một khối làm đôi giữa hai cột, và cái
    hộp đo được của khối ấy trùm cả hai cột lẫn khoảng trắng giữa chúng -- một
@@ -437,18 +489,19 @@ def _letterhead(doc: Doc, d: Design) -> str:
             right = (f'<div class="natl">'
                      f'{_span("meta.label", "Số:", "n2", role="key")}'
                      f'{_span("meta.value", doc.doc_no, "n2", role="value")}</div>')
-        return (f'<div class="blk"><div class="hrow">'
+        return (f'<div class="blk"><div class="hrow"{D.region_attr("letterhead")}>'
                 f'<div class="hcell head" style="width:56%">{logo_html}{body}</div>'
                 f'<div class="hcell r">{right}</div></div></div>')
 
     if d.head_layout == "logo_phai":
-        return (f'<div class="blk"><div class="hrow">'
+        return (f'<div class="blk"><div class="hrow"{D.region_attr("letterhead")}>'
                 f'<div class="hcell head">{body}</div>'
                 f'<div class="hcell r" style="width:22%">{logo_html}</div>'
                 f'</div></div>')
 
     rule = '<div class="headrule"></div>' if d.head_layout != "dai_mau" else ""
-    return f'<div class="blk"><div class="{cls}">{logo_html}{body}</div>{rule}</div>'
+    return (f'<div class="blk"><div class="{cls}"{D.region_attr("letterhead")}>'
+            f'{logo_html}{body}</div>{rule}</div>')
 
 
 def _national(doc: Doc, d: Design) -> str:
@@ -460,7 +513,7 @@ def _national(doc: Doc, d: Design) -> str:
     # lời được "tờ này là giấy gì". Đây cũng đúng hai `kind`
     # `generators/html/sheets/form.py::_govt_masthead` đã dùng, nên hai bộ sinh
     # nói cùng một từ vựng thay vì mỗi bên một kiểu.
-    return (f'<div class="blk"><div class="natl">'
+    return (f'<div class="blk"><div class="natl"{D.region_attr("national")}>'
             f'{_span("masthead", NATIONAL_1, "n1")}'
             f'{_span("masthead.motto", NATIONAL_2, "n2")}'
             f'<div class="nr"></div></div></div>')
@@ -471,7 +524,8 @@ def _doctitle(doc: Doc, d: Design) -> str:
     if doc.subtitle:
         parts.append(_span("subtitle", doc.subtitle, "s"))
     rule = '<div class="trule"></div>' if d.title_style == "hoa_dam_gach_ngan" else ""
-    return f'<div class="blk"><div class="title">{"".join(parts)}</div>{rule}</div>'
+    return (f'<div class="blk"><div class="title"{D.region_attr("doctitle")}>'
+            f'{"".join(parts)}</div>{rule}</div>')
 
 
 def _meta(doc: Doc, d: Design) -> str:
@@ -488,7 +542,8 @@ def _meta(doc: Doc, d: Design) -> str:
 
     if d.meta_style == "hai_cot":
         left = "".join(pair(k, v) for k, v in items)
-        return (f'<div class="blk"><div class="meta"><div class="mcols">'
+        return (f'<div class="blk"><div class="meta"{D.region_attr("meta")}>'
+                f'<div class="mcols">'
                 f'<div class="mcol">{left}</div>'
                 f'<div class="mcol r">{_span("period", place)}</div>'
                 f'</div></div></div>')
@@ -497,7 +552,8 @@ def _meta(doc: Doc, d: Design) -> str:
            "goc_phai_tren": "meta right", "dai_ngang": "meta band",
            "trong_khung_phai": "meta boxed"}[d.meta_style]
     align = ' style="text-align:right"' if d.meta_style == "trong_khung_phai" else ""
-    return f'<div class="blk"{align}><div class="{cls}">{body}</div></div>'
+    return (f'<div class="blk"{align}><div class="{cls}"{D.region_attr("meta")}>'
+            f'{body}</div></div>')
 
 
 def _fields(doc: Doc, d: Design) -> str:
@@ -524,7 +580,8 @@ def _fields(doc: Doc, d: Design) -> str:
 
     if columns == 1 or stack:
         rows = "".join(f'<div class="frow">{body}</div>' for _wide, body in cells)
-        return f'<div class="blk"><div class="fields">{rows}</div></div>'
+        return (f'<div class="blk"><div class="fields"{D.region_attr("fields")}>'
+                f'{rows}</div></div>')
 
     out, buffer = [], []
     width = 100 // columns
@@ -547,7 +604,8 @@ def _fields(doc: Doc, d: Design) -> str:
         grid.append('<div class="fgrid">' + "".join(
             f'<div class="fcell" style="width:{span}%">{body}</div>'
             for _wide, body in group) + "</div>")
-    return f'<div class="blk"><div class="fields">{"".join(grid)}</div></div>'
+    return (f'<div class="blk"><div class="fields"{D.region_attr("fields")}>'
+            f'{"".join(grid)}</div></div>')
 
 
 def _checks(doc: Doc, d: Design) -> str:
@@ -557,7 +615,8 @@ def _checks(doc: Doc, d: Design) -> str:
         f'{_span("invoice.checks.question", q, "q", role="key")}'
         f'{_span("invoice.checks.answer", a, "a", role="value")}'
         for q, a in doc.checks)
-    return f'<div class="blk"><div class="checks">{rows}</div></div>'
+    return (f'<div class="blk"><div class="checks"{D.region_attr("checks")}>'
+            f'{rows}</div></div>')
 
 
 def _legal_basis(doc: Doc, d: Design) -> str:
@@ -571,7 +630,7 @@ def _legal_basis(doc: Doc, d: Design) -> str:
         return ""
     rows = "".join(f'<div class="lb">{_span("legal.basis", line)}</div>'
                    for line in doc.legal_basis)
-    return (f'<div class="blk"><div class="basis" data-region="Bibliography">'
+    return (f'<div class="blk"><div class="basis"{D.region_attr("legal_basis")}>'
             f'{rows}</div></div>')
 
 
@@ -588,16 +647,49 @@ def _clauses(doc: Doc, d: Design) -> str:
     Khác khối bảng câu hỏi, và khác có lý do: ở đó mỗi câu là một cụm biểu
     mẫu người ta điền riêng, nên một vùng mỗi câu là đúng. Ở đây các điều
     là các MỤC của cùng một danh sách."""
-    if not doc.clauses:
+    return _clauses_slice(doc, d, 0, len(doc.clauses), 0)
+
+
+def _chunks(items: list[str], groups: int) -> list[list[str]]:
+    """Chia `items` thành `groups` phần gần bằng nhau, giữ thứ tự.
+
+    Dùng cho khối chảy trên trang NHIỀU CỘT. `.cols .blk{break-inside:avoid}`
+    giữ một khối không bị cắt ngang giữa hai cột -- đó là luật đúng, vì một
+    cái hộp trùm cả hai cột lẫn máng giữa chúng không tả được gì trên giấy.
+    Hệ quả là một khối chảy dài đổ hết vào MỘT cột và bỏ trắng cột kia. Chia
+    sẵn thành mấy khối thì mỗi khối lọt một cột, và mỗi khối vẫn là một vùng
+    `List-Group` trọn vẹn -- một danh sách mục, đúng nghĩa cái nhãn ấy."""
+    groups = max(int(groups), 1)
+    if groups == 1 or len(items) <= 1:
+        return [items]
+    size = -(-len(items) // groups)
+    return [items[i:i + size] for i in range(0, len(items), size)]
+
+
+def _clauses_slice(doc: Doc, d: Design, low: int, high: int,
+                   part: int, foot: bool = False, groups: int = 1) -> str:
+    """Các điều từ `low` đến `high`, đánh số TIẾP chứ không quay về 1.
+
+    Cùng luật với bảng chạy qua hai tờ (`_table`): tờ sau in "Điều 12." chứ
+    không in lại "Điều 1.", vì một văn bản thật đánh số điều theo cả văn bản.
+    `foot` không dùng ở đây -- khối tổng chỉ đi với bảng -- nhưng vẫn nhận, để
+    mọi bộ dựng khối chảy có cùng một chữ ký và `markup()` gọi chúng như nhau.
+    """
+    chunk = doc.clauses[low:high]
+    if not chunk:
         return ""
     items = []
-    for number, (head, body) in enumerate(doc.clauses, start=1):
+    for offset, (head, body) in enumerate(chunk):
+        number = low + offset + 1
         items.append(
-            f'<div class="cl">'
+            f'<div class="cl" data-flow-item="1">'
             f'{_span("clause.head", f"Điều {number}. {head}", "ch")}'
             f'{_span("clause.body", body, "cb")}</div>')
-    return (f'<div class="blk"><div class="clauses" data-region="List-Group">'
-            f'{"".join(items)}</div></div>')
+    return "".join(
+        f'<div class="blk" data-flow="clauses">'
+        f'<div class="clauses"{D.region_attr("clauses")}>'
+        f'{"".join(part_items)}</div></div>'
+        for part_items in _chunks(items, groups) if part_items)
 
 
 def _formula(doc: Doc, d: Design) -> str:
@@ -605,8 +697,39 @@ def _formula(doc: Doc, d: Design) -> str:
     bảo hiểm và viện phí in ra, không phải ký hiệu toán."""
     if not doc.formula:
         return ""
-    return (f'<div class="blk"><div class="fml" data-region="Formula">'
+    return (f'<div class="blk"><div class="fml"{D.region_attr("formula")}>'
             f'{_span("formula", doc.formula)}</div></div>')
+
+
+FIGURE_DIR = REPO_ROOT / "textures" / "figure"
+_FIGURE_CACHE: dict[str, str] = {}
+
+
+def figure_art(seed: int) -> str:
+    """Một hình SVG trong `textures/figure/`, bốc theo seed. Rỗng nếu kho rỗng.
+
+    ĐỌC THƯ MỤC chứ không kê tên trong mã: thêm một file .svg vào đó là bộ dữ
+    liệu có thêm một dáng hình, không phải sửa file này. Cùng lệ
+    `rulebase/corpus/` và `rulebase/synthgen/`.
+
+    Mọi nét trong kho dùng `currentColor`, nên hình đi theo màu của tờ giấy
+    mà không cần sửa file SVG nào -- xem `mk_figures.py` và `.fig{color:…}`.
+
+    Nhớ theo tiến trình: một shard trăm trang dùng lại cùng mười hai file, và
+    đọc đĩa cho từng tờ là trả một cái giá cố định một trăm lần. Cùng lý do
+    `seal_art()` có `_SEAL_CACHE`."""
+    if not _FIGURE_CACHE:
+        if not FIGURE_DIR.is_dir():
+            return ""
+        for path in sorted(FIGURE_DIR.glob("*.svg")):
+            try:
+                _FIGURE_CACHE[path.stem] = path.read_text(encoding="utf-8")
+            except OSError:
+                continue
+        if not _FIGURE_CACHE:
+            return ""
+    names = sorted(_FIGURE_CACHE)
+    return _FIGURE_CACHE[names[seed % len(names)]]
 
 
 def _figure(doc: Doc, d: Design) -> str:
@@ -614,14 +737,25 @@ def _figure(doc: Doc, d: Design) -> str:
 
     Khung sơ đồ là mực không phải chữ, nên nó không mang `data-kind` nào; câu
     chú thích bên dưới thì có. Đó là cặp `Figure`/`Caption` mà mọi bộ nhãn bố
-    cục đều có và bộ sinh này chưa từng vẽ."""
+    cục đều có và bộ sinh này chưa từng vẽ.
+
+    Hình lấy từ `textures/figure/`. Bản trước vẽ ĐÚNG BA HỘP RỖNG cho mọi tờ
+    giấy, nên nhãn `Figure` có mặt trên bộ dữ liệu mà thứ nằm dưới nhãn ấy
+    chỉ là một dáng duy nhất -- một mô hình học được "Figure nghĩa là ba hình
+    chữ nhật". Mười hai hình trong kho là biểu đồ cột, đường, tròn, sơ đồ tổ
+    chức, mặt bằng, sơ đồ vị trí, dòng chảy quy trình, mặt cắt.
+
+    Ba hộp rỗng GIỮ LẠI làm đường lùi: mất thư mục `textures/figure/` thì tờ
+    giấy vẫn có một khối `Figure` để đo, không phải một khối rỗng."""
     if not doc.caption:
         return ""
+    art = figure_art(doc.seed)
+    inner = art or ('<span class="fbox"></span><span class="fbox"></span>'
+                    '<span class="fbox"></span>')
     return (f'<div class="blk">'
-            f'<div class="fig" data-region="Figure" data-graphic="diagram">'
-            f'<span class="fbox"></span><span class="fbox"></span>'
-            f'<span class="fbox"></span></div>'
-            f'<div class="fcap" data-region="Caption">'
+            f'<div class="fig"{D.region_attr("figure")} data-graphic="diagram">'
+            f'{inner}</div>'
+            f'<div class="fcap"{D.region_attr("figure_caption")}>'
             f'{_span("caption.figure", doc.caption)}</div></div>')
 
 
@@ -632,7 +766,7 @@ def _footnote(doc: Doc, d: Design) -> str:
         return ""
     rows = "".join(f'<div class="fn">{_span("footnote", line)}</div>'
                    for line in doc.footnotes)
-    return (f'<div class="blk"><div class="fnotes" data-region="Footnote">'
+    return (f'<div class="blk"><div class="fnotes"{D.region_attr("footnote")}>'
             f'{rows}</div></div>')
 
 
@@ -644,7 +778,7 @@ def _toc(doc: Doc, d: Design) -> str:
         f'<div class="tocrow">{_span("toc.title", title, "tt")}'
         f'<span class="dots"></span>{_span("toc.page", page, "tp")}</div>'
         for title, page in doc.toc)
-    return (f'<div class="blk"><div class="toc" data-region="Table-Of-Contents">'
+    return (f'<div class="blk"><div class="toc"{D.region_attr("toc")}>'
             f'{rows}</div></div>')
 
 
@@ -660,27 +794,173 @@ def _questions(doc: Doc, d: Design) -> str:
     Dáng "phức" là có chủ đích: ba kiểu trả lời xen kẽ không theo quy luật, nên
     không khối nào đoán được khối sau nó cao bao nhiêu. Đó là tờ khai thật --
     xem ảnh mẫu trong `docs/`."""
-    if not doc.questions:
+    return _questions_slice(doc, d, 0, len(doc.questions), 0)
+
+
+def _tickbox(on: bool) -> str:
+    """Một ô tích. Ô và NHÃN của nó luôn là hai run riêng -- xem `_questions`."""
+    return _span("survey.tick", "☒" if on else "☐", "tk",
+                 key=("ticked" if on else "empty"))
+
+
+def _shape_rows(item: dict) -> list[str]:
+    """Phần thân của một câu hỏi, theo dạng của nó.
+
+    MƯỜI HAI DẠNG, không ba. Bản trước có `blank`/`yesno`/`options`, và ba
+    dạng ấy vẽ ra ba hình rất giống nhau: một dòng hỏi, một dòng kẻ hoặc một
+    hàng ô tích. Một mô hình học trên bộ ấy gặp một tờ khai thật -- dãy ô
+    vuông từng ký tự cho số căn cước, ma trận tích chéo hàng-cột, thang điểm
+    năm mức, bảng người ta điền tay -- thì không thấy thứ nào quen.
+
+    Chín dạng thêm vào đều là thứ giấy tờ Việt Nam thật in ra, và đều giữ
+    đúng lệ nhãn của khối này: mọi run mang `data-kind` họ `survey.`, nên
+    `pipeline/record.py` gọi cả khối là `Form`; ô tích và nhãn của nó là hai
+    run riêng, để toạ độ nói được ô NÀO đã tích.
+
+    KHÔNG dùng thẻ `<table>` cho `grid` và `table_form`, dù chúng trông như
+    bảng: `pipeline/tags.py` gắn `<table>` thành vùng `Table`, nên một ma
+    trận ô tích in bằng `<table>` sẽ đổi nhãn cả cụm từ `Form` sang `Table`
+    -- và thứ người ta làm với nó là ĐIỀN, không phải đọc số. Dựng bằng div
+    và CSS grid thì hình vẫn là bảng mà nhãn vẫn đúng.
+    """
+    shape = item["shape"]
+    rows: list[str] = []
+
+    if shape in ("options", "yesno"):
+        picked = item.get("picked") or set()
+        if shape == "yesno":
+            picked = {item.get("ticked")}
+        boxes = "".join(
+            f'<span class="opt">{_tickbox(o in picked)}'
+            f'{_span("survey.option", o, "ol", role="value")}</span>'
+            for o in item["options"])
+        rows.append(f'<div class="qopts">{boxes}</div>')
+
+    elif shape == "boxchar":
+        # Dãy ô vuông, mỗi ô MỘT ký tự -- số căn cước, mã số thuế, số tài
+        # khoản. Ô trống ở cuối vẫn in ra: tờ khai in đủ số ô dù người điền
+        # viết ngắn hơn, và một mô hình phải học được chỗ trống cũng là ô.
+        value = str(item.get("value") or "")
+        cells = max(int(item.get("cells") or len(value)), len(value))
+        boxes = "".join(
+            f'<span class="bx">'
+            f'{_span("survey.char", value[i] if i < len(value) else "", "bc", role="value")}'
+            f'</span>' for i in range(cells))
+        rows.append(f'<div class="qboxes">{boxes}</div>')
+
+    elif shape == "date_boxes":
+        parts = []
+        for label, text, width in (("Ngày", item.get("day"), 2),
+                                   ("Tháng", item.get("month"), 2),
+                                   ("Năm", item.get("year"), 4)):
+            text = str(text or "")
+            boxes = "".join(
+                f'<span class="bx">'
+                f'{_span("survey.char", text[i] if i < len(text) else "", "bc", role="value")}'
+                f'</span>' for i in range(width))
+            parts.append(f'<span class="dgrp">'
+                         f'{_span("survey.prompt", label, "dlab")}{boxes}</span>')
+        rows.append(f'<div class="qboxes">{"".join(parts)}</div>')
+
+    elif shape == "grid":
+        cols = list(item.get("cols") or ())
+        head = "".join(_span("survey.colhdr", c, "gh") for c in cols)
+        body = []
+        picked = item.get("picked") or {}
+        for index, label in enumerate(item.get("rows") or ()):
+            cells = "".join(f'<span class="gc">{_tickbox(picked.get(index) == j)}</span>'
+                            for j in range(len(cols)))
+            body.append(f'<div class="grow">'
+                        f'{_span("survey.rowhdr", label, "gr", role="key")}{cells}</div>')
+        rows.append(f'<div class="qgrid" style="--gcols:{len(cols)}">'
+                    f'<div class="grow ghead"><span class="gr"></span>{head}</div>'
+                    f'{"".join(body)}</div>')
+
+    elif shape == "scale":
+        levels = max(int(item.get("levels") or 5), 2)
+        picked = int(item.get("picked") or 0)
+        marks = "".join(
+            f'<span class="sc">{_tickbox(picked == n)}'
+            f'{_span("survey.option", str(n), "ol", role="value")}</span>'
+            for n in range(1, levels + 1))
+        rows.append(f'<div class="qscale">'
+                    f'{_span("survey.prompt", str(item.get("low_label") or ""), "sl")}'
+                    f'{marks}'
+                    f'{_span("survey.prompt", str(item.get("high_label") or ""), "sl")}'
+                    f'</div>')
+
+    elif shape == "rank":
+        order = list(item.get("order") or ())
+        marks = "".join(
+            f'<div class="rk">'
+            f'<span class="bx">{_span("survey.char", str(order[i]) if i < len(order) else "", "bc", role="value")}</span>'
+            f'{_span("survey.option", text, "ol", role="key")}</div>'
+            for i, text in enumerate(item.get("items") or ()))
+        rows.append(f'<div class="qrank">{marks}</div>')
+
+    elif shape == "inline_blank":
+        # Điền GIỮA câu. Câu gốc mang dấu `…`; mỗi chỗ trống thành một run
+        # riêng có gạch chân, nên hộp của nó tả đúng chỗ người ta viết vào
+        # chứ không trùm cả câu.
+        answers = list(item.get("answers") or ())
+        chunks = str(item.get("prompt") or "").split("…")
+        line = []
+        for i, chunk in enumerate(chunks):
+            if chunk:
+                line.append(_span("survey.prompt", chunk, "ib"))
+            if i < len(chunks) - 1:
+                line.append(_span("survey.answer",
+                                  answers[i] if i < len(answers) else "",
+                                  "iblank", role="value"))
+        rows.append(f'<div class="qinline">{"".join(line)}</div>')
+
+    elif shape == "subquestion":
+        for label, answer in item.get("subs") or ():
+            rows.append(f'<div class="qsubq">'
+                        f'{_span("survey.prompt", label, "sq", role="key")}'
+                        f'{_span("survey.answer", answer, "sa", role="value")}</div>')
+
+    elif shape == "table_form":
+        cols = list(item.get("cols") or ())
+        head = "".join(_span("survey.colhdr", c, "gh") for c in cols)
+        body = []
+        for line in item.get("rows") or ():
+            cells = "".join(
+                _span("survey.cell", line[j] if j < len(line) else "", "gv",
+                      role="value") for j in range(len(cols)))
+            body.append(f'<div class="grow">{cells}</div>')
+        rows.append(f'<div class="qgrid qtform" style="--gcols:{len(cols)}">'
+                    f'<div class="grow ghead">{head}</div>{"".join(body)}</div>')
+
+    elif shape == "attachment":
+        picked = item.get("picked") or set()
+        marks = "".join(
+            f'<div class="att">{_tickbox(text in picked)}'
+            f'{_span("survey.option", text, "ol", role="value")}</div>'
+            for text in item.get("items") or ())
+        rows.append(f'<div class="qatt">{marks}</div>')
+
+    return rows
+
+
+def _questions_slice(doc: Doc, d: Design, low: int, high: int,
+                     part: int, foot: bool = False, groups: int = 1) -> str:
+    """Các câu từ `low` đến `high`, đánh số TIẾP. Xem `_clauses_slice`."""
+    chunk = doc.questions[low:high]
+    if not chunk:
         return ""
     out = []
-    for number, item in enumerate(doc.questions, start=1):
-        rows = [f'<div class="qq">{_span("survey.number", f"{number}.", "qn")}'
-                f'{_span("survey.question", item["prompt"], "qt", role="key")}</div>']
-        shape = item["shape"]
-        if shape == "options":
-            boxes = "".join(
-                f'<span class="opt">'
-                f'{_span("survey.tick", "☒" if o in item["picked"] else "☐", "tk", key=("ticked" if o in item["picked"] else "empty"))}'
-                f'{_span("survey.option", o, "ol", role="value")}</span>'
-                for o in item["options"])
-            rows.append(f'<div class="qopts">{boxes}</div>')
-        elif shape == "yesno":
-            boxes = "".join(
-                f'<span class="opt">'
-                f'{_span("survey.tick", "☒" if o == item["ticked"] else "☐", "tk", key=("ticked" if o == item["ticked"] else "empty"))}'
-                f'{_span("survey.option", o, "ol", role="value")}</span>'
-                for o in item["options"])
-            rows.append(f'<div class="qopts">{boxes}</div>')
+    for number, item in enumerate(chunk, start=low + 1):
+        # `inline_blank` KHÔNG in dòng hỏi riêng: cả câu hỏi nằm trong chính
+        # dòng có chỗ trống ("Tôi tên là …, sinh ngày …"), nên in thêm một
+        # dòng hỏi là in câu ấy hai lần.
+        if item["shape"] == "inline_blank":
+            rows = [f'<div class="qq">'
+                    f'{_span("survey.number", f"{number}.", "qn")}</div>']
+        else:
+            rows = [f'<div class="qq">{_span("survey.number", f"{number}.", "qn")}'
+                    f'{_span("survey.question", item["prompt"], "qt", role="key")}</div>']
+        rows.extend(_shape_rows(item))
         if item.get("sub"):
             rows.append(f'<div class="qsub">{_span("survey.prompt", item["sub"], "qs")}</div>')
         if item.get("answer"):
@@ -692,8 +972,12 @@ def _questions(doc: Doc, d: Design) -> str:
         # thành một hộp khổng lồ trùm gần hết tờ giấy, chồng lên nhau. Một câu
         # hỏi với các ô tích và dòng trả lời của nó là MỘT cụm thông tin, và
         # đó chính là cụm người đọc tờ khai đọc một lần.
-        out.append(f'<div class="qitem" data-region="Form">{"".join(rows)}</div>')
-    return f'<div class="blk"><div class="survey">{"".join(out)}</div></div>'
+        out.append(f'<div class="qitem"{D.region_attr("questions")} data-flow-item="1">'
+                   f'{"".join(rows)}</div>')
+    return "".join(
+        f'<div class="blk" data-flow="questions">'
+        f'<div class="survey">{"".join(part_items)}</div></div>'
+        for part_items in _chunks(out, groups) if part_items)
 
 
 def _notes(doc: Doc, d: Design) -> str:
@@ -710,7 +994,8 @@ def _notes(doc: Doc, d: Design) -> str:
     mark = marks.get(d.note_style, lambda i: "")
     rows = "".join(_span("note", f"{mark(i)}{text}", "n")
                    for i, text in enumerate(doc.notes, start=1))
-    return f'<div class="blk"><div class="{cls}">{rows}</div></div>'
+    return (f'<div class="blk"><div class="{cls}"{D.region_attr("notes")}>'
+            f'{rows}</div></div>')
 
 
 def _group_of(doc: Doc, index: int) -> str:
@@ -990,7 +1275,11 @@ def _tfoot(doc: Doc, d: Design, width: int, after: int, money: int,
 
 
 def _table(doc: Doc, d: Design, low: int, high: int, part: int,
-           foot: bool = False) -> str:
+           foot: bool = False, groups: int = 1) -> str:
+    # `groups` nhận mà KHÔNG dùng, để ba bộ dựng khối chảy cùng một chữ ký.
+    # Một cái bảng bảy cột nhét vào cột rộng 8cm thì chữ vỡ ra từng ký tự,
+    # nên bảng không bao giờ được chia cột -- `markup()` giữ tờ mang bảng ở
+    # một cột, xem `COLUMN_SAFE_FLOWS`.
     if not doc.rows:
         return ""
     keys = [k for k in d.columns if k in COLUMNS]
@@ -1077,7 +1366,8 @@ def _table(doc: Doc, d: Design, low: int, high: int, part: int,
                        f'data-cell="{_t(COLUMNS[key]["kind"])}" '
                        f'data-row="{r_index}" data-col="{col + offset}">'
                        f'{_span(COLUMNS[key]["kind"], value)}{extra}</td>')
-        body.append(f'<tr class="itemrow">{"".join(tds)}</tr>')
+        body.append(f'<tr class="itemrow" data-flow-item="1">'
+                    f'{"".join(tds)}</tr>')
 
         # Cộng nhóm in NGAY SAU dòng cuối của nhóm, và chỉ khi dòng cuối ấy
         # nằm trên tờ này: một dòng cộng đứng trước phần nó cộng, hay đứng
@@ -1111,7 +1401,12 @@ def _table(doc: Doc, d: Design, low: int, high: int, part: int,
                     money_col + offset if money_col >= 0 else -1,
                     need.get(money_key, 12.0) / total * table_chars - PAD_CHARS)
              if foot else "")
-    return (f'<div class="blk">{caption}'
+    # `data-flow` / `data-flow-item`: chỗ DUY NHẤT `draw.MEASURE_JS` tìm khối
+    # chảy và các mục của nó. Trước đây nó tìm `table.items` và `tr.itemrow`,
+    # tức là tên của một khối cụ thể viết trong JavaScript -- nên thêm một
+    # khối chảy khác là phải sửa cả câu truy vấn ấy, và quên sửa thì phép đo
+    # im lặng trả về sức chứa bằng không.
+    return (f'<div class="blk" data-flow="table">{caption}'
             f'<table class="items"><colgroup>{"".join(cols)}</colgroup>'
             f'{head}'
             f'<tbody>{"".join(body)}</tbody>{tfoot}</table></div>')
@@ -1134,14 +1429,14 @@ def _totals(doc: Doc, d: Design) -> str:
     # định cắt ở chỗ hở ngang, mà máng giữa nhãn và số rộng hơn ngưỡng cắt --
     # nên nếu không khai, "Tổng cộng tiền thanh toán" và "1.569.081.240 đ"
     # thành hai vùng dù chúng là một dòng của cùng một khung.
-    return (f'<div class="blk"><div class="{cls}" data-region="Text">'
+    return (f'<div class="blk"><div class="{cls}"{D.region_attr("totals")}>'
             f'{rows}{grand}</div></div>')
 
 
 def _words(doc: Doc, d: Design) -> str:
     if not doc.words:
         return ""
-    return (f'<div class="blk"><div class="words">'
+    return (f'<div class="blk"><div class="words"{D.region_attr("words")}>'
             f'{_span("invoice.words.label", doc.words_label, "wk", role="key")} '
             f'{_span("invoice.words", doc.words, "wv", role="value")}</div></div>')
 
@@ -1177,7 +1472,8 @@ def _signatures(doc: Doc, d: Design) -> str:
     # một dòng chữ, hai thực thể, hai nhãn khác nhau. Một mô hình học trên đó
     # học rằng cùng một chuỗi vừa là `Text` vừa là `Form`.
     printed_by_meta = d.meta_style != "khong_co" and "meta" in d.order
-    date_line = _span("sign.signedat", place, "sdate") if (
+    date_line = _span("sign.signedat", place, "sdate",
+                      region=D.block_region("sign_date")) if (
         d.sign_style in ("trai_phai", "chi_ben_phai", "cot_deu")
         and not printed_by_meta) else ""
     cells = []
@@ -1195,13 +1491,15 @@ def _signatures(doc: Doc, d: Design) -> str:
     if d.sign_style == "chi_ben_phai":
         cls += " right"
         cells = cells[-1:]
-    return f'<div class="blk">{date_line}<div class="{cls}">{"".join(cells)}</div></div>'
+    return (f'<div class="blk">{date_line}<div class="{cls}"{D.region_attr("signatures")}>'
+            f'{"".join(cells)}</div></div>')
 
 
 def _footer(doc: Doc, d: Design) -> str:
     if not doc.footer:
         return ""
-    return f'<div class="blk"><div class="foot">{_span("footer", doc.footer)}</div></div>'
+    return (f'<div class="blk"><div class="foot"{D.region_attr("footer")}>'
+            f'{_span("footer", doc.footer)}</div></div>')
 
 
 # Con dấu lấy từ `textures/ornament/` -- thư viện PNG `tools/make_ornaments.py`
@@ -1215,6 +1513,31 @@ SEALS = {
                  "seal_round_export", "seal_round_hotel"),
     "dau_vuong": ("seal_square_paid", "seal_square_copy"),
 }
+
+# Con dấu nào CHỈ dùng cho hồ sơ nào. Hai file trong kho có TÊN PHÁP NHÂN in
+# sẵn trong ảnh -- `seal_round_hotel` đóng chữ "CÔNG TY TNHH KHÁCH SẠN THÁI
+# AN" -- nên bốc mù theo seed thì một hoá đơn viện phí mang con dấu khách
+# sạn. Đo được trên một trang vẽ thật.
+#
+# Dấu không có tên trong danh sách này dùng được cho mọi hồ sơ: `company` và
+# `company_double` chỉ có vành chữ chung chung, `square_paid` là "ĐÃ THANH
+# TOÁN", `square_copy` là "BẢN SAO".
+SEAL_ONLY_FOR: dict[str, tuple[str, ...]] = {
+    "seal_round_hotel": ("hotel",),
+    "seal_round_export": ("export", "invoice"),
+}
+
+
+def seals_for(name: str, profile: str) -> tuple[str, ...]:
+    """Nhóm dấu `name`, đã bỏ những con dấu không hợp hồ sơ `profile`.
+
+    Lọc hết thì trả về nhóm gốc: một tờ giấy có dấu sai còn hơn một tờ giấy
+    lẽ ra có dấu mà không có -- và trường hợp ấy chỉ xảy ra nếu ai đó thu hẹp
+    `SEAL_ONLY_FOR` tới mức không còn con dấu chung nào."""
+    group = SEALS.get(name) or ()
+    kept = tuple(stem for stem in group
+                 if profile in SEAL_ONLY_FOR.get(stem, (profile,)))
+    return kept or group
 
 _SEAL_CACHE: dict[str, tuple[str, float]] = {}
 
@@ -1276,9 +1599,13 @@ def _seal(d: Design, stem: str, right: float, top: float) -> str:
             f'</div>')
 
 
-def _ornament(doc: Doc, d: Design) -> str:
+def _ornament(doc: Doc, d: Design, corner: bool = False) -> str:
     """Mực không phải chữ chạy: dấu, mã vạch, mã QR. Mỗi thứ vẫn mang một
-    `data-kind` riêng, vì mực không có hộp là mực không có nhãn."""
+    `data-kind` riêng, vì mực không có hộp là mực không có nhãn.
+
+    `corner` in mã vào GÓC TRÊN BÊN PHẢI thay vì thành một khối trong mạch
+    nội dung -- phiếu gửi xe, vé, thẻ in ở đấy. Con dấu không đổi chỗ theo cờ
+    này: dấu vốn đã `position:absolute` và có chỗ riêng của nó."""
     name = d.ornament
     if name == "khong":
         return ""
@@ -1287,25 +1614,32 @@ def _ornament(doc: Doc, d: Design) -> str:
                  if name == "ma_vach"
                  else '<span class="qr" data-graphic="qr"></span>')
         code = f"{doc.doc_serial}{doc.doc_no}".replace("/", "")
-        return (f'<div class="blk mark">{inner}'
-                f'{_span("menu.barcode", code)}</div>')
+        cls = "markcorner mark" if corner else "blk mark"
+        return (f'<div class="{cls}">{inner}'
+                f'{_span("menu.barcode", code, region=D.block_region("barcode"))}'
+                f'</div>')
     # Con dấu nào trong nhóm là hàm thuần của seed: cùng tờ giấy thì cùng con
-    # dấu, mà hai tờ khác nhau không đóng chung một cái.
+    # dấu, mà hai tờ khác nhau không đóng chung một cái. Nhóm đã lọc theo hồ
+    # sơ trước -- xem `SEAL_ONLY_FOR`.
+    profile = d.archetype.profile
     pick = lambda group: group[d.seed % len(group)]  # noqa: E731
     if name == "dau_tron_va_ma_vach":
         code = f"{doc.doc_serial}{doc.doc_no}".replace("/", "")
         return (f'<div class="blk mark">'
                 f'<span class="barcode" data-graphic="barcode"></span>'
-                f'{_span("menu.barcode", code)}</div>'
-                + _seal(d, pick(SEALS["dau_tron"]), 6, -32))
-    group = SEALS.get(name) or SEALS["dau_tron" if name == "chim_mo" else "dau_vuong"]
+                f'{_span("menu.barcode", code, region=D.block_region("barcode"))}'
+                f'</div>'
+                + _seal(d, pick(seals_for("dau_tron", profile)), 6, -32))
+    fallback = "dau_tron" if name == "chim_mo" else "dau_vuong"
+    group = seals_for(name, profile) or seals_for(fallback, profile)
     return _seal(d, pick(group), 8, -34)
 
 
 def _photo(doc: Doc, d: Design) -> str:
     if not d.photo_box:
         return ""
-    return (f'<div class="photo">{_span("photo.placeholder", "ẢNH")}<br>'
+    return (f'<div class="photo"{D.region_attr("photo")}>'
+            f'{_span("photo.placeholder", "ẢNH")}<br>'
             f'{_span("photo.size", "4 x 6")}</div>')
 
 
@@ -1318,7 +1652,27 @@ FULL_WIDTH = frozenset({"photo", "letterhead", "doctitle", "meta",
 # Trong số đó, những khối in SAU phần chảy cột.
 _AFTER_FLOW = frozenset({"signatures", "footer", "ornament"})
 
+def _table_whole(doc: Doc, d: Design) -> str:
+    """Cả cái bảng trên MỘT tờ, cho khi bảng KHÔNG phải khối chảy.
+
+    Từ khi khối chảy tách khỏi bảng, một tờ giấy có thể vừa có bảng vừa chảy
+    bằng điều khoản: bảng khi ấy là một khối bình thường giữa trang, in trọn,
+    và `markup()` tra nó trong `_BUILDERS` như mọi khối khác. Không có hàm
+    này thì nó tra trượt -- `KeyError: 'table'` trên 150/1500 tờ, và lỗi ấy
+    nằm im cho đến khi phép đo chịu kể ra số tờ hỏng.
+
+    Không có `foot`: khối tổng chỉ chui vào chân bảng khi bảng là khối chảy
+    và nó là khối cuối (`markup()::foot_totals`). Ở đây `totals` đứng riêng
+    trong `_BUILDERS`, và in nó hai lần là in một con số hai lần."""
+    return _table(doc, d, 0, len(doc.rows), 0)
+
+
 _BUILDERS = {
+    # `_photo` trả rỗng khi tờ giấy không có ô ảnh, nên tên này nằm trong kế
+    # hoạch trang của MỌI tài liệu mà chỉ in ra ở tài liệu thật sự có ảnh --
+    # cùng lối mọi bộ dựng khác ở đây.
+    "photo": _photo,
+    "table": _table_whole,
     "letterhead": _letterhead,
     "doctitle": _doctitle,
     "meta": _meta,
@@ -1340,12 +1694,126 @@ _BUILDERS = {
 }
 
 
+# Bộ dựng của MỘT LÁT khối chảy: `(doc, design, low, high, part, foot=)`.
+# `markup()` tra bảng này chứ không viết tên khối vào thân vòng lặp, nên thêm
+# một khối chảy là thêm một dòng ở đây và một dòng ở `design.FLOW_BLOCKS`.
+# Khối chảy nào CHIA CỘT được. Điều khoản và câu hỏi thì được -- chúng là
+# danh sách mục, và `_chunks` cắt chúng thành mấy khối vừa một cột. Bảng thì
+# không: bảy cột bảng nhét vào một cột rộng 8cm thì chữ vỡ ra từng ký tự, và
+# cái hộp đo được của nó không còn tả một cái bảng nào.
+COLUMN_SAFE_FLOWS = frozenset({"clauses", "questions"})
+
+FLOW_BUILDERS = {
+    "table": _table,
+    "clauses": _clauses_slice,
+    "questions": _questions_slice,
+}
+
+
+# Muối cho phép rải khối. Riêng, vì nó phải KHÔNG đi cùng bất cứ thứ gì khác
+# bốc từ `seed` -- xem `draw.CONTENT_SALT`.
+PAGE_PLAN_SALT = 0x9A6E12D
+
+
+def _page_plan(seed: int, head_names: list[str], tail_names: list[str],
+               pages: int) -> list[tuple[list[str], list[str]]]:
+    """Khối nào in ra TỜ NÀO: `[(trước khối chảy, sau khối chảy)]`, một cặp
+    mỗi tờ.
+
+    Vì sao có hàm này. Bản trước dồn MỌI khối đầu vào tờ một và MỌI khối đuôi
+    vào tờ cuối, nên một tài liệu sáu tờ ra:
+
+        tờ 1: tiêu đề + điều khoản   tờ 2..5: điều khoản   tờ 6: điều khoản + chữ ký
+
+    -- bốn tờ giữa chỉ có đúng một nhãn vùng chạy từ mép trên xuống mép dưới.
+    Một mô hình học trên bộ ấy học rằng trang giữa của tài liệu dài thì không
+    có gì ngoài `List-Group`, và giấy thật không thế: hợp đồng dài có phụ lục
+    bảng ở giữa, có sơ đồ, có mục lục, có trang ký riêng.
+
+    NEO thì không rải: tiêu đề đơn vị, quốc hiệu, tên văn bản ở tờ đầu và chữ
+    ký, chân trang ở tờ cuối, vì đó là chỗ của chúng trên mọi tờ giấy thật.
+    Phần còn lại rải đều rồi xê dịch một tờ -- chia đều không thôi thì mọi
+    tài liệu cùng số tờ có cùng bố cục, còn rải ngẫu nhiên hết thì thứ tự đọc
+    vỡ (dòng tổng trôi lên trước cái bảng nó cộng).
+
+    Nhóm phải đi cùng nhau (`design.BOUND_GROUPS`) được gom lại thành MỘT mục
+    trước khi rải, nên bảng và dòng tổng của nó không bao giờ rơi hai tờ.
+    """
+    plan: list[tuple[list[str], list[str]]] = [([], []) for _ in range(pages)]
+    # Ô dán ảnh đi qua kế hoạch như mọi khối khác. Bản trước neo nó vào tờ một
+    # trong chính thân vòng lặp, nên nó là khối DUY NHẤT không rải được, và
+    # phép đo trên tờ giữa đọc ra 0% -- một con số không ai đặt mà cũng không
+    # ai thấy. Hồ sơ dày ngoài đời dán ảnh ở trang lý lịch, không nhất thiết
+    # trang bìa.
+    head_names = ["photo"] + [n for n in head_names if n != "photo"]
+    anchor_head = [n for n in head_names if n in D.ANCHOR_HEAD]
+    anchor_tail = [n for n in tail_names if n in D.ANCHOR_TAIL]
+    free_head = [n for n in head_names if n not in D.ANCHOR_HEAD]
+    free_tail = [n for n in tail_names if n not in D.ANCHOR_TAIL]
+
+    def finish(built):
+        # Ô dán ảnh lên ĐẦU tờ nó rơi vào. `.photo{float:right}` -- nó nổi
+        # sang phải của thứ đứng SAU nó trong DOM, nên đặt nó sau khối tiêu
+        # đề là đẩy nó tụt xuống giữa trang. Bản trước nó luôn là con đầu
+        # tiên của tờ giấy; rải nó đi thì phải mang theo tính chất ấy, không
+        # thì một thay đổi về TRANG lặng lẽ thành một thay đổi về CHỖ ĐỨNG.
+        #
+        # Hàm chứ không phải một vòng lặp ở cuối: nhánh tài liệu MỘT TỜ trả
+        # về sớm, nên một vòng lặp đặt sau nó bỏ sót đúng cái trường hợp
+        # thường gặp nhất -- và bỏ sót im lặng.
+        for before, _after in built:
+            if "photo" in before:
+                before.remove("photo")
+                before.insert(0, "photo")
+        return built
+
+    plan[0][0].extend(anchor_head)
+    plan[pages - 1][1].extend(anchor_tail)
+    if pages <= 1:
+        plan[0][0].extend(free_head)
+        plan[0][1].extend(free_tail)
+        return finish(plan)
+
+    rng = random.Random(seed ^ PAGE_PLAN_SALT ^ (pages * 2654435761))
+
+    def units(names: list[str]) -> list[list[str]]:
+        """Gom khối phải đi cùng nhau thành một mục, giữ thứ tự đọc."""
+        taken: set[str] = set()
+        out: list[list[str]] = []
+        for name in names:
+            if name in taken:
+                continue
+            group = next((g for g in D.BOUND_GROUPS if name in g), (name,))
+            together = [n for n in names if n in group]
+            taken.update(together)
+            out.append(together)
+        return out
+
+    def spread(groups: list[list[str]], side: int) -> None:
+        span = pages
+        for k, group in enumerate(groups):
+            base = (k * span) // max(len(groups), 1)
+            # Xê dịch một tờ, nghiêng 0: phần lớn giữ đúng chỗ chia đều, một
+            # phần trôi đi -- đủ để hai tài liệu cùng số tờ không cùng bố cục.
+            page = min(max(base + rng.choice((0, 0, 0, 1, -1)), 0), pages - 1)
+            plan[page][side].extend(group)
+
+    spread(units(free_head), 0)
+    spread(units(free_tail), 1)
+    return finish(plan)
+
+
 def markup(doc: Doc, slices: list[tuple[int, int]], faces: str = "") -> str:
     """HTML đầy đủ. `slices` dài bao nhiêu thì có bấy nhiêu tờ `.sheet`."""
     d = doc.design
     order = list(d.order)
-    if "table" in order:
-        cut = order.index("table")
+    # Khối CHẢY của tài liệu này -- khối bị cắt ra giữa các tờ. `design.flow`
+    # là chỗ duy nhất trả lời câu ấy; ở đây chỉ kiểm rằng nó thật sự có mặt
+    # trong thứ tự khối, vì một khối `blocks` có mà `order` không có thì
+    # không in ra gì để mà cắt.
+    flow = d.flow if d.flow in FLOW_BUILDERS and d.flow in order else ""
+    if flow:
+        cut = order.index(flow)
         head_names, tail_names = order[:cut], order[cut + 1:]
     else:
         head_names, tail_names = order, []
@@ -1353,7 +1821,8 @@ def markup(doc: Doc, slices: list[tuple[int, int]], faces: str = "") -> str:
 
     # Khối tổng đi VÀO bảng khi có bảng -- xem `_tfoot`. Không có bảng thì nó
     # vẫn phải in ra, và khi ấy `_totals` là chỗ duy nhất in được nó.
-    foot_totals = "totals" in tail_names and "table" in order and bool(doc.rows)
+    foot_totals = (flow == "table" and "totals" in tail_names
+                   and bool(doc.rows))
     if foot_totals:
         tail_names = [name for name in tail_names if name != "totals"]
 
@@ -1367,26 +1836,48 @@ def markup(doc: Doc, slices: list[tuple[int, int]], faces: str = "") -> str:
 
     sheets: list[str] = []
     pages = max(len(slices), 1)
+    plan = _page_plan(doc.seed, list(head_names), list(tail_names), pages)
     for index in range(pages):
+        before, after = plan[index]
         # `(tên khối, html)` chứ không chỉ html: trang nhiều cột phải biết khối
         # nào chảy vào cột và khối nào chạy hết chiều ngang, và biết theo TÊN.
         # Cắt theo vị trí thì sai ngay: `_photo` và quốc hiệu chen vào làm lệch
         # chỉ số, nên tiêu đề bị hút vào cột và "BIÊN BẢN BÀN GIAO" vỡ làm ba
         # dòng hẹp -- thấy được trên ảnh vẽ hộp.
         parts: list[tuple[str, str]] = []
-        if index == 0:
-            parts.append(("photo", _photo(doc, d)))
-            for name in head_names:
-                parts.append((name, _BUILDERS[name](doc, d)))
-                if name == "letterhead" and wants_national:
-                    parts.append(("letterhead", _national(doc, d)))
-        if "table" in d.order and index < len(slices):
+        for name in before:
+            parts.append((name, _BUILDERS[name](doc, d)))
+            if name == "letterhead" and wants_national:
+                parts.append(("letterhead", _national(doc, d)))
+        has_flow = bool(flow) and index < len(slices)
+        # Tờ này in mấy cột. Khác `d.page_columns` ở chỗ nó xét TỜ: một tờ
+        # mang cái bảng thì một cột dù cả tài liệu khai hai.
+        sheet_columns = d.page_columns
+        if has_flow and flow not in COLUMN_SAFE_FLOWS:
+            sheet_columns = 1
+        if has_flow:
             low, high = slices[index]
-            parts.append(("table", _table(doc, d, low, high, index,
-                                          foot=foot_totals and index == pages - 1)))
-        if index == pages - 1:
-            for name in tail_names:
-                parts.append((name, _BUILDERS[name](doc, d)))
+            parts.append((flow, FLOW_BUILDERS[flow](
+                doc, d, low, high, index,
+                foot=foot_totals and index == pages - 1,
+                groups=sheet_columns)))
+        for name in after:
+            parts.append((name, _BUILDERS[name](doc, d)))
+        # MỰC KHÔNG-PHẢI-CHỮ đứng theo `design.mark_place`, không phải luôn ở
+        # cuối tờ cuối. Bốn chỗ, và chúng là bốn dáng giấy khác nhau -- xem
+        # `design.MARK_PLACES`.
+        place = getattr(d, "mark_place", "cuoi")
+        if place == "goc_phai" and index == 0:
+            parts.append(("ornament", _ornament(doc, d, corner=True)))
+        elif place == "dau" and index == 0:
+            # Ngay SAU khối tiêu đề, trước phần thân: chèn vào đầu `parts` thì
+            # nó lên trên cả letterhead, mà hoá đơn bán lẻ in nó DƯỚI tên cửa
+            # hàng. `head_names` đã nằm trong `before`, nên chèn sau chúng.
+            cut = len(before) + (1 if wants_national and "letterhead" in before else 0)
+            parts.insert(min(cut, len(parts)), ("ornament", _ornament(doc, d)))
+        elif place == "moi_to":
+            parts.append(("ornament", _ornament(doc, d)))
+        elif index == pages - 1:
             parts.append(("ornament", _ornament(doc, d)))
         water = ""
         if d.watermark:
@@ -1399,30 +1890,58 @@ def markup(doc: Doc, slices: list[tuple[int, int]], faces: str = "") -> str:
             # không phải một đoạn trong mạch nội dung. Có nhãn vùng riêng thì
             # người huấn luyện đọc nội dung lọc được nó ra; gộp vào `Text` là
             # bảo họ rằng "BẢN SAO" xoay 25 độ là một đoạn văn của tài liệu.
-            water = (f'<div class="wmark" data-region="Watermark">'
-                     f'{_span("watermark", "BẢN SAO", "wtext")}</div>')
+            # `data-region` trên `.wtext`, KHÔNG trên `.wmark`.
+            #
+            # Chú thích ở `stylesheet()` đã nói phải đo trên `.wtext`, nhưng
+            # thuộc tính lại nằm trên thẻ ngoài -- nên phép đo lấy đúng cái
+            # `.wmark` rộng 36% bề ngang tờ giấy, và hộp `Watermark` bao cả
+            # một mảng giấy trắng hai bên chữ. Một luật đúng mà chỉ một trong
+            # hai chỗ biết là hình dạng lỗi hay gặp nhất của kho này.
+            #
+            # `.wtext` là `inline-block` nên nó co sát chữ, và
+            # `getBoundingClientRect` của phần tử nằm trong một thẻ đã xoay
+            # trả về hộp THẲNG TRỤC của chữ đã xoay -- đúng thứ cần.
+            water = (f'<div class="wmark">'
+                     f'<span class="wtext"{D.region_attr("watermark")}>'
+                     f'{_span("watermark", "BẢN SAO")}</span></div>')
         # Số trang, kiểu chứng từ thông dụng. Thay cho dòng "(Tiếp theo trang
         # N)" mà bản trước in ở ĐẦU bảng: nó là một ghi chú của riêng cái bảng,
         # trong khi thứ người đọc tìm là tờ này là tờ thứ mấy trong mấy tờ.
         # Chỉ in khi có từ hai tờ -- một tờ giấy một trang không đánh số.
         page_no = ""
         if pages > 1:
-            page_no = (f'<div class="pgnum">'
+            page_no = (f'<div class="pgnum"{D.region_attr("pagenum")}>'
                        f'{_span("footer.page", f"Trang {index + 1}/{pages}")}</div>')
         body = "".join(html for _name, html in parts if html)
         # CHỮ CHẢY THÀNH CỘT. `FULL_WIDTH` ở NGOÀI khung cột -- trên giấy thật
         # tiêu đề, quốc hiệu và dải chữ ký chạy hết chiều ngang, và một cái
         # tiêu đề rơi vào cột trái là thứ không tờ báo nào in.
-        if d.page_columns > 1:
-            flow = [html for name, html in parts
-                    if html and name not in FULL_WIDTH]
-            if len(flow) >= 2:
+        # HAI CỘT, xét theo TỜ chứ theo tài liệu. Tờ nào mang lát khối chảy
+        # thì một cột: khối chảy cao và `.cols .blk{break-inside:avoid}` giữ
+        # nó không cắt ngang được, nên nó dồn hết vào một cột và bỏ trắng cột
+        # kia -- đo được trên ảnh. Tờ chỉ có bảng phụ lục, sơ đồ, ghi chú thì
+        # hai cột vẫn đúng, và đó chính là những tờ giữa mà bản trước để
+        # trống.
+        if sheet_columns > 1:
+            # `column_flow`, KHÔNG `flow`: `flow` ở hàm này đã là tên của KHỐI
+            # CHẢY của tài liệu. Đặt trùng thì tờ đầu gán đè nó thành một
+            # danh sách html, và tờ thứ hai tra `FLOW_BUILDERS[flow]` với một
+            # danh sách -- tài liệu một tờ chạy đúng, tài liệu nhiều tờ chết.
+            column_flow = [html for name, html in parts
+                           if html and name not in FULL_WIDTH]
+            if len(column_flow) >= 2:
                 head = "".join(html for name, html in parts
                                if html and name in FULL_WIDTH
                                and name not in _AFTER_FLOW)
                 tail = "".join(html for name, html in parts
                                if html and name in _AFTER_FLOW)
-                body = (f'{head}<div class="cols">{"".join(flow)}</div>{tail}')
+                body = (f'{head}<div class="cols">'
+                        f'{"".join(column_flow)}</div>{tail}')
+        elif d.page_columns > 1:
+            # Tài liệu khai nhiều cột mà TỜ này không dùng được (mang bảng).
+            # Không làm gì -- `body` đã là một cột. Nhánh viết ra để câu
+            # `sheet_columns` ở trên đọc được là có chủ đích, không phải sót.
+            pass
         sheets.append(f'<div class="sheet">{water}{body}{page_no}'
                       f'<div class="clr"></div></div>')
 

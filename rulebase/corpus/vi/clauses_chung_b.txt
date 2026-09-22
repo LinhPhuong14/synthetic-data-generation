@@ -1,0 +1,68 @@
+# CLAUSES_CHUNG_B — mẻ điều khoản chung thứ hai, cùng định dạng
+# `clauses_chung.txt`: tiêu đề điều <TAB> khoản <TAB> khoản ...
+#
+# Tách file chứ không nối vào file trước, vì đây là chỗ bộ sinh DÀI RA: trần
+# số tờ của một tài liệu chảy bằng điều khoản đúng bằng số điều kho này có
+# (`design.FLOW_BLOCKS['clauses']` đếm nó), nên thêm một file ở đây là tài
+# liệu với tới được nhiều tờ hơn, không phải sửa một dòng mã nào.
+#
+# Đo trước khi viết: với riêng `clauses_chung.txt` + phần theo hồ sơ, trần là
+# 36-46 điều, chia cho 11 điều một tờ A4 thì tối đa bốn tờ — nên `--pages
+# 2-10` chỉ với tới 10 tờ bằng đường bảng, đúng thứ cần tránh.
+
+Ngôn ngữ và bản gốc	Văn bản này được lập bằng tiếng Việt; bản tiếng nước ngoài nếu có chỉ dùng để tham khảo.	Khi có sự khác nhau giữa các bản, bản tiếng Việt được ưu tiên áp dụng.
+Luật áp dụng	Văn bản này được điều chỉnh và giải thích theo pháp luật Việt Nam.	Những nội dung chưa được thoả thuận thực hiện theo quy định của pháp luật tại thời điểm phát sinh.
+Tính độc lập của các điều khoản	Một điều khoản bị tuyên vô hiệu không làm vô hiệu các điều khoản còn lại.	Các bên thoả thuận thay thế điều khoản vô hiệu bằng một điều khoản hợp pháp có nội dung gần nhất với ý định ban đầu.
+Bản gốc và bản sao	Văn bản này được lập thành bốn bản gốc có giá trị pháp lý như nhau.	Bản sao chỉ có giá trị khi được cơ quan có thẩm quyền chứng thực.
+Người đại diện	Người ký văn bản này phải là người đại diện theo pháp luật hoặc người được uỷ quyền hợp lệ.	Văn bản uỷ quyền phải được gửi kèm và là bộ phận không tách rời.
+Đầu mối phối hợp	Mỗi bên cử một đầu mối phối hợp và thông báo họ tên, chức vụ, số điện thoại bằng văn bản.	Việc thay đổi đầu mối phải thông báo trước ba ngày làm việc.	Ý kiến của đầu mối không thay thế quyết định của người có thẩm quyền.
+Kế hoạch triển khai	Trong mười ngày kể từ ngày ký, các bên thống nhất kế hoạch triển khai chi tiết.	Kế hoạch nêu rõ mốc thời gian, sản phẩm bàn giao và người chịu trách nhiệm từng phần việc.	Điều chỉnh kế hoạch phải được cả hai bên xác nhận.
+Tiêu chuẩn chất lượng	Sản phẩm, dịch vụ phải đạt tiêu chuẩn kỹ thuật ghi tại phụ lục và quy chuẩn hiện hành.	Trường hợp không có quy chuẩn, áp dụng tiêu chuẩn thông dụng của ngành.	Bên đặt hàng được quyền yêu cầu kiểm định độc lập; chi phí do bên có kết quả sai chịu.
+Nhân sự thực hiện	Bên thực hiện bố trí nhân sự có trình độ phù hợp và gửi danh sách trước khi bắt đầu công việc.	Việc thay đổi nhân sự chủ chốt phải được bên còn lại chấp thuận bằng văn bản.	Nhân sự làm việc tại trụ sở bên kia phải tuân thủ nội quy của nơi làm việc.
+Sử dụng nhà thầu phụ	Bên thực hiện được sử dụng nhà thầu phụ sau khi có chấp thuận bằng văn bản.	Bên thực hiện chịu trách nhiệm toàn bộ về phần việc do nhà thầu phụ đảm nhận.
+Bảo vệ dữ liệu cá nhân	Các bên chỉ thu thập và xử lý dữ liệu cá nhân trong phạm vi cần thiết để thực hiện văn bản này.	Không chuyển dữ liệu cá nhân cho bên thứ ba khi chưa có sự đồng ý của chủ thể dữ liệu.	Khi kết thúc, dữ liệu phải được xoá hoặc hoàn trả theo yêu cầu.
+An toàn thông tin	Mỗi bên chịu trách nhiệm bảo đảm an toàn cho hệ thống và tài khoản do mình quản lý.	Sự cố an toàn thông tin phải được thông báo cho bên còn lại trong hai mươi bốn giờ.
+Quyền sở hữu trí tuệ	Quyền sở hữu trí tuệ đối với sản phẩm hình thành trong quá trình thực hiện thuộc về bên đặt hàng sau khi thanh toán đủ.	Bên thực hiện bảo đảm sản phẩm không xâm phạm quyền sở hữu trí tuệ của bên thứ ba.	Bên thực hiện chịu mọi chi phí phát sinh nếu có khiếu nại về quyền sở hữu trí tuệ.
+Sử dụng tên và nhãn hiệu	Không bên nào được sử dụng tên, nhãn hiệu, biểu trưng của bên còn lại cho mục đích quảng cáo khi chưa được đồng ý bằng văn bản.
+Xung đột lợi ích	Các bên có nghĩa vụ thông báo khi phát hiện tình huống có thể dẫn đến xung đột lợi ích.	Người có xung đột lợi ích không tham gia vào quá trình xét duyệt, nghiệm thu phần việc liên quan.
+Phòng chống tham nhũng	Các bên cam kết không đưa, nhận, môi giới hối lộ dưới bất kỳ hình thức nào.	Vi phạm cam kết này là căn cứ chấm dứt ngay văn bản mà không phải bồi thường.
+Chế độ lưu trữ chứng từ	Mỗi bên tự lưu trữ chứng từ liên quan trong thời hạn tối thiểu năm năm.	Khi cơ quan có thẩm quyền yêu cầu, các bên phối hợp cung cấp đầy đủ.
+Kiểm toán và đối chiếu	Bên đặt hàng được quyền thuê đơn vị kiểm toán độc lập rà soát khối lượng và chi phí đã thanh toán.	Việc rà soát được thông báo trước mười ngày làm việc và không quá một lần trong năm.
+Điều chỉnh khối lượng	Khối lượng phát sinh tăng hoặc giảm trong phạm vi mười phần trăm được thanh toán theo đơn giá đã ký.	Phần vượt quá mười phần trăm phải lập phụ lục trước khi thực hiện.
+Điều chỉnh đơn giá	Đơn giá được giữ cố định, trừ trường hợp có thay đổi chính sách của nhà nước làm thay đổi cấu thành giá.	Bên đề nghị điều chỉnh phải gửi hồ sơ chứng minh trong vòng mười lăm ngày kể từ ngày chính sách có hiệu lực.
+Tạm ứng	Bên đặt hàng tạm ứng theo tỉ lệ đã thoả thuận sau khi nhận được bảo lãnh tạm ứng hợp lệ.	Tiền tạm ứng được thu hồi dần theo từng đợt thanh toán.
+Hồ sơ thanh toán	Hồ sơ thanh toán gồm biên bản nghiệm thu, bảng xác nhận khối lượng và hoá đơn hợp lệ.	Hồ sơ thiếu được thông báo bổ sung một lần trong năm ngày làm việc kể từ ngày nhận.
+Quyết toán	Quyết toán được lập trong vòng sáu mươi ngày kể từ ngày nghiệm thu phần việc cuối cùng.	Số liệu quyết toán là cơ sở để thanh toán phần còn lại và hoàn trả bảo đảm.
+Bảo lãnh thực hiện	Bảo lãnh thực hiện do một tổ chức tín dụng hoạt động hợp pháp tại Việt Nam phát hành.	Bảo lãnh có hiệu lực cho đến khi hoàn thành toàn bộ nghĩa vụ và được gia hạn tương ứng khi thời hạn kéo dài.
+Bảo hiểm trách nhiệm	Bên thực hiện mua bảo hiểm trách nhiệm cho người lao động và cho bên thứ ba trong suốt thời gian thi công.	Bản sao hợp đồng bảo hiểm được gửi cho bên còn lại trước khi bắt đầu công việc.
+An toàn tại nơi làm việc	Bên thực hiện chịu trách nhiệm về an toàn lao động đối với người và thiết bị do mình đưa đến.	Mọi tai nạn phải được lập biên bản tại chỗ và báo cáo trong hai mươi bốn giờ.	Bên đặt hàng được quyền đình chỉ công việc khi phát hiện nguy cơ mất an toàn.
+Bảo vệ môi trường	Bên thực hiện thu gom, phân loại và xử lý chất thải phát sinh theo quy định.	Chi phí khắc phục ô nhiễm do lỗi của bên nào thì bên đó chịu.
+Vệ sinh và hoàn trả mặt bằng	Khi kết thúc công việc, bên thực hiện dọn dẹp và hoàn trả mặt bằng trong tình trạng ban đầu.	Quá thời hạn bảy ngày mà chưa hoàn trả, bên đặt hàng được tự thực hiện và trừ vào tiền thanh toán.
+Bảo quản tài sản giao nhận	Tài sản, thiết bị bên đặt hàng giao cho bên thực hiện sử dụng phải được ghi nhận bằng biên bản.	Bên thực hiện bồi thường theo giá trị còn lại nếu làm mất hoặc hư hỏng.
+Quyền kiểm tra đột xuất	Bên đặt hàng được kiểm tra đột xuất không quá hai lần trong một quý.	Kết quả kiểm tra được lập biên bản tại chỗ, có chữ ký của đại diện hai bên.
+Xử lý sản phẩm không đạt	Sản phẩm không đạt yêu cầu được sửa chữa hoặc làm lại bằng chi phí của bên thực hiện.	Quá hai lần làm lại mà vẫn không đạt, bên đặt hàng được thuê bên thứ ba thực hiện và trừ vào tiền thanh toán.
+Tiến độ và phạt chậm tiến độ	Chậm tiến độ do lỗi của bên thực hiện chịu phạt theo tỉ lệ đã thoả thuận trên giá trị phần việc chậm.	Tiền phạt chậm tiến độ được khấu trừ trực tiếp vào đợt thanh toán gần nhất.
+Đình chỉ do vi phạm	Bên đặt hàng được đình chỉ công việc khi bên thực hiện vi phạm nghiêm trọng về chất lượng hoặc an toàn.	Thời gian đình chỉ không được tính là thời gian gia hạn.
+Bồi thường cho bên thứ ba	Bên gây thiệt hại cho bên thứ ba trong quá trình thực hiện chịu trách nhiệm bồi thường trực tiếp.	Bên còn lại không liên đới chịu trách nhiệm, trừ trường hợp có lỗi.
+Giới hạn trách nhiệm	Tổng trách nhiệm bồi thường của mỗi bên không vượt quá giá trị đã ghi tại văn bản này.	Giới hạn này không áp dụng với thiệt hại do cố ý hoặc do vi phạm nghĩa vụ bảo mật.
+Miễn trừ trách nhiệm	Không bên nào chịu trách nhiệm về thiệt hại gián tiếp, mất lợi nhuận hoặc mất cơ hội kinh doanh.	Điều khoản này không làm giảm nghĩa vụ khắc phục hậu quả đã phát sinh.
+Thay đổi pháp nhân	Bên có thay đổi về tên, trụ sở, người đại diện hoặc hình thức pháp lý phải thông báo trong bảy ngày làm việc.	Việc chia, tách, sáp nhập, hợp nhất không làm chấm dứt các nghĩa vụ đã cam kết.
+Kế thừa quyền và nghĩa vụ	Tổ chức kế thừa tiếp tục thực hiện toàn bộ quyền và nghĩa vụ của bên được kế thừa.	Việc kế thừa được xác nhận bằng văn bản gửi cho bên còn lại.
+Thoả thuận toàn bộ	Văn bản này cùng các phụ lục là toàn bộ thoả thuận giữa các bên về nội dung nêu trong đó.	Mọi trao đổi, cam kết trước ngày ký không còn giá trị nếu trái với nội dung văn bản này.
+Từ bỏ quyền	Việc một bên không thực hiện hoặc chậm thực hiện một quyền không được coi là từ bỏ quyền ấy.	Việc từ bỏ quyền chỉ có hiệu lực khi được lập thành văn bản.
+Chi phí lập văn bản	Chi phí soạn thảo, công chứng, chứng thực do các bên thoả thuận và ghi rõ trong phụ lục.	Mỗi bên tự chịu chi phí của người tư vấn do mình thuê.
+Thuế nhà thầu	Nghĩa vụ thuế phát sinh của mỗi bên do bên đó tự kê khai và nộp theo quy định.	Bên chi trả có trách nhiệm khấu trừ, kê khai thay trong trường hợp pháp luật yêu cầu.
+Đồng tiền thanh toán	Mọi khoản thanh toán được thực hiện bằng đồng Việt Nam, trừ trường hợp pháp luật cho phép khác.	Trường hợp quy đổi, áp dụng tỉ giá công bố của ngân hàng nơi bên nhận mở tài khoản tại ngày thanh toán.
+Bù trừ công nợ	Các bên được bù trừ các khoản phải thu, phải trả phát sinh từ văn bản này sau khi đối chiếu và xác nhận.	Phần chênh lệch được thanh toán trong mười ngày làm việc kể từ ngày ký biên bản bù trừ.
+Lãi chậm trả	Khoản tiền chậm trả chịu lãi theo mức hai bên thoả thuận, không vượt quá mức trần pháp luật cho phép.	Lãi chậm trả được tính từ ngày liền sau ngày đến hạn đến ngày thực trả.
+Hồ sơ hoàn công	Bên thực hiện lập và bàn giao hồ sơ hoàn công trong vòng ba mươi ngày kể từ ngày nghiệm thu.	Hồ sơ gồm bản vẽ, biên bản nghiệm thu từng giai đoạn và chứng chỉ vật tư.
+Đào tạo và chuyển giao	Bên thực hiện tổ chức đào tạo sử dụng cho nhân sự của bên đặt hàng trước khi bàn giao.	Tài liệu hướng dẫn được cung cấp bằng tiếng Việt, dạng bản in và bản điện tử.
+Hỗ trợ sau bàn giao	Bên thực hiện hỗ trợ kỹ thuật trong thời hạn mười hai tháng kể từ ngày bàn giao.	Thời gian phản hồi không quá bốn giờ làm việc kể từ khi nhận được yêu cầu.
+Bảo trì định kỳ	Việc bảo trì được thực hiện định kỳ sáu tháng một lần trong thời hạn bảo hành.	Lịch bảo trì được thống nhất trước và không làm gián đoạn hoạt động bình thường.
+Dự phòng và khôi phục	Bên vận hành lập phương án dự phòng và định kỳ diễn tập khôi phục ít nhất một lần trong năm.	Kết quả diễn tập được báo cáo cho bên còn lại.
+Báo cáo tiến độ	Bên thực hiện gửi báo cáo tiến độ định kỳ hằng tháng, nêu rõ phần việc đã hoàn thành và vướng mắc.	Báo cáo chậm quá năm ngày làm việc bị nhắc nhở bằng văn bản.
+Họp giao ban chung	Hai bên tổ chức họp giao ban định kỳ hằng tháng để đánh giá tiến độ và xử lý vướng mắc.	Kết luận cuộc họp được lập thành biên bản và có giá trị điều hành.
+Thay đổi phạm vi công việc	Mọi thay đổi phạm vi công việc phải được lập thành phụ lục trước khi thực hiện.	Công việc thực hiện ngoài phạm vi mà không có phụ lục thì không được thanh toán.
+Chấm dứt do bất khả kháng kéo dài	Bất khả kháng kéo dài quá chín mươi ngày liên tục, mỗi bên được quyền chấm dứt bằng thông báo bằng văn bản.	Các bên thanh toán cho nhau phần nghĩa vụ đã thực hiện đến thời điểm chấm dứt.
+Hậu quả của việc chấm dứt	Trong vòng ba mươi ngày kể từ ngày chấm dứt, các bên hoàn trả tài liệu, tài sản và đối chiếu công nợ.	Các nghĩa vụ bảo mật và bảo hành tiếp tục có hiệu lực sau khi chấm dứt.
+Thi hành và theo dõi	Các bên phân công bộ phận theo dõi việc thi hành và báo cáo người có thẩm quyền định kỳ.	Vướng mắc phát sinh được xử lý ở cấp đầu mối trước khi trình lên cấp trên.

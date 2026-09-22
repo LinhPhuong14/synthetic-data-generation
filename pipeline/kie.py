@@ -104,6 +104,52 @@ def _all_descriptions() -> dict[str, dict[str, str]]:
         return {}
 
 
+def _written_entry(field: str, layout: str) -> Any:
+    """The raw `VLM_KIE_DESCRIPTIONS` entry for one field, str or dict.
+
+    Two shapes, because one caption on one document type can be claimed by
+    two roles -- "Địa chỉ" belongs to both the seller and the buyer on an
+    invoice. `synthgen/descriptions.py::tables` writes a plain string when
+    the claim is unambiguous (measured: 1717 of 1730 layout/field pairs,
+    99.2%) and `{description, guidelines}` for the thirteen that are not.
+
+    A dict entry used to fall straight through the `isinstance(..., str)`
+    guard below and land on the caption fallback, silently -- the value was
+    there and unread. Unknown keys are refused instead: a ledger shape
+    nobody reads is the failure this repository has been bitten by before.
+    """
+    if not layout:
+        return None
+    entry = _all_descriptions().get(layout, {}).get(field)
+    if entry is None or isinstance(entry, str):
+        return entry
+    if isinstance(entry, dict):
+        extra = set(entry) - {"description", "guidelines"}
+        if extra:
+            raise ValueError(
+                f"VLM_KIE_DESCRIPTIONS[{layout!r}][{field!r}] carries unknown "
+                f"keys {sorted(extra)}; expected 'description'/'guidelines'")
+        return entry
+    raise TypeError(
+        f"VLM_KIE_DESCRIPTIONS[{layout!r}][{field!r}] is {type(entry).__name__}, "
+        f"expected a string or a {{description, guidelines}} object")
+
+
+def guidelines_for(field: str, layout: str = "") -> str:
+    """Annotation guidance for one field, or `""` when it needs none.
+
+    Kept apart from the description on purpose, after SLIMER (arXiv
+    2407.01272): one sentence says what the field IS, a second says how to
+    tell it from the field next to it. The paper measures the split as worth
+    up to +35 F1 on polysemous labels, and polysemous is exactly what the
+    thirteen contested captions here are.
+    """
+    entry = _written_entry(field, layout)
+    if isinstance(entry, dict):
+        return str(entry.get("guidelines") or "").strip()
+    return ""
+
+
 def _is_caption(kind: str) -> bool:
     return kind.endswith(".label") or kind.endswith(".title")
 
@@ -145,6 +191,16 @@ def pair_fields(blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "value_text": value_text,
                 "key_bbox": block.get("bbox"),
                 "value_bbox": value.get("bbox"),
+                # The pixel twins, carried beside the per-mille pair. Since
+                # `pipeline/record.py::to_per_mille` every `bbox` on a record
+                # is 0..1000; the measured pixels live in `bbox_px`. Anything
+                # drawing on the image itself -- `synthgen/overlay.py` -- needs
+                # the pixels, and without these it falls back to the per-mille
+                # numbers and paints them as pixels: measured on
+                # `giay_chung_nhan_tot_nghiep_00004_p2`, every key box piled
+                # into the top-left corner while the value boxes sat right.
+                "key_bbox_px": block.get("bbox_px"),
+                "value_bbox_px": value.get("bbox_px"),
                 # The caption's own `data-kind`, carried so `describe` has the
                 # closed half of the vocabulary on this path too. `pair_entities`
                 # supplies it through `key_entity_index`; blocks have no index
@@ -206,7 +262,9 @@ def describe(field: str, *, caption: str = "", kind: str = "",
     Nothing here can return empty: `field` itself is the floor, and `slug`
     already guarantees that is non-empty.
     """
-    written = _all_descriptions().get(layout, {}).get(field) if layout else None
+    written = _written_entry(field, layout)
+    if isinstance(written, dict):
+        written = written.get("description")
     if isinstance(written, str) and written.strip():
         return written.strip(), "llm"
     # `rulebase/kie_glossary.py`: bảng nghĩa tiếng Anh viết sẵn, tra theo slug
@@ -278,6 +336,9 @@ def pair_entities(entities: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "value_text": str(entity.get("text", "")).strip(),
             "key_bbox": _bbox_dict(key.get("bbox")),
             "value_bbox": _bbox_dict(entity.get("bbox")),
+            # Pixel twins -- see the note on the other construction site.
+            "key_bbox_px": _bbox_dict(key.get("bbox_px")),
+            "value_bbox_px": _bbox_dict(entity.get("bbox_px")),
             # The two boxes as entities, so a reader can get back to the
             # words, the lines and the polygon without matching on text.
             "key_entity_index": key_index,
@@ -304,7 +365,16 @@ def pair_entities(entities: list[dict[str, Any]]) -> list[dict[str, Any]]:
 #
 # Tên người ký THẬT vẫn vào KIE bình thường: `kie_full.IMPLIED` bắt
 # `sign.name` và dựng cặp `signer_name` cho nó.
-FURNITURE = frozenset({"sign.note", "masthead.motto"})
+# `masthead.motto` ĐÃ RA KHỎI ĐÂY. "Độc lập - Tự do - Hạnh phúc" là dòng thứ
+# hai của tiêu ngữ quốc gia, không phải lời nhắc nhà in: người hỏi "tiêu ngữ
+# trên tờ này là gì" muốn cả hai dòng. Nó cũng không giống `sign.note` ở chỗ
+# `sign.note` là chỉ dẫn cho NGƯỜI ĐIỀN, còn dòng này là nội dung đã in.
+#
+# Hệ quả đo được khi nó còn ở đây: 66 dòng có hộp đầy đủ trong
+# `entity_annotations` mà không vào một cặp KIE nào, và cũng không vào `marks`
+# -- vì `marks` dựng từ CẶP, mà nó bị loại trước khi thành cặp. Mực trên giấy
+# biến mất khỏi bản xuất.
+FURNITURE = frozenset({"sign.note"})
 
 
 def _bbox_dict(bbox: Any) -> dict[str, int] | None:
@@ -366,8 +436,18 @@ def build_page(blocks: list[dict[str, Any]], *,
                 kind = str((entities[index] or {}).get("kind") or "")
             description, source = describe(field, caption=pair["key_text"],
                                            kind=kind, layout=layout)
-        properties[field] = {"type": "string", "description": description}
-        out_pairs.append({**pair, "description": description, "description_source": source})
+        # Only the contested captions carry one, so the key is absent rather
+        # than empty on the other 99.2%: a reader can tell "no guidance
+        # needed" from "guidance that says nothing".
+        guide = guidelines_for(field, layout)
+        prop: dict[str, Any] = {"type": "string", "description": description}
+        extra: dict[str, Any] = {}
+        if guide:
+            prop["guidelines"] = guide
+            extra["guidelines"] = guide
+        properties[field] = prop
+        out_pairs.append({**pair, "description": description,
+                          "description_source": source, **extra})
     return {"schema": {"type": "object",
                        "properties": _folded(properties, pairs)},
             "pairs": out_pairs}

@@ -1,0 +1,41 @@
+# ITEMS_LUONG — cột `name` của bảng cho những tờ giấy nói về TIỀN LƯƠNG: bảng lương, phiếu lương, bảng chấm công.
+#
+# Vì sao có file này: `corpus.catalogue()` chọn kho hàng theo `profile`, tức
+# theo NGÀNH. Học bạ, bảng điểm, thời khoá biểu, bảng lương đều là `admin`,
+# nên cả bốn lấy chung `items_admin.txt` — và một tờ HỌC BẠ liệt kê "Ấm siêu
+# tốc inox", "Bình chữa cháy bột ABC". Đo được trên bản vẽ thật.
+#
+# Ngành nói tờ giấy thuộc về ai; TÊN tờ giấy mới nói nó liệt kê cái gì. Luật
+# ghép nằm ở `rulebase/synthgen/_blocks.yaml::items`, cùng lối `allow`.
+#
+# Cột giá giữ cho đúng định dạng `priced`; bảng nào không in cột tiền thì hai
+# số ấy không ra giấy.
+
+Lương cơ bản theo hợp đồng	5000000	32000000
+Lương theo ngày công thực tế	4000000	28000000
+Phụ cấp chức vụ	500000	6000000
+Phụ cấp trách nhiệm	300000	4000000
+Phụ cấp thâm niên	200000	5000000
+Phụ cấp độc hại	300000	2500000
+Phụ cấp đi lại	200000	1500000
+Phụ cấp điện thoại	100000	800000
+Tiền ăn giữa ca	500000	1800000
+Tiền làm thêm giờ ngày thường	200000	6000000
+Tiền làm thêm giờ ngày nghỉ	300000	8000000
+Tiền làm thêm giờ ngày lễ	400000	9000000
+Thưởng năng suất	500000	12000000
+Thưởng chuyên cần	200000	1500000
+Thưởng hoàn thành nhiệm vụ	500000	10000000
+Hỗ trợ nhà ở	500000	4000000
+Hỗ trợ nuôi con nhỏ	200000	1200000
+Bảo hiểm xã hội	300000	3000000
+Bảo hiểm y tế	50000	600000
+Bảo hiểm thất nghiệp	40000	400000
+Kinh phí công đoàn	20000	300000
+Thuế thu nhập cá nhân	100000	6000000
+Tạm ứng kỳ trước	500000	10000000
+Khấu trừ đi muộn	50000	800000
+Ngày công thực tế	1	26
+Ngày nghỉ phép	1	12
+Ngày nghỉ không lương	1	10
+Giờ làm thêm	1	60

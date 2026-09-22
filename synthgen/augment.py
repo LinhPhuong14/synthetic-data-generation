@@ -81,6 +81,7 @@ if str(REPO_ROOT) not in sys.path:
 from degradation import warp as W  # noqa: E402
 from degradation.pipeline import apply_recipe, chain_of  # noqa: E402
 from rulebase import spec  # noqa: E402
+from pipeline import record as R  # noqa: E402
 from synthgen import overlay as O  # noqa: E402
 
 JPEG_QUALITY = 92
@@ -191,9 +192,12 @@ def _as_rect(quad) -> dict:
 
 
 def _line_quads(entity: dict) -> list[list[list[float]]]:
+    # `lines_px`, cùng lẽ với mọi chỗ khác trong file này: `lines` đã là phần
+    # nghìn của cạnh giấy kể từ khi `pipeline/record.py::to_per_mille` chạy.
+    lines = entity.get("lines_px") or entity.get("lines") or ()
     return [[[float(x1), float(y1)], [float(x2), float(y1)],
              [float(x2), float(y2)], [float(x1), float(y2)]]
-            for x1, y1, x2, y2 in (entity.get("lines") or [])]
+            for x1, y1, x2, y2 in lines]
 
 
 def _on(items, page: int):
@@ -234,34 +238,61 @@ def warp_record(name: str, params, rng, image, record: dict, page: int):
     # `lines`; `block` mang `quad` bốn điểm và `bbox` là một dict `{x1..y2}`.
     # Viết sai hình dạng nào thì file vẫn mở được và cái đọc nó thì vỡ, nên
     # từng loại ghi lại theo đúng hình dạng của nó.
+    # ĐỌC BẢN PIXEL. Từ khi `pipeline/record.py` chuyển bản ghi sang hệ
+    # 0..1000, `polygon`/`bbox`/`quad` là phần nghìn của cạnh giấy; cong một
+    # phần nghìn trên trường dịch chuyển tính bằng pixel là cong nhầm hệ, và
+    # nó không ném lỗi -- mọi hộp chỉ co về góc trên trái. `*_px` là chính con
+    # số đo được, và nó vẫn ở đó cho đúng việc này.
+    def px(item, key):
+        return item.get(f"{key}_px") or item[key]
+
     lists = (
-        [{"quad": _quad(w["polygon"])} for w in words],
-        [{"quad": _quad(r["polygon"])} for r in layout],
-        [{"quad": _list_quad(e["bbox"])} for e in entities],
-        [{"quad": _quad(b["quad"])} for b in blocks],
+        [{"quad": _quad(px(w, "polygon"))} for w in words],
+        [{"quad": _quad(px(r, "polygon"))} for r in layout],
+        [{"quad": _list_quad(px(e, "bbox"))} for e in entities],
+        [{"quad": _quad(px(b, "quad"))} for b in blocks],
         line_quads,
-        [{"quad": _rect_quad(p["key_bbox"])} for p in keys],
-        [{"quad": _rect_quad(p["value_bbox"])} for p in values],
+        [{"quad": _rect_quad(px(p, "key_bbox"))} for p in keys],
+        [{"quad": _rect_quad(px(p, "value_bbox"))} for p in values],
     )
     aged, *moved = W.warp_regions(name, image, params, rng, *lists)
     new_words, new_layout, new_entities, new_blocks, new_lines, new_keys, new_values = moved
 
+    # GHI LẠI CẢ HAI HỆ. Trang đã cong nên mọi hộp đổi chỗ; ghi pixel mà quên
+    # phần nghìn thì bản ghi nói hộp ở chỗ cũ, ghi phần nghìn mà quên pixel
+    # thì lần làm cũ sau không còn gì để cong.
+    high, wide = aged.shape[:2]
     for items, fresh in ((words, new_words), (layout, new_layout)):
         for item, box in zip(items, fresh):
             quad = box["quad"]
-            item["polygon"] = [*quad, list(quad[0])]
-            item["bbox"] = _bbox(quad)
+            item["polygon_px"] = [*quad, list(quad[0])]
+            item["bbox_px"] = _bbox(quad)
+            item.update(R.to_per_mille(
+                {"polygon": item["polygon_px"], "bbox": item["bbox_px"]},
+                wide, high))
     for entity, box in zip(entities, new_entities):
-        entity["bbox"] = [float(v) for v in _bbox(box["quad"])]
+        entity["bbox_px"] = [float(v) for v in _bbox(box["quad"])]
+        entity.update(R.to_per_mille({"bbox": entity["bbox_px"]}, wide, high))
     for block, box in zip(blocks, new_blocks):
-        block["quad"] = box["quad"]
-        block["bbox"] = _as_rect(box["quad"])
+        block["quad_px"] = box["quad"]
+        block["bbox_px"] = _as_rect(box["quad"])
+        block.update(R.to_per_mille(
+            {"quad": block["quad_px"], "bbox": block["bbox_px"]}, wide, high))
     for (position, order), box in zip(line_index, new_lines):
-        entities[position]["lines"][order] = _bbox(box["quad"])
+        entity = entities[position]
+        entity.setdefault("lines_px", [list(v) for v in entity.get("lines") or []])
+        entity["lines_px"][order] = _bbox(box["quad"])
+    for entity in entities:
+        if entity.get("lines_px"):
+            entity.update(R.to_per_mille({"lines": entity["lines_px"]},
+                                         wide, high))
     for pair, box in zip(keys, new_keys):
-        pair["key_bbox"] = _as_rect(box["quad"])
+        pair["key_bbox_px"] = _as_rect(box["quad"])
+        pair.update(R.to_per_mille({"key_bbox": pair["key_bbox_px"]}, wide, high))
     for pair, box in zip(values, new_values):
-        pair["value_bbox"] = _as_rect(box["quad"])
+        pair["value_bbox_px"] = _as_rect(box["quad"])
+        pair.update(R.to_per_mille({"value_bbox": pair["value_bbox_px"]},
+                                   wide, high))
     return aged
 
 

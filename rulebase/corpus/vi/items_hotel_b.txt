@@ -1,0 +1,46 @@
+# ITEMS_HOTEL_B — mẻ thứ hai, cùng định dạng mẻ đầu: tên<TAB>giá tối thiểu<TAB>giá tối đa.
+#
+# Vì sao có mẻ này, bằng số. `corpus.sample()` lặp lại mặt hàng khi bảng dài
+# hơn kho, và điều đó đúng với một hoá đơn bốn dòng. Nhưng bảng dài nhất của
+# hồ sơ này là 72 dòng trong khi mẻ đầu chỉ có 20 mặt hàng — mỗi thứ
+# in lại 3 lần trên CÙNG MỘT tờ giấy, và một mô hình đọc tờ ấy học rằng
+# bảng tiếng Việt là một danh sách lặp.
+#
+# Tên viết CÓ DẤU; bố cục nào cần chữ không dấu thì `rulebase.text.ascii_fold`
+# bỏ dấu lúc render.
+
+Phòng Superior hướng thành phố	1200000	2600000
+Phòng Superior hướng biển	1600000	3400000
+Phòng Deluxe có ban công	2200000	4600000
+Phòng Family bốn người	2800000	5800000
+Phòng Connecting hai phòng thông nhau	3600000	7400000
+Suite Junior phòng khách riêng	4200000	9200000
+Suite Executive tầng cao	6800000	15000000
+Villa hai phòng ngủ có hồ bơi	12000000	32000000
+Bungalow sát biển	5200000	12000000
+Phụ thu ngày lễ tết	800000	3200000
+Buffet sáng người lớn	220000	520000
+Buffet sáng trẻ em	120000	280000
+Buffet tối hải sản	650000	1450000
+Set menu trưa ba món	320000	720000
+Tiệc trà giữa giờ	180000	420000
+Dịch vụ phòng khuya	150000	480000
+Minibar theo lượt sử dụng	80000	320000
+Thuê phòng họp nửa ngày	3200000	12000000
+Thuê phòng hội thảo cả ngày	6800000	26000000
+Thuê sảnh tiệc cưới	18000000	86000000
+Thuê thiết bị trình chiếu	1200000	4800000
+Dịch vụ phiên dịch hội nghị	3600000	14000000
+Dịch vụ giặt là theo kilôgam	120000	320000
+Dịch vụ giặt khô áo vest	180000	480000
+Dịch vụ đưa đón sân bay một chiều	450000	1600000
+Thuê xe theo ngày có tài xế	1800000	5600000
+Thuê xe đạp theo giờ	60000	180000
+Vé tham quan trong ngày	350000	1200000
+Tour lặn ngắm san hô	850000	2600000
+Massage toàn thân 60 phút	550000	1400000
+Xông hơi và bể sục	280000	720000
+Dịch vụ chăm sóc da mặt	480000	1300000
+Thuê ghế bãi biển theo ngày	150000	420000
+Giữ trẻ theo giờ	220000	620000
+Phí dịch vụ và thuế	100000	1800000

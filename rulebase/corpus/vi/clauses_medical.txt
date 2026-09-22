@@ -1,0 +1,26 @@
+# CLAUSES_MEDICAL — điều khoản đánh số, mỗi dòng MỘT điều.
+#
+# Cột 1 là tiêu đề điều ("Điều N." do bộ dựng tự đánh số, không viết ở đây).
+# Các cột sau là các KHOẢN của chính điều ấy, mỗi khoản một cột, ngăn bằng TAB.
+# Bộ dựng lấy từ một đến hết số khoản có, nên một điều in ra ngắn dài khác nhau
+# mà chữ vẫn thuộc về đúng cái tiêu đề của nó — khác hẳn ghép tiêu đề của điều
+# này với nội dung của điều kia.
+#
+# Đây là thứ cho một tờ giấy KHÔNG CÓ BẢNG tràn sang tờ sau: trước khi có file
+# này, `synthgen/paginate.py` chỉ cắt được theo dòng bảng, nên mọi tài liệu
+# nhiều trang trong bộ đều là một cái bảng. Xem `synthgen/corpus.py::clauses`.
+#
+# Tên riêng đều là tên tự đặt theo lệ "Mẫu" của kho, không trùng pháp nhân thật.
+
+Phạm vi khám, chữa bệnh	Cơ sở y tế thực hiện khám, chữa bệnh trong phạm vi chuyên môn kỹ thuật đã được phê duyệt.	Trường hợp vượt quá phạm vi chuyên môn, người bệnh được chuyển tuyến theo quy định.
+Quyền của người bệnh	Người bệnh được thông tin đầy đủ về tình trạng bệnh, phương pháp điều trị và chi phí dự kiến.	Người bệnh có quyền từ chối điều trị sau khi đã được giải thích và phải ký cam kết.	Người bệnh được giữ bí mật thông tin về tình trạng sức khoẻ của mình.
+Nghĩa vụ của người bệnh	Cung cấp trung thực thông tin về tiền sử bệnh, thuốc đang dùng và tiền sử dị ứng.	Chấp hành chỉ định điều trị và nội quy của cơ sở y tế.	Thanh toán chi phí khám, chữa bệnh theo quy định.
+Đồng ý điều trị và can thiệp	Người bệnh hoặc người đại diện ký giấy đồng ý trước khi thực hiện thủ thuật, phẫu thuật.	Trường hợp cấp cứu không thể chờ ý kiến, người có thẩm quyền chuyên môn quyết định và ghi rõ vào hồ sơ bệnh án.
+Hồ sơ bệnh án	Hồ sơ bệnh án được lập ngay khi người bệnh vào viện và ghi chép đầy đủ, kịp thời, chính xác.	Hồ sơ bệnh án được lưu trữ theo thời hạn quy định và chỉ cung cấp cho tổ chức, cá nhân theo đúng thẩm quyền.	Người bệnh được sao chụp hồ sơ bệnh án sau khi có đề nghị bằng văn bản.
+Chi phí và thanh toán	Chi phí khám, chữa bệnh được tính theo bảng giá dịch vụ đã niêm yết công khai tại cơ sở.	Phần chi phí thuộc phạm vi chi trả của quỹ bảo hiểm y tế được thanh toán theo quy định hiện hành.	Phần chi phí ngoài phạm vi chi trả do người bệnh tự thanh toán.
+Thuốc và vật tư y tế	Thuốc, vật tư sử dụng cho người bệnh phải nằm trong danh mục đã được phê duyệt và còn hạn sử dụng.	Việc sử dụng thuốc ngoài danh mục phải có ý kiến của hội đồng chuyên môn và sự đồng ý của người bệnh.
+Chuyển tuyến	Việc chuyển tuyến được thực hiện khi tình trạng bệnh vượt quá khả năng chuyên môn của cơ sở.	Giấy chuyển tuyến ghi rõ chẩn đoán, quá trình điều trị và lý do chuyển.	Cơ sở chuyển tuyến có trách nhiệm liên hệ trước và bảo đảm an toàn cho người bệnh trên đường vận chuyển.
+Chế độ trực	Cơ sở y tế tổ chức trực hai mươi bốn trên hai mươi bốn giờ, kể cả ngày nghỉ và ngày lễ.	Người trực không được rời vị trí khi chưa có người nhận bàn giao.	Nội dung bàn giao trực được ghi vào sổ trực và ký xác nhận.
+Kiểm soát nhiễm khuẩn	Nhân viên y tế thực hiện đúng quy trình vệ sinh tay và sử dụng phương tiện phòng hộ cá nhân.	Chất thải y tế được phân loại tại nguồn và xử lý theo quy định.	Khu vực cách ly được bố trí riêng và có biển cảnh báo.
+Thăm và chăm sóc người bệnh	Người nhà thăm người bệnh trong khung giờ quy định và xuất trình giấy tờ khi được yêu cầu.	Mỗi người bệnh có tối đa một người nhà ở lại chăm sóc, trừ trường hợp đặc biệt do trưởng khoa quyết định.
+Xử lý sự cố y khoa	Mọi sự cố y khoa phải được báo cáo ngay cho người phụ trách và ghi nhận vào hệ thống báo cáo sự cố.	Cơ sở y tế tổ chức phân tích nguyên nhân và đưa ra biện pháp phòng ngừa tái diễn.	Việc báo cáo sự cố nhằm cải tiến chất lượng, không nhằm quy kết trách nhiệm cá nhân.

@@ -1,0 +1,32 @@
+# CLAUSES_INVOICE — điều khoản đánh số, mỗi dòng MỘT điều.
+#
+# Cột 1 là tiêu đề điều ("Điều N." do bộ dựng tự đánh số, không viết ở đây).
+# Các cột sau là các KHOẢN của chính điều ấy, mỗi khoản một cột, ngăn bằng TAB.
+# Bộ dựng lấy từ một đến hết số khoản có, nên một điều in ra ngắn dài khác nhau
+# mà chữ vẫn thuộc về đúng cái tiêu đề của nó — khác hẳn ghép tiêu đề của điều
+# này với nội dung của điều kia.
+#
+# Đây là thứ cho một tờ giấy KHÔNG CÓ BẢNG tràn sang tờ sau: trước khi có file
+# này, `synthgen/paginate.py` chỉ cắt được theo dòng bảng, nên mọi tài liệu
+# nhiều trang trong bộ đều là một cái bảng. Xem `synthgen/corpus.py::clauses`.
+#
+# Tên riêng đều là tên tự đặt theo lệ "Mẫu" của kho, không trùng pháp nhân thật.
+
+Hàng hoá, dịch vụ cung cấp	Bên bán cung cấp hàng hoá, dịch vụ đúng chủng loại, số lượng và quy cách ghi tại phụ lục đính kèm.	Hàng hoá phải mới một trăm phần trăm, còn nguyên bao bì và tem nhãn của nhà sản xuất.	Việc thay đổi chủng loại chỉ được thực hiện khi có văn bản chấp thuận của bên mua.
+Giá và phương thức xác định giá	Giá ghi trên chứng từ là giá đã bao gồm thuế giá trị gia tăng, trừ khi có ghi chú khác.	Giá được giữ cố định trong suốt thời hạn hiệu lực, không điều chỉnh theo biến động thị trường.	Mọi khoản giảm giá, chiết khấu phải thể hiện trên hoá đơn.
+Điều kiện và thời hạn thanh toán	Bên mua thanh toán trong vòng mười lăm ngày kể từ ngày nhận đủ hàng và hoá đơn hợp lệ.	Thanh toán bằng chuyển khoản vào tài khoản ghi tại phần thông tin các bên.	Ngày thanh toán được tính là ngày tiền vào tài khoản của bên bán.
+Chậm thanh toán	Số tiền chậm thanh toán chịu lãi theo lãi suất quá hạn của ngân hàng nơi bên bán mở tài khoản.	Chậm thanh toán quá ba mươi ngày, bên bán được quyền tạm dừng giao hàng cho đến khi thanh toán xong.
+Giao nhận hàng hoá	Địa điểm giao hàng là kho của bên mua ghi trên đơn đặt hàng, trừ khi hai bên thoả thuận khác.	Chi phí vận chuyển, bốc xếp đến địa điểm giao hàng do bên bán chịu.	Rủi ro đối với hàng hoá chuyển sang bên mua kể từ thời điểm ký biên bản giao nhận.
+Kiểm tra và từ chối nhận hàng	Bên mua kiểm tra số lượng khi nhận và kiểm tra chất lượng trong thời hạn bảy ngày kể từ ngày nhận.	Hàng không đúng quy cách được trả lại và bên bán phải đổi hàng trong ba ngày làm việc.	Chi phí phát sinh do trả lại hàng sai quy cách do bên bán chịu.
+Bảo hành	Thời hạn bảo hành là mười hai tháng kể từ ngày nghiệm thu, trừ trường hợp nhà sản xuất quy định dài hơn.	Bên bán tiếp nhận yêu cầu bảo hành trong giờ làm việc và có mặt trong vòng hai mươi bốn giờ.	Bảo hành không áp dụng với hư hỏng do sử dụng sai hướng dẫn hoặc do tác động bên ngoài.
+Hàng đổi, hàng trả lại	Hàng đã bán được đổi trong bảy ngày kể từ ngày ghi trên hoá đơn, còn nguyên tem nhãn kèm chứng từ mua hàng.	Không nhận đổi, trả đối với hàng khuyến mại, hàng thanh lý và hàng đã qua sử dụng.
+Hoá đơn và chứng từ	Bên bán lập hoá đơn theo quy định về hoá đơn điện tử ngay khi hoàn thành việc giao hàng.	Bên mua có trách nhiệm đối chiếu nội dung hoá đơn trước khi thanh toán.	Sai sót trên hoá đơn được xử lý bằng hoá đơn điều chỉnh, không tẩy xoá trên chứng từ gốc.
+Đối chiếu công nợ	Hai bên đối chiếu công nợ vào ngày cuối cùng của mỗi quý và lập biên bản xác nhận.	Bên nhận đề nghị đối chiếu phải phản hồi trong năm ngày làm việc; quá hạn không phản hồi thì coi như xác nhận số liệu.
+Đặt hàng và huỷ đơn hàng	Đơn đặt hàng có hiệu lực khi được bên bán xác nhận bằng văn bản hoặc thư điện tử.	Bên mua được huỷ đơn hàng trước thời điểm bên bán xuất kho mà không phải chịu chi phí.	Huỷ đơn sau khi hàng đã xuất kho, bên mua chịu chi phí vận chuyển hai chiều.
+Bao bì và nhãn hàng hoá	Hàng hoá phải được đóng gói phù hợp với phương thức vận chuyển và điều kiện bảo quản.	Nhãn hàng hoá ghi đầy đủ tên hàng, xuất xứ, ngày sản xuất và hạn sử dụng.
+Nguồn gốc, xuất xứ	Bên bán cam kết hàng hoá có nguồn gốc hợp pháp và cung cấp đầy đủ chứng từ chứng minh khi được yêu cầu.	Bên bán chịu toàn bộ trách nhiệm trước cơ quan nhà nước về nguồn gốc hàng hoá đã cung cấp.
+Khuyến mại và chiết khấu	Chương trình khuyến mại được thông báo trước bằng văn bản và áp dụng cho các đơn hàng phát sinh trong thời gian thông báo.	Chiết khấu thương mại được tính trên doanh số luỹ kế của kỳ và quyết toán vào cuối kỳ.
+Bảo đảm thực hiện	Bên bán nộp bảo đảm thực hiện bằng một phần giá trị đơn hàng trước khi giao hàng đợt đầu tiên.	Khoản bảo đảm được hoàn trả trong vòng mười ngày kể từ ngày thanh lý.
+Thuế và lệ phí	Mỗi bên tự chịu trách nhiệm kê khai và nộp các khoản thuế phát sinh theo quy định pháp luật.	Trường hợp chính sách thuế thay đổi, hai bên thương lượng điều chỉnh giá cho phù hợp.
+Khiếu nại	Mọi khiếu nại về số lượng và chất lượng phải gửi trong vòng ba ngày làm việc kể từ ngày nhận hàng.	Khiếu nại phải kèm biên bản và ảnh chụp hiện trạng hàng hoá.	Quá thời hạn nêu trên, hàng hoá được coi là đã được chấp nhận.
+Thanh lý	Hai bên tiến hành thanh lý trong vòng ba mươi ngày kể từ ngày hoàn thành nghĩa vụ cuối cùng.	Biên bản thanh lý xác nhận khối lượng đã thực hiện, số tiền đã thanh toán và số tiền còn phải thanh toán.

@@ -1,0 +1,56 @@
+# CATALOGUE_INSURANCE_B — mẻ thứ hai, cùng định dạng mẻ đầu: tên<TAB>giá tối thiểu<TAB>giá tối đa.
+#
+# Vì sao có mẻ này, bằng số. `corpus.sample()` lặp lại mặt hàng khi bảng dài
+# hơn kho, và điều đó đúng với một hoá đơn bốn dòng. Nhưng bảng dài nhất của
+# hồ sơ này là 150 dòng trong khi mẻ đầu chỉ có ít mặt hàng — mỗi thứ
+# in lại nhiều lần trên CÙNG MỘT tờ giấy, và một mô hình đọc tờ ấy học rằng
+# bảng tiếng Việt là một danh sách lặp.
+#
+# Tên viết CÓ DẤU; bố cục nào cần chữ không dấu thì `rulebase.text.ascii_fold`
+# bỏ dấu lúc render.
+
+Quyền lợi phẫu thuật trong ngày	2000000	28000000
+Quyền lợi điều trị ung thư giai đoạn đầu	50000000	480000000
+Quyền lợi ghép tạng	80000000	620000000
+Quyền lợi chạy thận nhân tạo	8000000	120000000
+Quyền lợi chăm sóc tại nhà sau xuất viện	1500000	24000000
+Quyền lợi phục hồi chức năng	3000000	42000000
+Quyền lợi vật lý trị liệu ngoại trú	1200000	18000000
+Quyền lợi khám thai định kỳ	2000000	26000000
+Quyền lợi sinh thường	8000000	48000000
+Quyền lợi sinh mổ	15000000	86000000
+Quyền lợi biến chứng thai sản	20000000	180000000
+Quyền lợi chăm sóc trẻ sơ sinh	5000000	62000000
+Quyền lợi tiêm chủng theo lịch	1500000	16000000
+Quyền lợi nha khoa chuyên sâu	3000000	38000000
+Quyền lợi chỉnh nha	8000000	96000000
+Quyền lợi mắt kính theo đơn	1200000	12000000
+Quyền lợi phẫu thuật khúc xạ	12000000	68000000
+Quyền lợi máy trợ thính	6000000	58000000
+Quyền lợi trợ cấp mất thu nhập	3000000	48000000
+Quyền lợi trợ cấp mai táng	15000000	120000000
+Quyền lợi thương tật toàn bộ vĩnh viễn	100000000	980000000
+Quyền lợi bệnh hiểm nghèo giai đoạn cuối	150000000	1200000000
+Bảo hiểm cháy nổ bắt buộc nhà xưởng	12000000	420000000
+Bảo hiểm gián đoạn kinh doanh	25000000	680000000
+Bảo hiểm mọi rủi ro tài sản	18000000	520000000
+Bảo hiểm máy móc thiết bị	14000000	380000000
+Bảo hiểm thiết bị điện tử	6000000	165000000
+Bảo hiểm tiền trong két	3000000	86000000
+Bảo hiểm trách nhiệm công cộng	8000000	220000000
+Bảo hiểm trách nhiệm sản phẩm	12000000	320000000
+Bảo hiểm trách nhiệm nghề nghiệp	15000000	380000000
+Bảo hiểm trách nhiệm người sử dụng lao động	10000000	280000000
+Bảo hiểm xây dựng mọi rủi ro	28000000	860000000
+Bảo hiểm lắp đặt mọi rủi ro	22000000	680000000
+Bảo hiểm hàng hoá đường biển	4000000	180000000
+Bảo hiểm hàng hoá đường bộ	2500000	96000000
+Bảo hiểm thân tàu	65000000	1400000000
+Bảo hiểm vật chất xe cơ giới	6000000	165000000
+Bảo hiểm tai nạn hành khách	1500000	42000000
+Bảo hiểm du lịch quốc tế hạng cao	800000	18000000
+Bảo hiểm huỷ chuyến	500000	12000000
+Bảo hiểm hành lý thất lạc	400000	9000000
+Bảo hiểm hỗ trợ y tế khẩn cấp ở nước ngoài	2000000	48000000
+Bảo hiểm nông nghiệp cây trồng	3000000	86000000
+Bảo hiểm vật nuôi	2500000	68000000

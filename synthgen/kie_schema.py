@@ -39,11 +39,22 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from synthgen.design import COLUMNS  # noqa: E402
+from synthgen.kie_full import GROUPED, group_lists  # noqa: E402
 from synthgen.phrasing import describe as phrase  # noqa: E402
 
 # Câu tả chính cái MẢNG dòng hàng -- không thuộc cột nào nên không nằm trong
 # `COLUMNS`, và vì thế từng là câu duy nhất trong schema không ai đổi giọng.
 ITEMS_DESCRIBE = "Rows of the item table printed on this document."
+
+# Câu tả cho từng MẢNG có cấu trúc. Tên mảng là tập đóng (`kie_full.group_lists`),
+# nên bảng này không phải "bảng tra theo loại chứng từ" -- nó tả BỐN cấu trúc mà
+# mọi tờ giấy đều có thể mang.
+GROUP_DESCRIBE = {
+    "clauses": "Numbered clauses printed on this document, each with its heading.",
+    "questions": "Questionnaire items printed on this document, with the options offered and which were ticked.",
+    "legal_basis": "Legal grounds cited on this document.",
+    "signatures": "Signature blocks: the role printed at each place and who signed there.",
+}
 
 # Cột mang SỐ. `stt` là số thứ tự nên là số nguyên; `vat_rate` in ra "10%"
 # hoặc "KCT" nên vẫn là chuỗi.
@@ -192,6 +203,12 @@ def build(record: dict, page: int | None = None) -> tuple[dict, dict]:
         # Đối xứng với vòng trên: ô bảng đã vào mảng thì không vào đây nữa.
         if pair.get("column") and pair.get("row") is not None:
             continue
+        # Điều khoản, câu hỏi bảng hỏi, khối chữ ký cũng đã có mảng của chúng
+        # (`kie_full.group_lists`). Để lọt vào đây thì một tờ hai mươi hai điều
+        # khoản ra hai mươi hai thuộc tính tên `dieu_1_...` -- tên khoá chính là
+        # nội dung, thứ `docs/kie-schema-v2.md` đã bỏ ở bản xuất.
+        if pair.get("source") in GROUPED:
+            continue
         field = str(pair.get("field") or "")
         if not field or field in STRUCTURE:
             continue
@@ -296,6 +313,21 @@ def build(record: dict, page: int | None = None) -> tuple[dict, dict]:
                       "properties": {k: cols[k] for k in sorted(cols)}},
         }
         value[root] = [listed[root][n] for n in sorted(listed[root])]
+
+    # MẢNG CÓ CẤU TRÚC, dựng bằng CÙNG luật `synthgen/export.py` dùng -- chỉ
+    # khác cách vẽ một ô: ở đây schema không mang toạ độ nên ô là chữ trần.
+    grouped = group_lists([p for p in pairs if p.get("source") in GROUPED],
+                          lambda pair, side: str(pair.get(f"{side}_text") or ""))
+    for name, items in grouped.items():
+        if not items:
+            continue
+        properties[name] = {
+            "type": "array",
+            "description": phrase(GROUP_DESCRIBE[name], seed, name),
+            "items": {"type": "object"},
+        }
+        value[name] = [{k: v for k, v in item.items() if k != "description"}
+                       for item in items]
 
     if rows:
         properties[ITEMS] = {

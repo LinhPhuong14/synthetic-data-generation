@@ -13,7 +13,6 @@ so mới thấy. Mỗi test dưới đây là một nửa của chuyện ấy.
 
 from __future__ import annotations
 
-from agent import augment_descriptions as A
 from synthgen import kie_schema
 from synthgen.phrasing import POOL, describe, pool
 
@@ -110,45 +109,7 @@ def test_a_column_with_no_description_falls_back_to_the_declared_one():
 # ------------------------------------------------- cái gác cổng của augment
 
 
-def test_the_gate_accepts_every_wording_a_person_wrote():
-    """Luật nào loại một câu người đã viết là luật sai, không phải câu sai.
-
-    Cùng bất biến `agent/corpus_rules.py` dựng cho corpus, áp cho bảng này:
-    ngưỡng đo từ `POOL` thì phải nhận lại đúng `POOL`."""
-    box = A.envelopes()
-    for canon, variants in POOL.items():
-        for variant in variants:
-            lang = "vi" if A.vietnamese(variant) else "en"
-            why = box[lang].fits(variant, canon)
-            assert not why, f"{lang}: {variant!r} bị loại vì {why}"
 
 
-def test_the_gate_throws_out_the_four_things_the_model_actually_does():
-    box = A.envelopes()
-    reply = "\n".join([
-        "Dưới đây là các cách nói khác:",          # câu dẫn
-        "Number of units recorded against this line.",   # tốt
-        "- Quantity of the item on this line",     # trùng câu gốc, thiếu dấu chấm
-        "Số lượng mặt hàng của dòng này.",          # sai thứ tiếng cho lượt `en`
-        "Qty.",                                    # quá ngắn
-    ])
-    kept, thrown = A.sift(reply, CANON, "en", list(POOL[CANON]), box["en"])
-    assert kept == ["Number of units recorded against this line."]
-    assert [why for _line, why in thrown] == [
-        "câu dẫn, không phải mô tả",
-        "trùng câu đã có",
-        "lượt tiếng Anh mà câu có dấu tiếng Việt",
-        "1 từ, ngoài 2-21 đo được",
-    ]
 
 
-def test_every_canonical_sentence_in_the_repository_is_offered_to_the_model():
-    """Bước sinh đọc câu gốc từ DỮ LIỆU, nên một loại chứng từ mới là xong.
-
-    `POOL` là nửa synthgen; `rulebase/kie_field_glossary.json` là nửa pipeline
-    chính. Một danh sách viết cứng trong `augment_descriptions.py` sẽ lặng lẽ
-    bỏ sót nửa sau."""
-    every = A.canonicals()
-    assert set(POOL) <= set(every)
-    assert any(source.startswith("slug:") for source in every.values())
-    assert any(source.startswith("kind:") for source in every.values())

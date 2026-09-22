@@ -1,0 +1,81 @@
+# ITEMS_ADMIN_B — mẻ thứ hai, cùng định dạng mẻ đầu: tên<TAB>giá tối thiểu<TAB>giá tối đa.
+#
+# Vì sao có mẻ này, bằng số. `corpus.sample()` lặp lại mặt hàng khi bảng dài
+# hơn kho, và điều đó đúng với một hoá đơn bốn dòng. Nhưng bảng dài nhất của
+# hồ sơ này là 200 dòng trong khi mẻ đầu chỉ có 25 mặt hàng — mỗi thứ
+# in lại 8 lần trên CÙNG MỘT tờ giấy, và một mô hình đọc tờ ấy học rằng
+# bảng tiếng Việt là một danh sách lặp.
+#
+# Tên viết CÓ DẤU; bố cục nào cần chữ không dấu thì `rulebase.text.ascii_fold`
+# bỏ dấu lúc render.
+
+Máy tính bảng phục vụ họp không giấy	6200000	24000000
+Bảng tương tác thông minh 75 inch	42000000	128000000
+Bảng trắng từ tính treo tường	620000	2800000
+Bảng ghim nỉ bảng tin	380000	1600000
+Giá để tài liệu nhiều tầng	820000	3400000
+Kệ sắt lưu trữ hồ sơ	1800000	7200000
+Hộp đựng hồ sơ có nắp	38000	145000
+Bìa còng còng nhẫn A4	26000	98000
+Bìa lá nhựa A4	2500	9000
+Túi clear bag A4	3200	12000
+Giấy in A4 định lượng 70	68000	145000
+Giấy in A3 định lượng 80	135000	280000
+Giấy note dán nhiều màu	18000	62000
+Sổ công tác bìa cứng	32000	125000
+Sổ theo dõi văn bản đến	45000	160000
+Bút bi cao cấp vỏ kim loại	42000	320000
+Bút dạ quang nhiều màu	12000	45000
+Bút lông bảng không xoá	14000	52000
+Mực dấu chuyên dụng	26000	95000
+Dấu chức danh khắc sẵn	145000	580000
+Dấu ngày tháng tự động	185000	620000
+Máy đóng chứng từ cầm tay	420000	1800000
+Máy ép plastic khổ A3	1600000	6200000
+Màng ép plastic A4	85000	320000
+Máy đóng gáy xoắn	2800000	11000000
+Gáy xoắn nhựa 12mm	52000	185000
+Dao rọc giấy lớn	28000	96000
+Kéo văn phòng inox	32000	125000
+Ghim bấm số 10	8000	26000
+Máy bấm ghim đại	145000	620000
+Kẹp bướm các cỡ	12000	48000
+Băng keo trong bản lớn	14000	52000
+Hồ dán khô dạng thỏi	12000	42000
+Thước kẻ nhôm 50cm	26000	92000
+Bàn tính điện tử 14 số	145000	620000
+Đồng hồ treo tường phòng họp	185000	820000
+Bình lọc nước nóng lạnh	3200000	12000000
+Ấm siêu tốc inox	320000	1400000
+Máy pha cà phê văn phòng	4200000	26000000
+Tủ lạnh mini phòng làm việc	3600000	12000000
+Lò vi sóng khu bếp chung	1800000	7200000
+Máy hút bụi công nghiệp	4200000	16000000
+Xe đẩy dọn vệ sinh	1600000	6200000
+Thùng rác phân loại ba ngăn	820000	3400000
+Biển chỉ dẫn nội bộ	185000	920000
+Thẻ nhân viên in nhiệt	12000	48000
+Dây đeo thẻ in logo	8000	32000
+Đồng phục văn phòng theo bộ	420000	1800000
+Áo bảo hộ phản quang	145000	620000
+Giày bảo hộ mũi thép	320000	1400000
+Mũ bảo hộ lao động	85000	340000
+Găng tay chống cắt	42000	185000
+Khẩu trang lọc bụi N95	12000	52000
+Kính bảo hộ chống hoá chất	62000	280000
+Nút bịt tai chống ồn	8000	34000
+Tủ thuốc y tế cơ quan	620000	2800000
+Cáng cứu thương gấp gọn	1800000	6800000
+Bình oxy y tế xách tay	2400000	9600000
+Máy đo huyết áp điện tử	620000	2600000
+Nhiệt kế hồng ngoại	320000	1400000
+Dịch vụ bảo trì máy photocopy	1800000	12000000
+Dịch vụ chuyển phát nhanh nội địa	32000	420000
+Dịch vụ lưu trữ hồ sơ thuê ngoài	2800000	24000000
+Dịch vụ số hoá tài liệu	1200	8500
+Dịch vụ tiêu huỷ tài liệu có giám sát	4200000	32000000
+Dịch vụ bảo vệ toà nhà theo tháng	18000000	120000000
+Dịch vụ lễ tân thuê ngoài	12000000	68000000
+Dịch vụ xe đưa đón cán bộ	14000000	96000000
+Dịch vụ suất ăn ca theo phần	28000	85000
+Dịch vụ tổ chức tập huấn nội bộ	8600000	62000000

@@ -170,6 +170,15 @@ def test_every_kind_in_every_committed_dataset_is_mapped():
     halfway through a run over a label vocabulary -- so this is where it is
     caught instead. If this fails, add the kind to `LABELS`; do not widen the
     fallback.
+
+    **Ranh giới sau khi từ vựng kind mở** (`synthgen/llm_page.py::_COINED`):
+    luật này nói về kind ENGINE in ra, thứ hữu hạn và sửa được bằng một dòng
+    trong `LABELS`. Một kind model TỰ ĐẶT (`contract.party_a`) không thể và
+    không nên có mặt trong `LABELS` -- nó rơi về `Text` theo thiết kế, và
+    nhãn vùng thật của nó đến từ `data-region` chứ không từ bảng tiền tố (đo
+    trên ba bộ mới nhất: 79,8% nhãn từ đến từ vùng model khai, 5,9% từ bảng
+    tiền tố). Nên nếu một bộ dữ liệu nhánh LLM được commit, phép đếm này
+    phải lọc kind tự đặt ra trước, không phải nới `LABELS` để chứa chúng.
     """
     unmapped: dict[str, str] = {}
     seen = 0
@@ -208,6 +217,67 @@ def test_a_block_keeps_the_field_it_is_as_well_as_the_class_it_is_in():
     assert block["kind"] == "total.grand"     # which field it actually is
     assert block["text"] == "232,000"
     assert block["id"] == "p1-b0" and block["index_in_page"] == 0
+
+
+def test_a_stamp_printed_over_a_paragraph_does_not_turn_it_into_a_wrapper():
+    """Luật bỏ-cái-ngoài chỉ nhìn hình học, và hình học không phân biệt "cái
+    khung bọc một khối" với "một đoạn văn bị đóng dấu đè lên giữa".
+
+    Đo trên `data/`: 592 từ mang nhãn `List-Group` trỏ vào một vùng `Stamp` --
+    đoạn văn bị vứt vì nó bao trọn con dấu, và chữ của nó đi theo con trỏ cũ
+    sang cái dấu."""
+    words = R.words_from_boxes([
+        a_box(kind="note", text="Ghi", quad=[[100, 100], [160, 100], [160, 140], [100, 140]]),
+        a_box(kind="note", text="chú", quad=[[170, 100], [230, 100], [230, 140], [170, 140]]),
+    ])
+    seal = {"kind": "seal", "quad": [[150, 105], [200, 105], [200, 135], [150, 135]]}
+    regions = R.regions_from_words(words, graphics=[seal], page_size=(1000, 1000))
+
+    labels = [r["layout_class"] for r in regions]
+    assert labels.count("Text") == 1, "đoạn văn phải còn vùng của nó"
+    assert "Stamp" in labels
+    for word in words:
+        host = regions[word["layout_region_index"]]
+        assert host["layout_class"] == "Text", "chữ không được trỏ sang con dấu"
+
+
+def test_dropping_a_wrapper_renumbers_every_word_that_pointed_at_it():
+    """`region_index` được đánh lại từ 0 sau khi bỏ một vùng, và
+    `word["layout_region_index"]` giữ số CŨ -- nên mọi con trỏ sau chỗ bị bỏ
+    trượt đi một bậc, im lặng.
+
+    Đo trên 1105 bản ghi trong `data/`: 30 tờ (3%) và 4231 từ (0,6%) trỏ vào
+    một vùng không chứa chúng. `synthgen/check.py` chỉ kiểm chỉ số có nằm
+    trong mảng hay không, nên nó không thấy gì.
+
+    Gọi thẳng `_unwrap` vì cái khung ở đây phải là một vùng KHÔNG có chữ của
+    riêng nó, và đường `zones` đã lọc những vùng ấy từ sớm hơn -- dựng nó qua
+    `regions_from_words` là dựng một trang không tồn tại."""
+    def region(index, label, x1, y1, x2, y2, text=""):
+        one = R._region_entry(index, label, text, (x1, y1, x2, y2),
+                              "dom_element_perimeter", None)
+        one["bbox"] = [x1, y1, x2, y2]
+        one["polygon"] = [[x1, y1], [x2, y1], [x2, y2], [x1, y2], [x1, y1]]
+        return one
+
+    regions = [region(0, "Page-Header", 0, 0, 500, 500),      # bọc #1, không chữ riêng
+               region(1, "Title", 100, 100, 200, 200, "TIÊU ĐỀ"),
+               region(2, "Text", 0, 600, 500, 700, "đoạn cuối")]
+    words = [{"text": "TIÊU", "bbox": [110, 110, 150, 150], "layout_region_index": 0},
+             {"text": "ĐỀ", "bbox": [155, 110, 195, 150], "layout_region_index": 1},
+             {"text": "đoạn", "bbox": [10, 610, 90, 660], "layout_region_index": 2}]
+
+    kept = R._unwrap(regions, words)
+    assert [r["layout_class"] for r in kept] == ["Title", "Text"]
+    assert [r["region_index"] for r in kept] == [0, 1]
+    # Chữ của cái khung về vùng con sát nó; chữ của vùng sau lùi một bậc.
+    assert [w["layout_region_index"] for w in words] == [0, 0, 1]
+    for word in words:
+        host = kept[word["layout_region_index"]]
+        cx = (word["bbox"][0] + word["bbox"][2]) / 2
+        cy = (word["bbox"][1] + word["bbox"][3]) / 2
+        assert (host["bbox"][0] <= cx <= host["bbox"][2]
+                and host["bbox"][1] <= cy <= host["bbox"][3])
 
 
 # --------------------------------------------------------------- the markdown

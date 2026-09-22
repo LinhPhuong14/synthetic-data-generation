@@ -1,0 +1,116 @@
+# ITEMS_INVOICE_B — mẻ thứ hai, cùng định dạng mẻ đầu: tên<TAB>giá tối thiểu<TAB>giá tối đa.
+#
+# Vì sao có mẻ này, bằng số. `corpus.sample()` lặp lại mặt hàng khi bảng dài
+# hơn kho, và điều đó đúng với một hoá đơn bốn dòng. Nhưng bảng dài nhất của
+# hồ sơ này là 240 dòng trong khi mẻ đầu chỉ có 28 mặt hàng — mỗi thứ
+# in lại 8 lần trên CÙNG MỘT tờ giấy, và một mô hình đọc tờ ấy học rằng
+# bảng tiếng Việt là một danh sách lặp.
+#
+# Tên viết CÓ DẤU; bố cục nào cần chữ không dấu thì `rulebase.text.ascii_fold`
+# bỏ dấu lúc render.
+
+Máy chủ rack 2U Intel Xeon	38000000	165000000
+Tủ rack 42U kèm quạt thông gió	12000000	46000000
+Bộ lưu điện UPS 10kVA	24000000	92000000
+Thiết bị tường lửa phần cứng	18000000	140000000
+Bộ chuyển mạch quang 24 cổng SFP	14000000	68000000
+Cáp quang singlemode 12FO	18000	62000
+Măng xông quang 24FO	850000	3200000
+Tủ phối quang ODF 48 cổng	2400000	9800000
+Camera IP 4MP hồng ngoại	2100000	8900000
+Đầu ghi hình NVR 16 kênh	5600000	22000000
+Ổ cứng chuyên dụng giám sát 8TB	4200000	11000000
+Màn hình ghép 55 inch viền mỏng	16000000	58000000
+Máy chiếu laser 6000 ansi	22000000	96000000
+Màn chiếu điện 150 inch	4800000	16000000
+Hệ thống âm thanh hội trường	35000000	210000000
+Micro không dây hai kênh	3200000	14000000
+Bục phát biểu gỗ công nghiệp	5600000	18000000
+Bàn họp mặt kính 12 chỗ	14000000	52000000
+Ghế lưới tựa cao có tựa đầu	1900000	7400000
+Tủ tài liệu ba khoang cánh kính	3600000	12000000
+Két sắt chống cháy 120 phút	6800000	28000000
+Máy huỷ tài liệu công suất lớn	5400000	21000000
+Máy photocopy đa chức năng A3	32000000	128000000
+Máy in nhiệt mã vạch công nghiệp	9600000	38000000
+Máy quét tài liệu tốc độ cao	12000000	54000000
+Máy chấm công vân tay và thẻ từ	3800000	14000000
+Cổng kiểm soát ra vào ba càng	28000000	86000000
+Barrier tự động cần thẳng 4m	18000000	62000000
+Hệ thống báo cháy địa chỉ 5 loop	65000000	320000000
+Bình chữa cháy khí CO2 5kg	620000	1800000
+Tủ chữa cháy vách tường	1400000	4600000
+Máy bơm chữa cháy diesel	78000000	340000000
+Máy phát điện 100kVA vỏ chống ồn	180000000	620000000
+Máy nén khí trục vít 22kW	68000000	240000000
+Bình tích áp 500 lít	12000000	42000000
+Máy hàn que inverter 250A	3400000	12000000
+Máy cắt plasma cầm tay	9800000	36000000
+Máy khoan bê tông 1500W	2800000	9400000
+Máy đầm bàn động cơ xăng	12000000	38000000
+Giàn giáo khung 1m7 mạ kẽm	480000	1600000
+Cốp pha thép định hình	620000	2200000
+Xe rùa bánh hơi	680000	2100000
+Máy trộn bê tông 350 lít	14000000	46000000
+Máy cắt sắt bàn 400mm	4200000	15000000
+Thước thuỷ laser tia xanh	2600000	12000000
+Máy đo khoảng cách laser 100m	1800000	6800000
+Máy toàn đạc điện tử	68000000	280000000
+Máy thuỷ bình tự động	9200000	32000000
+Ampe kìm đo dòng rò	1600000	6400000
+Thiết bị kiểm tra cách điện	8600000	34000000
+Tủ điện phân phối tổng	18000000	96000000
+Aptomat khối 400A	4200000	16000000
+Tụ bù công suất 30kVAr	2800000	11000000
+Biến tần ba pha 15kW	12000000	48000000
+Động cơ điện ba pha 7.5kW	8400000	32000000
+Máy bơm ly tâm trục ngang	6800000	26000000
+Van cổng gang 150mm	2200000	8600000
+Đồng hồ nước mặt bích DN100	4600000	18000000
+Ống thép mạ kẽm DN100	320000	980000
+Bồn inox 2000 lít	12000000	36000000
+Bơm định lượng hoá chất	8800000	34000000
+Máy lọc nước công nghiệp RO	42000000	168000000
+Điều hoà âm trần cassette 24000BTU	22000000	68000000
+Quạt hút công nghiệp 600mm	3200000	12000000
+Hệ thống thông gió tầng hầm	86000000	420000000
+Cửa cuốn khe thoáng có mô tơ	4200000	14000000
+Cửa nhôm hệ Xingfa kính hộp	2600000	8400000
+Vách ngăn kính cường lực 10mm	1400000	4200000
+Sàn nâng kỹ thuật phòng máy	1800000	6200000
+Thảm trải sàn chống tĩnh điện	420000	1600000
+Sơn epoxy nền nhà xưởng	380000	1400000
+Tấm ốp alu chống cháy	620000	2400000
+Trần thạch cao khung chìm	280000	920000
+Đèn LED panel 600x600	320000	1400000
+Đèn pha LED 200W ngoài trời	1200000	4800000
+Cột đèn chiếu sáng 9m	6800000	24000000
+Biển báo phản quang giao thông	480000	1900000
+Gương cầu lồi đường kính 800mm	620000	2400000
+Dịch vụ bảo trì hệ thống lạnh	8000000	68000000
+Dịch vụ vệ sinh công nghiệp định kỳ	6000000	52000000
+Dịch vụ kiểm định an toàn thiết bị nâng	4500000	32000000
+Dịch vụ hiệu chuẩn thiết bị đo	2800000	24000000
+Dịch vụ diệt côn trùng định kỳ	3200000	18000000
+Dịch vụ chăm sóc cây cảnh văn phòng	2400000	14000000
+Dịch vụ giặt thảm và rèm	1800000	12000000
+Dịch vụ thông tắc và hút bể phốt	3600000	22000000
+Dịch vụ thu gom chất thải nguy hại	6800000	46000000
+Dịch vụ quan trắc môi trường lao động	12000000	86000000
+Dịch vụ lập báo cáo đánh giá tác động	45000000	320000000
+Dịch vụ thiết kế nội thất văn phòng	28000000	240000000
+Dịch vụ thi công biển hiệu mặt tiền	14000000	96000000
+Dịch vụ in ấn ấn phẩm truyền thông	4200000	48000000
+Dịch vụ tổ chức hội nghị khách hàng	65000000	480000000
+Dịch vụ quay dựng phim doanh nghiệp	32000000	260000000
+Dịch vụ dịch thuật công chứng	180000	1400000
+Dịch vụ kiểm toán báo cáo tài chính	38000000	280000000
+Dịch vụ tư vấn pháp lý thường xuyên	12000000	96000000
+Phí thuê kho lạnh theo tháng	18000000	120000000
+Phí thuê xe nâng theo ca	1800000	6800000
+Phí lưu container tại cảng	620000	2800000
+Phí kiểm dịch thực vật lô hàng	480000	2200000
+Phí hun trùng container	1200000	4600000
+Phí nâng hạ container tại bãi	680000	2400000
+Phụ phí nhiên liệu vận chuyển	320000	1800000
+Phụ phí mùa cao điểm	480000	2600000

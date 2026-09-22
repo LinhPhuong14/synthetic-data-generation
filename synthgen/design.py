@@ -26,7 +26,12 @@ import dataclasses as _dc
 import random
 import sys as _sys
 from dataclasses import dataclass
+from pathlib import Path as _Path
 from typing import Any
+
+import yaml as _yaml
+
+_REPO_ROOT = _Path(__file__).resolve().parents[1]
 
 
 # --------------------------------------------------------------- khổ giấy & lề
@@ -283,6 +288,24 @@ class Design:
     reverse_title_band: bool
     lang_en: bool
     target_pages: int
+    # KHỐI CHẢY: khối nào quyết định tài liệu này DÀI bao nhiêu, và do đó
+    # khối nào bị cắt ra khi nó phải in làm nhiều tờ.
+    #
+    # Trước đây không có trường này vì câu trả lời luôn là `table`, viết thẳng
+    # vào `paginate.py`, `markup.py` và `draw.py`. Hệ quả đo được: mọi tài
+    # liệu nhiều trang trong bộ đều là một cái bảng, tức là "nhiều trang" và
+    # "có bảng" là CÙNG MỘT THỨ với bất kỳ mô hình nào học trên bộ ấy. Đặt
+    # tên cho nó, một lần, ở đây, để ba chỗ kia đọc chứ không đoán -- xem
+    # `FLOW_BLOCKS`.
+    flow: str
+    # CHỖ ĐỨNG của mực không-phải-chữ: dấu, mã vạch, mã QR.
+    #
+    # Trước đây không có trường này vì câu trả lời luôn là "cuối tờ cuối",
+    # viết thẳng trong thân vòng lặp của `markup()`. Giấy thật không thế: hoá
+    # đơn siêu thị in mã vạch ngay dưới tên cửa hàng, phiếu gửi xe in mã QR ở
+    # góc trên bên phải, còn công văn thì đóng dấu cuối trang. Ba chỗ ấy là ba
+    # dáng khác nhau mà một bộ dữ liệu chỉ có một chỗ thì không dạy được.
+    mark_place: str
     seed: int
 
     # `boost` là hệ số cỡ chữ, và là trường DUY NHẤT đổi được sau khi `draw()`
@@ -304,7 +327,7 @@ class Design:
             self.sign_captions,
             tuple(f.key for f in self.fields), self.order,
             tuple(sorted(self.blocks)), self.photo_box, self.watermark,
-            self.reverse_title_band, self.lang_en,
+            self.reverse_title_band, self.lang_en, self.flow, self.mark_place,
         )
 
     def has(self, block: str) -> bool:
@@ -555,7 +578,7 @@ ARCHETYPES: tuple[Archetype, ...] = (
     A('to_trinh', ('TỜ TRÌNH', 'TỜ TRÌNH ĐỀ NGHỊ PHÊ DUYỆT', 'GIẤY ĐỀ NGHỊ'), ('V/v đề nghị cấp kinh phí', 'V/v đề nghị mua sắm trang thiết bị', ''), 'admin', 'state', 0.9, SUBJECT_FIELDS[8:10] + CONTRACT_FIELDS[4:5], (1, 3), (('stt', 'name', 'unit', 'qty', 'unit_price', 'amount'), ('stt', 'name', 'qty', 'amount'), ('stt', 'name', 'note')), 'money', True, (('NGƯỜI ĐỀ NGHỊ', 'THỦ TRƯỞNG ĐƠN VỊ'), ('NGƯỜI LẬP', 'PHỤ TRÁCH BỘ PHẬN', 'THỦ TRƯỞNG ĐƠN VỊ')), _NOTE_STATE, (2, 64), optional=('table', 'footer', 'words', 'summary'), always=('letterhead', 'doctitle', 'meta', 'fields', 'notes', 'signatures')),
     A('don_xin_nghi_phep', ('ĐƠN XIN NGHỈ PHÉP', 'ĐƠN XIN NGHỈ VIỆC RIÊNG', 'GIẤY XIN PHÉP'), ('Kính gửi: Ban Giám đốc', 'Kính gửi: Trưởng phòng Hành chính - Nhân sự', ''), 'admin', 'state', 0.85, SUBJECT_FIELDS[:1] + SUBJECT_FIELDS[1:2] + SUBJECT_FIELDS[6:10], (4, 7), (('stt', 'date', 'name', 'note'),), 'none', False, _SIGN_STATE, _NOTE_STATE, (0, 6), optional=('table', 'footer', 'meta'), always=('letterhead', 'doctitle', 'fields', 'notes', 'signatures')),
     A('giay_uy_quyen', ('GIẤY UỶ QUYỀN', 'GIẤY UỶ QUYỀN GIAO DỊCH', 'VĂN BẢN UỶ QUYỀN'), ('', 'Số: ..../GUQ', '(Có giá trị đến hết ngày ....)'), 'admin', 'state', 0.8, SUBJECT_FIELDS[:8], (5, 8), (('stt', 'name', 'note'),), 'none', False, (('BÊN UỶ QUYỀN', 'BÊN ĐƯỢC UỶ QUYỀN'), ('NGƯỜI UỶ QUYỀN', 'NGƯỜI ĐƯỢC UỶ QUYỀN', 'XÁC NHẬN CỦA ĐƠN VỊ')), _NOTE_STATE, (0, 16), optional=('table', 'footer', 'meta'), always=('letterhead', 'doctitle', 'fields', 'notes', 'signatures')),
-    A('giay_gioi_thieu', ('GIẤY GIỚI THIỆU', 'GIẤY GIỚI THIỆU CÔNG TÁC'), ('Kính gửi: ....', '', 'Số: ..../GGT'), 'admin', 'state', 0.9, SUBJECT_FIELDS[:1] + SUBJECT_FIELDS[3:5] + SUBJECT_FIELDS[8:10], (3, 5), (('stt', 'name', 'note'),), 'none', False, (('TM. THỦ TRƯỞNG ĐƠN VỊ',), ('NGƯỜI GIỚI THIỆU', 'THỦ TRƯỞNG ĐƠN VỊ')), _NOTE_STATE, (0, 5), optional=('table', 'footer', 'photo'), always=('letterhead', 'doctitle', 'meta', 'fields', 'notes', 'signatures')),
+    A('giay_gioi_thieu', ('GIẤY GIỚI THIỆU', 'GIẤY GIỚI THIỆU CÔNG TÁC'), ('Kính gửi: ....', '', 'Số: ..../GGT'), 'admin', 'state', 0.9, SUBJECT_FIELDS[:1] + SUBJECT_FIELDS[3:5] + SUBJECT_FIELDS[8:10], (3, 5), (('stt', 'name', 'note'),), 'none', False, (('TM. THỦ TRƯỞNG ĐƠN VỊ',), ('NGƯỜI GIỚI THIỆU', 'THỦ TRƯỞNG ĐƠN VỊ')), _NOTE_STATE, (4, 40), optional=('table', 'footer', 'photo'), always=('letterhead', 'doctitle', 'meta', 'fields', 'notes', 'signatures')),
     A('don_dang_ky', (
     'ĐƠN ĐĂNG KÝ',
     'PHIẾU ĐĂNG KÝ THÔNG TIN',
@@ -619,6 +642,324 @@ def _declared() -> tuple:
 TABLE_OPTIONAL_FLOOR = 4
 
 
+# ------------------------------------------------------------- khối chảy
+
+
+def _question_ceiling(arch: "Archetype") -> int:
+    """Bao nhiêu CÂU một tờ khai viết ra được, đếm từ kho câu hỏi.
+
+    Cộng mọi chủ đề, vì `content.questions_of` bốc tràn sang chủ đề khác khi
+    một chủ đề cạn câu -- một tờ khai bốn trang không có cách nào chỉ hỏi
+    mười hai câu của đúng một chủ đề."""
+    from synthgen import content  # noqa: PLC0415
+
+    return sum(len(theme["items"]) for theme in content.QUESTION_THEMES.values())
+
+
+def _clause_ceiling(arch: "Archetype") -> int:
+    """Bao nhiêu ĐIỀU một phôi viết ra được, ĐẾM TỪ KHO chứ không đoán.
+
+    Đây là chỗ dễ viết cứng nhất trong cả thay đổi này -- một con số 40 gõ
+    vào đây chạy đúng hôm nay và sai đúng cái ngày ai đó thêm một file điều
+    khoản. Kho là `rulebase/corpus/vi/clauses_*.txt`; thêm dòng vào đó thì
+    tài liệu dài ra, không phải sửa file này."""
+    from synthgen import corpus  # noqa: PLC0415 -- corpus không nhập ngược
+
+    return len(corpus.clauses(arch.profile))
+
+
+# Khối nào CHẢY được qua nhiều tờ, và sức chứa của nó lấy ở đâu.
+#
+# `table` đọc `rows` của phôi -- số dòng hàng phôi ấy cho phép. `clauses` đếm
+# kho điều khoản của hồ sơ. Sàn là số mục ít nhất còn ra một khối đọc được:
+# một cái bảng một dòng vẫn là bảng, còn một văn bản một điều thì chưa phải
+# văn bản có điều khoản.
+#
+# Thêm một khối chảy mới -- `questions` chẳng hạn -- là thêm MỘT dòng ở đây,
+# không phải sửa `paginate.py`, `markup.py` và `draw.py`: ba file ấy hỏi
+# `design.flow` chứ không hỏi "có phải bảng không".
+FLOW_BLOCKS: dict[str, Any] = {
+    "table": {"floor": lambda arch: arch.rows[0],
+              "ceiling": lambda arch: arch.rows[1]},
+    "clauses": {"floor": lambda arch: 2,
+                "ceiling": _clause_ceiling},
+    "questions": {"floor": lambda arch: 4,
+                  "ceiling": _question_ceiling},
+}
+
+
+# Ước lượng THÔ "một tờ chứa bao nhiêu mục của khối này", và chỉ để `draw()`
+# biết nhắm mấy tờ là hợp lý. Không phải sức chứa thật: sức chứa thật do
+# `paginate.py` ĐO trong trình duyệt, và nó hạ số tờ xuống khi đo xong.
+#
+# Đo lại từ một lượt chạy thật (28 tờ, `rows_in_document / pages_in_document`)
+# chứ không đoán: điều khoản ra 10,7 mục một tờ. Con số đoán ban đầu là 7, và
+# nó nhắm CAO hơn sức chứa nên gần như tài liệu nào cũng phải hạ số tờ một
+# vòng -- xem `plan_note` của lượt ấy, "hạ xuống 3 tờ: 51 dòng cần cho 4 tờ".
+# Mực không-phải-chữ đứng ở đâu trên tờ giấy. Bốc theo trọng số đọc từ
+# `rulebase/synthgen/_blocks.yaml::mark_place`, nên đổi hình dạng bộ dữ liệu
+# không phải sửa file này.
+#
+#   cuoi        cuối tờ CUỐI -- công văn, quyết định, hợp đồng (dáng cũ)
+#   dau         ngay dưới khối tiêu đề, tờ ĐẦU -- hoá đơn bán lẻ, phiếu cân
+#   goc_phai    góc trên bên phải tờ đầu -- phiếu gửi xe, vé, thẻ
+#   moi_to      cuối MỌI tờ -- sổ, biên bản nhiều trang có đánh dấu từng tờ
+MARK_PLACES: tuple[str, ...] = ("cuoi", "dau", "goc_phai", "moi_to")
+
+FLOW_PER_PAGE: dict[str, int] = {"table": 15, "clauses": 11, "questions": 8}
+
+
+def block_boost(name: str) -> float:
+    """Hệ số nhân xác suất của KHỐI `name` khi lượt chạy đòi nhiều tờ.
+
+    Theo từng khối, không đều tay, và đó là kết quả của phép đo. Nhân đều thì
+    khối vốn hay gặp bão hoà trước khối hiếm: ở hệ số 2.4, `footnote` lên 0.84
+    và đo ra `Footnote` có mặt trên 82% số tờ, trong khi `Figure` mới 22% --
+    đúng cái lệch mà việc nhân lên sinh ra để xoá, lần thứ ba trong file này.
+
+    Và có một lý do thứ hai, mạnh hơn: thứ làm một TỜ GIỮA hết đơn điệu là
+    khối CHIẾM CHỖ -- một cái bảng phụ lục, một khối trường, một sơ đồ. Ghi
+    chú dấu sao và dòng "bằng chữ" chỉ thêm một nhãn vùng chứ không đổi hình
+    dạng tờ giấy, nên nhân chúng lên là trả giá mà không mua được gì."""
+    data = _blocks_yaml()
+    rule = data.get("multipage_boost", 1.0)
+    if not isinstance(rule, dict):
+        try:
+            return max(float(rule), 0.0)
+        except (TypeError, ValueError):
+            return 1.0
+    try:
+        return max(float(rule.get(name, rule.get("default", 1.0))), 0.0)
+    except (TypeError, ValueError):
+        return 1.0
+
+
+def block_cap() -> float:
+    """Trần của phép nhân trên. Khối đã cao hơn trần thì giữ nguyên."""
+    data = _blocks_yaml()
+    try:
+        return max(float(data.get("multipage_cap", 0.95)), 0.0)
+    except (TypeError, ValueError):
+        return 0.95
+
+
+def item_rules() -> dict:
+    """Mục `items:` của `_blocks.yaml`: bảng của phôi nào liệt kê kho nào."""
+    data = _blocks_yaml()
+    rules = data.get("items") or {}
+    return rules if isinstance(rules, dict) else {}
+
+
+def block_allow() -> dict:
+    """Luật `allow:` của `_blocks.yaml`: khối nào gắn được vào phôi nào."""
+    data = _blocks_yaml()
+    rules = data.get("allow") or {}
+    return rules if isinstance(rules, dict) else {}
+
+
+def _allowed_for(rule: Any, arch: "Archetype") -> bool:
+    """Phôi này có khớp một luật `allow:` không.
+
+    Ba vế, và khớp MỘT vế là đủ: tên tài liệu (`title_any`, không phân biệt
+    hoa thường), ngành (`profile_any`), loại tổ chức (`org_kind_any`). Tên
+    là vế chính xác nhất -- "TỜ KHAI Y TẾ" nói thẳng nó là tờ khai -- còn hai
+    vế kia để với tới những phôi đặt tên không theo lệ."""
+    rule = rule or {}
+    words = rule.get("title_any") or ()
+    if words:
+        titles = " ".join(arch.titles).lower()
+        if any(str(word).lower() in titles for word in words):
+            return True
+    if arch.profile in (rule.get("profile_any") or ()):
+        return True
+    return arch.org_kind in (rule.get("org_kind_any") or ())
+
+
+def flow_reach(flow: str, arch: "Archetype") -> int:
+    """Khối chảy `flow` nuôi nổi bao nhiêu TỜ trên phôi này. Ước lượng thô.
+
+    Một chỗ duy nhất tính con số ấy. `draw()` cần nó hai lần -- một lần để
+    chọn khối chảy, một lần để chốt số tờ -- và hai phép tính rời nhau cho
+    cùng một câu hỏi là đúng hình dạng lỗi kho này hay gặp nhất."""
+    lo, hi = flow_span(flow, arch)
+    per = FLOW_PER_PAGE.get(flow, 0)
+    if not per:
+        return 1
+    if hi - lo < per:
+        # Khoảng mục hẹp hơn một tờ: sáu đến tám điều thì sáu đến tám điều,
+        # không có gì để dồn sang tờ sau.
+        return 1
+    return max(hi // per, 1)
+
+
+def pick_span(rng: random.Random, pages) -> tuple[int, int]:
+    """`(sàn, trần)` số tờ cho MỘT tài liệu, từ khai báo `--pages`.
+
+    Nhận ba hình dạng, và trả về cùng một thứ:
+
+        None                      -> `PAGE_SPAN` mặc định
+        (2, 10)                   -> đúng khoảng ấy
+        [((2, 5), 75), ((7, 10), 25)] -> bốc khoảng theo trọng số, rồi mới
+                                          bốc số tờ trong khoảng đã bốc
+
+    Hình thứ ba là thứ một khoảng phẳng không thay được: `--pages 2-10` rải
+    đều từ hai tới mười tờ, còn hồ sơ ngoài đời là phần lớn vài tờ và một
+    phần nhỏ rất dày. Trọng số KHÔNG cần cộng thành 100 -- chúng được chuẩn
+    hoá, nên `3,1` và `75,25` nói cùng một điều."""
+    if not pages:
+        return PAGE_SPAN
+    if (isinstance(pages, (list, tuple)) and len(pages) == 2
+            and all(isinstance(v, int) for v in pages)):
+        lo, hi = int(pages[0]), int(pages[1])
+    else:
+        spans = [(tuple(span), float(weight)) for span, weight in pages]
+        spans = [(span, w) for span, w in spans if w > 0] or [
+            (tuple(span), 1.0) for span, _w in
+            [(tuple(sp), 1.0) for sp, _ in pages]]
+        picked = random.Random(rng.random()).choices(
+            [span for span, _ in spans], weights=[w for _, w in spans])[0]
+        lo, hi = int(picked[0]), int(picked[1])
+    lo, hi = max(lo, 1), max(hi, 1)
+    return (min(lo, hi), max(lo, hi))
+
+
+def flow_weight(name: str) -> float:
+    """Trọng số bốc khối chảy `name`, đọc từ `_blocks.yaml`.
+
+    Vì sao bốc chứ không xếp thứ tự ưu tiên: bản trước xếp `clauses` trước
+    mọi khối không-bảng, và kết quả đo được là nhãn `List-Group` có mặt trên
+    82% số tờ -- đúng cái lệch mà việc hạ tỉ lệ bảng sinh ra để xoá, chỉ là
+    đổi tên nhãn. Một khối chảy được ưu tiên tuyệt đối thì nhãn của nó thành
+    nhãn của cả bộ."""
+    data = _blocks_yaml()
+    weights = data.get("flow_weight") or {}
+    try:
+        return max(float(weights.get(name, 1.0)), 0.0)
+    except (TypeError, ValueError):
+        return 1.0
+
+
+def pick_weighted(rng: random.Random, names, section: str) -> str:
+    """Một tên trong `names`, bốc theo trọng số ở mục `section` của
+    `_blocks.yaml`. Tên không khai trọng số coi như 1.0.
+
+    Dùng chung cho mọi lựa chọn "bộ này nghiêng về dáng nào": chỗ đứng của
+    mã vạch, và những thứ sau nó. Mỗi lựa chọn như thế là một con số sửa là
+    đổi cả bộ dữ liệu, nên nó thuộc về file, không thuộc về mã."""
+    pool = list(names)
+    if not pool:
+        return ""
+    data = _blocks_yaml().get(section) or {}
+    weights = []
+    for name in pool:
+        try:
+            weights.append(max(float(data.get(name, 1.0)), 0.0))
+        except (TypeError, ValueError):
+            weights.append(1.0)
+    if sum(weights) <= 0:
+        return pool[0]
+    return random.Random(rng.random()).choices(pool, weights=weights)[0]
+
+
+def block_region(name: str) -> str:
+    """Nhãn vùng bố cục của khối `name`, đọc từ `_blocks.yaml::region`.
+
+    Rỗng nghĩa là khối ấy KHÔNG tự khai vùng -- và khi ấy vùng của nó được
+    `pipeline/record.py` dựng lại bằng cách gom từ theo ngưỡng khe. Đó là
+    hành vi cũ của mọi khối, giữ lại làm lưới đỡ chứ không làm mặc định.
+
+    KHÔNG có bảng dự phòng trong mã. Một `dict` nhãn viết ở đây "cho chắc" là
+    người dựng thứ hai của cùng một luật, và kho này đã bị cắn vì đúng chuyện
+    ấy nhiều lần -- bảng thẻ HTML từng có hai bản (`page.py` và `repair.py`)
+    phủ hai tập thẻ khác nhau, và chỗ hở im lặng theo cả hai chiều. Mất file
+    thì mọi khối về lưới đỡ, y như trước khi mục `region:` ra đời: kém hơn,
+    nhưng không có bản nào nói khác bản nào."""
+    value = (_blocks_yaml().get("region") or {}).get(name)
+    return str(value).strip() if isinstance(value, str) else ""
+
+
+def gate_ceiling(name: str, default: float) -> float:
+    """Ngưỡng `_blocks.yaml::gate` tên `name`, hoặc `default` nếu chưa khai.
+
+    Có `default` ở đây, khác `block_region()` cố tình KHÔNG có: một nhãn vùng
+    thiếu thì khối ấy đơn giản không khai vùng -- hành vi cũ, kém hơn nhưng
+    vẫn chạy. Còn một NGƯỠNG thiếu thì cổng không có gì để so, và "không có
+    gì để so" phải nghĩa là KHÔNG LOẠI, chứ không phải loại sạch. Chỗ gọi nói
+    ra con số an toàn ấy, tại chính chỗ nó biết an toàn nghĩa là gì."""
+    try:
+        return float((_blocks_yaml().get("gate") or {}).get(name, default))
+    except (TypeError, ValueError):
+        return default
+
+
+def region_attr(name: str) -> str:
+    """` data-region="..."` cho khối `name`, hoặc chuỗi rỗng.
+
+    Trả cả thuộc tính kèm dấu cách đầu để chỗ gọi dán thẳng vào f-string mà
+    không phải tự nhớ dấu cách -- một khoảng trắng thiếu ở đây dán liền hai
+    thuộc tính thành một cái tên không ai đọc được, và trang vẫn vẽ ra."""
+    label = block_region(name)
+    return f' data-region="{label}"' if label else ""
+
+
+def pick_flow(rng: random.Random, names) -> str:
+    """Một khối chảy trong `names`, bốc theo trọng số. Rỗng thì trả ''."""
+    pool = [n for n in names if n in FLOW_BLOCKS]
+    if not pool:
+        return ""
+    weights = [flow_weight(n) for n in pool]
+    if sum(weights) <= 0:
+        return pool[0]
+    return random.Random(rng.random()).choices(pool, weights=weights)[0]
+
+# Số tờ mặc định một lượt chạy nhắm tới. `run.py --pages LO-HI` ghi đè.
+PAGE_SPAN: tuple[int, int] = (1, 4)
+
+
+def _blocks_yaml() -> dict:
+    """`rulebase/synthgen/_blocks.yaml`, đọc một lần cho mỗi tiến trình.
+
+    Mất file thì về mặc định và chạy tiếp: đây là thứ chỉnh bộ, không phải
+    thứ bắt buộc -- cùng lối `archetypes.load()` với phôi khai bằng file."""
+    global _BLOCKS_CACHE
+    if _BLOCKS_CACHE is not None:
+        return _BLOCKS_CACHE
+    path = _REPO_ROOT / "rulebase" / "synthgen" / "_blocks.yaml"
+    data: dict = {}
+    try:
+        loaded = _yaml.safe_load(path.read_text(encoding="utf-8"))
+        if isinstance(loaded, dict):
+            data = loaded
+    except (OSError, _yaml.YAMLError):
+        data = {}
+    _BLOCKS_CACHE = data
+    return data
+
+
+_BLOCKS_CACHE: dict | None = None
+
+
+def block_chance(name: str) -> float:
+    """Xác suất khối tuỳ chọn `name` được bốc. Đọc từ file, không viết cứng."""
+    data = _blocks_yaml()
+    chance = data.get("chance") or {}
+    default = data.get("default", 0.4)
+    try:
+        return float(chance.get(name, default))
+    except (TypeError, ValueError):
+        return 0.4
+
+
+def flow_span(flow: str, arch: "Archetype") -> tuple[int, int]:
+    """`(sàn, trần)` số mục của khối chảy. `(0, 0)` khi không có khối nào."""
+    rule = FLOW_BLOCKS.get(flow)
+    if not rule:
+        return (0, 0)
+    ceiling = int(rule["ceiling"](arch))
+    floor = min(int(rule["floor"](arch)), ceiling)
+    return (max(floor, 0), max(ceiling, 0))
+
+
 def _widen(every: tuple) -> tuple:
     """Gắn sáu khối không-phải-bảng vào những phôi hợp với chúng.
 
@@ -637,9 +978,16 @@ def _widen(every: tuple) -> tuple:
         # Căn cứ pháp lý: đầu mọi văn bản của cơ quan nhà nước và bệnh viện.
         if arch.org_kind in ("state", "hospital"):
             add.append("legal_basis")
-        # Điều khoản đánh số: giấy có hai bên ký, tức là một thoả thuận.
-        if any(len(s) >= 2 for s in arch.sign_sets):
-            add.append("clauses")
+        # Điều khoản đánh số, mục lục, tờ khai, ô tích, sơ đồ, ô dán ảnh:
+        # đọc luật `allow:` của `rulebase/synthgen/_blocks.yaml` thay vì viết
+        # ở đây. Luật cũ cho `clauses` là "giấy có hai bên ký", và nó gắn
+        # điều khoản cho 95% số phôi -- "Điều 1." in lên cả thẻ kho. Cân bằng
+        # giữa các khối là thứ phải chỉnh đi chỉnh lại sau mỗi lần đo, nên nó
+        # thuộc về dữ liệu, không thuộc về mã nguồn.
+        rules = block_allow()
+        for name, rule in rules.items():
+            if name in BLOCKS and _allowed_for(rule, arch):
+                add.append(name)
         # Công thức tính: chỗ nào có tiền hoặc có bảo hiểm, y tế, điện nước.
         if arch.totals == "money" or arch.profile in (
                 "insurance", "medical", "power", "water"):
@@ -650,11 +998,27 @@ def _widen(every: tuple) -> tuple:
         # Ghi chú có dấu sao: tờ nào có bảng cũng có thể có.
         if arch.rows[1] > 0:
             add.append("footnote")
-        # Mục lục: chỉ tài liệu đủ dài để cắt ra nhiều tờ.
-        if arch.rows[1] >= 60:
-            add.append("toc")
+        # (Mục lục `toc` chuyển sang luật `allow:` -- luật cũ đòi
+        # `rows[1] >= 60`, tức là đòi một cái BẢNG dài, mà "dài" không còn
+        # đồng nghĩa với "có bảng" từ khi có `design.FLOW_BLOCKS`.)
         fresh = tuple(b for b in add
                       if b not in arch.always and b not in arch.optional)
+
+        # `replace: true` -- luật THU HẸP, và nó CHỈ gỡ khối mà chính file
+        # `_blocks.yaml` gắn vào, không gỡ khối người viết phôi đã khai.
+        #
+        # Bản trước gỡ cả khối tác giả phôi khai, và đo được hậu quả:
+        # `giay_moi.yaml` khai `clauses` trong `optional`, luật `replace` thấy
+        # "giấy mời" không khớp danh sách tên và gỡ nó -- nên phôi ấy mất khối
+        # chảy duy nhất không phải bảng, rồi `--multipage-only` loại sạch mọi
+        # seed của nó. Một file trọng số cãi lại lời khai của phôi là đúng thứ
+        # câu "file này nới rộng, không thu hẹp" ở đầu `_blocks.yaml` cấm.
+        declared = set(arch.always) | set(arch.optional)
+        drop = {name for name, rule in block_allow().items()
+                if (rule or {}).get("replace")
+                and not _allowed_for(rule, arch)
+                and name not in declared}
+        pruned = tuple(b for b in arch.optional if b not in drop)
 
         # Và thêm BỘ CỘT cho những cột vừa lấy từ `rulebase/layouts/`. Cũng
         # theo tính chất phôi: một bảng viện phí có cột giá bảo hiểm, một hoá
@@ -687,7 +1051,7 @@ def _widen(every: tuple) -> tuple:
         # Ngưỡng đọc từ chính `rows[0]`, không phải một danh sách tên: thêm một
         # phôi thì nó tự được xét. Đo trước khi sửa: 77% số tờ có bảng.
         always = arch.always
-        optional = arch.optional + fresh
+        optional = pruned + fresh
         if "table" in always and arch.rows[0] <= TABLE_OPTIONAL_FLOOR:
             always = tuple(b for b in always if b != "table")
             optional = optional + ("table",)
@@ -698,7 +1062,8 @@ def _widen(every: tuple) -> tuple:
                 if name not in always and name not in optional:
                     optional = optional + (name,)
 
-        if fresh or sets or optional != arch.optional or always != arch.always:
+        if (fresh or sets or optional != arch.optional
+                or always != arch.always):
             out.append(_dc.replace(arch, always=always, optional=optional,
                                    column_pool=arch.column_pool + sets))
             continue
@@ -718,6 +1083,24 @@ _MIDDLE = ('fields', 'notes', 'checks', 'questions', 'clauses', 'formula',
            'figure', 'toc', 'table', 'totals', 'words', 'summary', 'footnote')
 
 _ANCHOR_TAIL = ('signatures', 'footer')
+
+# Ba nhóm trên, mở ra cho `markup.py` đọc. Nó cần đúng ba nhóm ấy để quyết
+# khối nào NEO vào tờ đầu / tờ cuối và khối nào rải được sang các tờ giữa:
+# tiêu đề đơn vị in ở tờ đầu vì đó là chỗ của nó trên mọi tờ giấy thật, còn
+# một cái bảng phụ lục hay một sơ đồ thì tờ nào cũng in được.
+#
+# Alias chứ không đổi tên: ba tuple gạch dưới đã được dùng ở vài chỗ trong
+# chính file này, và đổi tên chúng là sửa một thứ không hỏng.
+ANCHOR_HEAD = _ANCHOR_HEAD
+ANCHOR_TAIL = _ANCHOR_TAIL
+
+# Khối phải đi CÙNG một khối khác, không rải riêng ra được. Dòng tổng nằm xa
+# cái bảng nó cộng thì nó không cộng gì cả -- và đó là một tờ giấy không tồn
+# tại, không phải một biến thể bố cục.
+BOUND_GROUPS: tuple[tuple[str, ...], ...] = (
+    ('table', 'totals', 'words', 'summary'),
+    ('figure',),
+)
 
 # Mọi tên khối một phôi khai được. `archetypes.schema()` đọc CÁI NÀY chứ không
 # đọc những khối các phôi hiện có tình cờ dùng: một khối vừa thêm vào kho mà
@@ -801,32 +1184,93 @@ def ladder(minimum_width: float) -> tuple[Paper, ...]:
 
 
 def draw(rng: random.Random, seed: int,
-         archetype: Archetype | None = None) -> Design:
-    """Một tờ giấy, dáng rút ngẫu nhiên từ ngữ pháp trên."""
+         archetype: Archetype | None = None,
+         pages: tuple[int, int] | None = None) -> Design:
+    """Một tờ giấy, dáng rút ngẫu nhiên từ ngữ pháp trên.
+
+    `pages` là khoảng số tờ lượt chạy này NHẮM tới, `run.py --pages LO-HI`
+    đưa vào. Truyền qua tham số chứ không đặt biến toàn cục: `unique_seeds()`
+    tính chữ ký dáng ở tiến trình cha còn shard vẽ ở tiến trình con, và một
+    biến toàn cục đặt ở cha thì con không thấy -- hai bên sẽ tính ra hai dáng
+    khác nhau cho cùng một seed, lặng lẽ."""
     arch = archetype or _pick(rng, ARCHETYPES)
+
+    # Lượt chạy này đòi tài liệu dài tới đâu. Biết được TRƯỚC khi bốc khối,
+    # vì nó đến từ `--pages` chứ không từ tờ giấy -- và phải biết trước, xem
+    # `boost` ở dưới.
+    #
+    # `pages` nhận được MỘT khoảng, hoặc một HỖN HỢP khoảng có trọng số --
+    # `--pages 2-5:75,7-10:25`. Bốc khoảng trước, rồi mới bốc số tờ trong
+    # khoảng ấy: hai phép bốc lồng nhau là cách duy nhất ra được một phân bố
+    # hai cụm. Một khoảng phẳng 2-10 không làm được điều đó, và bộ dữ liệu
+    # "phần lớn ngắn, một phần tư thật dài" là hình dạng hồ sơ ngoài đời.
+    want_lo, want_hi = pick_span(rng, pages)
+    long_run = want_hi > 2
+    boost_cap = block_cap() if long_run else 1.0
 
     blocks = set(arch.always)
     for name in arch.optional:
         # Khối tuỳ chọn không bốc đều tay: một tờ giấy thật gần như luôn có
         # meta, thường có footer, và hiếm khi có ô dán ảnh.
-        chance = {'footer': 0.55, 'notes': 0.5, 'meta': 0.7, 'words': 0.45,
-                  'summary': 0.35, 'checks': 0.3, 'questions': 0.5,
-                  'legal_basis': 0.45, 'clauses': 0.4, 'formula': 0.3,
-                  'figure': 0.25, 'footnote': 0.4, 'toc': 0.2,
-                  # Bảng CHỈ 0.35, và đó là chỗ sửa một con số đổi cả bộ. Đo
-                  # trước: 77% số tờ vẽ ra có bảng, nên một mô hình học trên bộ
-                  # ấy học rằng "chứng từ Việt Nam" nghĩa là "một cái bảng có
-                  # chữ quanh nó". Giấy tờ thật không thế: công văn, tờ trình,
-                  # biên bản họp, giấy uỷ quyền đều không có bảng nào.
-                  'table': 0.35,
-                  'fields': 0.6, 'photo': 0.25}.get(name, 0.4)
-        if rng.random() < chance:
+        # Xác suất đọc từ `rulebase/synthgen/_blocks.yaml`, không viết ở
+        # đây: một con số sửa là đổi cả bộ dữ liệu không nên nằm trong mã
+        # nguồn, vì khi ấy chỉ người sửa mã mới đổi được hình dạng của bộ.
+        #
+        # NHÂN LÊN khi lượt chạy đòi tài liệu dài. Một tờ giấy bốc được ba
+        # khối thì rải lên sáu tờ vẫn còn bốn tờ chỉ có mỗi khối chảy -- đúng
+        # cái "trải dài từ đầu tới cuối" phải xoá. Tài liệu dài ngoài đời
+        # cũng thế: một hợp đồng sáu trang có phụ lục bảng, có sơ đồ, có mục
+        # lục, còn một phiếu thu một trang thì không.
+        base = block_chance(name)
+        boost = block_boost(name) if long_run else 1.0
+        if rng.random() < min(base * boost, max(boost_cap, base)):
             blocks.add(name)
     if 'totals' in blocks and 'table' not in blocks:
         blocks.discard('totals')
     if 'words' in blocks and 'totals' not in blocks:
         blocks.discard('words')
     if arch.totals == 'none':
+        blocks.discard('totals')
+        blocks.discard('words')
+
+    # KHỐI CHẢY -- khối quyết định tài liệu này dài bao nhiêu, và khối bị cắt
+    # ra khi nó phải in làm nhiều tờ.
+    #
+    # Đoạn này là cả thay đổi. Trước nó, số tờ đọc `'table' not in blocks` và
+    # trả về 1 -- nên "nhiều trang" và "có bảng" là cùng một thứ trong toàn
+    # bộ dữ liệu, dù xác suất bảng có hạ xuống bao nhiêu.
+    #
+    # BỐC theo trọng số, không xếp thứ tự ưu tiên. Bản trước xếp `clauses`
+    # trước mọi khối không-bảng, và đo ra `List-Group` có mặt trên 82% số tờ:
+    # cùng một cái lệch, chỉ đổi tên nhãn. Một khối chảy được ưu tiên tuyệt
+    # đối thì nhãn của nó thành nhãn của cả bộ.
+    #
+    # Phải đứng TRƯỚC `order`: ép thêm một khối sau khi đã xếp thứ tự thì
+    # `blocks` có nó mà `order` không, và khối ấy biến mất lặng lẽ -- đúng
+    # cái bẫy đoạn `tail` bên dưới sinh ra để chặn.
+    here = [n for n in FLOW_BLOCKS if n in blocks]
+    if want_lo > 1:
+        # CHỈ BỐC KHỐI VỚI TỚI. Một `biên lai thu học phí` có bảng trần mười
+        # hai dòng và điều khoản trần một trăm tám mươi điều; bốc trúng bảng
+        # là nó tụt về một tờ, rồi `--multipage-only` loại nó. Đo được: 33
+        # phôi có tỉ lệ sống dưới 90% chỉ vì phép bốc không nhìn sức chứa.
+        #
+        # Lọc chứ không sửa từng phôi: nâng trần bảng của ba mươi ba file là
+        # ba mươi ba lần nói cùng một điều, và lần thứ ba mươi bốn sẽ quên.
+        able = [n for n in here if flow_reach(n, arch) >= want_lo]
+        here = able or here
+    flow = pick_flow(rng, here)
+    if not flow and want_lo > 1:
+        # Lượt chạy đòi nhiều tờ mà tờ này không có gì chảy được. Thêm một
+        # khối chảy -- nhưng CHỈ khối chính phôi ấy đã khai: ép điều khoản vào
+        # một tấm thẻ bảo hiểm y tế là vẽ ra một tờ giấy không tồn tại.
+        allowed = set(arch.always) | set(arch.optional)
+        names = [n for n in FLOW_BLOCKS if n in allowed]
+        able = [n for n in names if flow_reach(n, arch) >= want_lo]
+        flow = pick_flow(rng, able or names)
+        if flow:
+            blocks.add(flow)
+    if 'totals' in blocks and 'table' not in blocks:
         blocks.discard('totals')
         blocks.discard('words')
 
@@ -842,7 +1286,13 @@ def draw(rng: random.Random, seed: int,
     order += tuple(name for name in middle if name in blocks) + tail
     order += tuple(name for name in _ANCHOR_TAIL if name in blocks)
 
-    columns = _pick(rng, arch.column_pool)
+    # Bộ cột RỖNG là hợp lệ, và phải hợp lệ: một phôi không bao giờ có bảng --
+    # `hop_dong_dich_vu_dai`, `quy_che_noi_bo` -- khai `columns: []`, vì khai
+    # cột cho một tờ giấy không có bảng là khai một thứ không in ra. `_pick`
+    # trên kho rỗng thì `randrange(0)` ném `ValueError`, và nó ném ở
+    # `unique_seeds()` tức là TRƯỚC khi mở trình duyệt, nên cả lượt chạy chết
+    # chứ không phải một tờ hỏng.
+    columns = _pick(rng, arch.column_pool) if arch.column_pool else ()
     head = _pick(rng, HEAD_LAYOUTS)
     if arch.org_kind == 'state' and head == 'khong_letterhead':
         head = 'chia_doi'
@@ -884,31 +1334,28 @@ def draw(rng: random.Random, seed: int,
         blocks.discard('fields')
         order = tuple(name for name in order if name != 'fields')
 
-    # Số tờ ĐỊNH nhắm tới. Chỉ là ý định: `paginate.py` đo xong mới chốt, và
-    # nó hạ số tờ xuống nếu không tờ nào lấp nổi 80%.
-    # Số tờ ĐỊNH nhắm tới, và nó nhắm theo SỨC CHỨA của chính chứng từ ấy:
-    # một tờ biên lai tám dòng không có cách nào lấp hai tờ giấy, còn một
-    # bảng lương một trăm hai mươi dòng thì hai tờ là ít. Nhắm cao rồi để
-    # `paginate.py` hạ xuống là đúng chiều: nó ĐO rồi mới chốt, còn nhắm
-    # thấp thì không có gì kéo lên được.
-    span = arch.rows[1] - arch.rows[0]
-    roll = rng.random()
-    if span < 10 or 'table' not in blocks:
-        target = 1
-    elif span < 30:
-        target = 1 if roll < 0.42 else 2
-    elif roll < 0.16:
-        target = 1
-    elif roll < 0.52:
-        target = 2
-    elif roll < 0.82:
-        target = 3
-    else:
-        target = 4
+    floor, ceiling = flow_span(flow, arch)
+
+    # Số tờ ĐỊNH nhắm tới, nhắm theo SỨC CHỨA của chính chứng từ ấy: một tờ
+    # biên lai tám dòng không có cách nào lấp hai tờ giấy, còn một bảng lương
+    # một trăm hai mươi dòng thì hai tờ là ít. Nhắm cao rồi để `paginate.py`
+    # hạ xuống là đúng chiều: nó ĐO rồi mới chốt, còn nhắm thấp thì không có
+    # gì kéo lên được.
+    lo, hi = want_lo, want_hi
+    # Trần THẬT: bao nhiêu tờ khối chảy này nuôi nổi. Ước lượng thô, và nói
+    # thẳng là thô -- phép đo trong trình duyệt mới chốt. Đọc `flow_reach`
+    # chứ không tính lại: phép bốc khối chảy ở trên đã dùng chính nó, và hai
+    # phép tính rời nhau cho cùng một câu hỏi thì sẽ lệch.
+    reach = flow_reach(flow, arch) if flow else 0
+    hi = max(min(hi, max(reach, 1)), 1)
+    lo = max(min(lo, hi), 1)
+    # Nghiêng về phía ít tờ trong khoảng: giấy tờ thật phần lớn là một tờ, và
+    # một bộ toàn tài liệu mười trang cũng lệch y như một bộ toàn một trang.
+    target = min(rng.randint(lo, hi), rng.randint(lo, hi))
 
     # Ước lượng thô "tờ này có bao nhiêu chữ", chỉ để không nhét một bảng
     # sáu mươi dòng vào khổ A5.
-    volume = arch.rows[1] + len(chosen) * 2 + (6 if 'notes' in blocks else 0)
+    volume = ceiling + len(chosen) * 2 + (6 if 'notes' in blocks else 0)
 
     room = [paper for paper in PAPERS if paper.w >= 40 + 22 * len(columns)]
     room = room or [paper for paper in PAPERS if paper.id == 'a4_ngang']
@@ -948,12 +1395,19 @@ def draw(rng: random.Random, seed: int,
         # (khối trường). Đây là dáng báo, tạp chí, tờ rơi, đơn nhiều mục: chữ
         # chảy thành hai hoặc ba cột trên một khổ giấy.
         #
-        # CHỈ khi tờ giấy không có bảng. Một bảng bảy cột nhét vào một cột rộng
-        # 8cm thì chữ vỡ ra từng ký tự, và cái hộp đo được của nó không còn tả
-        # một cái bảng nào -- đúng thứ luật "hộp phải tả được tấm ảnh" cấm.
-        # `blocks` đã chốt ở trên nên chỗ này biết chắc.
-        page_columns=(_pick(rng, PAGE_COLUMNS) if 'table' not in blocks else 1),
+        # Bốc BÌNH THƯỜNG, kể cả khi có khối chảy: quyết định "tờ này in
+        # mấy cột" là của cả tài liệu, còn việc một TỜ cụ thể có dùng được
+        # hai cột hay không thì `markup.py` xét riêng từng tờ.
+        #
+        # Bản trước ép về 1 khi có khối chảy, và nó chữa đúng triệu chứng sai
+        # chỗ: khối chảy là khối CAO và không cắt ngang được
+        # (`.cols .blk{break-inside:avoid}`), nên tờ NÀO CHỨA NÓ mới hỏng --
+        # dồn hết vào một cột, bỏ trắng cột kia. Ép ở đây thì mọi tờ của tài
+        # liệu ấy mất hai cột, kể cả những tờ chỉ có bảng phụ lục và sơ đồ.
+        # `markup.py::markup` tắt cột trên đúng tờ mang lát khối chảy.
+        page_columns=_pick(rng, PAGE_COLUMNS),
         ornament=_pick(rng, ORNAMENTS),
+        mark_place=pick_weighted(rng, MARK_PLACES, "mark_place"),
         columns=columns,
         sign_captions=sign,
         fields=chosen,
@@ -964,5 +1418,6 @@ def draw(rng: random.Random, seed: int,
         reverse_title_band=rng.random() < 0.1,
         lang_en=arch.en_ok and rng.random() < 0.18,
         target_pages=target,
+        flow=flow,
         seed=seed,
     )

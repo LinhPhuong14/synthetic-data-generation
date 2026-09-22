@@ -42,17 +42,28 @@ ROUNDS = 4
 
 @dataclass
 class Sheet:
-    """Một tờ giấy đã dàn xong, đo trong trình duyệt."""
+    """Một tờ giấy đã dàn xong, đo trong trình duyệt.
+
+    `rows`, `flow_*` nói về KHỐI CHẢY của tài liệu -- khối bị cắt ra giữa các
+    tờ -- chứ không riêng về bảng. Các tên này từng là `thead`, `table_top`,
+    `table_bottom`, và cái tên ấy là lý do file này chỉ cắt trang được cho tài
+    liệu có bảng: một khái niệm mang tên của trường hợp đầu tiên dùng nó thì
+    trường hợp thứ hai trông như một ngoại lệ. Xem `design.FLOW_BLOCKS`.
+    """
 
     paper: float
     used: float
     height: float
+    # Chiều cao từng MỤC của khối chảy: dòng hàng của bảng, hoặc một điều
+    # khoản với các khoản của nó.
     rows: list[float]
-    thead: float
+    # Phần in lại ở ĐẦU mỗi tờ: `<thead>` của bảng. Khối chảy không có gì in
+    # lại -- điều khoản chẳng hạn -- thì bằng 0.
+    flow_head: float
     pad_top: float
     pad_bottom: float
-    table_top: float
-    table_bottom: float
+    flow_top: float
+    flow_bottom: float
 
     @property
     def fill(self) -> float:
@@ -94,18 +105,19 @@ def _row_height(sheets: list[Sheet]) -> float:
 
 
 def _capacity(probe: Sheet, row_h: float, *, head: bool, tail: bool) -> int:
-    """Bao nhiêu dòng hàng lọt vào MỘT tờ, tuỳ tờ ấy có khối đầu / khối cuối.
+    """Bao nhiêu MỤC của khối chảy lọt vào MỘT tờ, tuỳ tờ ấy có khối đầu /
+    khối cuối.
 
-    `chrome` là phần bảng chiếm mà không phải dòng hàng: chú thích bảng,
+    `chrome` là phần khối chảy chiếm mà không phải mục: chú thích bảng,
     viền, lề khối. Đo bằng hiệu, chứ không cộng từng thành phần -- cộng tay
     là cách bỏ sót đúng cái thứ CSS vừa thêm vào."""
     if row_h <= 0:
         return 0
     body = sum(h for h in probe.rows if h > 0)
-    chrome = max(probe.table_bottom - probe.table_top - probe.thead - body, 0.0)
-    top = probe.table_top if head else probe.pad_top
-    bottom = (probe.used - probe.table_bottom) if tail else probe.pad_bottom
-    room = probe.paper - top - bottom - probe.thead - chrome
+    chrome = max(probe.flow_bottom - probe.flow_top - probe.flow_head - body, 0.0)
+    top = probe.flow_top if head else probe.pad_top
+    bottom = (probe.used - probe.flow_bottom) if tail else probe.pad_bottom
+    room = probe.paper - top - bottom - probe.flow_head - chrome
     return max(int(room // row_h), 0)
 
 
@@ -198,9 +210,9 @@ def plan(measure, *, rows_probe: int, target_pages: int, rows_floor: int,
     Trả về kế hoạch TỐT NHẤT tìm được, kèm `note` nói nó đã phải nhượng bộ ở
     đâu. Không bao giờ ném: một trang không cắt được đẹp vẫn là một trang vẽ
     được, và `run.py` ghi lại tỉ lệ lấp để đếm."""
-    # Không có bảng hàng thì không có gì để cắt: một tờ, lấp bằng cỡ chữ.
+    # Không có khối chảy thì không có gì để cắt: một tờ, lấp bằng cỡ chữ.
     if rows_ceiling <= 0:
-        return _fit_single(measure, [0], set_boost, 'không có bảng hàng',
+        return _fit_single(measure, [0], set_boost, 'không có khối chảy',
                            set_paper)
 
     refill(rows_probe)
@@ -210,7 +222,7 @@ def plan(measure, *, rows_probe: int, target_pages: int, rows_floor: int,
     row_h = _row_height(probe)
     if row_h <= 0:
         return _fit_single(measure, [rows_probe], set_boost,
-                           'không có dòng hàng để đo', set_paper)
+                           'không có mục nào để đo', set_paper)
 
     cap_one = _capacity(probe[0], row_h, head=True, tail=True)
     cap_first = _capacity(probe[0], row_h, head=True, tail=False)
@@ -236,7 +248,7 @@ def plan(measure, *, rows_probe: int, target_pages: int, rows_floor: int,
         counts = [cap_first] + [cap_mid] * (pages - 2) + [tail_rows]
         if min(counts) <= 0:
             pages -= 1
-            note = 'khổ giấy không chứa nổi một dòng hàng trên tờ tiếp theo'
+            note = 'khổ giấy không chứa nổi một mục trên tờ tiếp theo'
             continue
 
         if sum(counts) > rows_ceiling:

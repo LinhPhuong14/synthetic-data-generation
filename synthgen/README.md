@@ -10,6 +10,90 @@ python synthgen/derive.py    data/09-09-26-synthetics-document --sample 200
 python synthgen/check.py     data/09-09-26-synthetics-document --sample 800
 ```
 
+Bộ **5000 chứng từ nhiều trang**, mỗi chứng từ 2–10 tờ:
+
+```bash
+python synthgen/run.py -o data/synth5k -n 5000 --pages 2-10 --augment fast --workers 14
+python synthgen/run.py -o data/synth5k -n 5000 --pages 2-10 --dry-run   # chỉ in phân bố
+```
+
+`-n` là số **chứng từ**, không phải số ảnh: ở khoảng 2–10 tờ thì 5000 chứng từ
+ra khoảng mười tám nghìn ảnh. Nghỉ giữa chừng thì chạy lại đúng lệnh ấy — mỗi
+shard để lại một tệp `DONE`.
+
+---
+
+## 0.1 Khối CHẢY: vì sao "nhiều trang" không còn nghĩa là "có bảng"
+
+Trước `--pages`, phép cắt trang của `paginate.py` chỉ cắt được theo **dòng
+bảng**. Hệ quả không ai viết ra nhưng đo được: **mọi** tài liệu nhiều trang
+trong bộ đều có một cái bảng, dù xác suất bảng có hạ xuống bao nhiêu — "nhiều
+trang" và "có bảng" là cùng một thứ với bất kỳ mô hình nào học trên bộ ấy.
+
+`design.FLOW_BLOCKS` đặt tên cho khái niệm bị thiếu: **khối chảy** là khối
+quyết định tài liệu dài bao nhiêu, và là khối bị cắt ra giữa các tờ. Ba khối
+chảy được, và thêm khối thứ tư là thêm một dòng ở `FLOW_BLOCKS` cộng một dòng
+ở `markup.FLOW_BUILDERS` — không phải sửa `paginate.py`, `draw.py`:
+
+| khối chảy | nhãn vùng | mục là gì | sức chứa đọc từ |
+| :--- | :--- | :--- | :--- |
+| `table` | *(Table)* | một dòng hàng | `rows` của phôi |
+| `clauses` | `List-Group` | một điều khoản đánh số | `rulebase/corpus/vi/clauses_*.txt` |
+| `questions` | `Form` | một câu hỏi của tờ khai | `content.QUESTION_THEMES` |
+
+Khối nào thắng thì **bốc theo trọng số**, không xếp thứ tự ưu tiên — xem
+`rulebase/synthgen/_blocks.yaml::flow_weight` và lý do viết ngay trong file
+ấy. Bản đầu xếp `clauses` trước mọi khối không-bảng, và đo ra `List-Group`
+có mặt trên 82% số tờ: cùng một cái lệch, chỉ đổi tên nhãn.
+
+Đo trước và sau (1500 tờ, đếm `data-region` trên chính markup):
+
+| | trước | sau |
+| :--- | ---: | ---: |
+| tờ có bảng | 77% | 39% |
+| `List-Group` | — | 44% |
+| `Form` | 2% | 21% |
+| `Table-Of-Contents` | 6% | 10% |
+| `Figure` + `Caption` | 5% | 11% |
+
+Hai tầng quyết cân bằng, và tầng dưới mạnh hơn tầng trên: `chance:` chỉ đổi
+được **trong giới hạn** của `allow:`. Một khối chỉ 8% số phôi cho phép thì
+`chance: 1.0` vẫn ra 8% — đó là lý do chỉnh `chance` mãi mà `Form` không lên
+được.
+
+## 0.2 Trang GIỮA: vì sao cân cả bộ vẫn chưa đủ
+
+Bộ có thể cân theo nhãn mà từng tài liệu vẫn đơn điệu, và hai câu hỏi ấy phải
+đo riêng. Bản đầu của khối chảy dồn mọi khối đầu vào tờ một và mọi khối đuôi
+vào tờ cuối, nên một tài liệu sáu tờ ra:
+
+```
+tờ 1: tiêu đề + điều khoản    tờ 2..5: điều khoản    tờ 6: điều khoản + chữ ký
+```
+
+Bốn tờ giữa chỉ có đúng một nhãn vùng chạy từ mép trên xuống mép dưới —
+**100% tờ giữa chỉ có khối chảy**. Ba thay đổi, đo trên 1219 tờ giữa:
+
+| | trước | sau |
+| :--- | ---: | ---: |
+| tờ giữa CHỈ có khối chảy | 100% | 24% |
+| tờ giữa dùng 2–3 cột | 0% | 23% |
+| tờ giữa có bảng | 0% | 26% |
+| tờ giữa có khối trường | 0% | 26% |
+
+1. **`markup._page_plan`** rải khối theo trang thay vì dồn hai đầu. Neo thì
+   không rải — tiêu đề đơn vị ở tờ đầu, chữ ký ở tờ cuối, vì đó là chỗ của
+   chúng trên giấy thật; `design.BOUND_GROUPS` giữ bảng và dòng tổng của nó
+   không rơi hai tờ.
+2. **Hai cột xét theo TỜ, không theo tài liệu.** Tờ mang bảng thì một cột
+   (bảy cột bảng nhét vào cột 8cm thì chữ vỡ ra từng ký tự); tờ mang điều
+   khoản hoặc câu hỏi thì `_chunks` cắt khối chảy thành mấy khối vừa một
+   cột, mỗi khối vẫn là một vùng `List-Group` trọn vẹn.
+3. **`multipage_boost`** làm giàu tài liệu dài — theo TỪNG KHỐI, vì thứ làm
+   một tờ hết đơn điệu là khối *chiếm chỗ*. Ghi chú dấu sao và dòng "bằng
+   chữ" để ở 1.0: nhân chúng lên là trả giá mà không mua được gì (đo ở hệ số
+   2.4 đều tay: `Footnote` 82% số tờ, `Figure` mới 22%).
+
 ---
 
 ## 0. Ranh giới: cái gì dùng lại, cái gì soạn mới

@@ -428,8 +428,8 @@ cái mới so với hôm nay:
   "unit_from": "items[].unit",
 
   "state": "printed",
-  "bbox": [640, 443, 690, 455], "bbox_1000": [403, 197, 435, 203],
-  "lines": [[640, 443, 690, 455]],
+  "bbox": [403, 197, 435, 203], "bbox_px": [640, 443, 690, 455],
+  "lines": [[403, 197, 435, 203]],
 
   "reading_order": 61, "neighbors": {"left": 60, "right": 62},
   "certainty": "high", "certainty_basis": "declared",

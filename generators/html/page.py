@@ -15,12 +15,22 @@ the markup and the labels and never open a page.
 from __future__ import annotations
 
 import shutil
+import sys
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 FONT_ROOT = REPO_ROOT / "fonts"
+
+# Bảng "thẻ HTML nghĩa là gì" sống ở `pipeline/tags.py`, không ở đây. Nó thuần
+# thư viện chuẩn, nên dòng này không phá lời hứa ở đầu file -- và nó là cách
+# `ZONE_REGIONS_JS` dưới kia thôi giữ một bản chép riêng lệch với bản mà
+# `synthgen/repair.py` đọc. Xem chú thích của chính `pipeline/tags.py`.
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from pipeline.tags import measured_elsewhere_js, region_by_tag_js  # noqa: E402
 
 # Linux containers that ship a browser system-wide, this repository's own
 # included. Elsewhere -- Windows, macOS, a plain `pip install playwright` --
@@ -395,7 +405,7 @@ CELL_REGIONS_JS = """() => {
 #   Boxing it again would put two labels on one mark.
 # * **inside another candidate** -- `statement.py` draws `<svg class="mark">`,
 #   which matches twice. The outer element is the picture.
-ZONE_REGIONS_JS = """() => {
+_ZONE_REGIONS_TEMPLATE = """() => {
   // Khối tự khai mình là MỘT vùng bố cục: `<div data-region="Text">`.
   //
   // Bộ gom vùng mặc định nối các từ cùng nhãn lại và cắt ở chỗ hở rộng. Luật
@@ -425,15 +435,7 @@ ZONE_REGIONS_JS = """() => {
   //
   // KHÔNG suy cho `<table>`: `CELL_REGIONS_JS` đã đo bảng theo từng ô, và
   // thêm một vùng `Table` nữa ở đây là đếm hai lần.
-  const BY_TAG = {
-    ul: 'List-Group', ol: 'List-Group', dl: 'List-Group',
-    h1: 'Title', h2: 'Section-Header', h3: 'Section-Header',
-    h4: 'Section-Header', h5: 'Section-Header', h6: 'Section-Header',
-    figure: 'Figure', figcaption: 'Caption',
-    header: 'Page-Header', footer: 'Page-Footer',
-    form: 'Form', fieldset: 'Form',
-    blockquote: 'Text', pre: 'Code-Block',
-  };
+  const BY_TAG = __BY_TAG__;
   const TAGS = Object.keys(BY_TAG).join(',');
   const seen = new Set();
   const out = [];
@@ -449,7 +451,19 @@ ZONE_REGIONS_JS = """() => {
       w: box.width, h: box.height,
     });
   };
+  // NHÃN ĐÃ CÓ PHÉP ĐO RIÊNG THÌ KHÔNG QUA ĐÂY, kể cả khi tác giả khai tay
+  // `data-region`. `MEASURED_ELSEWHERE` (`pipeline/tags.py`) là bảng DUY
+  // NHẤT nói "nhãn này KHÔNG đến từ `data-region`" -- nhánh SUY TỪ THẺ dưới
+  // kia đã tra bảng ấy từ trước (`<table>` không có mặt trong `BY_TAG`);
+  // nhánh KHAI TAY này trước bản sửa này thì KHÔNG, và một `<table
+  // data-region="Table">` (đúng cách một model từng viết thật, xem
+  // `data/pilot16/records/export_invoice/llm_export_invoice_0003.json`) lọt
+  // thẳng qua, ra một vùng `Table` thứ hai chồng lên vùng `CELL_REGIONS_JS`
+  // đã đo từ chính các ô. Cùng MỘT bảng, hai nhánh đều tra nó -- không phải
+  // hai danh sách chép tay có thể lệch nhau.
+  const MEASURED_ELSEWHERE = __MEASURED_ELSEWHERE__;
   for (const el of document.querySelectorAll('.sheet [data-region]')) {
+    if (MEASURED_ELSEWHERE.includes(el.dataset.region)) continue;
     add(el, el.dataset.region, 'declared');
   }
   for (const el of document.querySelectorAll('.sheet ' + TAGS.split(',').join(', .sheet '))) {
@@ -466,6 +480,12 @@ ZONE_REGIONS_JS = """() => {
   }
   return out;
 }"""
+
+# Dán bảng vào khuôn một lần, lúc nạp module. `replace` chứ không f-string:
+# thân hàm JS đầy `{`/`}` và một f-string ở đây là một bãi mìn dấu ngoặc.
+ZONE_REGIONS_JS = (_ZONE_REGIONS_TEMPLATE
+                   .replace("__BY_TAG__", region_by_tag_js())
+                   .replace("__MEASURED_ELSEWHERE__", measured_elsewhere_js()))
 
 
 GRAPHIC_RECTS_JS = """() => {

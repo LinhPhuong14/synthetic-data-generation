@@ -1,0 +1,351 @@
+# Hình dạng của bộ dữ liệu synthgen: khối nào có mặt bao nhiêu, ở đâu.
+#
+# Gạch dưới đầu tên để `archetypes.load()` không đọc file này như một phôi --
+# cùng lệ `rulebase/rules/_order.yaml` đã đặt, và cùng lý do.
+#
+# BỐN MỤC, và chúng chồng lên nhau theo thứ tự này -- mục sau chỉ đổi được
+# trong giới hạn mục trước:
+#
+#   allow:            phôi NÀO được gắn khối nào          (trần cứng)
+#   chance:           xác suất khối tuỳ chọn được bốc
+#   multipage_boost:  nhân xác suất ấy lên khi `--pages` đòi tài liệu dài
+#   flow_weight:      khối CHẢY nào thắng khi có nhiều khối chảy cùng lúc
+#
+# Thứ tự ấy là thứ tự phải đọc khi một con số không nhúc nhích: `chance: 1.0`
+# cho một khối mà `allow:` chỉ mở cho 8% số phôi thì vẫn ra 8%.
+#
+# ĐO TRƯỚC VÀ SAU MỖI LẦN ĐỔI: `make synth-balance`. Kho này đã hai lần đổi
+# một cái lệch lấy một cái lệch khác vì chỉnh trọng số rồi mới đo.
+#
+# Vì sao ra file: đây là những con số sửa là đổi cả bộ dữ liệu, và trước đây
+# chúng nằm trong một dict viết thẳng giữa `synthgen/design.py::draw`. Muốn hạ
+# tỉ lệ bảng xuống thì phải sửa mã nguồn, tức là chỉ người sửa mã mới đổi được
+# hình dạng của bộ -- đúng ranh giới mà `rulebase/` sinh ra để xoá.
+#
+# `default` áp cho khối không có tên ở dưới: thêm một khối mới vào
+# `design.BLOCKS` thì nó có ngay một xác suất hợp lý, không phải nhớ sửa file
+# này mới thấy nó xuất hiện.
+
+default: 0.4
+
+chance:
+  # --- khối gần như tờ nào cũng có
+  meta: 0.7
+  fields: 0.6
+  footer: 0.55
+
+  # --- phần chữ
+  # ĐO TRƯỚC KHI CHỈNH. Bản trước để `clauses: 0.55`, và đo trên 1200 tờ ra:
+  #
+  #     List-Group  82%   Form 7%   Bibliography 21%   Table-Of-Contents 6%
+  #
+  # tức là đã đổi "tờ nào cũng có bảng" lấy "tờ nào cũng có một danh sách
+  # điều khoản". Một mô hình học trên bộ ấy vẫn học một cái lệch, chỉ khác
+  # tên nhãn. Hạ `clauses` về ngang hàng, và nâng những khối có nhãn vùng
+  # hiếm -- `questions` (Form), `toc` (Table-Of-Contents), `figure`
+  # (Figure+Caption), `checks` -- lên cho đủ mặt.
+  #
+  # Đây là những con số phải ĐO LẠI mỗi lần đổi, không phải đoán lại: chạy
+  # `python synthgen/run.py --dry-run` cho phân bố khối, và đếm `data-region`
+  # trên chính markup cho phân bố nhãn vùng.
+  notes: 0.45
+  questions: 0.45
+  legal_basis: 0.4
+  words: 0.45
+  footnote: 0.35
+  clauses: 0.35
+  checks: 0.35
+  summary: 0.32
+  formula: 0.3
+  figure: 0.3
+  toc: 0.3
+  photo: 0.25
+
+  # --- bảng
+  # Đo trước khi có file này: 77% số tờ vẽ ra có bảng, ở mức 0.35. Một mô
+  # hình học trên bộ ấy học rằng "chứng từ Việt Nam" nghĩa là "một cái bảng
+  # có chữ quanh nó". Giấy tờ thật không thế: công văn, tờ trình, biên bản
+  # họp, giấy uỷ quyền, quy chế nội bộ đều không có bảng nào.
+  #
+  # Con số này KHÔNG phải cái duy nhất quyết tỉ lệ bảng, và trước đây người
+  # ta tưởng thế. Cái còn lại là `paginate.py` chỉ cắt trang được theo dòng
+  # bảng, nên MỌI tài liệu nhiều trang đều có bảng dù con số này bằng bao
+  # nhiêu. Khối chảy đã tách khỏi bảng; đây giờ mới thật sự là cái van.
+  table: 0.22
+
+# Khối chảy nào được chọn khi một tờ giấy có nhiều khối chảy cùng lúc, và khối
+# nào bị ÉP vào khi `--pages` đòi nhiều tờ mà tờ giấy không có khối nào chảy
+# được. Bốc theo trọng số dưới đây -- xem `design.pick_flow`.
+#
+# Vì sao không phải một thứ tự ưu tiên: thứ tự ưu tiên nghĩa là khối đứng đầu
+# luôn thắng, nên nhãn vùng của nó thành nhãn vùng của cả bộ. Đúng cái đã xảy
+# ra hai lần trong file này -- `Table` 77%, rồi `List-Group` 82%.
+#
+# `table` thấp nhất và có lý do: nó là khối chảy DÀI nhất (một bảng kê chứa
+# 240 dòng, một bộ điều khoản chỉ 46 điều), nên mỗi lần nó thắng là nó lấy
+# nhiều tờ hơn hai khối kia. Cân theo số TỜ chứ không theo số tài liệu.
+flow_weight:
+  questions: 1.1
+  clauses: 0.9
+  table: 0.3
+
+# Phôi NÀO được gắn khối nào -- tầng dưới `chance` một bậc, và là tầng thật sự
+# quyết cân bằng. Đo trước khi viết phần này:
+#
+#     clauses  95% số phôi cho phép      questions  8%
+#     table    94%                       checks    10%
+#     notes    99%                       photo      7%
+#
+# Một khối chỉ 8% số phôi cho phép thì không `chance` nào nâng nó lên được:
+# nâng lên 1.0 vẫn chỉ ra 8%. Đó là lý do bản trước chỉnh `chance` mãi mà
+# `Form` vẫn 2% còn `List-Group` vẫn 58%.
+#
+# Luật đọc TÊN phôi, cùng lối `content._theme_for` chọn bộ câu hỏi: tên một
+# tài liệu nói nó là loại giấy gì, còn `profile` chỉ nói nó thuộc ngành nào --
+# ba phôi hành chính khác hẳn nhau vẫn cùng một `profile`. So khớp không phân
+# biệt hoa thường, trên `titles` của phôi.
+#
+# `synthgen/design.py::_widen` đọc mục này và GẮN THÊM vào `optional`. Phôi đã
+# khai khối ấy trong `always` thì không đổi: file này nới rộng, không thu hẹp
+# thứ người viết phôi đã quyết -- trừ `clauses`, xem dưới.
+allow:
+  # `clauses` là khối DUY NHẤT ở đây bị thu hẹp chứ không nới rộng. Trước đây
+  # `_widen` gắn nó cho mọi phôi có bộ chữ ký từ hai người trở lên, ra 95% số
+  # phôi -- nên "Điều 1., Điều 2." in lên cả thẻ kho lẫn phiếu xét nghiệm.
+  # Giấy mang điều khoản đánh số là giấy RÀNG BUỘC: hợp đồng, quy chế, quyết
+  # định, thoả thuận, uỷ quyền.
+  clauses:
+    replace: true
+    title_any: [hợp đồng, quy chế, nội quy, quyết định, thoả thuận, thỏa thuận,
+                cam kết, cam đoan, uỷ quyền, ủy quyền, điều lệ, phụ lục,
+                bảo hiểm, bảo hành, tín dụng, thuê, nguyên tắc, lao động,
+                biên bản, thông báo, công văn,
+                # `chứng chỉ`, `hành nghề`: chứng chỉ hành nghề thật in PHẠM VI
+                # HÀNH NGHỀ thành các mục đánh số ở mặt sau. Không có hai từ
+                # này thì `chung_chi_hanh_nghe` không có khối chảy nào và
+                # `--multipage-only` loại sạch seed của nó.
+                chứng chỉ, hành nghề]
+
+  # Tờ khai, phiếu đăng ký, phiếu đánh giá -- nhãn `Form`. Đang 8% số phôi.
+  questions:
+    title_any: [tờ khai, khai, đăng ký, đánh giá, khảo sát, phiếu khám,
+                yêu cầu, đề nghị, khiếu nại, xin, hồ sơ, dự thi, nhập học,
+                tuyển, phỏng vấn, bệnh, sức khoẻ, sức khỏe, bảo hiểm,
+                bồi thường, chuyển tuyến, hội chẩn, chỉ định]
+    # Giấy y tế và bảo hiểm gần như tờ nào cũng có một cụm câu hỏi đánh số --
+    # tiền sử, triệu chứng, kê khai rủi ro -- kể cả khi tên không nói.
+    profile_any: [medical, insurance]
+
+  # Ô tích chọn -- cụm biểu mẫu người ta đánh dấu. Đang 10% số phôi.
+  checks:
+    title_any: [phiếu, biên nhận, giao nhận, bàn giao, kiểm kê, nghiệm thu,
+                tiếp nhận, đăng ký, tờ khai, xác nhận, chuyển tuyến]
+
+  # Sơ đồ kèm chú thích -- nhãn `Figure` + `Caption`. Đang 23% số phôi.
+  figure:
+    title_any: [biên bản, báo cáo, nghiệm thu, bàn giao, kỹ thuật, bản vẽ,
+                sơ đồ, nhật ký, giám định, kiểm kê, thiết kế, công trình]
+
+  # Mục lục -- nhãn `Table-Of-Contents`. Đang 30% số phôi, và luật cũ đòi
+  # `rows[1] >= 60` tức là đòi một cái BẢNG dài; mục lục thì đi với tài liệu
+  # dài, mà dài không còn đồng nghĩa với có bảng nữa.
+  toc:
+    title_any: [hợp đồng, quy chế, điều lệ, báo cáo, hồ sơ, tài liệu,
+                quyết định, nội quy, đề án, phương án, biên bản, bảng kê,
+                danh sách, sổ, kế hoạch, dự toán, thuyết minh, tổng hợp,
+                chương trình, hướng dẫn, thông báo, công văn]
+
+  # Ô dán ảnh. Đang 7% số phôi.
+  photo:
+    title_any: [hồ sơ, đăng ký, dự thi, chứng chỉ, thẻ, giấy phép, tuyển,
+                nhập học, chứng nhận, lý lịch]
+
+# Khi `--pages` đòi tài liệu dài (trần số tờ > 2), nhân `chance` ở trên lên.
+# Một tờ giấy bốc được ba khối rải lên sáu tờ thì vẫn còn bốn tờ chỉ có mỗi
+# khối chảy — đúng cái "một màu trải dài từ đầu tới cuối" phải xoá.
+#
+# THEO TỪNG KHỐI, không đều tay, vì thứ làm một tờ giữa hết đơn điệu là khối
+# CHIẾM CHỖ. Ghi chú dấu sao, dòng "bằng chữ", công thức một dòng chỉ thêm
+# một nhãn vùng chứ không đổi hình dạng tờ giấy — để chúng ở 1.0. Đo ở hệ số
+# 2.4 đều tay: `Footnote` 82% số tờ, `Figure` mới 22%.
+multipage_boost:
+  default: 1.0
+  # --- khối chiếm chỗ, đổi được hình dạng một tờ
+  figure: 2.6
+  # `table: 1.0` -- KHÔNG nhân. Đo bốn mức 1.0/1.3/1.7/2.4: bảng trên
+  # trang giữa chỉ nhích 16%->21%, còn "tờ chỉ có khối chảy" đứng im ở
+  # 28%. Tức là nhân bảng lên gần như không mua được sự đa dạng nào,
+  # mà ở mức 2.4 nó kéo xác suất thật của bảng từ 0.22 lên 0.53 --
+  # đúng cái van `chance.table` sinh ra để đóng. Cùng lập luận đã đặt
+  # `footnote` ở 1.0.
+  table: 1.0
+  checks: 2.4
+  toc: 2.4
+  summary: 2.2
+  photo: 2.0
+  notes: 1.8
+  questions: 1.6
+  fields: 1.4
+  clauses: 1.2
+  # --- khối một-hai dòng: KHÔNG nhân
+  footnote: 1.0
+  words: 1.0
+  formula: 1.0
+  legal_basis: 1.0
+
+# Trần của phép nhân trên. Khối nào `chance` đã cao hơn trần thì giữ nguyên
+# `chance`, không bị hạ: file này để LÀM GIÀU tài liệu dài, không làm nghèo.
+multipage_cap: 0.62
+
+# Mực không-phải-chữ (dấu, mã vạch, mã QR) đứng ở đâu trên tờ giấy. Bản trước
+# chỉ có MỘT chỗ — cuối tờ cuối — viết thẳng trong thân vòng lặp của
+# `markup()`, nên mọi mã vạch trong bộ nằm đúng một chỗ. Giấy thật: hoá đơn
+# bán lẻ in mã vạch ngay dưới tên cửa hàng, phiếu gửi xe in mã QR góc trên
+# bên phải, sổ nhiều trang đánh dấu từng tờ. Xem `design.MARK_PLACES`.
+mark_place:
+  cuoi: 1.0
+  dau: 0.55
+  goc_phai: 0.4
+  moi_to: 0.25
+
+# BẢNG CỦA PHÔI NÀY LIỆT KÊ CÁI GÌ — tra theo TÊN tài liệu, không theo ngành.
+#
+# Vì sao cần: `corpus.catalogue()` chọn kho hàng theo `profile`. Học bạ, bảng
+# điểm, thời khoá biểu, bảng lương, danh sách học viên đều là `admin`, nên cả
+# năm lấy chung `items_admin.txt` — và một tờ HỌC BẠ liệt kê "Ấm siêu tốc
+# inox", "Bình chữa cháy bột ABC", một BẢNG ĐIỂM liệt kê "Kệ sắt lưu trữ hồ
+# sơ". Đo được trên bản vẽ thật, và đó là lỗi nặng hơn mọi lệch phân bố: nhãn
+# KIE vẫn đúng chỗ, nhưng chữ trên giấy là chữ không tờ nào in ra.
+#
+# Ngành nói tờ giấy thuộc về AI; tên tờ giấy mới nói nó liệt kê CÁI GÌ. Cùng
+# nhận xét đã dẫn tới `content._theme_for` và mục `allow` ở trên.
+#
+# Khoá là TÊN FILE corpus (`rulebase/corpus/vi/<khoá>.txt`); phôi không khớp
+# mẫu nào vẫn rơi về kho theo ngành như cũ. Nhiều kho khớp thì gộp cả.
+items:
+  items_hoc_tap:
+    title_any: [học bạ, bảng điểm, thời khoá biểu, sổ liên lạc,
+                kết quả học tập, phiếu điểm,
+                # Bằng/giấy chứng nhận tốt nghiệp in kèm BẢNG ĐIỂM ở tờ sau,
+                # nên bảng của nó liệt kê môn học. Không có ba từ này thì nó
+                # rơi về kho theo ngành và liệt kê "Tủ hồ sơ sắt hai cánh" --
+                # đo được trên `giay_chung_nhan_tot_nghiep_00004_p2`.
+                tốt nghiệp, học bạ, bảng ghi điểm]
+  items_luong:
+    title_any: [lương, chấm công, thu nhập cá nhân, tăng ca, làm thêm giờ]
+  items_dao_tao:
+    title_any: [học viên, đào tạo, khoá học, tập huấn, bồi dưỡng]
+
+# ---------------------------------------------------------------------------
+# region: KHỐI NÀY MANG NHÃN VÙNG BỐ CỤC NÀO
+#
+# Trước mục này, nhãn vùng của một khối nằm rải trong `synthgen/markup.py`
+# dưới dạng `data-region="..."` viết thẳng vào chuỗi f-string -- mười lăm
+# chỗ -- và MƯỜI khối còn lại thì không khai gì cả. Hệ quả đo được trên 25 tờ
+# `data/thu1k/html`: 874 trên 4404 run (19,8%) không nằm trong vùng nào đã
+# khai, nên vùng của chúng được `pipeline/record.py` DỰNG LẠI bằng cách gom
+# từ theo ngưỡng khe -- `visible_content_union_perimeter`, 53% số vùng của cả
+# bộ. Một cái máng giữa hai cột rộng hơn ngưỡng là một khối bị xé làm đôi, và
+# không gì báo.
+#
+# Nhãn ở đây là NHÃN, không phải trọng số: nó không đổi khối nào có mặt, chỉ
+# đổi khối ấy tự xưng là gì. Nhưng nó vẫn thuộc về file này vì nó cũng là
+# "con số sửa là đổi cả bộ dữ liệu" -- đổi `fields` từ Form sang Text là đổi
+# phân bố nhãn của mọi tờ có khối ấy.
+#
+# ĐO SAU MỖI LẦN ĐỔI: `make synth-balance`. Và nhớ lệ của kho -- tổng luôn
+# bằng hằng số, nên nâng một nhãn là hạ mọi nhãn khác.
+#
+# Khối KHÔNG có tên ở đây thì không khai `data-region`, và vùng của nó lại
+# rơi về bộ gom theo ngưỡng. Không có bản mặc định trong mã: một bảng thứ hai
+# trong `design.py` là đúng cái bệnh mục này sinh ra để chữa.
+#
+# Mọi nhãn phải nằm trong `pipeline/record.py::DOCSYNTH_LABELS`;
+# `tests/test_synthgen_regions.py` giữ lời hứa ấy.
+region:
+  # --- neo đầu tờ
+  letterhead: Page-Header
+  doctitle: Title
+  meta: Text               # "Số: … / Ký hiệu: … / Hà Nội, ngày …" -- chữ in
+                           # sẵn để ĐỌC, không phải ô để điền. Xem `fields`.
+  legal_basis: Bibliography
+
+  # --- thân tờ
+  fields: Form             # khối "nhãn : giá trị" có dấu chấm/gạch để điền --
+                           # đúng nghĩa Form trong bộ nhãn DocLayNet.
+  notes: Text
+  checks: Form
+  questions: Form
+  clauses: List-Group
+  formula: Formula
+  figure: Figure
+  figure_caption: Caption  # `_figure` in RA HAI vùng; đây là vùng thứ hai.
+  toc: Table-Of-Contents
+  totals: Text
+  words: Text
+  footnote: Footnote
+  national: Page-Header    # quốc hiệu khi letterhead KHÔNG chia đôi; khi chia
+                           # đôi nó nằm trong `.hrow` đã khai, nên không khai
+                           # lại -- hai vùng lồng nhau là một vùng nói hai lần.
+
+  # KHÔNG khai ở đây: `table` và `summary`. Cả hai LÀ `<table>`, và
+  # `generators/html/page.py::CELL_REGIONS_JS` đã dựng vùng `Table` cho chúng
+  # từ chính các ô. Khai thêm `data-region` lúc này là vùng thứ hai chồng lên
+  # vùng ấy -- đúng lỗi đo được trên `llm_export_invoice_0003` (bốn vùng
+  # `Table` thay vì hai). Chúng chỉ vào bảng này khi thẩm quyền "vùng này có
+  # hay không" chuyển hẳn về `data-region`, và phép đo ô lùi về chỉ còn cấp
+  # HỘP -- xem `pipeline/tags.py`.
+
+  # --- neo cuối tờ
+  signatures: Form         # ô ký là ô để ĐIỀN: chức danh, họ tên, nét ký.
+  footer: Page-Footer
+  barcode: Text            # dãy số in dưới mã vạch / QR. Chữ ĐỌC ĐƯỢC đứng
+                           # cạnh một `data-graphic`, nên nó cần vùng riêng:
+                           # hình có `GRAPHIC_RECTS_JS` lo, chữ thì không.
+  sign_date: Text          # "Đà Lạt, ngày 18 tháng 06 năm 2026" nằm NGOÀI
+                           # `.signs`, ngay trong `.blk`. Khai lên `.blk` thì
+                           # vùng ấy trùm luôn khối chữ ký đã khai.
+  photo: Form              # ô dán ảnh 4x6 trên tờ khai: một cái khung để
+                           # ĐIỀN, và nó có chữ in sẵn ("ẢNH", "4 x 6") nên
+                           # phải có vùng. KHÔNG phải `Image`: không có ảnh
+                           # nào trong đó, và `Image` là nhãn của mực thật.
+  pagenum: Page-Footer     # số tờ, `markup()` in mỗi `.sheet` một cái.
+
+  # --- mực phủ
+  watermark: Watermark
+
+# ---------------------------------------------------------------------------
+# gate: NGƯỠNG CỦA CỔNG GÁC, cho trang do model viết
+#
+# `synthgen/llm_page.py` ĐO, file này nói bao nhiêu thì quá. Tách hai việc ấy
+# vì chúng đổi theo hai nhịp khác nhau: phép đo đúng hay sai là chuyện của mã
+# và của test, còn "bao nhiêu thì quá" là một núm siết dần theo số đo thật --
+# và siết nó không nên phải sửa mã.
+#
+# --- orphan_share ---------------------------------------------------------
+#
+# Tỉ lệ run có `data-kind` mà KHÔNG nằm trong vùng bố cục nào đã khai. Chữ ấy
+# vẫn có hộp, nhưng vùng của nó do `pipeline/record.py` gom theo ngưỡng khe
+# dựng ra -- và bộ gom cắt ở chỗ hở ngang, nên một khối "nhãn ... giá trị" ra
+# hai vùng, một khối tổng tám dòng ra tám vùng.
+#
+# ĐO TRÊN 40 TỜ MODEL VIẾT, sau `repair.zoned()`, chia theo kết cục cổng:
+#
+#                  trung vị   phân vị 75   phân vị 90
+#   đã QUA cổng      10,5%       41,1%        83,3%
+#   đã trượt cổng     4,1%       66,3%        83,8%
+#
+# Trang QUA cổng còn tệ hơn trang trượt: không phép kiểm nào đang chạy có
+# tương quan với lỗi này. Nó lọt hoàn toàn, và lọt vào đúng tập đem đi huấn
+# luyện.
+#
+# 0.99 là mức KHÔNG LOẠI GÌ trên thực tế -- chỉ chặn tờ mà gần như không một
+# chữ nào thuộc vùng nào, thứ vô dụng với mọi mô hình bố cục. Con số mồ côi
+# vẫn được ghi vào `compose_report.json` cho MỌI tờ, kể cả tờ qua cổng, nên
+# siết dần là việc đọc báo cáo rồi hạ số này -- không phải đoán.
+#
+# Đường siết theo số đo trên: 0.99 -> 0.85 (cắt phân vị 90) -> 0.45 (cắt phân
+# vị 75) -> 0.15. Mỗi bậc đo lại tỉ lệ qua cổng TRƯỚC khi đi tiếp: kho này đã
+# một lần siết luật kế hoạch mà không đo trước, và nó giết 4 trên 6 tờ.
+gate:
+  orphan_share: 0.99

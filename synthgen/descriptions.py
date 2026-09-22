@@ -29,12 +29,21 @@ from synthgen.design import ARCHETYPES  # noqa: E402
 
 # Nhãn không đi kèm `FieldDef` nào -- chữ in sẵn trong khối tổng, khối tiêu
 # đề, khối tiền bằng chữ. Chúng không có `describe` để lấy, nên viết ở đây.
+#
+# LUẬT CỦA BẢNG NÀY: đây là NỀN DÙNG CHUNG cho cả 99 phôi (`_shared`), nên một
+# câu ở đây phải ĐÚNG Ở MỌI NƠI caption của nó có thể được in ra. "Chiết khấu
+# thương mại" hay "Cộng tiền hàng" chỉ in trên chứng từ mua bán, nên nói
+# "goods total" là an toàn. "Ký hiệu" thì không: công văn, quyết định, giấy ra
+# viện đều in "Ký hiệu:" -- đo trên `data/09-09-26-synthetics-document`, 103
+# cặp của `giay_ra_vien` nhận câu "Invoice symbol...". Một tờ ra viện không có
+# hoá đơn nào. Chữ hành chính phổ thông thì phải tả trung tính; nghĩa hẹp hơn
+# là việc của `field_pool` từng phôi, nơi biết mình là chứng từ gì.
 FIXED: dict[str, str] = {
     'Địa chỉ': 'Registered address of the organisation that issued this document.',
     'Điện thoại': 'Contact telephone number printed in the letterhead.',
     'Mã số thuế': 'Tax identification number of the organisation.',
     'Số': 'Serial number this document was issued under.',
-    'Ký hiệu': 'Invoice symbol: the letter-and-digit code identifying the issued form.',
+    'Ký hiệu': 'Symbol code of the form this document was issued on, printed beside its number.',
     'Mẫu số': 'Form template code this document was printed from.',
     'Cộng tiền hàng': 'Sum of the line amounts before tax and discount.',
     'Tổng tiền hàng': 'Sum of the line amounts before tax and discount.',
@@ -160,8 +169,23 @@ def role_description(caption: str) -> str:
 CLAUSE_HEAD = "Heading of one numbered clause in the agreement."
 CLAUSE_BODY = "Body of one numbered clause in the agreement."
 
-def table() -> dict[str, str]:
-    """`{field: mô tả}` cho mọi nhãn gói này có thể in ra."""
+def _contested_guideline(label: str, base: str, rivals: tuple[str, ...]) -> str:
+    """Chỉ dẫn cho một nhãn mà HAI vai cùng đòi trên cùng một phôi.
+
+    Dựng từ chính các câu đang tranh nhau, không viết tay: phôi mới thêm một
+    vai là chỉ dẫn tự kể thêm vai ấy. Tách khỏi `description` theo lối
+    SLIMER (arXiv 2407.01272): một câu nói trường LÀ GÌ, một câu nói cách
+    phân biệt nó với trường giống nó -- và chính ca đa nghĩa như đây mới là
+    chỗ câu thứ hai đáng giá."""
+    roles = '; '.join(r.rstrip('.') for r in rivals)
+    return (f'"{label}" is printed more than once on this document type, once per '
+            f'party: `{base}` is the first occurrence on the page, `{base}_2` the '
+            f'second, and so on. Roles that use this caption here: {roles}.')
+
+
+def _shared() -> dict[str, str]:
+    """Nhãn KHÔNG thuộc `field_pool` của phôi nào: khối tổng, tiêu đề điều,
+    câu hỏi có ô tích. Mọi phôi nằm trên cùng nền này."""
     out: dict[str, str] = {}
 
     def put(caption: str, description: str) -> None:
@@ -170,23 +194,6 @@ def table() -> dict[str, str]:
         base = slug(caption)
         for suffix in SUFFIXES:
             out.setdefault(base + suffix, description)
-
-    for archetype in ARCHETYPES:
-        for fdef in archetype.field_pool:
-            for label in fdef.labels:
-                put(label, fdef.describe)
-        # CHỨC DANH KÝ. Không có vòng này thì mọi caption chữ ký rơi về bước
-        # cuối cùng của `pipeline/kie.py::describe`: lấy CHÍNH CHỮ IN làm mô
-        # tả. Đo trên một bộ thật, `nguoi_nop` có `description: "Người nộp"` --
-        # một mô tả không nói gì mà chữ in chưa nói, và một mô hình học trên nó
-        # học cách chép lại nhãn.
-        #
-        # Từ vựng caption là MỞ: mỗi phôi tự đặt chức danh của nó, và một phôi
-        # mới khai bằng file còn đặt ra những chức danh chưa ai thấy. Nên mô tả
-        # ở đây nói cái VAI, không nói cái tên -- tên đã nằm trong `key_text`.
-        for signs in archetype.sign_sets:
-            for caption in signs:
-                put(caption, role_description(caption))
 
     # Tiêu đề điều khoản. Đọc từ `content.CLAUSES` -- kho điều khoản THẬT mà
     # `_clauses` bốc ra -- chứ không từ phôi: điều khoản là nội dung, không
@@ -205,15 +212,108 @@ def table() -> dict[str, str]:
     return out
 
 
+def tables() -> dict[str, dict[str, object]]:
+    """`{layout: {field: mô tả}}` -- MỘT BẢNG CHO MỖI PHÔI, không dùng chung.
+
+    Bản trước dựng đúng một bảng rồi gán cho cả 99 phôi, với lý do "Địa chỉ
+    trên một hoá đơn và trên một tờ khai nghĩa như nhau". Tiền đề ấy đúng;
+    cái sai nằm ở chỗ khác. `put` dùng `setdefault`, tức AI VIẾT TRƯỚC THẮNG,
+    và vòng `field_pool` chạy trước `FIXED`, nên `design.py::seller_addr`
+    chiếm slug `dia_chi` cho mọi phôi -- kể cả công văn và quyết định bổ
+    nhiệm, những tờ không có bên bán nào. Câu trung tính trong `FIXED` vẫn
+    nằm đó, chỉ là không bao giờ tới lượt: mã chết.
+
+    Đo trên bộ `data/09-09-26-synthetics-document`: 2.418/6.456 cặp KIE của
+    14 loại giấy phi thương mại mang câu tả nói "seller"/"invoice"/"goods"
+    -- 37,5%. Công văn 56,7%, danh sách học viên 51,3%.
+
+    Dựng theo phôi thì câu tả lấy từ chính `field_pool` của phôi ấy, và đo
+    được là gần như luôn không mập mờ: trên 1.730 cặp (phôi, slug), 1.717
+    (99,2%) chỉ có MỘT vai đòi. Mười ba ca còn lại (0,8%, ở 9 phôi) là
+    `dia_chi`/`ma_so_thue` trên chứng từ hai bên -- bên bán và bên mua cùng
+    in một nhãn. Ở đó KHÔNG đoán: lấy câu trung tính của `FIXED` (đo được:
+    phủ 13/13) và kèm một `guidelines` nói cách phân biệt."""
+    fixed_by_slug = {slug(caption): text for caption, text in FIXED.items()}
+    shared = _shared()
+    out: dict[str, dict[str, object]] = {}
+
+    for archetype in ARCHETYPES:
+        claims: dict[str, set[str]] = {}
+        label_of: dict[str, str] = {}
+        for fdef in archetype.field_pool:
+            for label in fdef.labels:
+                if not label or not fdef.describe:
+                    continue
+                base = slug(label)
+                claims.setdefault(base, set()).add(fdef.describe)
+                label_of.setdefault(base, label)
+
+        mine: dict[str, object] = {}
+
+        def put(base: str, value: object) -> None:
+            for suffix in SUFFIXES:
+                mine.setdefault(base + suffix, value)
+
+        for base, rivals in claims.items():
+            if len(rivals) == 1:
+                put(base, next(iter(rivals)))
+                continue
+            neutral = fixed_by_slug.get(base)
+            if not neutral:
+                # Lỗi phải kêu (AGENTS.md luật 6). Một nhãn bị hai vai đòi mà
+                # không có câu trung tính nào thì mọi lựa chọn đều là đoán, và
+                # một câu tả đoán sai chạy im lặng vào 20 nghìn tờ là đúng cái
+                # kho này đã bị cắn một lần rồi.
+                raise ValueError(
+                    f"phôi {archetype.id!r}: nhãn {label_of[base]!r} bị "
+                    f"{len(rivals)} vai cùng đòi và không có câu trung tính "
+                    f"trong FIXED — thêm một mục FIXED[{label_of[base]!r}] "
+                    f"nói đúng phần chung của: {sorted(rivals)}")
+            put(base, {
+                'description': neutral,
+                'guidelines': _contested_guideline(
+                    label_of[base], base, tuple(sorted(rivals))),
+            })
+
+        # CHỨC DANH KÝ. Không có vòng này thì mọi caption chữ ký rơi về bước
+        # cuối cùng của `pipeline/kie.py::describe`: lấy CHÍNH CHỮ IN làm mô
+        # tả. Đo trên một bộ thật, `nguoi_nop` có `description: "Người nộp"` --
+        # một mô tả không nói gì mà chữ in chưa nói, và một mô hình học trên nó
+        # học cách chép lại nhãn.
+        #
+        # Từ vựng caption là MỞ: mỗi phôi tự đặt chức danh của nó, và một phôi
+        # mới khai bằng file còn đặt ra những chức danh chưa ai thấy. Nên mô tả
+        # ở đây nói cái VAI, không nói cái tên -- tên đã nằm trong `key_text`.
+        for signs in archetype.sign_sets:
+            for caption in signs:
+                if caption:
+                    put(slug(caption), role_description(caption))
+
+        for field, text in shared.items():
+            mine.setdefault(field, text)
+        out[archetype.id] = mine
+    return out
+
+
+def table() -> dict[str, str]:
+    """`{field: mô tả}` -- nền dùng chung, giữ cho ai đang gọi hàm này.
+
+    Không còn là thứ `write()` ghi ra. Nó KHÔNG mang trường của phôi nào, vì
+    đó đúng là chỗ bảng dùng chung nói sai; xem `tables()`."""
+    return _shared()
+
+
 def write(path: Path) -> int:
-    """Viết file `VLM_KIE_DESCRIPTIONS`. Cùng một bảng cho mọi loại chứng từ:
-    "Địa chỉ" trên một hoá đơn và trên một tờ khai nghĩa như nhau, và một bảng
-    riêng cho từng loại chỉ là cùng một câu chép ba mươi lần."""
-    shared = table()
-    payload = {archetype.id: shared for archetype in ARCHETYPES}
+    """Viết file `VLM_KIE_DESCRIPTIONS`, MỘT BẢNG MỖI PHÔI. Trả về số trường
+    của bảng lớn nhất.
+
+    Giá trị của một trường là một câu (`str`), hoặc -- ở ca một nhãn bị hai
+    vai cùng đòi -- một dict `{description, guidelines}`. `pipeline/kie.py::
+    describe` đọc được cả hai dạng."""
+    payload = tables()
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=1) + '\n',
                     encoding='utf-8')
-    return len(shared)
+    return max((len(one) for one in payload.values()), default=0)
 
 
 if __name__ == '__main__':

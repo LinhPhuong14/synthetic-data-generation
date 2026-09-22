@@ -1,0 +1,39 @@
+# ITEMS_HOC_TAP — cột `name` của bảng cho những tờ giấy nói về HỌC TẬP: học bạ, bảng điểm, thời khoá biểu, sổ liên lạc.
+#
+# Vì sao có file này: `corpus.catalogue()` chọn kho hàng theo `profile`, tức
+# theo NGÀNH. Học bạ, bảng điểm, thời khoá biểu, bảng lương đều là `admin`,
+# nên cả bốn lấy chung `items_admin.txt` — và một tờ HỌC BẠ liệt kê "Ấm siêu
+# tốc inox", "Bình chữa cháy bột ABC". Đo được trên bản vẽ thật.
+#
+# Ngành nói tờ giấy thuộc về ai; TÊN tờ giấy mới nói nó liệt kê cái gì. Luật
+# ghép nằm ở `rulebase/synthgen/_blocks.yaml::items`, cùng lối `allow`.
+#
+# Cột giá giữ cho đúng định dạng `priced`; bảng nào không in cột tiền thì hai
+# số ấy không ra giấy.
+
+Toán	1	10
+Ngữ văn	1	10
+Tiếng Anh	1	10
+Vật lí	1	10
+Hoá học	1	10
+Sinh học	1	10
+Lịch sử	1	10
+Địa lí	1	10
+Giáo dục công dân	1	10
+Tin học	1	10
+Công nghệ	1	10
+Giáo dục thể chất	1	10
+Giáo dục quốc phòng và an ninh	1	10
+Âm nhạc	1	10
+Mĩ thuật	1	10
+Hoạt động trải nghiệm	1	10
+Ngoại ngữ 2 - Tiếng Trung	1	10
+Ngoại ngữ 2 - Tiếng Nhật	1	10
+Chuyên đề học tập Toán	1	10
+Chuyên đề học tập Ngữ văn	1	10
+Tự nhiên và Xã hội	1	10
+Khoa học tự nhiên	1	10
+Lịch sử và Địa lí	1	10
+Đạo đức	1	10
+Giáo dục địa phương	1	10
+Tiếng Việt	1	10

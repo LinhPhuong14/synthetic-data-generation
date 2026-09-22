@@ -1,0 +1,60 @@
+# Cổng chất lượng cho MÔ TẢ KIE. `synthgen/kie_gate.py` đọc file này.
+#
+# Gạch dưới đầu tên để `archetypes.load()` không đọc như một phôi -- cùng lệ
+# `_blocks.yaml` và `rulebase/rules/_order.yaml`.
+#
+# ## Vì sao có file này
+#
+# Mô tả tồn tại để một mô hình PHÂN BIỆT trường này với trường kia trên cùng
+# một trang. Khi bốn mươi mốt cột khác nhau cùng mang câu "Reference label
+# printed on the document.", mô tả mang ZERO thông tin phân biệt -- và mô
+# hình học được rằng trường ấy là nhiễu, chứ không học được nó là gì.
+#
+# Đo trên `data/pilot7..16` (664 bản ghi, 67.683 mô tả) trước khi viết file:
+#
+#     mô tả là câu fallback chung chung        35%
+#     cột logic bị gộp nghĩa với cột khác      52%
+#     bản ghi có >=2 cột chung một mô tả       55%
+#
+# Ba con số ấy là điểm xuất phát, không phải ngưỡng. Ngưỡng dưới đây là chỗ
+# muốn tới, và cổng ĐỎ cho tới khi tới được -- đó là cả điểm của một cái cổng.
+# Kho này đã ba lần chữa một cái lệch rồi để nó trôi lại vì không có gì canh.
+
+# Trần cho từng cổng. Vượt trần là cổng đỏ (`kie_gate.py` ra mã 1).
+thresholds:
+  # Hai CỘT LOGIC khác nhau trên cùng một trang dùng chung một mô tả.
+  #
+  # "Cột logic" = tên trường đã gộp mọi chuỗi số: `line_items_7_name` và
+  # `line_items_8_name` là MỘT cột, nên bốn mươi dòng của một bảng lặp một
+  # câu KHÔNG bị tính là lỗi -- chúng thật sự cùng một nghĩa. Còn
+  # `document_issue_date` và `owner_address` chung một câu thì là lỗi.
+  collapsed_columns: 0.05
+
+  # Mô tả khớp một trong các mẫu `generic:` dưới kia.
+  generic_descriptions: 0.05
+
+  # Một câu mô tả được dùng ở TỪ HAI LOẠI GIẤY trở lên.
+  #
+  # Không đặt 0: "Ngày lập chứng từ" đúng cho cả hoá đơn lẫn biên bản, và ép
+  # mỗi loại giấy một câu riêng cho mọi trường là ép bộ sinh nói dối. Trần
+  # này chặn cái khác: một câu dùng cho HẦU HẾT loại giấy thì nó không còn
+  # tả loại giấy nào.
+  shared_across_types: 0.35
+
+# Câu nào bị coi là FALLBACK chung chung. Regex, khớp không phân biệt hoa
+# thường. Đây là những câu `pipeline/kie.py::describe` trả về khi nó không tìm
+# được gì tốt hơn -- chúng đúng ngữ pháp và vô dụng với người huấn luyện.
+#
+# Thêm một mẫu vào đây là siết cổng mà không phải sửa mã.
+generic:
+  - 'printed on the document\.$'
+  - '^Reference (value|label)\b'
+  - '^Document field\b'
+  - '^Value printed\b'
+  - '^Text printed\b'
+  - '^Field value\b'
+
+# Mô tả ngắn hơn ngần này ký tự thì không tả được gì. Đếm riêng, in ra, nhưng
+# KHÔNG tính vào cổng nào: một mô tả ngắn vẫn có thể chính xác, và biến nó
+# thành cổng là thưởng cho việc viết dài.
+min_useful_chars: 20

@@ -1,0 +1,26 @@
+# CLAUSES_INSURANCE_B — mẻ thứ hai của hồ sơ này, cùng định dạng `clauses_chung.txt`.
+#
+# Tách file thay vì nối vào mẻ đầu: `corpus.CLAUSE_FILES` gộp các file của một
+# hồ sơ lại, nên thêm một file là hồ sơ ấy dài thêm được mấy tờ mà không phải
+# đọc lại file cũ để tránh trùng.
+
+Tái tục hợp đồng	Hợp đồng được tái tục khi bên mua bảo hiểm nộp phí cho kỳ mới trước ngày hết hạn.	Điều kiện tái tục có thể thay đổi và được thông báo trước ba mươi ngày.
+Điều chỉnh số tiền bảo hiểm	Số tiền bảo hiểm được điều chỉnh theo đề nghị của bên mua và chấp thuận của doanh nghiệp bảo hiểm.	Phí bảo hiểm được tính lại tương ứng kể từ ngày điều chỉnh có hiệu lực.
+Người thụ hưởng	Bên mua bảo hiểm chỉ định người thụ hưởng và được thay đổi bằng văn bản trước khi xảy ra sự kiện bảo hiểm.	Không chỉ định người thụ hưởng thì tiền bảo hiểm được trả cho người thừa kế hợp pháp.
+Quyền lợi tử vong	Quyền lợi tử vong được chi trả theo số tiền bảo hiểm ghi trên giấy chứng nhận.	Hồ sơ gồm giấy chứng tử, giấy tờ tuỳ thân của người thụ hưởng và giấy yêu cầu chi trả.
+Quyền lợi thương tật	Thương tật vĩnh viễn được chi trả theo tỉ lệ ghi tại bảng tỉ lệ thương tật đính kèm.	Mức chi trả cộng dồn không vượt quá số tiền bảo hiểm của hợp đồng.
+Trợ cấp nằm viện	Trợ cấp nằm viện được chi trả theo số ngày điều trị nội trú thực tế.	Số ngày được chi trả trong một năm hợp đồng không vượt quá mức ghi tại bảng quyền lợi.
+Đồng bảo hiểm	Khi nhiều doanh nghiệp cùng nhận bảo hiểm, mỗi doanh nghiệp chịu trách nhiệm theo tỉ lệ đã nhận.	Doanh nghiệp đứng đầu đại diện giao dịch với bên mua bảo hiểm.
+Tái bảo hiểm	Việc thu xếp tái bảo hiểm không làm thay đổi quyền và nghĩa vụ đối với bên mua bảo hiểm.	Doanh nghiệp bảo hiểm vẫn là bên chịu trách nhiệm trực tiếp trước người được bảo hiểm.
+Giám định tổn thất	Tổn thất được giám định bởi giám định viên do doanh nghiệp bảo hiểm chỉ định.	Bên mua bảo hiểm được yêu cầu giám định lại nếu không đồng ý với kết luận, chi phí do bên yêu cầu chịu.
+Chi phí hạn chế tổn thất	Chi phí hợp lý mà người được bảo hiểm bỏ ra để hạn chế tổn thất được bồi hoàn.	Chi phí này được bồi hoàn ngay cả khi biện pháp áp dụng không thành công.
+Tạm ứng bồi thường	Khi trách nhiệm đã rõ, doanh nghiệp bảo hiểm tạm ứng một phần tiền bồi thường theo đề nghị.	Số tạm ứng được khấu trừ vào số tiền bồi thường cuối cùng.
+Bồi thường bằng hiện vật	Doanh nghiệp bảo hiểm được lựa chọn bồi thường bằng sửa chữa, thay thế hoặc bằng tiền.	Giá trị bồi thường bằng hiện vật không thấp hơn giá trị bồi thường bằng tiền tương ứng.
+Khấu hao khi bồi thường	Bộ phận thay thế được tính khấu hao theo thời gian đã sử dụng, trừ khi hợp đồng ghi bồi thường theo giá mới.	Tỉ lệ khấu hao áp dụng theo bảng đính kèm hợp đồng.
+Bảo hiểm trùng	Khi một đối tượng được bảo hiểm ở nhiều nơi, mỗi doanh nghiệp bồi thường theo tỉ lệ số tiền bảo hiểm.	Bên mua bảo hiểm có nghĩa vụ khai báo các hợp đồng bảo hiểm trùng đang có hiệu lực.
+Yếu tố tính phí	Phí bảo hiểm được tính theo tuổi, nghề nghiệp, tình trạng sức khoẻ và mức trách nhiệm lựa chọn.	Khai sai tuổi làm thay đổi phí thì số tiền chi trả được điều chỉnh tương ứng.
+Khám sức khoẻ trước khi cấp đơn	Doanh nghiệp bảo hiểm được yêu cầu khám sức khoẻ trước khi chấp nhận bảo hiểm.	Chi phí khám theo yêu cầu của doanh nghiệp bảo hiểm do doanh nghiệp chịu.
+Hiệu lực khi ra nước ngoài	Hợp đồng tiếp tục có hiệu lực khi người được bảo hiểm ra nước ngoài dưới thời hạn ghi tại hợp đồng.	Quá thời hạn ấy, quyền lợi chỉ áp dụng với tai nạn, trừ khi có thoả thuận riêng.
+Chấm dứt do không đóng phí	Quá thời gian gia hạn đóng phí, hợp đồng chấm dứt hiệu lực và doanh nghiệp bảo hiểm không chịu trách nhiệm.	Phí đã đóng của kỳ chưa sử dụng được hoàn theo tỉ lệ.
+Khôi phục hiệu lực	Hợp đồng đã mất hiệu lực được khôi phục trong hai năm nếu bên mua nộp đủ phí còn thiếu và được chấp thuận.	Thời gian chờ được tính lại kể từ ngày khôi phục.
+Bảo mật thông tin người được bảo hiểm	Thông tin sức khoẻ của người được bảo hiểm chỉ dùng cho mục đích thẩm định và giải quyết quyền lợi.	Cung cấp cho bên thứ ba phải có sự đồng ý bằng văn bản, trừ trường hợp pháp luật yêu cầu.

@@ -1,0 +1,28 @@
+# CLAUSES_INSURANCE — điều khoản đánh số, mỗi dòng MỘT điều.
+#
+# Cột 1 là tiêu đề điều ("Điều N." do bộ dựng tự đánh số, không viết ở đây).
+# Các cột sau là các KHOẢN của chính điều ấy, mỗi khoản một cột, ngăn bằng TAB.
+# Bộ dựng lấy từ một đến hết số khoản có, nên một điều in ra ngắn dài khác nhau
+# mà chữ vẫn thuộc về đúng cái tiêu đề của nó — khác hẳn ghép tiêu đề của điều
+# này với nội dung của điều kia.
+#
+# Đây là thứ cho một tờ giấy KHÔNG CÓ BẢNG tràn sang tờ sau: trước khi có file
+# này, `synthgen/paginate.py` chỉ cắt được theo dòng bảng, nên mọi tài liệu
+# nhiều trang trong bộ đều là một cái bảng. Xem `synthgen/corpus.py::clauses`.
+#
+# Tên riêng đều là tên tự đặt theo lệ "Mẫu" của kho, không trùng pháp nhân thật.
+
+Đối tượng được bảo hiểm	Đối tượng được bảo hiểm là người, tài sản hoặc trách nhiệm ghi tại giấy chứng nhận bảo hiểm.	Việc thay đổi đối tượng được bảo hiểm phải được doanh nghiệp bảo hiểm chấp thuận bằng văn bản.
+Phạm vi bảo hiểm	Doanh nghiệp bảo hiểm chi trả cho các tổn thất xảy ra trong thời hạn bảo hiểm và thuộc phạm vi ghi tại hợp đồng.	Phạm vi bảo hiểm được xác định theo điều khoản và các sửa đổi bổ sung đính kèm.	Tổn thất xảy ra ngoài lãnh thổ ghi trên hợp đồng không thuộc phạm vi bảo hiểm.
+Điểm loại trừ	Không thuộc phạm vi bảo hiểm các tổn thất do hành vi cố ý của người được bảo hiểm.	Không chi trả đối với tổn thất phát sinh khi người được bảo hiểm vi phạm quy định về an toàn.	Không chi trả đối với bệnh có sẵn trước ngày hiệu lực, trừ khi đã kê khai và được chấp nhận.
+Thời hạn bảo hiểm	Thời hạn bảo hiểm ghi trên giấy chứng nhận và bắt đầu từ thời điểm doanh nghiệp bảo hiểm nhận đủ phí.	Hợp đồng chấm dứt hiệu lực khi hết thời hạn hoặc khi số tiền chi trả đạt mức trách nhiệm tối đa.
+Phí bảo hiểm	Phí bảo hiểm được tính trên số tiền bảo hiểm và tỉ lệ phí tương ứng với mức độ rủi ro.	Bên mua bảo hiểm nộp phí một lần hoặc theo kỳ đã thoả thuận.	Quá thời hạn nộp phí sáu mươi ngày, hợp đồng tạm mất hiệu lực.
+Thời gian chờ	Thời gian chờ đối với quyền lợi điều trị nội trú là ba mươi ngày kể từ ngày hiệu lực.	Thời gian chờ đối với bệnh đặc biệt và thai sản áp dụng theo bảng quyền lợi đính kèm.	Thời gian chờ không áp dụng với tai nạn.
+Nghĩa vụ kê khai	Bên mua bảo hiểm có nghĩa vụ kê khai đầy đủ và trung thực mọi thông tin được yêu cầu.	Kê khai không trung thực là căn cứ để doanh nghiệp bảo hiểm từ chối chi trả hoặc huỷ hợp đồng.
+Thông báo sự kiện bảo hiểm	Khi xảy ra sự kiện bảo hiểm, người được bảo hiểm thông báo cho doanh nghiệp bảo hiểm trong vòng năm ngày.	Người được bảo hiểm có trách nhiệm giữ nguyên hiện trường và áp dụng biện pháp hạn chế tổn thất.	Chậm thông báo không có lý do chính đáng có thể bị giảm số tiền chi trả.
+Hồ sơ yêu cầu bồi thường	Hồ sơ gồm giấy yêu cầu bồi thường, giấy tờ tuỳ thân, chứng từ y tế hoặc biên bản xác minh tổn thất.	Chứng từ phải là bản gốc hoặc bản sao có xác nhận của cơ quan phát hành.	Hồ sơ thiếu được thông báo bổ sung một lần trong ba ngày làm việc.
+Thời hạn giải quyết bồi thường	Doanh nghiệp bảo hiểm giải quyết bồi thường trong vòng mười lăm ngày kể từ ngày nhận đủ hồ sơ hợp lệ.	Trường hợp phải xác minh, thời hạn kéo dài nhưng không quá bốn mươi lăm ngày và phải thông báo bằng văn bản.
+Mức miễn thường	Mức miễn thường có khấu trừ được áp dụng cho từng vụ tổn thất và ghi rõ trên giấy chứng nhận.	Phần tổn thất dưới mức miễn thường do người được bảo hiểm tự chịu.
+Chuyển quyền yêu cầu bồi hoàn	Sau khi trả tiền bồi thường, doanh nghiệp bảo hiểm được thay quyền người được bảo hiểm yêu cầu bên gây thiệt hại bồi hoàn.	Người được bảo hiểm có trách nhiệm cung cấp tài liệu và phối hợp trong quá trình đòi bồi hoàn.
+Huỷ bỏ hợp đồng	Bên mua bảo hiểm được huỷ hợp đồng và nhận lại phí theo tỉ lệ thời gian còn lại nếu chưa phát sinh bồi thường.	Doanh nghiệp bảo hiểm được huỷ hợp đồng khi phát hiện hành vi gian dối trong kê khai hoặc trong yêu cầu bồi thường.
+Giải quyết khiếu nại	Khiếu nại về kết quả giải quyết bồi thường được gửi trong thời hạn ba mươi ngày kể từ ngày nhận thông báo.	Doanh nghiệp bảo hiểm trả lời khiếu nại bằng văn bản trong mười lăm ngày làm việc.

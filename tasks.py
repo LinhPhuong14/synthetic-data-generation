@@ -340,6 +340,89 @@ def setup_writevit(args) -> None:
     run([first_available_python(), REPO_ROOT / "tools" / "writevit" / "setup.py"])
 
 
+@task("synth", "synthgen: 5000 chứng từ nhiều trang, bố cục soạn mới")
+def synth(args) -> None:
+    """Bộ mặc định của synthgen: 5000 chứng từ, mỗi chứng từ 2-10 TỜ.
+
+        make synth                      # data/synth5k, 5000 chứng từ
+        make synth SYNTH=data/thu N=50  # thử một bộ nhỏ trước
+
+    Trình thông dịch của backend html, vì `synthgen/draw.py` mở chính
+    Chromium ấy và dùng chính `generators/html/handwriting.py` — chạy bằng
+    Python hệ thống thì thiếu playwright và cv2.
+
+    `-n` là số CHỨNG TỪ, không phải số ảnh: một chứng từ nhiều tờ ra nhiều
+    ảnh, nên 5000 chứng từ ở khoảng 2-10 tờ ra khoảng mười tám nghìn ảnh.
+
+    `--pages 2-10` là cả lý do task này tồn tại, và nó làm hai việc: nhắm số
+    tờ trong khoảng ấy, và ÉP một khối chảy vào tờ giấy nào bốc phải không có
+    khối nào — điều khoản hoặc tờ khai trước, bảng sau (`rulebase/synthgen/
+    _blocks.yaml::flow_weight`). Không có vế thứ hai thì "nhiều trang" quay
+    về đồng nghĩa với "có bảng", đúng cái lệch đo được là 77%.
+
+    Nghỉ giữa chừng thì chạy lại đúng lệnh này: mỗi shard để lại một tệp
+    DONE và shard đã xong được bỏ qua.
+    """
+    out = Path(args.out if args.out != str(Path("data") / "dataset60")
+               else Path("data") / "synth5k")
+    run([venv_python(VENVS["html"]), REPO_ROOT / "synthgen" / "run.py",
+         "-o", out, "-n", str(args.count or 5000), "--pages", args.pages or "2-10",
+         "--augment", "fast"])
+
+
+@task("synth-plan", "synthgen: chỉ in phân bố loại giấy, khối và số tờ")
+def synth_plan(args) -> None:
+    """Lượt chạy `--dry-run`: chọn seed, in phân bố, không mở trình duyệt.
+
+    Rẻ, và là cách xem một thay đổi trong `rulebase/synthgen/_blocks.yaml` đổi
+    hình dạng bộ dữ liệu thế nào TRƯỚC khi bỏ ra vài giờ vẽ. Nó in tỉ lệ tờ có
+    bảng và phân bố khối chảy — hai con số phải nhìn sau mỗi lần chỉnh trọng
+    số."""
+    run([venv_python(VENVS["html"]), REPO_ROOT / "synthgen" / "run.py",
+         "-o", args.out, "-n", str(args.count or 5000),
+         "--pages", args.pages or "2-10", "--dry-run"])
+
+
+@task("synth-multipage", "synthgen: CHỈ tài liệu nhiều tờ, 75% 2-5 tờ / 25% 7-10 tờ")
+def synth_multipage(args) -> None:
+    """Bộ chỉ-nhiều-trang, hình dạng hai cụm.
+
+        make synth-multipage                        # data/synth-multi, 5000 chứng từ
+        make synth-multipage SYNTH_N=200 PAGES=3-6  # thử nhỏ, một cụm
+
+    Hai cờ, và chúng làm hai việc khác nhau:
+
+    * `--pages 2-5:75,7-10:25` là Ý ĐỊNH -- 75% tài liệu nhắm hai tới năm tờ,
+      25% nhắm bảy tới mười. Một khoảng phẳng `2-10` rải đều và không dựng
+      được hình dạng hai cụm ấy, mà hồ sơ ngoài đời là hai cụm.
+    * `--multipage-only` là KẾT QUẢ -- `synthgen/paginate.py` đo trong trình
+      duyệt rồi mới chốt, và nó hạ một tài liệu xuống một tờ khi không tờ nào
+      lấp nổi 80%. Không có cờ này thì một lượt xin toàn nhiều trang vẫn lẫn
+      tờ lẻ; đo được 18% ở bước `--dry-run`.
+
+    Số chứng từ RA ít hơn số xin vì cờ thứ hai loại bớt. `report.json` ghi
+    `dropped_single_page_count`.
+    """
+    out = Path(args.out if args.out != str(Path("data") / "dataset60")
+               else Path("data") / "synth-multi")
+    run([venv_python(VENVS["html"]), REPO_ROOT / "synthgen" / "run.py",
+         "-o", out, "-n", str(args.count or 5000),
+         "--pages", args.pages or "2-5:75,7-10:25", "--multipage-only",
+         "--augment", "fast"])
+
+
+@task("synth-balance", "synthgen: bộ có cân không — nhãn vùng cả bộ và tờ giữa")
+def synth_balance(args) -> None:
+    """Đếm `data-region` trên markup, không mở trình duyệt.
+
+    Chạy TRƯỚC và SAU mỗi lần chỉnh `rulebase/synthgen/_blocks.yaml`. Kho này
+    đã hai lần đổi một cái lệch lấy một cái lệch khác vì chỉnh trọng số rồi
+    mới đo: `Table` 77% số tờ, rồi `List-Group` 82%.
+    """
+    run([venv_python(VENVS["html"]), REPO_ROOT / "synthgen" / "balance.py",
+         str(args.count or 1500), args.pages or "2-10"])
+
+
 @task("run", "run pipeline.yaml: preflight, shards in parallel, assemble")
 def run_pipeline(args) -> None:
     command = [first_available_python(), REPO_ROOT / "pipeline" / "run.py"]
@@ -573,6 +656,12 @@ def main() -> int:
     # space, and a default would silently turn that into "monitor whichever
     # dataset happens to be the usual one".
     parser.add_argument("--run", help="a run directory to monitor")
+    # No default here either, and for the same reason as `-n`: `synth` states
+    # `2-10` and `synth-plan` follows it, so the two never drift apart. A
+    # default up here would be a third place the number lives.
+    parser.add_argument("--pages", default=None, metavar="LO-HI",
+                        help="số TỜ mỗi chứng từ nhắm tới (synth, synth-plan); "
+                             "mặc định 2-10")
     args = parser.parse_args()
 
     if not args.task:

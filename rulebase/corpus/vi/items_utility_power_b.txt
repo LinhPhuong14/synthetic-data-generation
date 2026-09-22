@@ -1,0 +1,24 @@
+# ITEMS_POWER_B — mẻ thứ hai, cùng định dạng mẻ đầu: tên<TAB>giá tối thiểu<TAB>giá tối đa.
+#
+# Vì sao có mẻ này, bằng số. `corpus.sample()` lặp lại mặt hàng khi bảng dài
+# hơn kho, và điều đó đúng với một hoá đơn bốn dòng. Nhưng bảng dài nhất của
+# hồ sơ này là 18 dòng trong khi mẻ đầu chỉ có 8 mặt hàng — mỗi thứ
+# in lại 2 lần trên CÙNG MỘT tờ giấy, và một mô hình đọc tờ ấy học rằng
+# bảng tiếng Việt là một danh sách lặp.
+#
+# Tên viết CÓ DẤU; bố cục nào cần chữ không dấu thì `rulebase.text.ascii_fold`
+# bỏ dấu lúc render.
+
+Điện sinh hoạt bậc bảy	3150	3600
+Điện kinh doanh giờ cao điểm	4800	5600
+Điện kinh doanh giờ thấp điểm	1600	2100
+Điện sản xuất cấp điện áp trung thế	1500	2900
+Điện sản xuất cấp điện áp cao thế	1400	2700
+Điện cho bơm tưới tiêu	1300	1900
+Điện cho cơ sở lưu trú du lịch	2600	4200
+Công suất phản kháng vượt định mức	800	2400
+Phí kiểm định công tơ theo yêu cầu	120000	480000
+Phí thay công tơ hỏng do khách	450000	1800000
+Phí cấp điện trở lại sau cắt	85000	320000
+Phí thoả thuận đấu nối lưới	1200000	8600000
+Phí thí nghiệm trạm biến áp	2400000	14000000

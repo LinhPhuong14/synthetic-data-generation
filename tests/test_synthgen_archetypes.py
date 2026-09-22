@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import yaml
 
-from agent import compose_archetype as C
 from synthgen import archetypes as A
 from synthgen import design as D
 
@@ -123,35 +122,12 @@ def test_a_signature_block_with_no_signers_is_caught():
 # ------------------------------------------- cổng của bước sinh: so với BỘ có
 
 
-def test_a_title_case_id_is_refused_because_it_becomes_a_directory_name():
-    found = C.collection_problems(a_spec(id="Phiếu Thu 2"), list(D.ARCHETYPES))
-    assert any("slug ascii" in line for line in found), found
 
 
-def test_one_way_of_naming_the_document_is_refused():
-    found = C.collection_problems(a_spec(titles=["PHIẾU THU"]), list(D.ARCHETYPES))
-    assert any("cách đặt tiêu đề" in line for line in found), found
 
 
-def test_a_new_archetype_that_is_an_existing_one_renamed_is_refused():
-    """Khác mỗi cái tên thì không thêm gì cho bộ dữ liệu."""
-    twin = D.BY_ID["bao_gia"]
-    spec = a_spec(id="bao_gia_moi", titles=["BÁO GIÁ MỚI", "BẢNG GIÁ"],
-                  always=list(twin.always), optional=list(twin.optional),
-                  columns=[list(twin.column_pool[0])])
-    found = C.collection_problems(spec, list(D.ARCHETYPES))
-    assert any("trùng `bao_gia`" in line for line in found), found
 
 
-def test_the_model_is_shown_real_archetypes_and_the_closed_vocabularies():
-    """Ngữ cảnh gửi model phải mang schema + ví dụ THẬT + id đã có.
-
-    Một prompt tả định dạng bằng lời mà không kèm ví dụ thật thì model nhỏ trả
-    về đúng hình dạng khoảng một nửa số lần."""
-    ctx = C.context()
-    assert "profile" in ctx and "admin" in ctx
-    assert "bang_ke_chi_tiet" in ctx
-    assert all(a.id in ctx for a in D.ARCHETYPES[:3])
 
 
 def test_the_national_masthead_is_never_a_title_wherever_it_is_printed():
@@ -170,7 +146,3 @@ def test_the_national_masthead_is_never_a_title_wherever_it_is_printed():
             assert '_span("masthead"' in line, line.strip()
 
 
-def test_a_fenced_reply_is_unwrapped():
-    """Model vẫn thêm rào ``` dù đã dặn; đó là định dạng, không phải nội dung."""
-    spec, why = C.parse("```yaml\nid: a\ntitles: [X]\n```")
-    assert not why and spec == {"id": "a", "titles": ["X"]}

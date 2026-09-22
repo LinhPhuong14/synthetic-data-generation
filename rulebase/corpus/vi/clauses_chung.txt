@@ -1,0 +1,38 @@
+# CLAUSES_CHUNG — điều khoản đánh số, mỗi dòng MỘT điều.
+#
+# Cột 1 là tiêu đề điều ("Điều N." do bộ dựng tự đánh số, không viết ở đây).
+# Các cột sau là các KHOẢN của chính điều ấy, mỗi khoản một cột, ngăn bằng TAB.
+# Bộ dựng lấy từ một đến hết số khoản có, nên một điều in ra ngắn dài khác nhau
+# mà chữ vẫn thuộc về đúng cái tiêu đề của nó — khác hẳn ghép tiêu đề của điều
+# này với nội dung của điều kia.
+#
+# Đây là thứ cho một tờ giấy KHÔNG CÓ BẢNG tràn sang tờ sau: trước khi có file
+# này, `synthgen/paginate.py` chỉ cắt được theo dòng bảng, nên mọi tài liệu
+# nhiều trang trong bộ đều là một cái bảng. Xem `synthgen/corpus.py::clauses`.
+#
+# Tên riêng đều là tên tự đặt theo lệ "Mẫu" của kho, không trùng pháp nhân thật.
+
+Phạm vi điều chỉnh	Văn bản này quy định phạm vi công việc, quyền và nghĩa vụ của các bên trong suốt thời gian có hiệu lực.	Những nội dung không được nêu tại văn bản này được thực hiện theo quy định của pháp luật hiện hành.	Phụ lục đính kèm là bộ phận không tách rời và có giá trị pháp lý như nội dung chính.
+Giải thích từ ngữ	Các từ ngữ viết hoa trong văn bản này được hiểu theo nghĩa đã nêu tại điều này, trừ khi ngữ cảnh đòi hỏi cách hiểu khác.	"Ngày làm việc" là ngày từ thứ Hai đến thứ Sáu, không kể ngày nghỉ lễ theo quy định.	"Bên vi phạm" là bên không thực hiện hoặc thực hiện không đúng nghĩa vụ đã cam kết.
+Đối tượng áp dụng	Văn bản này áp dụng cho toàn bộ đơn vị trực thuộc, người lao động và các bên có liên quan kể từ ngày ký.	Đơn vị mới thành lập hoặc mới tiếp nhận thuộc phạm vi áp dụng kể từ ngày có quyết định.
+Nguyên tắc thực hiện	Các bên thực hiện trên nguyên tắc tự nguyện, bình đẳng, thiện chí, hợp tác và cùng có lợi.	Mọi thay đổi trong quá trình thực hiện phải được thông báo bằng văn bản trước khi áp dụng.	Bên nào chậm thực hiện nghĩa vụ phải nêu rõ lý do và thời hạn khắc phục.
+Thời hạn thực hiện	Thời hạn thực hiện tính từ ngày văn bản có hiệu lực và kết thúc khi các bên hoàn thành nghiệm thu.	Thời hạn có thể được gia hạn một lần nếu có sự kiện khách quan làm chậm tiến độ, và phải lập thành văn bản.	Thời gian tạm dừng do lỗi của một bên không được tính vào thời hạn gia hạn.
+Quyền và nghĩa vụ của bên thứ nhất	Cung cấp đầy đủ, kịp thời hồ sơ, tài liệu và thông tin cần thiết cho bên còn lại.	Cử đầu mối liên hệ và thông báo bằng văn bản khi thay đổi đầu mối.	Thanh toán đúng hạn theo tiến độ đã thoả thuận.	Được quyền yêu cầu giải trình đối với bất kỳ nội dung nào chưa rõ.
+Quyền và nghĩa vụ của bên thứ hai	Thực hiện công việc đúng khối lượng, chất lượng và tiến độ đã cam kết.	Chịu trách nhiệm về năng lực và hành vi của nhân sự do mình bố trí.	Bảo quản tài sản, hồ sơ được giao và hoàn trả khi kết thúc công việc.	Được quyền từ chối các yêu cầu nằm ngoài phạm vi đã thoả thuận.
+Bàn giao và nghiệm thu	Việc bàn giao được lập thành biên bản có chữ ký của đại diện các bên.	Bên nhận có thời hạn năm ngày làm việc để kiểm tra và nêu ý kiến; quá thời hạn mà không có ý kiến thì coi như chấp nhận.	Trường hợp có sai sót, bên giao có trách nhiệm khắc phục trong thời hạn do hai bên thống nhất.
+Bảo mật thông tin	Các bên không được tiết lộ cho bên thứ ba bất kỳ thông tin nào có được trong quá trình thực hiện, trừ trường hợp pháp luật yêu cầu.	Nghĩa vụ bảo mật tiếp tục có hiệu lực trong ba năm kể từ ngày văn bản này chấm dứt.	Bên làm lộ thông tin phải bồi thường toàn bộ thiệt hại thực tế phát sinh.
+Quyền sở hữu và bàn giao tài liệu	Toàn bộ tài liệu, dữ liệu hình thành trong quá trình thực hiện thuộc quyền sở hữu của bên đặt hàng sau khi đã thanh toán đủ.	Bên thực hiện được giữ một bản sao để lưu hồ sơ, và không được sử dụng cho mục đích khác.
+Sửa đổi, bổ sung	Mọi sửa đổi, bổ sung chỉ có giá trị khi được lập thành văn bản và có chữ ký của người có thẩm quyền của các bên.	Văn bản sửa đổi là phụ lục và có giá trị pháp lý như nội dung chính.
+Tạm dừng thực hiện	Một bên được tạm dừng thực hiện khi bên còn lại vi phạm nghiêm trọng nghĩa vụ đã cam kết.	Bên tạm dừng phải thông báo bằng văn bản trước bảy ngày, nêu rõ lý do và điều kiện tiếp tục.	Thời gian tạm dừng không làm phát sinh trách nhiệm bồi thường của bên tạm dừng đúng quy định.
+Chấm dứt trước thời hạn	Văn bản này chấm dứt trước thời hạn khi các bên thoả thuận bằng văn bản.	Một bên được đơn phương chấm dứt nếu bên còn lại không khắc phục vi phạm trong thời hạn ba mươi ngày kể từ ngày nhận được thông báo.	Việc chấm dứt không làm mất hiệu lực của các nghĩa vụ đã phát sinh trước đó.
+Phạt vi phạm	Bên vi phạm chịu phạt theo tỉ lệ đã thoả thuận trên giá trị phần nghĩa vụ bị vi phạm.	Tiền phạt không thay thế nghĩa vụ bồi thường thiệt hại thực tế.	Tổng mức phạt không vượt quá mức trần do pháp luật quy định.
+Bồi thường thiệt hại	Bên gây thiệt hại có trách nhiệm bồi thường phần thiệt hại thực tế, trực tiếp mà bên kia phải gánh chịu.	Bên bị thiệt hại có nghĩa vụ áp dụng các biện pháp cần thiết để hạn chế thiệt hại.
+Sự kiện bất khả kháng	Bất khả kháng là sự kiện xảy ra khách quan, không lường trước được và không thể khắc phục dù đã áp dụng mọi biện pháp cần thiết.	Bên gặp bất khả kháng phải thông báo trong bảy ngày kể từ ngày sự kiện xảy ra và cung cấp tài liệu chứng minh.	Thời gian xảy ra bất khả kháng không tính vào thời hạn thực hiện.
+Giải quyết tranh chấp	Các bên ưu tiên giải quyết tranh chấp bằng thương lượng, hoà giải trên tinh thần thiện chí.	Sau ba mươi ngày thương lượng không thành, tranh chấp được đưa ra Toà án có thẩm quyền giải quyết.	Phán quyết của cơ quan tài phán là chung thẩm và có hiệu lực thi hành với các bên.
+Thông báo và liên lạc	Mọi thông báo phải lập thành văn bản và gửi đến địa chỉ ghi tại phần thông tin các bên.	Thông báo gửi qua đường bưu chính được coi là đã nhận sau ba ngày làm việc kể từ ngày gửi.	Bên thay đổi địa chỉ liên lạc phải thông báo trước năm ngày làm việc.
+Chuyển giao quyền và nghĩa vụ	Không bên nào được chuyển giao một phần hoặc toàn bộ quyền, nghĩa vụ cho bên thứ ba nếu không có chấp thuận bằng văn bản của bên còn lại.	Việc chuyển giao trái quy định tại điều này không có giá trị pháp lý.
+Hiệu lực thi hành	Văn bản này có hiệu lực kể từ ngày ký và thay thế các thoả thuận trước đó về cùng nội dung.	Văn bản được lập thành hai bản có giá trị pháp lý như nhau, mỗi bên giữ một bản.	Các bên cam kết thực hiện đầy đủ các nội dung đã ghi.
+Điều khoản chuyển tiếp	Công việc đã triển khai trước ngày văn bản này có hiệu lực tiếp tục được thực hiện theo thoả thuận cũ cho đến khi hoàn thành.	Hồ sơ đang xử lý dở dang được chuyển sang áp dụng quy định mới kể từ kỳ kế tiếp.
+Trách nhiệm tổ chức thực hiện	Thủ trưởng các đơn vị trực thuộc chịu trách nhiệm phổ biến và tổ chức thực hiện trong phạm vi quản lý.	Bộ phận hành chính làm đầu mối theo dõi, tổng hợp và báo cáo định kỳ hằng quý.	Trường hợp vướng mắc, các đơn vị phản ánh bằng văn bản để xem xét, điều chỉnh.
+Chi phí phát sinh	Chi phí phát sinh ngoài phạm vi đã thoả thuận chỉ được thanh toán khi có văn bản chấp thuận trước.	Bên đề nghị phát sinh có trách nhiệm lập dự toán và giải trình cơ sở tính toán.
+Kiểm tra, giám sát	Bên đặt hàng được quyền kiểm tra tiến độ và chất lượng công việc tại bất kỳ thời điểm nào trong giờ làm việc.	Việc kiểm tra không làm cản trở hoạt động bình thường của bên được kiểm tra.	Kết quả kiểm tra được lập thành biên bản và gửi cho các bên trong ba ngày làm việc.

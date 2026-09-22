@@ -33,9 +33,14 @@ sign_sets:
 - - TRƯỞNG CÔNG AN PHƯỜNG
 notes:
 - Trích lục chỉ có giá trị tham khảo, không thay thế giấy tờ gốc.
+# Sức chứa nới ra để khối chảy BẢNG cũng với tới hai tờ: trích lục ở tờ đầu, BẢNG THÀNH VIÊN hộ ở tờ sau.
+# Trần cũ thấp hơn một tờ (4..? < 15 dòng/tờ) nên mỗi lần
+# `pick_flow` bốc trúng bảng là phôi này tụt về một tờ và
+# `--multipage-only` loại nó — đo được chỉ 30-33% seed sống sót,
+# dù khối điều khoản của nó với tới mười sáu tờ.
 rows:
-- 2
-- 20
+- 4
+- 40
 always:
 - letterhead
 - doctitle

@@ -1371,5 +1371,1522 @@
   "Chỗ ký xác nhận nội dung trên.",
   "Người xác nhận đặt bút ở đây.",
   "Phần xác nhận của chứng từ."
+ ],
+ "Heading of one numbered clause in the agreement.": [
+  "English: This field contains the title for a specific numbered provision within the contract.",
+  "Vietnamese: Mục này dùng để hiển thị tiêu đề của một điều khoản được đánh số trong văn bản thỏa thuận."
+ ],
+ "Seller named on this invoice.": [
+  "The party identified as the seller on this invoice.",
+  "This invoice lists the entity acting as the seller.",
+  "The seller's name appears on this specific invoice document.",
+  "Bên bán được ghi nhận trên hóa đơn này.",
+  "Tên của người bán được thể hiện trên hóa đơn.",
+  "Đây là thông tin về bên bán được nêu trong hóa đơn."
+ ],
+ "Head of the issuing unit, who signs to approve the document.": [
+  "Người ký duyệt tài liệu với tư cách là người đứng đầu đơn vị ban hành",
+  "Chữ ký của thủ trưởng cơ quan phát hành nhằm phê duyệt văn bản",
+  "Vị trí dành cho người đứng đầu đơn vị phát hành khi ký chấp thuận tài liệu",
+  "The person in charge of the issuing department who signs to grant approval on the document",
+  "Signature line for the head of the issuing body to authorize the document",
+  "The official from the issuing unit who holds the authority to sign and approve the paper",
+  "Personnel from the issuing agency who sign the document to indicate formal approval"
+ ],
+ "The person signing as \"Nhân viên bán hàng\" on this document.": [
+  "The individual who executed the signature in the capacity of sales staff for this document.",
+  "This document bears the signature of the sales representative acting in their official role.",
+  "The identity of the sales employee who signed this specific administrative record.",
+  "Người ký vào tài liệu này với tư cách là nhân viên bán hàng.",
+  "Đây là phần xác nhận chữ ký của nhân viên bán hàng trên văn bản này.",
+  "Người thực hiện việc ký tên dưới chức danh nhân viên bán hàng đối với hồ sơ này."
+ ],
+ "Clerk who wrote this slip out.": [
+  "The individual responsible for preparing this slip.",
+  "This slip was authored by the named clerk.",
+  "The person who filled out this form.",
+  "Nhân viên đã lập phiếu này.",
+  "Phiếu này được viết bởi nhân viên nào.",
+  "Người trực tiếp soạn thảo phiếu hiện tại."
+ ],
+ "Chief accountant, who signs off the figures on this document.": [
+  "The document's figures are authenticated by the signature of the chief accountant.",
+  "Signatory of the financial data on this form is the chief accountant.",
+  "This document requires the chief accountant to sign off on its numerical values.",
+  "Người phê duyệt các số liệu trên tài liệu này là kế toán trưởng.",
+  "Các con số trong văn bản được kế toán trưởng ký xác nhận.",
+  "Kế toán trưởng là người ký duyệt các chỉ số tài chính tại đây."
+ ],
+ "Director of the organisation, signing as its legal representative.": [
+  "Signed by the organisation's director acting as its legal representative.",
+  "The organisation's director signs this document in the capacity of its legal representative.",
+  "This signature is affixed by the organisation's director, who serves as its legal representative.",
+  "Giám đốc tổ chức ký với tư cách là người đại diện theo pháp luật.",
+  "Người ký là Giám đốc tổ chức, hành sự với vai trò người đại diện theo pháp luật.",
+  "Giám đốc tổ chức là người ký thay mặt với tư cách đại diện pháp luật của tổ chức."
+ ],
+ "Cashier who rang up this sale.": [
+  "The employee responsible for processing the payment for this transaction.",
+  "Identify the staff member who handled the checkout for this purchase.",
+  "This field records the name of the cashier who completed the sale.",
+  "Nhân viên thu ngân đã thực hiện thanh toán cho giao dịch này.",
+  "Họ tên của người phụ trách khâu thu tiền tại thời điểm bán hàng.",
+  "Phần này ghi nhận nhân viên đã xử lý việc tính tiền cho đơn hàng."
+ ],
+ "Person handing over the money recorded on this receipt.": [
+  "The individual transferring the funds itemized in this receipt.",
+  "This field identifies the party responsible for delivering the cash amount specified on the voucher.",
+  "Refer to the name of the person who provides the monetary value documented here.",
+  "Người chuyển giao số tiền được ghi nhận trong biên lai này.",
+  "Phần thông tin xác định bên có nghĩa vụ thanh toán khoản tiền nêu trên.",
+  "Ghi rõ danh tính của người đã bàn giao số tiền tương ứng với nội dung biên lai."
+ ],
+ "Cashier who took in the money recorded on this receipt.": [
+  "The cashier responsible for receiving the funds specified in this receipt.",
+  "This receipt documents the payment received by the cashier.",
+  "The individual who collected the amount stated on the receipt.",
+  "Người thu ngân đã tiếp nhận khoản tiền được ghi nhận trên phiếu này.",
+  "Phiếu này xác nhận việc thu tiền do nhân viên thu ngân thực hiện.",
+  "Số tiền trong phiếu đã được thu bởi người làm nhiệm vụ thu ngân."
+ ],
+ "Treasurer holding the cash this document moves.": [
+  "The individual who serves as treasurer and holds the cash being moved by this document.",
+  "The cash this document transfers is held by the person acting as treasurer.",
+  "This document moves cash held by the treasurer.",
+  "Người giữ chức thủ quỹ nắm giữ số tiền mặt mà văn bản này đang thực hiện việc di chuyển.",
+  "Số tiền mặt được văn bản này di chuyển đang do người giữ chức thủ quỹ nắm giữ.",
+  "Thủ quỹ là người đang nắm giữ số tiền mặt mà văn bản này tiến hành chuyển động."
+ ],
+ "Person receiving the money paid out here.": [
+  "This field identifies the individual who receives the disbursed funds.",
+  "The recipient of the payment made on this form is recorded in this section.",
+  "Enter the name of the person to whom the money is paid here.",
+  "Trường này dùng để ghi tên người nhận tiền được chi trả.",
+  "Người được chi trả tiền trong giao dịch này là đối tượng được ghi nhận tại đây.",
+  "Thông tin về cá nhân nhận khoản tiền chi ra được điền vào phần này."
+ ],
+ "Person making the request this document records.": [
+  "This field identifies the individual who is submitting the application documented here.",
+  "The name recorded in this section refers to the person initiating the request.",
+  "It specifies the identity of the party making the inquiry captured by this form.",
+  "Phần này ghi lại tên của người thực hiện việc yêu cầu trong tài liệu.",
+  "Trường dữ liệu này dùng để xác định cá nhân đã gửi đơn yêu cầu được nêu trên.",
+  "Đây là thông tin về người đứng ra thực hiện yêu cầu mà văn bản này phản ánh."
+ ],
+ "Person handing the goods over.": [
+  "The individual responsible for delivering the merchandise.",
+  "This field identifies the party that transfers the items.",
+  "It specifies who is giving the goods to the recipient.",
+  "Người giao hàng hóa cho bên nhận.",
+  "Trường này xác định cá nhân có trách nhiệm chuyển giao sản phẩm.",
+  "Phần dành cho người thực hiện việc giao sản phẩm."
+ ],
+ "Storekeeper responsible for the goods moving in or out.": [
+  "The inventory manager who oversees the flow of items entering or leaving the premises.",
+  "Goods transfers are supervised by the designated custodian in this role.",
+  "This position is held by the individual accountable for all inbound and outbound merchandise.",
+  "Nhân viên kho là người chịu trách nhiệm quản lý các mặt hàng đi vào hoặc đi ra.",
+  "Việc di chuyển hàng hóa ra vào được giám sát bởi thủ kho được chỉ định.",
+  "Thủ kho đóng vai trò kiểm soát toàn bộ quy trình nhập và xuất kho vật tư."
+ ],
+ "Person taking delivery of the goods.": [
+  "The individual who receives the items is identified here.",
+  "This section specifies who accepts the delivered merchandise.",
+  "It indicates the party responsible for receiving the goods.",
+  "Người nhận hàng hóa được ghi nhận tại mục này.",
+  "Phần này xác định cá nhân tiếp nhận số hàng đã giao.",
+  "Đây là thông tin về bên có trách nhiệm nhận các sản phẩm."
+ ],
+ "Person who prepared this document.": [
+  "The individual responsible for drafting this specific document.",
+  "This document was prepared by the person identified here.",
+  "Whoever compiled the content of this document is listed in this field.",
+  "Người đã soạn thảo văn bản này.",
+  "Chủ thể thực hiện việc lập văn bản được ghi nhận tại đây.",
+  "Văn bản do ai thực hiện việc soạn thảo thì người đó được nêu ở trường này."
+ ],
+ "Clerk who drew up this table and signs for its contents.": [
+  "The staff member responsible for preparing this table and attesting to its accuracy.",
+  "This is the individual who compiled the table and provides a signature to verify its contents.",
+  "The person tasked with creating this table and signing off on the information within it.",
+  "Cán bộ trực tiếp lập bảng và ký xác nhận nội dung bên dưới.",
+  "Người phụ trách soạn thảo bảng biểu này và thực hiện việc ký tên để xác thực.",
+  "Đây là nhân viên lập bảng và chịu trách nhiệm ký vào nội dung của bảng."
+ ],
+ "Human-resources department, signing off the personnel figures.": [
+  "The HR division approves the staff count.",
+  "Personnel statistics are endorsed by the human-resources unit.",
+  "A sign-off on employee numbers is provided by the HR department.",
+  "Phòng nhân sự ký xác nhận số liệu nhân sự.",
+  "Các số liệu về nhân sự được bộ phận nhân sự phê duyệt.",
+  "Phòng nhân sự thực hiện việc ký duyệt con số nhân viên."
+ ],
+ "Timekeeper who recorded the attendance in this table.": [
+  "The individual responsible for logging attendance data in this table.",
+  "This table's attendance records were kept by the designated timekeeper.",
+  "The person tasked with documenting attendance for this specific table.",
+  "Chuyên viên chấm công thực hiện ghi chép dữ liệu trong bảng này.",
+  "Dữ liệu chấm công trong bảng này được lưu lại bởi người phụ trách thời gian.",
+  "Người có nhiệm vụ ghi nhận công tác trong bảng biểu hiện tại."
+ ],
+ "Supervisor of the department the document came from.": [
+  "Identifies the supervisor of the originating department.",
+  "The manager responsible for the department that submitted this document.",
+  "Specifies the oversight authority of the department where the document originated.",
+  "Ghi nhận người phụ trách phòng ban đã tạo ra văn bản này.",
+  "Người quản lý trực tiếp của bộ phận xuất phát ra hồ sơ.",
+  "Thông tin về cấp trên của đơn vị hành chính có nguồn gốc phát hành tài liệu."
+ ],
+ "The person signing as \"THƯ KÝ\" on this document.": [
+  "THƯ KÝ is the title of the individual who executes the signature on the form.",
+  "The signer identified by the designation THƯ KÝ.",
+  "Người ký tên trên tài liệu với vai trò là THƯ KÝ.",
+  "Hồ sơ này được ký bởi cá nhân giữ chức danh THƯ KÝ.",
+  "Người thực hiện chữ ký với danh xưng THƯ KÝ trên văn bản.",
+  "CHỮ KÝ của người giữ vị trí THƯ KÝ được thể hiện tại đây.",
+  "Vị trí ký tên dành cho người có chức vụ THƯ KÝ trong tài liệu này.",
+  "Người mang danh hiệu THƯ KÝ là chủ thể ký kết văn bản.",
+  "Người ký tên với tư cách THƯ KÝ trên hồ sơ hành chính này."
+ ],
+ "The person signing as \"CHỦ TRÌ\" on this document.": [
+  "The individual who provides the signature in the capacity of CHỦ TRÌ for this document.",
+  "This field identifies the person acting as CHỦ TRÌ by signing the document.",
+  "The signatory of the document who holds the title of CHỦ TRÌ.",
+  "Người ký tên trên văn bản này với tư cách là CHỦ TRÌ.",
+  "Cá nhân ký xác nhận vai trò CHỦ TRÌ trên tài liệu này là ai.",
+  "Dòng chữ ký của người giữ chức vụ CHỦ TRÌ trên văn bản."
+ ],
+ "The person signing as \"ĐẠI DIỆN BÊN GIAO\" on this document.": [
+  "The individual who executes the signature for the transferring party.",
+  "This refers to the representative acting on behalf of the party delivering the goods or services.",
+  "The signatory designated to represent the transferring side on this form.",
+  "Đây là người ký thay mặt cho bên giao trong tài liệu này.",
+  "Người đại diện thực hiện việc ký tên cho phía bên giao tại đây.",
+  "Cá nhân được chỉ định để ký thay cho bên có nghĩa vụ giao hàng hoặc cung cấp dịch vụ."
+ ],
+ "The person signing as \"ĐẠI DIỆN BÊN NHẬN\" on this document.": [
+  "The individual who executes the signature in the capacity of the recipient's representative.",
+  "This refers to the person acting as the representative for the receiving party when signing the document.",
+  "The signature on this document is provided by the person representing the recipient.",
+  "Người ký tên với tư cách là đại diện của bên nhận tài liệu này.",
+  "Đây là người thực hiện việc ký kết trên văn bản dưới danh nghĩa đại diện bên nhận.",
+  "Cá nhân đứng tên ký văn bản với vai trò là đại diện cho phía nhận."
+ ],
+ "The person signing as \"THƯ KÝ CUỘC HỌP\" on this document.": [
+  "The individual who executed the signature in the capacity of Meeting Secretary.",
+  "Identify the person responsible for signing this document as the Meeting Secretary.",
+  "This field captures the name of the official acting as the Meeting Secretary who signed the record.",
+  "Người ký tên trên văn bản với tư cách là Thư ký cuộc họp.",
+  "Phần này ghi lại thông tin của cá nhân đã ký kết dưới vai trò Thư ký cuộc họp.",
+  "Chỉ ra người thực hiện chữ ký đại diện cho vị trí Thư ký cuộc họp trên tài liệu này."
+ ],
+ "The person signing as \"CHỦ TOẠ\" on this document.": [
+  "This field identifies the individual who signs in the capacity of Chairperson.",
+  "The identity of the person acting as the presiding officer is recorded here.",
+  "Whoever affixes their signature under the title of Chair is represented by this entry.",
+  "Trường dữ liệu này chỉ ra người ký tên với tư cách là Chủ tọa.",
+  "Người giữ chức danh Chủ tọa và tiến hành ký tên vào văn bản được ghi nhận tại đây.",
+  "Thông tin về cá nhân đóng vai trò chủ tọa và ký kết văn bản nằm ở mục này."
+ ],
+ "The person signing as \"ĐẠI DIỆN CÁC BÊN\" on this document.": [
+  "This field identifies the individual who provides the signature for the representative of the parties.",
+  "The signatory acting on behalf of all involved parties is recorded in this field.",
+  "Indicate the name of the person who signs as the representative for the parties here.",
+  "Trường này ghi nhận người ký thay mặt cho các bên trong văn bản.",
+  "Người đại diện cho các bên ký vào tài liệu này được nêu tại ô này.",
+  "Ô này dành cho chữ ký của người đứng ra đại diện cho các bên liên quan."
+ ],
+ "Where copies of this document are sent.": [
+  "This field indicates the destinations for the duplicate copies of the current document.",
+  "The recipients who receive the replicated versions of this file are identified here.",
+  "Destinations for dispatching the duplicated instances of this paperwork are recorded in this section.",
+  "Chỗ này ghi lại các nơi nhận được bản sao của tài liệu hiện tại.",
+  "Mục này liệt kê các đơn vị hoặc cá nhân được gửi bản sao của hồ sơ này.",
+  "Nơi nhận các bản sao của văn bản này được thể hiện tại đây."
+ ],
+ "The person signing as \"TM. THỦ TRƯỞNG ĐƠN VỊ\" on this document.": [
+  "The individual identified as representing the Head of the Unit who signs this document.",
+  "This field specifies who signed the document in the capacity of the Unit Head's representative.",
+  "The signatory designated as the Representative of the Head of the Unit for this specific document.",
+  "The individual whose signature appears under the role of TM. THỦ TRƯỞNG ĐƠN VỊ on the document.",
+  "Người ký tên tại vị trí TM. THỦ TRƯỞNG ĐƠN VỊ trên văn bản này."
+ ],
+ "The person signing as \"KT. GIÁM ĐỐC\" on this document.": [
+  "The individual whose signature appears under the authority of KT. GIÁM ĐỐC.",
+  "Whoever is responsible for signing this document in the capacity of KT. GIÁM ĐỐC.",
+  "The signatory acting on behalf of the Director as indicated by the title KT. GIÁM ĐỐC.",
+  "Người ký tên trên tài liệu này với tư cách là KT. GIÁM ĐỐC.",
+  "Cá nhân thực hiện chữ ký dưới chức danh KT. GIÁM ĐỐC trong văn bản này.",
+  "Chủ thể ký thay Giám đốc được thể hiện qua cụm từ KT. GIÁM ĐỐC trên giấy tờ."
+ ],
+ "The person signing as \"TM. BAN GIÁM ĐỐC\" on this document.": [
+  "The individual who executes the signature block designated as TM. BAN GIÁM ĐỐC on this document.",
+  "This field identifies the person acting under the TM. BAN GIÁM ĐỐC title when signing the document.",
+  "The signatory responsible for the TM. BAN GIÁM ĐỐC designation appears here.",
+  "Người ký thay mặt Ban Giám đốc trên văn bản này là cá nhân được ghi nhận tại đây.",
+  "Chữ ký thuộc phần TM. BAN GIÁM ĐỐC trên tài liệu do người nào thực hiện được thể hiện trong trường này.",
+  "Trường này dùng để xác định danh tính của người ký với tư cách là TM. BAN GIÁM ĐỐC."
+ ],
+ "The person signing as \"NGƯỜI LÀM ĐƠN\" on this document.": [
+  "The individual identified as the applicant who signs the document.",
+  "This field indicates the person whose signature appears under the applicant heading.",
+  "The signer designated as the applicant on the form.",
+  "Người ký tên dưới mục NGƯỜI LÀM ĐƠN trên tài liệu này.",
+  "Đó là người thực hiện việc ký tên với tư cách người làm đơn.",
+  "Phần này chỉ ra cá nhân ký xác nhận ở vị trí người làm đơn."
+ ],
+ "The unit's own confirmation of what is written above.": [
+  "This section serves as the department's formal validation of the preceding details.",
+  "The office affirms the accuracy of the information presented in the above text.",
+  "A statement by the unit verifying the content recorded previously.",
+  "Bộ phận này xác nhận tính chính xác của các thông tin đã nêu ở trên.",
+  "Đơn vị có trách nhiệm đối chiếu và cam kết với nội dung được trình bày phía trên.",
+  "Phần này dùng để cơ quan tự xác minh những gì đã được ghi nhận ở các mục trước đó."
+ ],
+ "The person signing as \"TM. ĐƠN VỊ\" on this document.": [
+  "The individual who provides the signature for the TM. ĐƠN VỊ role on this document.",
+  "Signature responsibility for the TM. ĐƠN VỊ position belongs to this specific person.",
+  "This document is signed by the person acting in the capacity of TM. ĐƠN VỊ.",
+  "Người ký thay cho chức danh TM. ĐƠN VỊ trên tài liệu này.",
+  "Cá nhân thực hiện hành động ký tên với tư cách là TM. ĐƠN VỊ trong văn bản.",
+  "Chữ ký trên tài liệu này thuộc về người giữ vị trí TM. ĐƠN VỊ."
+ ],
+ "The person signing as \"NGƯỜI VIẾT ĐƠN\" on this document.": [
+  "The individual who signs in the capacity of the applicant on this form.",
+  "This field identifies the person acting as the applicant when executing the document.",
+  "The signature of the applicant is recorded by the person designated as NGƯỜI VIẾT ĐƠN.",
+  "Người ký với tư cách là người viết đơn trên tài liệu này.",
+  "Dòng chữ ký của người viết đơn được thực hiện bởi cá nhân đứng tên trên đơn.",
+  "Đây là người thực hiện việc ký kết với vai trò người viết đơn của văn bản."
+ ],
+ "The person signing as \"BÊN UỶ QUYỀN\" on this document.": [
+  "The individual executing the signature for the authorizing party.",
+  "This field identifies the person who signs in the capacity of BÊN UỶ QUYỀN.",
+  "The signatory acting on behalf of the principal as indicated by the BÊN UỶ QUYỀN label.",
+  "Người ký thay mặt bên ủy quyền trên tài liệu này.",
+  "Cá nhân thực hiện chữ ký với tư cách là BÊN UỶ QUYỀN.",
+  "Trường này ghi nhận người đại diện ký tên cho bên ủy quyền."
+ ],
+ "The person signing as \"BÊN ĐƯỢC UỶ QUYỀN\" on this document.": [
+  "This is the individual executing the signature for the authorized party on the paper.",
+  "The document bears the signature of the person acting as the authorized party.",
+  "It identifies who signs in the capacity of the authorized party for this specific paperwork.",
+  "Đây là người thực hiện ký tên với tư cách là Bên được ủy quyền trên tài liệu.",
+  "Tài liệu này có chữ ký của người đóng vai trò là Bên được ủy quyền.",
+  "Danh tính của người ký thay mặt cho Bên được ủy quyền đối với hồ sơ này."
+ ],
+ "Person granting the authority this letter delegates.": [
+  "The entity that delegates its powers through this document is the subject of this field.",
+  "This entry identifies the individual or organization conferring the delegated authority.",
+  "It records the party responsible for granting the powers outlined in the letter.",
+  "Chữ ký của người có thẩm quyền ban hành văn bản ủy quyền này được ghi nhận tại đây.",
+  "Trường này chỉ rõ chủ thể đã chuyển giao các quyền hạn cho người khác.",
+  "Đây là thông tin về tổ chức hoặc cá nhân thực hiện việc ủy quyền."
+ ],
+ "Person receiving the delegated authority.": [
+  "This field indicates the individual to whom authority has been transferred.",
+  "The recipient of the delegated powers is identified in this section.",
+  "It names the party that has been granted the delegated authority.",
+  "Đây là phần chỉ định người được giao quyền hạn.",
+  "Người tiếp nhận quyền được ủy quyền sẽ được ghi nhận tại đây.",
+  "Trường này xác định cá nhân nhận chuyển giao quyền hạn."
+ ],
+ "The person signing as \"NGƯỜI GIỚI THIỆU\" on this document.": [
+  "The individual who signs the document in the capacity of the introducer.",
+  "The signature on this document belongs to the person acting as the introducer.",
+  "Identifies the person who provides the signature for the introducer role on this form.",
+  "Người ký vào tài liệu này với tư cách là người giới thiệu.",
+  "Chữ ký trên tài liệu này thuộc về cá nhân đảm nhận vai trò người giới thiệu.",
+  "Xác định người thực hiện việc ký tên với danh nghĩa người giới thiệu trong hồ sơ này."
+ ],
+ "The insured person this policy or claim is about.": [
+  "This field identifies the individual covered by the current policy or claim.",
+  "The subject of the policy or claim refers to the specific person who is insured.",
+  "It specifies the identity of the person holding the insurance policy or filing the claim.",
+  "Trường này chỉ rõ người được bảo hiểm trong phạm vi hợp đồng hoặc yêu cầu bồi thường hiện tại.",
+  "Người tham gia bảo hiểm là đối tượng mà hồ sơ đơn bảo hiểm hoặc yêu cầu chi trả này hướng đến.",
+  "Thông tin này xác định danh tính của cá nhân được cấp quyền lợi bảo hiểm hoặc đang thực hiện yêu cầu bồi thường."
+ ],
+ "Witness who signs to confirm what the document records.": [
+  "The individual who provides a signature to verify the content recorded in the document.",
+  "Signatories who attest to the accuracy of what is stated in the paperwork.",
+  "Persons responsible for signing in order to confirm the information contained within the file.",
+  "Người ký tên nhằm xác nhận nội dung được ghi nhận trong tài liệu.",
+  "Các cá nhân thực hiện việc ký để chứng thực những gì được trình bày trong văn bản.",
+  "Người có trách nhiệm ký xác nhận cho những thông tin được lưu trữ trong hồ sơ."
+ ],
+ "Person who filled in this declaration.": [
+  "This is the individual responsible for completing the form.",
+  "The declaration was completed by this specific individual.",
+  "The person whose details are provided below is the one who made this declaration.",
+  "Người điền thông tin vào tờ khai này là cá nhân được chỉ định.",
+  "Đây là người thực hiện việc khai báo trên mẫu đơn.",
+  "Thông tin của người lập tờ khai được ghi nhận tại đây."
+ ],
+ "Consultant who advised on this form and witnesses it.": [
+  "The consultant who provided advice on this document and serves as its witness.",
+  "Witnessed by the consultant responsible for advising on this form.",
+  "This field is for the consultant who advised on and witnessed the form.",
+  "Tư vấn viên đã tư vấn cho biểu mẫu này và làm chứng cho nó.",
+  "Biểu mẫu này được chứng thực bởi tư vấn viên đã đưa ra lời khuyên.",
+  "Người tư vấn chịu trách nhiệm cho các lời khuyên về biểu mẫu này đồng thời là nhân chứng."
+ ],
+ "Officer who received the paperwork at the counter.": [
+  "The staff member at the service desk who took possession of the documents.",
+  "This refers to the counter agent responsible for accepting the submitted paperwork.",
+  "The individual behind the reception window who handled the intake of the file.",
+  "Cán bộ tại quầy giao dịch chịu trách nhiệm tiếp nhận hồ sơ.",
+  "Nhân viên trực tiếp nhận bộ hồ sơ do người dân cung cấp tại quầy.",
+  "Người làm việc tại bộ phận tiếp nhận đã tiếp nhận các giấy tờ liên quan."
+ ],
+ "The person signing as \"NGƯỜI KHẢO SÁT\" on this document.": [
+  "The individual who executes the signature under the title NGƯỜI KHẢO SÁT for this document.",
+  "This field identifies the person responsible for signing as the surveyor on the current form.",
+  "The signatory acting in the capacity of NGƯỜI KHẢO SÁT on this specific document.",
+  "Người ký vào tài liệu này với tư cách là NGƯỜI KHẢO SÁT.",
+  "Cá nhân chịu trách nhiệm ký tên dưới tiêu đề NGƯỜI KHẢO SÁT trên biểu mẫu này.",
+  "Dòng chữ ký của người thực hiện vai trò NGƯỜI KHẢO SÁT đối với văn bản hiện tại."
+ ],
+ "The person signing as \"Người trả lời\" on this document.": [
+  "Individual identified as the responder on the form.",
+  "The signatory fulfilling the role of the respondent.",
+  "Person who executes the signature for the answering party.",
+  "Cá nhân ký xác nhận với tư cách là người trả lời.",
+  "Người thực hiện hành vi ký dưới danh hiệu người trả lời.",
+  "Chủ thể ký vào văn bản với vai trò là bên trả lời."
+ ],
+ "The person signing as \"Cán bộ khảo sát\" on this document.": [
+  "The individual who signs in the capacity of survey officer for this document.",
+  "This is the signature line reserved for the person acting as the survey officer.",
+  "The document requires the signature of the person fulfilling the role of survey officer.",
+  "Người ký tên trên văn bản này với tư cách là cán bộ khảo sát.",
+  "Vị trí ký dành cho cá nhân thực hiện chức năng cán bộ khảo sát trong tài liệu này.",
+  "Chữ ký của người giữ vai trò cán bộ khảo sát được ghi nhận tại đây."
+ ],
+ "Doctor who treated the patient and signs the record.": [
+  "The physician who provided care and attests to the record by signing.",
+  "This field is for the signature of the doctor responsible for the patient's treatment.",
+  "The medical professional who managed the case and authenticates the document with their signature.",
+  "Bác sĩ đã khám chữa bệnh cho người bệnh và ký xác nhận vào hồ sơ.",
+  "Người ký ghi nhận y bạ chính là vị bác sĩ trực tiếp điều trị cho bệnh nhân.",
+  "Chữ ký của bác sĩ phụ trách điều trị được ghi nhận tại đây để xác thực thông tin."
+ ],
+ "The person signing as \"TRƯỞNG KHOA\" on this document.": [
+  "The individual responsible for signing the document in the capacity of Head of Department.",
+  "Head of Department is the role held by the person providing the signature on this form.",
+  "The signature on this document is affixed by the individual serving as Head of Department.",
+  "Người ký tên trên tài liệu này với tư cách là Trưởng khoa.",
+  "Chức danh Trưởng khoa thuộc về người thực hiện việc ký tên trên biểu mẫu này.",
+  "Việc ký tên trên văn bản này do người giữ chức Trưởng khoa thực hiện."
+ ],
+ "The person signing as \"GIÁM ĐỐC BỆNH VIỆN\" on this document.": [
+  "The individual who signs the document under the title of Hospital Director.",
+  "This field identifies the person holding the position of Hospital Director who signs the document.",
+  "The signature on this document is provided by the person serving as the Hospital Director.",
+  "Người ký tên trên tài liệu này với tư cách là Giám đốc Bệnh viện.",
+  "Trường hợp này chỉ người đảm nhiệm chức vụ Giám đốc Bệnh viện thực hiện việc ký trên hồ sơ.",
+  "Dấu hiệu nhận diện người ký tài liệu được xác định là Giám đốc Bệnh viện."
+ ],
+ "The person signing as \"NHÂN VIÊN THU NGÂN\" on this document.": [
+  "The individual who signs the document in the capacity of a cash collection employee.",
+  "This field identifies the person acting as a cashier when signing the document.",
+  "It refers to the signer of the document who holds the title of cash collection employee.",
+  "Người ký tên trên tài liệu với tư cách là nhân viên thu ngân.",
+  "Tài liệu này ghi nhận cá nhân thực hiện việc ký kết dưới danh nghĩa nhân viên thu ngân.",
+  "Trường này dùng để xác định người ký tài liệu khi đảm nhận vai trò nhân viên thu ngân."
+ ],
+ "The person signing as \"BÁC SĨ KÊ ĐƠN\" on this document.": [
+  "The individual who executes the signature in the BÁC SĨ KÊ ĐƠN capacity.",
+  "This field identifies the physician acting as the prescriber on the document.",
+  "The name of the doctor who signs as the ordering physician.",
+  "Người ký tên với vai trò BÁC SĨ KÊ ĐƠN trên hồ sơ.",
+  "Nhân sự thực hiện chữ ký tại phần dành cho bác sĩ kê đơn.",
+  "Đây là thông tin về người bác sĩ chịu trách nhiệm kê đơn và ký xác nhận."
+ ],
+ "The insurance company party to this document.": [
+  "This field identifies the insurance provider that is a signatory to the document.",
+  "The insurance firm named as a party in this agreement is listed here.",
+  "Refer to this field for the name of the insurer bound by the terms of this paperwork.",
+  "Trường dữ liệu này ghi nhận tên của công ty bảo hiểm có tư cách bên tham gia văn bản.",
+  "Doanh nghiệp bảo hiểm đóng vai trò là một bên trong văn bản này được liệt kê tại đây.",
+  "Thông tin về đơn vị bảo hiểm tham gia ký kết văn bản được thể hiện qua trường này."
+ ],
+ "The person signing as \"ĐẠI DIỆN CÔNG TY\" on this document.": [
+  "The individual who executes the signature in the capacity of company representative.",
+  "Whoever is designated to sign the document as the official company representative.",
+  "This field identifies the person authorized to sign on behalf of the company.",
+  "Người thực hiện ký tên với tư cách đại diện công ty trên tài liệu này.",
+  "Đó là người được ủy quyền ký thay mặt công ty tại phần ĐẠI DIỆN CÔNG TY.",
+  "Hạng mục xác định cá nhân ký tên với vai trò đại diện pháp lý của công ty."
+ ],
+ "The person signing as \"CÁN BỘ KHAI THÁC\" on this document.": [
+  "The individual who executes the signature under the CÁN BỘ KHAI THÁC title.",
+  "This field identifies the signatory acting in the capacity of CÁN BỘ KHAI THÁC.",
+  "It refers to the person responsible for signing the document as CÁN BỘ KHAI THÁC.",
+  "Người ký tên với chức danh CÁN BỘ KHAI THÁC trên tài liệu này.",
+  "Dữ liệu này chỉ định cá nhân thực hiện việc ký tên dưới vai trò CÁN BỘ KHAI THÁC.",
+  "Đây là người chịu trách nhiệm ký kết với tư cách là CÁN BỘ KHAI THÁC."
+ ],
+ "The person signing as \"NHÂN VIÊN THU\" on this document.": [
+  "The individual providing the signature under the title of Collection Staff.",
+  "This field is occupied by the signature of the employee acting as a Collection Agent.",
+  "The person identified as the Collection Staff member who signs the document.",
+  "Người ký tên trên tài liệu với tư cách là nhân viên thu.",
+  "Cái chữ ký của nhân viên thu được thể hiện trong hồ sơ này.",
+  "Vị trí dành cho chữ ký của người đóng vai trò nhân viên thu."
+ ],
+ "The person signing as \"ĐƠN VỊ PHÁT HÀNH\" on this document.": [
+  "The individual who executes the signature for the issuing unit on this paper.",
+  "This is the person responsible for signing the document on behalf of the issuing organization.",
+  "The signer identified under the issuing unit designation on the form.",
+  "Người ký tên thay mặt cho đơn vị phát hành trên tài liệu này.",
+  "Đây là cá nhân thực hiện việc ký tên cho đơn vị phát hành trong văn bản.",
+  "Người thực hiện chữ ký cho đơn vị phát hành trên giấy tờ này."
+ ],
+ "Receptionist who handled this stay.": [
+  "This field identifies the receptionist in charge of the guest's stay.",
+  "The name of the receptionist who took care of this particular stay goes here.",
+  "It records the front desk staff member responsible for handling the accommodation.",
+  "Nhân viên lễ tân phụ trách ca trực trong suốt kỳ lưu trú này được ghi tại đây.",
+  "Thông tin về người trực lễ tân đã xử lý hồ sơ lưu trú này được cập nhật vào trường này.",
+  "Đây là vị trí dành cho tên nhân viên lễ tân tiếp đón và hỗ trợ trong quá trình nghỉ dưỡng."
+ ],
+ "Member of staff who dealt with this document.": [
+  "The employee assigned to handle this document.",
+  "This field identifies the staff member responsible for processing the document.",
+  "The name of the employee who processed the document.",
+  "Nhân viên phụ trách xử lý văn bản này.",
+  "Người cán bộ đã thực hiện thao tác trên văn bản.",
+  "Nhân viên được giao nhiệm vụ xử lý văn bản."
+ ],
+ "Manager signing off this document.": [
+  "The individual responsible for approving this document by their signature.",
+  "This field is designated for the manager's approval signature.",
+  "The person in charge of signing off on the document in a managerial capacity.",
+  "Người có trách nhiệm ký xác nhận trên tài liệu này với vai trò quản lý.",
+  "Chỗ dành cho chữ ký phê duyệt của người quản lý đối với văn bản.",
+  "Cá nhân giữ vị trí quản lý thực hiện việc ký kết để hoàn tất tài liệu này."
+ ],
+ "The person signing as \"NGƯỜI LẬP BÁO GIÁ\" on this document.": [
+  "The individual who signs the document in the capacity of the person preparing the quotation.",
+  "This field identifies the person who executes the signature as the preparer of the quotation.",
+  "It refers to the party signing the document with the title of the person making the quotation.",
+  "Người ký vào tài liệu này với tư cách là người lập báo giá.",
+  "Dữ liệu này xác định cá nhân thực hiện việc ký tên dưới danh nghĩa người lập báo giá.",
+  "Đây là người chịu trách nhiệm ký xác nhận trên văn bản với vai trò là người lập báo giá."
+ ],
+ "The person signing as \"BÊN BÁO GIÁ\" on this document.": [
+  "The individual who executes the signature for the quoting party on this document.",
+  "The specific person responsible for signing on behalf of the entity providing the quotation.",
+  "Whose signature appears in the capacity of the quoting party for this administrative record.",
+  "Người thực hiện ký tên với tư cách là bên báo giá trên tài liệu này.",
+  "Chủ thể có trách nhiệm ký xác nhận cho phía đưa ra báo giá trong văn bản.",
+  "Danh tính của người đại diện ký tên cho bên báo giá trong hồ sơ."
+ ],
+ "The person signing as \"BÊN NHẬN BÁO GIÁ\" on this document.": [
+  "The individual who executes the signature on behalf of the party receiving the quotation.",
+  "This field identifies the person responsible for signing as the recipient of the price estimate.",
+  "The name of the person who signs the document in the capacity of the entity receiving the quotation.",
+  "Người ký thay mặt bên nhận báo giá trên tài liệu này.",
+  "Danh tính của cá nhân có trách nhiệm ký tên với tư cách là bên tiếp nhận báo giá.",
+  "Người thực hiện ký tên dưới mục bên nhận báo giá của văn bản."
+ ],
+ "The person signing as \"ĐẠI DIỆN CỬA HÀNG\" on this document.": [
+  "The individual identified as the store representative who signs this document.",
+  "This field refers to the signatory acting on behalf of the store.",
+  "The person who executes the signature for the store representative role.",
+  "Người ký tên với tư cách là đại diện cửa hàng trên tài liệu này.",
+  "Phần dành cho chữ ký của người đại diện cho cửa hàng.",
+  "Người thực hiện việc ký kết thay mặt cho cửa hàng trong văn bản này."
+ ],
+ "Technician who carried out the work recorded here.": [
+  "The name of the technician responsible for performing the tasks listed in this document.",
+  "This field identifies the technician who executed the work detailed herein.",
+  "A record of the technician who carried out the operations described in this entry.",
+  "Kỹ thuật viên thực hiện công việc được ghi nhận trong tài liệu này.",
+  "Phần này ghi rõ kỹ thuật viên đã tiến hành các hạng mục công việc nêu trên.",
+  "Tên của người kỹ thuật viên đã hoàn thành công việc được mô tả ở đây."
+ ],
+ "The person signing as \"NGƯỜI LẬP DANH SÁCH\" on this document.": [
+  "The individual who executes the signature in the capacity of the list creator for this document.",
+  "This field identifies the specific person responsible for signing the document as the list preparer.",
+  "The signatory designated to act as the one who established the list on the presented paperwork.",
+  "Cá nhân ký tên với vai trò là người lập danh sách trên tài liệu này.",
+  "Trang này xác định người thực hiện chữ ký cho vị trí người lập danh sách.",
+  "Đây là thông tin về người ký thay mặt cho vị trí người lập danh sách trong văn bản."
+ ],
+ "Representative signing for Party A.": [
+  "This field is reserved for the signature of the individual acting as the authorized representative of Party A.",
+  "The person designated to sign on behalf of Party A provides their signature in this section.",
+  "Party A's legal representative executes their signature at this designated location.",
+  "Chỗ này dành cho chữ ký của người đại diện hợp pháp cho Bên A.",
+  "Người được ủy quyền đại diện cho Bên A sẽ ký tên tại vị trí này.",
+  "Phần này là nơi người đại diện của Bên A thực hiện việc ký tên."
+ ],
+ "Representative signing for Party B.": [
+  "The individual from Party B who executes the signature on the document.",
+  "Signature executed by the designated representative of Party B.",
+  "The authorized delegate of Party B responsible for signing.",
+  "Người đại diện được ủy quyền của Bên B tiến hành ký tên.",
+  "Chữ ký do người đại diện hợp pháp của Bên B thực hiện.",
+  "Phần ký tên dành cho người đại diện của Bên B."
+ ],
+ "The person signing as \"XÁC NHẬN\" on this document.": [
+  "Xác định người ký dưới mục Xác nhận của tài liệu này",
+  "Người đóng dấu và ký tên ở phần xác nhận",
+  "The individual who provides the signature in the confirmation section of the current form",
+  "Refers to the signatory responsible for the confirmation block on this paperwork",
+  "Identifies the party executing the signature within the designated confirmation area",
+  "Danh tính của người ký tên tại phần xác nhận trên giấy tờ này",
+  "Chỉ người có chữ ký trong khu vực được ghi là xác nhận",
+  "Người chịu trách nhiệm ký kết tại mục xác nhận của hồ sơ"
+ ],
+ "The person signing as \"NGƯỜI VẼ\" on this document.": [
+  "The individual who affixes their signature to the drafter field.",
+  "This field identifies the signatory designated as the person in charge of drawing.",
+  "It records the name of the person who signs in the capacity of the drafter.",
+  "Trường này ghi nhận người ký tên với tư cách là người vẽ.",
+  "Đây là thông tin về cá nhân thực hiện việc ký tên vào vị trí người vẽ.",
+  "Người chịu trách nhiệm ký xác nhận ở mục người vẽ trên tài liệu này."
+ ],
+ "The person signing as \"CHỦ TRÌ THIẾT KẾ\" on this document.": [
+  "This identifies the individual who signs the document in the capacity of Design Coordinator.",
+  "The document specifies the name of the person acting as the Design Coordinator for the signature block.",
+  "It refers to the party responsible for signing off as the Design Coordinator on this specific paperwork.",
+  "Trường hợp này xác định người ký tên với tư cách là Chủ trì Thiết kế trên tài liệu.",
+  "Thông tin này dùng để ghi nhận cá nhân thực hiện việc ký kết với vai trò Chủ trì Thiết kế.",
+  "Đây là danh tính của người chịu trách nhiệm ký xác nhận ở vị trí Chủ trì Thiết kế."
+ ],
+ "The person signing as \"CHỦ NHIỆM DỰ ÁN\" on this document.": [
+  "The individual who executes the signature in the capacity of Project Director.",
+  "Signed by the person holding the position of Project Director on this form.",
+  "This field identifies the signatory acting as the Project Director.",
+  "Người ký thay mặt cho chức danh Chủ nhiệm dự án trên hồ sơ này.",
+  "Hạng mục dành cho chữ ký của cá nhân giữ vị trí Chủ nhiệm dự án.",
+  "Chủ nhiệm dự án là người trực tiếp ký xác nhận văn bản này."
+ ],
+ "The person signing as \"TRƯỞNG PHÒNG ĐÀO TẠO\" on this document.": [
+  "The individual whose signature appears under the title of Head of Training on this document.",
+  "This field identifies the specific person acting in the capacity of Head of Training for the document.",
+  "The signatory who holds the position of Head of Training on this particular form.",
+  "Người ký với chức danh Trưởng phòng Đào tạo trên tài liệu này.",
+  "Dữ liệu này xác định người thực hiện việc ký tên dưới cương vị Trưởng phòng Đào tạo.",
+  "Đây là người có thẩm quyền ký thay Trưởng phòng Đào tạo trên văn bản."
+ ],
+ "The person signing as \"HIỆU TRƯỞNG\" on this document.": [
+  "The individual who executes the signature under the title of Principal on this form.",
+  "This field identifies the Principal responsible for signing the current document.",
+  "The specific person acting as the Principal when signing this particular document.",
+  "Người ký tên với chức danh Hiệu trưởng trên tài liệu này.",
+  "Chức danh của người thực hiện việc ký tên trên văn bản này là Hiệu trưởng.",
+  "Danh tính của người giữ chức Hiệu trưởng đã ký vào trang giấy này."
+ ],
+ "The person signing as \"CHỦ ĐẦU TƯ\" on this document.": [
+  "The individual who executes the signature in the capacity of the investor.",
+  "The identity of the signatory acting on behalf of the project investor.",
+  "The person responsible for signing this document as the investor.",
+  "Người ký tên trên văn bản này với tư cách là chủ đầu tư.",
+  "Hành động ký kết của chủ đầu tư được thể hiện trên tài liệu này.",
+  "Danh tính của người đại diện cho chủ đầu tư thực hiện ký tên."
+ ],
+ "The person signing as \"ĐƠN VỊ QUẢN LÝ\" on this document.": [
+  "Who signs the document in the capacity of the management unit",
+  "The identity of the individual acting as the authorized signatory for the managing entity",
+  "Which person is responsible for signing on behalf of the administrative management body",
+  "Người ký thay mặt cho đơn vị quản lý trên văn bản này",
+  "Tên của cá nhân thực hiện quyền ký tên với tư cách là đơn vị quản lý",
+  "Ai là người có thẩm quyền ký tên cho đơn vị quản lý trong tài liệu"
+ ],
+ "The person signing as \"KẾ TOÁN BÊN A\" on this document.": [
+  "The individual who executes the signature for the Party A accountant position on this document.",
+  "This field identifies the person responsible for signing in the capacity of the accountant for Party A.",
+  "The name of the person acting as the signing accountant on the Party A side of this form.",
+  "Người ký thay cho vị trí kế toán của bên A trên hồ sơ này.",
+  "Đây là thông tin về cá nhân thực hiện ký tên với tư cách kế toán bên A.",
+  "Họ tên của nhân sự giữ chức vụ kế toán và tiến hành ký kết cho phía bên A."
+ ],
+ "The person signing as \"KẾ TOÁN BÊN B\" on this document.": [
+  "The individual responsible for the accounting signature on the B side of the document.",
+  "Whoever executes the signature in the capacity of B side accountant.",
+  "This refers to the accountant representing Party B who signs the document.",
+  "Người thực hiện chữ ký với tư cách là kế toán bên B trên văn bản.",
+  "Đây là người có trách nhiệm ký tên ở mục kế toán bên B của tài liệu.",
+  "Cá nhân đóng vai trò kế toán bên B ký xác nhận trên giấy tờ."
+ ],
+ "The person signing as \"GIÁM ĐỊNH VIÊN\" on this document.": [
+  "This document is signed by the individual serving as the appraiser.",
+  "The signature on this form belongs to the designated appraiser.",
+  "The appraiser is the person who has signed this document.",
+  "Người ký tên với tư cách là Giám định viên trên tài liệu này.",
+  "Chữ ký trên văn bản này được thực hiện bởi người giữ chức Giám định viên.",
+  "Tài liệu này có chữ ký của nhân sự đảm nhận vai trò Giám định viên."
+ ],
+ "The person signing as \"CHỦ TÀI SẢN\" on this document.": [
+  "This field identifies the individual who signs the document in the capacity of property owner.",
+  "The signature block for the property owner is designated by this entry.",
+  "The party executing the document as the asset holder corresponds to this field.",
+  "Trường dữ liệu này ghi nhận người ký tên với tư cách chủ tài sản trên văn bản.",
+  "Dòng chữ ký của chủ sở hữu tài sản được thể hiện thông qua trường thông tin này.",
+  "Người đóng dấu và ký thay cho chủ tài sản trên hồ sơ này được xác định bởi trường này."
+ ],
+ "The person signing as \"KẾ TOÁN\" on this document.": [
+  "The individual who signs the document in the capacity of the accountant.",
+  "Whoever affixes their signature to this document as the accounting staff member.",
+  "The identity of the person who signs off on this paperwork as the accountant.",
+  "Người ký tên vào tài liệu này với tư cách là nhân viên kế toán.",
+  "Chủ thể thực hiện việc ký đóng dấu trên văn bản với vai trò kế toán viên.",
+  "Người chịu trách nhiệm ký xác nhận trên hồ sơ này dưới danh nghĩa bộ phận kế toán."
+ ],
+ "The person signing as \"TRƯỞNG BAN KIỂM KÊ\" on this document.": [
+  "The individual who executes the signature in the capacity of Head of the Inventory Committee.",
+  "This field identifies the signatory holding the title of Head of the Inventory Committee.",
+  "The person authorized to sign as the Head of the Inventory Committee.",
+  "Người ký tên với tư cách là Trưởng Ban Kiểm Kê trên tài liệu này.",
+  "Dòng này ghi nhận chữ ký của vị Trưởng Ban Kiểm Kê.",
+  "Đây là người thực hiện việc ký kết với chức danh Trưởng Ban Kiểm Kê."
+ ],
+ "The person signing as \"ĐẠI DIỆN BÊN GIAO THẦU\" on this document.": [
+  "This field identifies the individual who executes the signature for the party awarding the contract.",
+  "The entity responsible for signing on behalf of the contract awarding party is recorded in this position.",
+  "Here is where the representative of the party granting the contract signs the document.",
+  "Chữ ký tại vị trí này thuộc về người đại diện cho bên giao thầu.",
+  "Trường này dùng để xác định cá nhân ký thay mặt cho bên giao thầu.",
+  "Người ký với tư cách là đại diện bên giao thầu sẽ điền thông tin tại đây."
+ ],
+ "The person signing as \"ĐẠI DIỆN BÊN NHẬN THẦU\" on this document.": [
+  "The individual who executes the signature on behalf of the Contractor on this document.",
+  "The signer designated as the representative of the Contractor for this specific document.",
+  "The person acting as the authorized signatory for the Contractor party on this paper.",
+  "Người ký thay mặt Bên Nhận Thầu trên tài liệu này.",
+  "Đối tượng giữ vai trò đại diện cho Bên Nhận Thầu thực hiện việc ký tên trên văn bản.",
+  "Người đứng tên với tư cách là đại diện Bên Nhận Thầu để ký vào bản giấy này."
+ ],
+ "The person signing as \"TƯ VẤN GIÁM SÁT\" on this document.": [
+  "The individual who executes the signature for the supervising consultant role.",
+  "This field identifies the signatory acting in the capacity of the supervising consultant.",
+  "The name of the person responsible for signing as the supervising consultant.",
+  "Người ký tên với tư cách là tư vấn giám sát trên văn bản này.",
+  "Cá nhân thực hiện chữ ký cho vai trò tư vấn giám sát.",
+  "Đây là thông tin về người ký đại diện cho tư vấn giám sát."
+ ],
+ "The person signing as \"NHÀ THẦU THI CÔNG\" on this document.": [
+  "The entity executing the signature block designated for the Construction Contractor.",
+  "Signature by the party identified as the Construction Contractor on the document.",
+  "The individual or entity authorized to sign in the capacity of the Construction Contractor.",
+  "Người ký tên với vai trò Nhà thầu thi công trên văn bản này.",
+  "Chủ thể thực hiện việc ký kết dưới danh nghĩa Nhà thầu thi công.",
+  "Ký hiệu xác nhận từ phía được ghi nhận là Nhà thầu thi công trong tài liệu."
+ ],
+ "The person signing as \"NGƯỜI VI PHẠM\" on this document.": [
+  "The individual who signs their name in the capacity of NGƯỜI VI PHẠM.",
+  "Signature of the party identified as the violator on the form.",
+  "The signatory assuming the role of NGƯỜI VI PHẠM for this paperwork.",
+  "Người ký tên với tư cách là NGƯỜI VI PHẠM trên tài liệu này.",
+  "Phần chữ ký của bên được xác định là người vi phạm.",
+  "Đối tượng ký xác nhận vai trò NGƯỜI VI PHẠM trong văn bản."
+ ],
+ "The person signing as \"NGƯỜI LẬP BIÊN BẢN\" on this document.": [
+  "The individual identified as the minutes preparer by the signature NGƯỜI LẬP BIÊN BẢN.",
+  "Signatory NGƯỜI LẬP BIÊN BẢN refers to the person who prepared the document.",
+  "The document bears the signature of NGƯỜI LẬP BIÊN BẢN, indicating the author of the record.",
+  "Người ký tên tại mục NGƯỜI LẬP BIÊN BẢN chính là chủ thể thực hiện việc lập biên bản.",
+  "Biên bản được xác lập bởi người có chữ ký ở phần NGƯỜI LẬP BIÊN BẢN.",
+  "Chữ ký NGƯỜI LẬP BIÊN BẢN thuộc về cá nhân chịu trách nhiệm soạn thảo tài liệu này."
+ ],
+ "The person signing as \"NGƯỜI CHỨNG KIẾN\" on this document.": [
+  "This field identifies the individual who signed the document in the capacity of a witness.",
+  "The person whose signature appears under the witness heading on this form is recorded here.",
+  "It refers to the specific individual acting as the witness by signing the document.",
+  "Trường dữ liệu này chỉ định người đã ký tên với tư cách là người chứng kiến trên văn bản.",
+  "Người ký xác nhận với vai trò người chứng kiến trên tài liệu này được ghi nhận tại đây.",
+  "Đây là thông tin về cá nhân thực hiện hành động ký kết ở phần người chứng kiến của văn bản."
+ ],
+ "Person submitting the paperwork.": [
+  "This field identifies the individual responsible for submitting the paperwork.",
+  "The identity of the person who files the document is recorded here.",
+  "It specifies who is presenting the administrative forms.",
+  "Dữ liệu này ghi nhận danh tính của người nộp hồ sơ.",
+  "Phần này cho biết ai là người trực tiếp trình bày giấy tờ.",
+  "Từ trường này xác định người có trách nhiệm nộp tài liệu."
+ ],
+ "The person signing as \"NGƯỜI NỘP HỒ SƠ\" on this document.": [
+  "The individual who executes the signature under the NGƯỜI NỘP HỒ SƠ designation.",
+  "This refers to the person who signs the document in the capacity of the applicant.",
+  "The signatory identified by the title NGƯỜI NỘP HỒ SƠ on this form.",
+  "Người ký tên với tư cách là NGƯỜI NỘP HỒ SƠ trên văn bản này.",
+  "Đối tượng thực hiện việc ký tên ở mục NGƯỜI NỘP HỒ SƠ của hồ sơ.",
+  "Người đóng dấu và ký xác nhận tại vị trí NGƯỜI NỘP HỒ SƠ."
+ ],
+ "The person signing as \"NGƯỜI TIẾP NHẬN\" on this document.": [
+  "The individual who signs the document in the capacity of the recipient.",
+  "This field identifies the person acting as the party receiving the document.",
+  "The signature block for the person designated as the recipient on this form.",
+  "Cá nhân ký vào văn bản với vai trò là người tiếp nhận.",
+  "Tên của người chịu trách nhiệm ký xác nhận đã tiếp nhận tài liệu này.",
+  "Danh tính của người thực hiện việc ký tên ở vị trí người tiếp nhận trên hồ sơ."
+ ],
+ "The person signing as \"Lãnh đạo bộ phận\" on this document.": [
+  "The individual who executes the signature for the leadership of the department on this document.",
+  "This document features the signature of the departmental leader in their official capacity.",
+  "The person acting as the department leader is the one who signed this document.",
+  "Đây là người ký với tư cách là Lãnh đạo bộ phận trên tài liệu này.",
+  "Tài liệu này được ký bởi người giữ chức vụ Lãnh đạo bộ phận.",
+  "Người thực hiện chữ ký dưới danh nghĩa Lãnh đạo bộ phận trên văn bản này là nhân vật được đề cập."
+ ],
+ "The person signing as \"GIÁM ĐỐC SỞ\" on this document.": [
+  "The individual who affixes their signature in the capacity of Department Director on the form.",
+  "Signed in the role of Department Director by the person identified on this document.",
+  "The specific person responsible for signing the document as the Department Director.",
+  "Người ký tên với tư cách là Giám đốc Sở trên văn bản này.",
+  "Hạng mục chỉ định người có chữ ký dưới danh nghĩa Giám đốc Sở tại tài liệu.",
+  "Bên ký kết văn bản với vai trò Giám đốc Sở được ghi nhận ở đây."
+ ],
+ "The person signing as \"NGƯỜI ĐƯỢC CẤP\" on this document.": [
+  "The individual who provides the signature under the NGƯỜI ĐƯỢC CẤP designation on this form.",
+  "On this document, the party identified as NGƯỜI ĐƯỢC CẤP is the one applying the signature.",
+  "This field refers to the signer acting in the capacity of NGƯỜI ĐƯỢC CẤP for the current document.",
+  "Người ký tên trên văn bản này với tư cách là NGƯỜI ĐƯỢC CẤP chính là cá nhân liên quan.",
+  "Cá nhân thực hiện việc ký vào vị trí NGƯỜI ĐƯỢC CẤP của tài liệu này được xác định bởi trường thông tin này.",
+  "Trường dữ liệu này chỉ đến người đã đặt bút ký dưới dòng NGƯỜI ĐƯỢC CẤP trong giấy tờ hiện tại."
+ ],
+ "The person signing as \"NGƯỜI ĐẶT HÀNG\" on this document.": [
+  "This document is signed by the entity identified as the customer.",
+  "The individual assuming the role of the ordering party signs this form.",
+  "The signature on this record belongs to the person listed as the buyer.",
+  "Người ký tên trên văn bản này là cá nhân được ghi nhận với tư cách là bên đặt hàng.",
+  "Chữ ký trên tài liệu này thuộc về đối tượng đóng vai trò người đặt hàng.",
+  "Chủ thể chịu trách nhiệm ký kết với danh nghĩa bên đặt hàng trong hồ sơ này."
+ ],
+ "Person who approved the document.": [
+  "The name of the individual who authorized this document.",
+  "This field identifies the person responsible for signing off on the document.",
+  "It refers to the authority that gave approval to the paperwork.",
+  "Người phê duyệt tài liệu là ai.",
+  "Danh tính của người đã ký duyệt văn bản này được ghi ở đây.",
+  "Đây là phần thông tin về cá nhân có thẩm quyền chấp thuận tài liệu."
+ ],
+ "The person signing as \"NGƯỜI KHIẾU NẠI\" on this document.": [
+  "This field identifies the individual who executes the document in the capacity of the complainant.",
+  "The identity of the person responsible for the signature under the heading of the complainant is recorded here.",
+  "It is the name of the party acting as the complainant and affixing their signature to this paperwork.",
+  "Dữ liệu này xác định cá nhân trực tiếp ký tên dưới mục khiếu nại trên hồ sơ.",
+  "Đây là thông tin về người đại diện cho bên khiếu nại thực hiện việc ký kết văn bản.",
+  "Trường này dùng để ghi nhận danh tính của người ký với tư cách là bên khiếu nại."
+ ],
+ "The person signing as \"XÁC NHẬN CỦA ĐỊA PHƯƠNG\" on this document.": [
+  "Whoever executes the signature in the local confirmation section is the individual identified by this field.",
+  "Field representing the identity of the official who signs off on the local verification part of the form.",
+  "The name of the person responsible for providing the local endorsement on this administrative document.",
+  "Người ký tên trong phần xác nhận của địa phương trên hồ sơ này là đối tượng được chỉ định bởi trường dữ liệu này.",
+  "Trường thông tin mô tả danh tính của viên chức ký duyệt tại mục xác nhận cấp địa phương.",
+  "Cá nhân chịu trách nhiệm ký xác nhận từ phía địa phương cho văn bản hành chính này được ghi nhận tại đây."
+ ],
+ "The person signing as \"TRƯỞNG BỘ PHẬN\" on this document.": [
+  "This field identifies the individual who affixes their signature in the capacity of department head on the current document.",
+  "The signature of the department head on this document is attributed to the person listed in this field.",
+  "Whoever signs as the department head on this specific document is the individual designated by this entry.",
+  "Trường hợp này dùng để xác định người ký tên với tư cách Trưởng bộ phận trên tài liệu hiện tại.",
+  "Người được ghi nhận trong trường này là cá nhân đã ký thay mặt Trưởng bộ phận trên văn bản.",
+  "Tài liệu này do người nào ký với danh nghĩa Trưởng bộ phận thì chính là đối tượng mà trường thông tin này đại diện."
+ ],
+ "The person signing as \"GIÁM ĐỐC SỞ TÀI NGUYÊN VÀ MÔI TRƯỜNG\" on this document.": [
+  "The individual who signs this document in the capacity of Director of the Department of Natural Resources and Environment.",
+  "This document is signed by the person holding the title of Director of the Department of Natural Resources and Environment.",
+  "The signatory to this document acts as the Director of the Department of Natural Resources and Environment.",
+  "Người ký tên trên tài liệu này với tư cách là Giám đốc Sở Tài nguyên và Môi trường.",
+  "Tài liệu này được ký bởi người giữ chức vụ Giám đốc Sở Tài nguyên và Môi trường.",
+  "Cá nhân đứng tên ký trên văn bản này là Giám đốc Sở Tài nguyên và Môi trường."
+ ],
+ "The person signing as \"NGƯỜI SỬ DỤNG ĐẤT\" on this document.": [
+  "The individual identified as the land user provides their signature on this document.",
+  "This field records the signature of the party designated as the land user.",
+  "The signatory for the land user role is indicated by this entry.",
+  "Cá nhân được ghi nhận với tư cách là người sử dụng đất thực hiện ký tên vào tài liệu này.",
+  "Chữ ký của bên được xác định là người sử dụng đất được thể hiện tại mục này.",
+  "Phần này phản ánh chữ ký của chủ thể đóng vai trò người sử dụng đất trên văn bản."
+ ],
+ "The person signing as \"CƠ QUAN CẤP GIẤY\" on this document.": [
+  "This field identifies the individual who executes the signature for the issuing authority.",
+  "The name of the officer signing on behalf of the organization that issues the certificate.",
+  "Whoever provides the signature for the entity designated as the paper issuer belongs in this slot.",
+  "Trường này dùng để ghi nhận người ký thay mặt cho cơ quan cấp giấy.",
+  "Danh tính của người ký tên với tư cách là đại diện của cơ quan cấp giấy được thể hiện tại đây.",
+  "Người chịu trách nhiệm ký vào văn bản với vai trò là cơ quan cấp giấy sẽ được liệt kê ở mục này."
+ ],
+ "The person signing as \"BÁC SĨ\" on this document.": [
+  "The individual who signs this document in the capacity of a doctor.",
+  "Người ký tên trên tài liệu này với tư cách là bác sĩ.",
+  "The specific person who executes the signature for the doctor role on this form.",
+  "Cá nhân thực hiện việc ký kết cho vai trò bác sĩ trong văn bản này.",
+  "This refers to the party providing the signature under the doctor title on the document.",
+  "Bên ký vào hồ sơ này dưới danh xưng bác sĩ là ai.",
+  "The signer identified by the doctor position on this particular document.",
+  "Người chịu trách nhiệm ký tên với chức danh bác sĩ trên tài liệu này.",
+  "Who is the person that signs as a doctor on this administrative record."
+ ],
+ "The person signing as \"TL. GIÁM ĐỐC\" on this document.": [
+  "The individual who provides the signature for the Acting Director role on the form.",
+  "This field identifies the signatory acting in the capacity of the Deputy Director.",
+  "The signature of the person fulfilling the Acting Director function is recorded here.",
+  "Người ký thay cho vị trí Giám đốc trên tài liệu này.",
+  "Dòng chữ ký của cá nhân hành sự với tư cách là Phó Giám đốc được ghi nhận tại đây.",
+  "Đây là mục dành cho chữ ký của người thực hiện quyền Giám đốc."
+ ],
+ "The person signing as \"CHÁNH VĂN PHÒNG\" on this document.": [
+  "The individual who signs in the capacity of Head of Office.",
+  "The signer of this document holding the position of CHÁNH VĂN PHÒNG.",
+  "The person identified as the Head of Office who executes the signature on this form.",
+  "Người ký tên trên văn bản này với tư cách là Chánh Văn phòng.",
+  "Cá nhân giữ chức vụ Chánh Văn phòng và thực hiện ký tên vào hồ sơ.",
+  "Người đứng tên ký duyệt với chức danh Chánh Văn phòng trong tài liệu này."
+ ],
+ "The person signing as \"BAN TỔ CHỨC\" on this document.": [
+  "The individual who executes the signature on behalf of the Organizing Committee for this document.",
+  "This field identifies the signatory representing the Organizing Committee on the paperwork.",
+  "The party authorized to sign the document as the Organizing Committee.",
+  "Người ký thay mặt Ban Tổ chức trên tài liệu này.",
+  "Cá nhân thực hiện chữ ký với tư cách là Ban Tổ chức của văn bản.",
+  "Người đại diện ký tên cho Ban Tổ chức trong tài liệu hành chính này."
+ ],
+ "The person signing as \"BÁC SĨ KHÁM BỆNH\" on this document.": [
+  "This field identifies the individual who signs in the capacity of the examining doctor.",
+  "The examining physician's signature is recorded in this section of the document.",
+  "The doctor responsible for the examination signs here to authenticate the document.",
+  "Chữ ký của bác sĩ trực tiếp thăm khám bệnh được ghi nhận tại phần này của văn bản.",
+  "Dòng chữ ký này thuộc về vị bác sĩ có trách nhiệm khám bệnh cho bệnh nhân.",
+  "Người ký tên với tư cách là bác sĩ khám bệnh chính là đối tượng được đề cập trong trường thông tin này."
+ ],
+ "The person signing as \"GIAO DỊCH VIÊN\" on this document.": [
+  "The individual who executes the signature in the capacity of GIAO DỊCH VIÊN.",
+  "This field identifies the signatory acting under the title of GIAO DỊCH VIÊN.",
+  "The person responsible for signing the document as the designated GIAO DỊCH VIÊN.",
+  "Người ký tên trên văn bản với tư cách là GIAO DỊCH VIÊN.",
+  "Chữ ký của cá nhân thực hiện vai trò GIAO DỊCH VIÊN trên tài liệu này.",
+  "Người đại diện ký xác nhận với danh nghĩa GIAO DỊCH VIÊN."
+ ],
+ "The person signing as \"KIỂM SOÁT\" on this document.": [
+  "The individual who signs the document in the capacity of Kiểm Soát.",
+  "This field identifies the person responsible for the signature designated as Kiểm Soát.",
+  "It is the name of the person who signs the document under the title Kiểm Soát.",
+  "Người ký tên trên tài liệu với chức danh Kiểm Soát.",
+  "Đây là người thực hiện chữ ký mang tên Kiểm Soát trên văn bản.",
+  "Tên của cá nhân ký xác nhận ở vị trí Kiểm Soát."
+ ],
+ "The person signing as \"TRƯỞNG PHÒNG ĐĂNG KÝ KINH DOANH\" on this document.": [
+  "This field identifies the individual who signs in the capacity of Head of Business Registration Department.",
+  "The signatory identified as Head of Business Registration Department is recorded in this field.",
+  "It captures the name of the person executing the signature for the Head of Business Registration Department.",
+  "Trường dữ liệu này ghi nhận cá nhân ký thay cho Trưởng phòng Đăng ký kinh doanh.",
+  "Người thực hiện ký với tư cách Trưởng phòng Đăng ký kinh doanh được thể hiện tại đây.",
+  "Phần này dành cho nhân sự giữ chức vụ Trưởng phòng Đăng ký kinh doanh thực hiện ký tên."
+ ],
+ "The person signing as \"CƠ QUAN CẤP PHÉP\" on this document.": [
+  "This field identifies the individual who executes the signature on behalf of the licensing authority.",
+  "The identity of the signatory acting for the issuing agency is recorded in this section.",
+  "A specific individual responsible for signing as the licensing body is designated here.",
+  "Trường này ghi nhận danh tính của người thực hiện ký thay mặt cho cơ quan cấp phép.",
+  "Người có thẩm quyền ký trên tư cách là cơ quan cấp sẽ được nêu rõ tại đây.",
+  "Danh sách này xác định cá nhân chịu trách nhiệm ký với tư cách là cơ quan cấp phép trong văn bản."
+ ],
+ "The person signing as \"TRƯỞNG CÔNG AN PHƯỜNG\" on this document.": [
+  "The individual who executed the signature in the capacity of Ward Public Security Chief.",
+  "This field identifies the person responsible for signing as the Ward Public Security Chief.",
+  "The signer of the document holding the position of Ward Public Security Chief is recorded here.",
+  "Cá nhân đã ký tên với tư cách là Trưởng Công an Phường trên tài liệu này.",
+  "Thông tin này chỉ rõ người có chữ ký đứng tên Trưởng Công an Phường.",
+  "Người giữ chức vụ Trưởng Công an Phường và đã ký xác nhận trên văn bản là đối tượng được đề cập.",
+  "Đây là chi tiết về người ký thay mặt cho vị trí Trưởng Công an Phường trong hồ sơ.",
+  "Tên của cá nhân thực hiện việc ký dưới danh nghĩa Trưởng Công an Phường được ghi nhận tại đây."
+ ],
+ "The person signing as \"CÁN BỘ ĐĂNG KÝ\" on this document.": [
+  "The individual identified as the registration officer who executed the signature on the form.",
+  "This field refers to the registration official responsible for signing the document.",
+  "The name of the person acting in the capacity of registration officer who signed this administrative paper.",
+  "Người ký dưới chức danh cán bộ đăng ký trên biểu mẫu này.",
+  "Chức danh cán bộ đăng ký của người thực hiện việc ký vào tài liệu.",
+  "Danh tính của nhân sự giữ vị trí cán bộ đăng ký đã đặt chữ ký trên văn bản."
+ ],
+ "The person signing as \"TRƯỞNG CÔNG AN XÃ\" on this document.": [
+  "The individual who executed the signature in the capacity of TRƯỞNG CÔNG AN XÃ on the specified document.",
+  "This field identifies the person acting as TRƯỞNG CÔNG AN XÃ when signing the document.",
+  "The document bears the signature of the person serving as TRƯỞNG CÔNG AN XÃ.",
+  "Người có chức danh TRƯỞNG CÔNG AN XÃ đã ký tên trên tài liệu này.",
+  "Tài liệu được ký bởi cá nhân giữ chức TRƯỞNG CÔNG AN XÃ.",
+  "Đây là người thực hiện chữ ký với tư cách TRƯỞNG CÔNG AN XÃ trên văn bản."
+ ],
+ "The person signing as \"NGƯỜI YÊU CẦU\" on this document.": [
+  "This field identifies the individual who signs the document in the capacity of the requesting party.",
+  "The signature of the person acting as the requester is recorded in this field.",
+  "This field captures the identity of the signatory designated as the one making the request.",
+  "Trường dữ liệu này chứa thông tin về người ký tên với tư cách là bên yêu cầu.",
+  "Người ký vào vị trí NGƯỜI YÊU CẦU trên tài liệu được xác định bởi trường này.",
+  "Trường này dùng để ghi nhận cá nhân chịu trách nhiệm ký với vai trò người yêu cầu."
+ ],
+ "The person signing as \"GIÁO VIÊN CHỦ NHIỆM\" on this document.": [
+  "The individual who executes the signature in the capacity of class teacher for this document.",
+  "This field identifies the class teacher responsible for signing the paperwork.",
+  "The document is signed by the person holding the role of class teacher.",
+  "Người ký vào văn bản này với tư cách là giáo viên chủ nhiệm.",
+  "Trường hợp ký tên của giáo viên chủ nhiệm trên tài liệu này.",
+  "Cá nhân giữ chức danh giáo viên chủ nhiệm thực hiện việc ký xác nhận trên văn bản."
+ ],
+ "The person signing as \"BÊN CUNG CẤP DỊCH VỤ\" on this document.": [
+  "This field identifies the individual executing the document on behalf of the service provider.",
+  "The signatory designated as the service provider in this agreement is indicated here.",
+  "This entry records who affixes their signature in the capacity of the service provider.",
+  "Trường hợp này dùng để xác định người đại diện ký tên cho bên cung cấp dịch vụ.",
+  "Người ký tên với tư cách là bên cung cấp dịch vụ trên tài liệu được ghi nhận tại đây.",
+  "Mục này nêu rõ ai là người thực hiện việc ký kết thay mặt cho bên cung cấp dịch vụ."
+ ],
+ "The person signing as \"BÊN SỬ DỤNG DỊCH VỤ\" on this document.": [
+  "This field identifies the individual who executes the document in the capacity of the service user.",
+  "The signature of the entity referred to as the service user is captured in this position.",
+  "It specifies the person who signs the document on behalf of the service utilizing party.",
+  "Trường này ghi nhận người ký văn bản với tư cách là bên sử dụng dịch vụ.",
+  "Dòng chữ ký được dành cho cá nhân đại diện cho bên sử dụng dịch vụ trong tài liệu này.",
+  "Người thực hiện chữ ký với danh nghĩa bên sử dụng dịch vụ sẽ được xác định tại đây."
+ ],
+ "The person signing as \"NGƯỜI LAO ĐỘNG\" on this document.": [
+  "This field identifies the individual who signs the document in the capacity of NGƯỜI LAO ĐỘNG.",
+  "The entity described here is the one executing the signature as NGƯỜI LAO ĐỘNG on the current paper.",
+  "Whoever signs as NGƯỜI LAO ĐỘNG on this form is the subject of this field.",
+  "Trường hợp này xác định người ký tên với tư cách NGƯỜI LAO ĐỘNG trên tài liệu.",
+  "Người thực hiện việc ký đóng vai trò NGƯỜI LAO ĐỘNG trên văn bản này là đối tượng được nêu tại đây.",
+  "Tài liệu này ghi nhận danh tính của cá nhân ký dưới mục NGƯỜI LAO ĐỘNG."
+ ],
+ "The person signing as \"NGƯỜI SỬ DỤNG LAO ĐỘNG\" on this document.": [
+  "This field identifies the individual who executes the signature under the title of labor user.",
+  "The signatory acting in the capacity of the entity employing labor is recorded here.",
+  "It specifies who affixes their signature as the party utilizing the workforce on this form.",
+  "Trường này ghi nhận danh tính của người thực hiện ký tên với tư cách là người sử dụng lao động.",
+  "Người đứng ra ký tên để đại diện cho bên sử dụng lao động trên tài liệu này là ai được nêu ở đây.",
+  "Thông tin về chủ thể ký thay mặt cho đơn vị tuyển dụng lao động được thể hiện tại mục này."
+ ],
+ "The person signing as \"BÊN VAY\" on this document.": [
+  "The individual who executes the signature in the capacity of the Borrower on this document.",
+  "This document identifies the specific person who signs as the Borrowing Party.",
+  "The Borrower is the party represented by the signature on this instrument.",
+  "Người ký thay mặt cho Bên Vay trên văn bản này.",
+  "Đây là cá nhân thực hiện việc ký tên với tư cách là Bên Vay trong tài liệu.",
+  "Văn bản này ghi nhận người ký kết dưới danh nghĩa Bên Vay."
+ ],
+ "The person signing as \"BÊN CHO VAY\" on this document.": [
+  "This field identifies the individual executing the signature for the lender party on the document.",
+  "The specific signer acting on behalf of the lending entity is captured in this section.",
+  "It records who affixes their signature as the party providing the loan.",
+  "Trường hợp này ghi nhận người ký thay mặt bên cho vay trong văn bản.",
+  "Dòng này dùng để xác định cá nhân ký thay cho bên cho vay.",
+  "Thông tin người thực hiện chữ ký với tư cách là bên cho vay được thể hiện tại đây."
+ ],
+ "The person signing as \"GIÁM ĐỐC CHI NHÁNH\" on this document.": [
+  "The individual who executes the signature in the capacity of Branch Director on this document.",
+  "On this document, the signature is placed by the person acting as the Branch Director.",
+  "The signatory identified by the title Branch Director on the presented document.",
+  "Người ký tên với chức danh Giám đốc chi nhánh trên văn bản này.",
+  "Dòng chữ ký trên tài liệu thuộc về cá nhân giữ vị trí Giám đốc chi nhánh.",
+  "Cá nhân thực hiện việc ký dưới danh nghĩa Giám đốc chi nhánh đối với văn bản đang xem xét."
+ ],
+ "The person signing as \"LÁI XE\" on this document.": [
+  "The individual who signs the document in the capacity of driver.",
+  "This refers to the person providing their signature as the driver on the document.",
+  "The identity of the party executing the document as the designated driver.",
+  "Người ký tên trên tài liệu này với tư cách là lái xe.",
+  "Đây là thông tin về cá nhân đóng vai trò lái xe khi ký kết văn bản này.",
+  "Chức danh của người thực hiện việc ký tên trên tài liệu dưới danh nghĩa lái xe."
+ ],
+ "The person signing as \"PHỤ TRÁCH ĐỘI XE\" on this document.": [
+  "The individual who executes the signature for the vehicle team leader role on this document.",
+  "Các cá nhân ký tên với tư cách là phụ trách đội xe tại vị trí này trên hồ sơ.",
+  "The signatory assuming the title of vehicle team manager for this specific administrative form.",
+  "Danh tính của người thực hiện việc ký xác nhận với vai trò phụ trách đội xe.",
+  "This entry identifies the person responsible for signing in the capacity of vehicle team in charge.",
+  "Người giữ chức vụ phụ trách đội xe được xác định thông qua chữ ký trên biểu mẫu này."
+ ],
+ "The person signing as \"CÁN BỘ KỸ THUẬT\" on this document.": [
+  "The individual who executes the signature under the title of CÁN BỘ KỸ THUẬT for this specific document.",
+  "This field identifies the person responsible for signing the document in the capacity of a technical officer.",
+  "The signature on this document belongs to the person holding the position of CÁN BỘ KỸ THUẬT.",
+  "Đây là người thực hiện chữ ký với tư cách là Cán bộ kỹ thuật trên tài liệu này.",
+  "Chữ ký trên văn bản này được thực hiện bởi người giữ chức danh Cán bộ kỹ thuật.",
+  "Người ký tên dưới danh hiệu Cán bộ kỹ thuật cho văn bản hiện tại là đối tượng được chỉ định ở trường này."
+ ],
+ "The person signing as \"CHỈ HUY TRƯỞNG\" on this document.": [
+  "The individual who executes the signature for the role of CHỈ HUY TRƯỞNG on this document.",
+  "This document is signed by the person holding the position of CHỈ HUY TRƯỞNG.",
+  "The signatory acting in the capacity of CHỈ HUY TRƯỞNG for this document.",
+  "Người ký tên với tư cách là CHỈ HUY TRƯỞNG trên văn bản này.",
+  "Văn bản này được ký bởi người giữ chức danh CHỈ HUY TRƯỞNG.",
+  "Chức danh CHỈ HUY TRƯỞNG thuộc về người thực hiện việc ký trên tài liệu này."
+ ],
+ "The person signing as \"GIÁM ĐỐC KINH DOANH\" on this document.": [
+  "The individual who executes the signature in the capacity of Business Director on this document.",
+  "On this document, the Business Director role is assumed by the person whose signature appears.",
+  "The signer of this document holds the specific position of Business Director.",
+  "Người ký tên trên tài liệu này với tư cách là Giám đốc Kinh doanh.",
+  "Trên tài liệu này, vị trí Giám đốc Kinh doanh được xác nhận bởi chữ ký của người thực hiện.",
+  "Chữ ký trên tài liệu này thuộc về cá nhân giữ chức vụ Giám đốc Kinh doanh."
+ ],
+ "The person signing as \"BÁC SĨ CHỈ ĐỊNH\" on this document.": [
+  "The individual who executes the signature in the role of designated doctor.",
+  "This field identifies the person acting as the designated physician for the document.",
+  "The signer assuming the position of the doctor in charge.",
+  "Người ký tên với tư cách là bác sĩ chỉ định trên văn bản này.",
+  "Dòng chữ ký của cá nhân được xác định là bác sĩ chỉ định.",
+  "Đây là thông tin về người đóng vai trò bác sĩ chỉ định khi ký vào tài liệu."
+ ],
+ "The person signing as \"ĐIỀU DƯỠNG\" on this document.": [
+  "This field identifies the individual who provides their signature in the capacity of a nurse.",
+  "The nurse who signs the document is the person indicated in this section.",
+  "Signatures rendered under the title of nurse are associated with the person described here.",
+  "Trường này ghi nhận danh tính của người ký với tư cách là Điều dưỡng.",
+  "Người có chức danh Điều dưỡng ký vào văn bản này được thể hiện tại mục này.",
+  "Đây là thông tin về cá nhân thực hiện chữ ký dưới danh xưng Điều dưỡng."
+ ],
+ "Person making the registration this form records.": [
+  "The individual who completed the registration documented in this form.",
+  "This form identifies the person responsible for the registration process.",
+  "The registration recorded here was initiated by the person described in this field.",
+  "Người thực hiện việc đăng ký được ghi nhận trong biểu mẫu này.",
+  "Biểu mẫu này lưu trữ thông tin về cá nhân đã tiến hành đăng ký.",
+  "Đây là người đã thực hiện các thủ tục đăng ký được phản ánh trong biểu mẫu."
+ ],
+ "The person signing as \"Học viên\" on this document.": [
+  "The individual who provides their signature in the capacity of a learner on this specific document.",
+  "This field identifies the learner responsible for signing the presented paperwork.",
+  "The signature of the learner is recorded by the person named in this section.",
+  "Người ký tên vào văn bản này với tư cách là học viên.",
+  "Danh tính của học viên có chữ ký trên tài liệu này được thể hiện tại đây.",
+  "Phần này chỉ ra người đại diện cho tư cách học viên đã ký xác nhận."
+ ],
+ "The person signing as \"Phụ trách đào tạo\" on this document.": [
+  "The individual who executes the signature in the capacity of Phụ trách đào tạo on this document.",
+  "Signature of the person designated as Phụ trách đào tạo for this administrative record.",
+  "The signatory assuming the role of Phụ trách đào tạo on this specific document.",
+  "Người ký thay cho vị trí Phụ trách đào tạo trên tài liệu này.",
+  "Chữ ký của cá nhân giữ chức vụ Phụ trách đào tạo trong văn bản này.",
+  "Người thực hiện việc ký với tư cách là Phụ trách đào tạo trên trang giấy này."
+ ],
+ "The person signing as \"Lãnh đạo đơn vị\" on this document.": [
+  "The individual who signs the document in the capacity of unit leader.",
+  "This field identifies the person providing their signature as the unit leader.",
+  "The specific person acting as the unit leader when signing this document.",
+  "Người ký tên trên tài liệu với vai trò là lãnh đạo đơn vị.",
+  "Danh tính của người thực hiện việc ký thay cho lãnh đạo đơn vị.",
+  "Cá nhân được xác định là người ký với tư cách lãnh đạo đơn vị."
+ ],
+ "The person signing as \"THÍ SINH\" on this document.": [
+  "The individual who provides their signature under the title THÍ SINH.",
+  "The person identified as THÍ SINH is the one executing the signature on this document.",
+  "This document is signed by the person holding the role of THÍ SINH.",
+  "Người ký tên với danh xưng THÍ SINH trên hồ sơ này.",
+  "Danh tính của người thực hiện việc ký tên ở vị trí THÍ SINH trong văn bản.",
+  "Cá nhân giữ chức danh THÍ SINH là người đã ký vào tài liệu."
+ ],
+ "The person signing as \"CÁN BỘ THU NHẬN HỒ SƠ\" on this document.": [
+  "The individual who affixes their signature in the role of the officer receiving the file.",
+  "Signed by the staff member acting as the file recipient on this document.",
+  "This field identifies the personnel member who signs as the officer in charge of receiving the dossier.",
+  "Người ký tên ở vị trí Cán bộ thu nhận hồ sơ trên văn bản này.",
+  "Chữ ký của nhân viên thực hiện chức năng tiếp nhận hồ sơ được thể hiện tại đây.",
+  "Danh tính của người đóng vai trò cán bộ nhận hồ sơ và ký xác nhận trên tài liệu."
+ ],
+ "The person signing as \"NGƯỜI ĐƯỢC ĐÁNH GIÁ\" on this document.": [
+  "This field identifies the individual who signs the document in the capacity of the assessed party.",
+  "The signature of the entity being evaluated is recorded in this field.",
+  "You enter the name of the person acting as the subject of assessment here.",
+  "Trường này ghi lại tên người ký đại diện cho vị trí người được đánh giá.",
+  "Dữ liệu này xác định cá nhân đứng tên bên được đánh giá trên văn bản.",
+  "Hãy điền thông tin của người ký với tư cách là đối tượng được đánh giá vào đây."
+ ],
+ "The person signing as \"Người tự đánh giá\" on this document.": [
+  "The individual who signs the document in the capacity of the self-evaluator.",
+  "This field identifies the person who executes the signature for the role of self-evaluator.",
+  "The signer of the document acting under the title of the self-assessment party.",
+  "Người ký tên trên tài liệu với tư cách là người thực hiện việc tự đánh giá.",
+  "Cá nhân chịu trách nhiệm ký xác nhận cho vai trò người tự đánh giá trong văn bản.",
+  "Người thực hiện hành vi ký kết trên hồ sơ dưới danh nghĩa là bên tự đánh giá."
+ ],
+ "The person signing as \"Trưởng phòng\" on this document.": [
+  "The individual who affixes their signature in the capacity of Trưởng phòng.",
+  "This field identifies the signatory acting in the role of Trưởng phòng.",
+  "The party responsible for signing the document as Trưởng phòng.",
+  "Người ký thay mặt Trưởng phòng trên văn bản này.",
+  "Thân nhân giữ chức vụ Trưởng phòng và thực hiện việc ký tên vào tài liệu.",
+  "Cá nhân thực hiện hành động ký với tư cách là Trưởng phòng."
+ ],
+ "The person signing as \"NHÂN VIÊN TIẾP NHẬN\" on this document.": [
+  "The individual who executes the signature in the capacity of the receiving staff member.",
+  "This refers to the staff member responsible for signing the document as the recipient.",
+  "The party identified by the signature as the employee acting in the role of receiving staff.",
+  "Người ký tên vào tài liệu với chức danh là nhân viên tiếp nhận.",
+  "Đây là nhân viên thực hiện việc ký xác nhận ở vị trí tiếp nhận trên văn bản.",
+  "Cá nhân đóng vai trò là người tiếp nhận và ký vào hồ sơ này."
+ ],
+ "The person signing as \"CÁN BỘ TIÊM CHỦNG\" on this document.": [
+  "This refers to the individual who signs in the capacity of a vaccination staff member on the document.",
+  "The document features a signature from the person acting as the CÁN BỘ TIÊM CHỦNG.",
+  "The identity of the signer is defined by their role as a vaccination officer for this specific form.",
+  "Đây là người thực hiện ký tên với tư cách là cán bộ tiêm chủng trên tài liệu này.",
+  "Người ký trên văn bản giữ chức vụ là cán bộ tiêm chủng.",
+  "Tài liệu này được ký bởi nhân sự đảm nhiệm vai trò cán bộ tiêm chủng."
+ ],
+ "The person signing as \"NGƯỜI ĐƯỢC TIÊM\" on this document.": [
+  "The individual who applies their signature in the capacity of the vaccinated person.",
+  "This field identifies the specific person executing the signature for the role of NGƯỜI ĐƯỢC TIÊM.",
+  "The signature on this document is provided by the person acting as the vaccinated individual.",
+  "Người ký tên trong vai trò người được tiêm trên tài liệu này là cá nhân nào.",
+  "Dòng chữ ký của người được tiêm do cá nhân cụ thể nào thực hiện trên văn bản này.",
+  "Cá nhân thực hiện việc ký tên với tư cách là người được tiêm trên giấy tờ này."
+ ],
+ "The person signing as \"CÁN BỘ Y TẾ\" on this document.": [
+  "The individual providing their signature in the capacity of a medical staff member.",
+  "Signed by the official designated as a health worker for this form.",
+  "The medical staff member whose signature appears on the document.",
+  "Người ký tên với tư cách là cán bộ y tế trên tài liệu này.",
+  "Cán bộ y tế là người đã thực hiện ký kết trên văn bản.",
+  "Chữ ký của người giữ vị trí cán bộ y tế trong hồ sơ."
+ ],
+ "The person signing as \"TRƯỞNG TRẠM\" on this document.": [
+  "The individual who executes the signature in the capacity of TRƯỞNG TRẠM on this document.",
+  "This field identifies the person acting as the Station Chief who signs the form.",
+  "The signature on this document is provided by the person holding the title of TRƯỞNG TRẠM.",
+  "Người ký tên trên văn bản này với tư cách là Trưởng trạm.",
+  "Đây là vị trí dành cho chữ ký của người giữ chức Trưởng trạm trên tài liệu.",
+  "Cá nhân có chức danh Trưởng trạm thực hiện ký xác nhận trên trang giấy này."
+ ],
+ "The person signing as \"BÁC SĨ ĐỌC KẾT QUẢ\" on this document.": [
+  "The individual who executes the signature under the BÁC SĨ ĐỌC KẾT QUẢ title.",
+  "This field identifies the doctor who signs the document in the capacity of BÁC SĨ ĐỌC KẾT QUẢ.",
+  "The person responsible for signing as BÁC SĨ ĐỌC KẾT QUẢ on the form.",
+  "Người ký tên với tư cách là BÁC SĨ ĐỌC KẾT QUẢ trên hồ sơ này.",
+  "Trường này ghi nhận bác sĩ thực hiện chữ ký dưới mục BÁC SĨ ĐỌC KẾT QUẢ.",
+  "Người thực hiện ký tên ở vị trí BÁC SĨ ĐỌC KẾT QUẢ của tài liệu."
+ ],
+ "The person signing as \"TM. HỘI ĐỒNG QUẢN TRỊ\" on this document.": [
+  "This field identifies the individual who signs the document in their capacity representing the Board of Directors.",
+  "The signature of the person acting on behalf of the Board of Directors is captured in this field.",
+  "It records the identity of the individual signing as the representative of the Board of Directors.",
+  "Trường hợp này xác định người ký thay mặt Hội đồng Quản trị trên tài liệu.",
+  "Dòng chữ ký của người đại diện Hội đồng Quản trị được ghi nhận tại đây.",
+  "Dữ liệu này lưu trữ thông tin về người ký với tư cách thành viên Hội đồng Quản trị."
+ ],
+ "The person signing as \"CHỦ TỊCH\" on this document.": [
+  "This field identifies the individual who signs the document in the capacity of Chairman.",
+  "The identity of the Chairman who executes the signature on this paper is recorded here.",
+  "Here lies the name of the person holding the title of Chairman and signing this document.",
+  "Trường này ghi nhận danh tính của người ký tên với tư cách là Chủ tịch trên tài liệu.",
+  "Người đóng vai trò Chủ tịch và ký tên vào văn bản này được xác định tại trường thông tin này.",
+  "Thông tin về cá nhân giữ chức vụ Chủ tịch thực hiện chữ ký trên giấy tờ được thể hiện ở đây."
+ ],
+ "The person signing as \"PHỤ HUYNH\" on this document.": [
+  "This document is signed by an individual identified as a parent.",
+  "The signature of a parent is present on this document.",
+  "An individual acting in the capacity of a parent signs this document.",
+  "Người ký tên trên văn bản này với tư cách là phụ huynh.",
+  "Đây là chữ ký của người được xác định là phụ huynh trên tài liệu này.",
+  "Một cá nhân đóng vai trò là phụ huynh đã ký vào văn bản này."
+ ],
+ "The person signing as \"GIÁM ĐỐC BHXH TỈNH\" on this document.": [
+  "The individual executing the signature in the capacity of Provincial Social Insurance Director for this document.",
+  "This document bears the signature of the person serving as the Provincial Social Insurance Director.",
+  "The signatory identified by the title Provincial Social Insurance Director on this specific form.",
+  "Người ký tên trên văn bản này với tư cách là Giám đốc Bảo hiểm xã hội tỉnh.",
+  "Đây là người thực hiện chữ ký mang danh xưng Giám đốc BHXH tỉnh trên tài liệu được đề cập.",
+  "Vị trí chữ ký trên tài liệu này thuộc về cá nhân đang giữ chức vụ Giám đốc Bảo hiểm xã hội tỉnh."
+ ],
+ "The person signing as \"CHI CỤC TRƯỞNG\" on this document.": [
+  "The individual responsible for signing the document in the capacity of Deputy Chief.",
+  "This field identifies the signer who holds the title of Deputy Chief on the document.",
+  "The person who executed the document signature under the title of Deputy Chief.",
+  "Người ký tên với tư cách là Chi cục trưởng trên văn bản này.",
+  "Đây là người giữ chức Chi cục trưởng và ký xác nhận trên tài liệu.",
+  "Chức danh Chi cục trưởng của người ký vào văn bản được ghi nhận tại đây."
+ ],
+ "The person signing as \"NGƯỜI NỘP THUẾ\" on this document.": [
+  "This field identifies the individual who executes the signature as the tax payer.",
+  "The identity of the person acting in the capacity of NGƯỜI NỘP THUẾ is recorded here.",
+  "It specifies who signs the document under the title of tax payer.",
+  "Ô này ghi nhận danh tính của người ký với tư cách người nộp thuế.",
+  "Người thực hiện việc ký tên tại vị trí người nộp thuế được xác định trong trường này.",
+  "Trường thông tin này dùng để xác định cá nhân đại diện ký tên với vai trò người nộp thuế."
+ ],
+ "The person signing as \"NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT\" on this document.": [
+  "The individual who signs the document in the capacity of the legal representative.",
+  "This field identifies the signatory acting as the authorized legal representative of the entity.",
+  "The person providing their signature in the role of the legal representative on this specific document.",
+  "Người ký tên trên văn bản này với tư cách là người đại diện theo pháp luật của tổ chức.",
+  "Cá nhân thực hiện việc ký kết thay mặt cho đơn vị với vai trò là người đại diện theo pháp luật.",
+  "Người có quyền và nghĩa vụ ký thay mặt tổ chức dưới danh nghĩa người đại diện theo pháp luật."
+ ],
+ "The person signing as \"NHÂN VIÊN ĐẠI LÝ THUẾ\" on this document.": [
+  "The individual who executes the signature in the capacity of a Tax Agent's Staff Member for this specific document.",
+  "This field identifies the person acting in the role of Tax Agent's Staff Member when signing the document.",
+  "Chỉ cá nhân thực hiện việc ký tên với tư cách là Nhân viên Đại lý thuế trên văn bản này.",
+  "Mô tả về người ký với danh xưng Nhân viên Đại lý thuế đối với hồ sơ hành chính hiện tại.",
+  "Đây là thông tin về người đóng vai trò Nhân viên Đại lý thuế khi ký duyệt văn bản.",
+  "Cá nhân chịu trách nhiệm ký tên trên giấy tờ dưới chức danh Nhân viên Đại lý thuế."
+ ],
+ "The person signing as \"CƠ QUAN THUẾ\" on this document.": [
+  "The individual who signs on behalf of the tax authority.",
+  "This field identifies the signatory acting in the capacity of the tax agency.",
+  "It refers to the person providing the signature for the tax authority section.",
+  "Người ký thay mặt cho cơ quan thuế trên tài liệu này.",
+  "Đây là người thực hiện việc ký tên với tư cách là cơ quan thuế.",
+  "Dòng này chỉ định người ký kết thay cho cơ quan quản lý thuế."
+ ],
+ "The person signing as \"Người khai báo\" on this document.": [
+  "This field indicates the individual who executes the signature in the capacity of the declarant.",
+  "The identity of the person who signs the document under the title of 'Người khai báo' is recorded here.",
+  "Refer to the signatory who acts as the declarant on this specific form.",
+  "Trường này ghi nhận thông tin của người ký tên với tư cách là Người khai báo trên tài liệu.",
+  "Dữ liệu tại đây là của cá nhân thực hiện việc ký kết dưới danh hiệu Người khai báo.",
+  "Người chịu trách nhiệm ký tên vào mục Người khai báo của văn bản này được thể hiện ở đây."
+ ],
+ "The person signing as \"Nhân viên y tế\" on this document.": [
+  "The individual who executes the signature in the capacity of a medical staff member.",
+  "This document is signed by the person acting in the role of medical staff.",
+  "The medical staff member responsible for the signature on this form.",
+  "Người ký tên trên tài liệu này với tư cách là nhân viên y tế.",
+  "Danh tính của nhân viên y tế thực hiện việc ký vào văn bản này.",
+  "Người đại diện cho bộ phận y tế đã ký xác nhận trên tài liệu."
+ ],
+ "The person signing as \"Lãnh đạo khoa\" on this document.": [
+  "This field identifies the individual who executes the signature in the capacity of department head.",
+  "The signature for the role of department head is provided by the person indicated here.",
+  "Here is the name of the official acting as the department head who signs the document.",
+  "Trường này ghi rõ danh tính người ký thay cho vị trí lãnh đạo khoa.",
+  "Người có chức danh lãnh đạo khoa sẽ thực hiện chữ ký tại mục này.",
+  "Đây là nơi điền tên người đại diện cho lãnh đạo khoa để ký xác nhận trên hồ sơ."
+ ],
+ "The person signing as \"CHỦ TÀI KHOẢN\" on this document.": [
+  "The individual who executes the signature under the title of Account Holder.",
+  "This field identifies the person acting as the Account Holder when signing the document.",
+  "The party designated as the Account Holder who provides the signature on this form.",
+  "Người ký với tư cách là Chủ tài khoản trên tài liệu này.",
+  "Dòng chữ này xác định cá nhân đóng dấu hoặc ký tên với danh nghĩa Chủ tài khoản.",
+  "Người chịu trách nhiệm ký xác nhận với vai trò Chủ tài khoản trên biểu mẫu."
+ ],
+ "The person signing as \"NGƯỜI GỬI HÀNG\" on this document.": [
+  "The individual identified as the shipper by their signature on this form.",
+  "This signature represents the party acting as the sender of the goods.",
+  "The entity that signs the document in the capacity of the consignor.",
+  "Người ký tên với vai trò là bên gửi hàng trên tài liệu này.",
+  "Ký hiệu của cá nhân thực hiện chức năng gửi hàng tại chỗ ký trên biểu mẫu.",
+  "Đây là chữ ký của đối tượng được xác định là người gửi hàng trong văn bản."
+ ],
+ "The person signing as \"BÊN VẬN CHUYỂN\" on this document.": [
+  "The individual who executes the signature for the party designated as the carrier.",
+  "This field identifies the specific person acting as the signatory for the carrier entity.",
+  "The name of the person authorized to sign on behalf of the transport provider.",
+  "Cá nhân thực hiện việc ký tên thay mặt cho bên vận chuyển.",
+  "Trường hợp này dùng để ghi nhận người ký thay cho đơn vị vận tải.",
+  "Người có thẩm quyền ký kết cho phía bên vận chuyển trong văn bản này."
+ ],
+ "Questionnaire tick box printed on the document.": [
+  "The document features a printed tick box designed for questionnaire responses.",
+  "This is a questionnaire option indicated by a printed checkmark box on the form.",
+  "A pre-printed checkbox is provided on the document to select a questionnaire answer.",
+  "Đây là một ô chọn in sẵn trên tài liệu để sử dụng trong bảng câu hỏi.",
+  "Tài liệu có chứa một ô tích chọn được in sẵn nhằm phục vụ mục đích khảo sát.",
+  "Một ô đánh dấu chọn được in trên văn bản để người dùng thực hiện các lựa chọn trong phiếu khảo sát."
+ ],
+ "Questionnaire option printed on the document.": [
+  "The specific choice from the questionnaire displayed on the form.",
+  "A printed selection from the survey instrument appears on the page.",
+  "This field contains the printed answer option from the questionnaire.",
+  "Mục lựa chọn được in trên mẫu câu hỏi khảo sát.",
+  "Đây là phương án trả lời khảo sát được in sẵn trên tài liệu.",
+  "Phần in sẵn thể hiện một tùy chọn trong bộ câu hỏi khảo sát."
+ ],
+ "Numbered clause heading printed on the document.": [
+  "This field indicates the printed heading of a numbered clause on the document.",
+  "A numbered clause title appears as a printed heading in this section.",
+  "The document features this printed heading which identifies a specific numbered clause.",
+  "Trường dữ liệu này xác định tiêu đề của một điều khoản có số thứ tự được in trên tài liệu.",
+  "Tiêu đề của điều khoản đánh số xuất hiện dưới dạng chữ in trên văn bản tại đây.",
+  "Phần này chứa tiêu đề in sẵn dùng để chỉ định một điều khoản có số thứ tự."
+ ],
+ "Numbered clause body printed on the document.": [
+  "The main text of a specific numbered provision appears on the form.",
+  "This field contains the body of a clause that is identified by a number on the paperwork.",
+  "Printed on the document is the textual content of a numbered section.",
+  "Nội dung của một điều khoản được đánh số in trên tài liệu.",
+  "Phần thân của điều khoản mang số thứ tự được thể hiện bằng chữ in trên mẫu.",
+  "Văn bản in trên giấy tờ là nội dung chi tiết của một điều khoản có số hiệu."
+ ],
+ "Questionnaire number printed on the document.": [
+  "The document displays its assigned questionnaire identifier.",
+  "A specific questionnaire code is printed on the form.",
+  "This field contains the numerical identifier for the questionnaire as shown on the paper.",
+  "Số hiệu của bảng câu hỏi được in trực tiếp trên tài liệu.",
+  "Mã số bảng hỏi xuất hiện trên văn bản dưới dạng in sẵn.",
+  "Tài liệu mang theo mã định danh của bảng câu hỏi được in rõ ràng."
+ ],
+ "Questionnaire answer printed on the document.": [
+  "The document displays the recorded response from the questionnaire.",
+  "This field contains the questionnaire response as it appears in the printed layout.",
+  "Printed on the form is the answer provided for the questionnaire item.",
+  "Trên tài liệu thể hiện câu trả lời của bảng hỏi đã được in ra.",
+  "Phần này chứa nội dung câu trả lời cho bảng hỏi theo dạng in trên văn bản.",
+  "Câu trả lời của phiếu khảo sát được trình bày dưới dạng in trên tài liệu."
+ ],
+ "Questionnaire prompt printed on the document.": [
+  "This field contains the survey question displayed on the form.",
+  "The prompt for the questionnaire is printed directly on the document.",
+  "A survey query is inscribed on the form to prompt a response.",
+  "Câu hỏi khảo sát được in trên tài liệu.",
+  "Dòng chữ yêu cầu trả lời khảo sát nằm trên biểu mẫu.",
+  "Phần in ấn trên giấy tờ chứa nội dung câu hỏi thăm dò ý kiến."
+ ],
+ "Questionnaire char printed on the document.": [
+  "The document displays a questionnaire character.",
+  "A questionnaire character is printed on the face of the document.",
+  "Printed on the document is a questionnaire character.",
+  "Trên tài liệu có in một ký tự bảng hỏi.",
+  "Ký tự bảng hỏi được in trên mặt tài liệu.",
+  "Tài liệu này hiển thị một ký tự bảng hỏi đã được in sẵn."
+ ],
+ "Table column cell.": [
+  "A cell within a column of a table",
+  "The intersection point of a row and column in a grid structure",
+  "An individual data holder located inside a tabular column",
+  "Ô dữ liệu nằm trong cột của bảng",
+  "Vị trí cụ thể thuộc một cột trong cấu trúc bảng biểu",
+  "Khoảng trống riêng biệt được phân chia theo chiều dọc trong bảng"
+ ],
+ "Label that runs across the row, naming what the figures beside it add up to.": [
+  "This label spans the row to identify the sum of the numbers next to it.",
+  "Identifying the total of adjacent figures, the label stretches across the entire row.",
+  "The row is traversed by a label that specifies what the neighboring numbers total.",
+  "Dán nhãn trải dài trên hàng nhằm xác định tổng giá trị của các con số nằm bên cạnh.",
+  "Tên gọi bao phủ toàn bộ hàng dùng để chỉ rõ các số liệu kề bên cộng lại bằng bao nhiêu.",
+  "Phần nhãn chạy ngang hàng có chức năng gọi tên tổng của những con số phía bên cạnh."
+ ],
+ "Table of contents page number printed on the document.": [
+  "The page number displayed on the table of contents.",
+  "Where the page number for the table of contents is printed.",
+  "This field captures the page number of the document's table of contents.",
+  "Số trang của mục lục được in trên tài liệu.",
+  "Vị trí thể hiện số trang của bảng mục lục.",
+  "Trang số ứng với phần mục lục trong văn bản."
+ ],
+ "Legal ground printed on the document.": [
+  "The document displays the legal basis for its issuance.",
+  "Legal grounds are inscribed directly on the paper.",
+  "A statement of the relevant legal authority appears on the document.",
+  "Cơ sở pháp lý được in trên văn bản.",
+  "Văn bản ghi rõ căn cứ pháp luật áp dụng.",
+  "Trên giấy tờ có in các căn cứ pháp lý liên quan."
+ ],
+ "Questionnaire cell printed on the document.": [
+  "The questionnaire cell that appears on the document.",
+  "It is the questionnaire cell printed on the document.",
+  "A questionnaire cell is printed on the document.",
+  "Ô khảo sát được in trên tài liệu.",
+  "Ô khảo sát in trên tài liệu."
+ ],
+ "Questionnaire colhdr printed on the document.": [
+  "The questionnaire header printed on the document.",
+  "Questionnaire column header displayed on the document.",
+  "The colhdr field of the questionnaire as it appears on the printed document.",
+  "Tiêu đề cột của bảng câu hỏi được in trên tài liệu.",
+  "Phần tiêu đề cột in trên tài liệu của bảng câu hỏi.",
+  "Trên tài liệu, tiêu đề cột của bảng câu hỏi được in ở dạng văn bản."
+ ],
+ "Footnote printed on the document.": [
+  "The document includes printed footnotes.",
+  "Footnotes appear on the document in print.",
+  "Printed footnotes are present on the document.",
+  "Văn bản này có chứa các chú thích được in ở phần cuối trang.",
+  "Các ghi chú được in trên tài liệu.",
+  "Tài liệu này được trang bị các chú thích in ở đáy trang."
+ ],
+ "Signature block note printed on the document.": [
+  "This area contains the pre-printed note associated with the signature section.",
+  "The printed annotation for the signature block is located here.",
+  "A standard note printed on the form accompanies the signature area.",
+  "Phần này chứa ghi chú in sẵn liên quan đến khu vực ký tên.",
+  "Ghi chú in trên tài liệu đi kèm với phần ký tên được đặt tại đây.",
+  "Nội dung ghi chú in sẵn của khối chữ ký được thể hiện trong trường này."
+ ],
+ "Caption figure printed on the document.": [
+  "The text label that identifies a specific figure is printed on the document.",
+  "A document contains the printed text serving as a caption for a figure.",
+  "The figure's title appears as printed text within the document.",
+  "Dòng chú thích mô tả hình ảnh được in trực tiếp trên tài liệu.",
+  "Tài liệu bao gồm phần văn bản in sẵn đóng vai trò là chú thích cho hình vẽ.",
+  "Phần in chữ giải thích cho hình ảnh có mặt trên văn bản này."
+ ],
+ "Caption table printed on the document.": [
+  "The title appearing above the tabular data on the printed form.",
+  "Table heading displayed on the official paper.",
+  "Tên bảng được in trên tài liệu.",
+  "Chú thích bảng in sẵn trên văn bản.",
+  "Tiêu đề bảng xuất hiện trên mẫu in.",
+  "Tên của bảng biểu được thể hiện trên giấy."
+ ],
+ "Document field printed on the document.": [
+  "The text that appears in the designated field on the document.",
+  "Information displayed within a specific field on the document.",
+  "Content shown in the relevant field area of the document.",
+  "Thông tin được in trên trường dữ liệu của tài liệu.",
+  "Phần văn bản hiển thị tại vị trí trường trên tài liệu.",
+  "Nội dung in sẵn trong ô thông tin của tài liệu."
+ ],
+ "Organisation address printed on the document.": [
+  "The physical location of the organization as displayed on the form.",
+  "This field contains the address of the entity printed directly on the paper.",
+  "The document shows the organization's registered address in this specific section.",
+  "Địa chỉ của tổ chức được thể hiện trên văn bản.",
+  "Mục này ghi lại địa chỉ của đơn vị theo như thông tin in trên tài liệu.",
+  "Vị trí địa lý của tổ chức như đã được in sẵn trên trang giấy."
+ ],
+ "Organisation telephone printed on the document.": [
+  "The phone number of the organization is displayed on the document.",
+  "Printed on the document is the telephone contact for the organization.",
+  "This field indicates the organizational phone number as it appears in the document.",
+  "Số điện thoại của tổ chức được in trên tài liệu.",
+  "Tài liệu hiển thị số điện thoại liên hệ của tổ chức.",
+  "Trường này ghi lại số điện thoại của tổ chức như đã in trong văn bản."
+ ],
+ "Organisation tax code printed on the document.": [
+  "The tax identification number of the organization displayed on the form.",
+  "Documents include the organization's tax code as a printed identifier.",
+  "This field contains the tax code of the entity that appears on the document.",
+  "Mã số thuế của tổ chức được in trên tài liệu.",
+  "Tài liệu có in mã số thuế thuộc về tổ chức liên quan.",
+  "Đây là mã số thuế của tổ chức được thể hiện trên văn bản."
+ ],
+ "Formula printed on the document.": [
+  "The formula displayed on the document.",
+  "This field contains the formula that appears on the document.",
+  "A representation of the formula as it is printed on the document.",
+  "Công thức được in trên văn bản.",
+  "Dữ liệu công thức xuất hiện trên tài liệu này.",
+  "Phần thể hiện công thức theo đúng cách in trên văn bản."
+ ],
+ "Reference value printed on the document.": [
+  "This refers to the reference value as displayed on the form.",
+  "The document features a printed reference value.",
+  "Printed on the paperwork is the reference value.",
+  "Đây là giá trị tham chiếu được in trực tiếp trên tài liệu.",
+  "Tài liệu có in sẵn giá trị tham chiếu.",
+  "Giá trị tham chiếu xuất hiện dưới dạng in trên biểu mẫu."
+ ],
+ "Value printed on the sheet beside the caption “1. Quyền và nghĩa vụ của bên A”.": [
+  "Engraved on the form adjacent to the heading titled '1. Quyền và nghĩa vụ của bên A'.",
+  "Located next to the caption '1. Quyền và nghĩa vụ của bên A' on the printed sheet.",
+  "The text appearing beside the section header '1. Quyền và nghĩa vụ của bên A' on the document.",
+  "Số liệu được in cạnh dòng tiêu đề '1. Quyền và nghĩa vụ của bên A' trên tờ giấy.",
+  "Dữ liệu hiển thị tại vị trí liền kề với phần chữ in '1. Quyền và nghĩa vụ của bên A'.",
+  "Giá trị được ghi trên tờ in ở khu vực bên cạnh chú thích '1. Quyền và nghĩa vụ của bên A'."
+ ],
+ "Value printed on the sheet beside the caption “2. Trách nhiệm của các bên”.": [
+  "The text appearing next to the heading 2. Trách nhiệm của các bên on the form.",
+  "What is written alongside the label 2. Trách nhiệm của các bên on the document.",
+  "The entry found in proximity to the title 2. Trách nhiệm của các bên.",
+  "Nội dung được in ngay cạnh tiêu đề 2. Trách nhiệm của các bên trên biểu mẫu.",
+  "Phần văn bản xuất hiện bên cạnh cụm từ 2. Trách nhiệm của các bên.",
+  "Giá trị hiển thị tại vị trí tiếp giáp với nhãn 2. Trách nhiệm của các bên."
  ]
 }

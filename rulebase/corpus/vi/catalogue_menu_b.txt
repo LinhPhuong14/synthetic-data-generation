@@ -1,0 +1,59 @@
+# CATALOGUE_MENU_B — mẻ thứ hai, cùng định dạng mẻ đầu: tên<TAB>giá tối thiểu<TAB>giá tối đa.
+#
+# Vì sao có mẻ này, bằng số. `corpus.sample()` lặp lại mặt hàng khi bảng dài
+# hơn kho, và điều đó đúng với một hoá đơn bốn dòng. Nhưng bảng dài nhất của
+# hồ sơ này là 160 dòng trong khi mẻ đầu chỉ có ít mặt hàng — mỗi thứ
+# in lại nhiều lần trên CÙNG MỘT tờ giấy, và một mô hình đọc tờ ấy học rằng
+# bảng tiếng Việt là một danh sách lặp.
+#
+# Tên viết CÓ DẤU; bố cục nào cần chữ không dấu thì `rulebase.text.ascii_fold`
+# bỏ dấu lúc render.
+
+Gỏi bưởi tôm khô	78000	148000
+Nộm sứa hoa chuối	92000	175000
+Salad rong nho cá hồi	125000	235000
+Chả giò hải sản chiên giòn	88000	158000
+Bánh khọt tôm tươi	72000	135000
+Bánh cuốn nhân thịt mộc nhĩ	55000	98000
+Súp măng tây cua	88000	165000
+Lẩu nấm chay thập cẩm	225000	480000
+Lẩu riêu cua bắp bò	295000	650000
+Cá tầm hấp xì dầu	385000	780000
+Cá chẽm chiên xù sốt me	295000	580000
+Cá kho tộ truyền thống	145000	285000
+Tôm sú hấp nước dừa	320000	680000
+Tôm rang me chua ngọt	285000	560000
+Mực một nắng nướng sa tế	265000	520000
+Mực chiên nước mắm	195000	385000
+Ghẹ rang muối ớt	420000	850000
+Nghêu hấp sả ớt	125000	245000
+Sò điệp nướng mỡ hành	235000	465000
+Bò nướng lá lốt	165000	325000
+Bê thui chấm tương bần	285000	560000
+Gà nướng muối ớt nguyên con	320000	620000
+Gà hấp lá chanh	265000	520000
+Vịt quay Bắc Kinh nửa con	385000	750000
+Vịt om sấu	245000	480000
+Heo quay giòn bì	295000	580000
+Thịt kho trứng cút	125000	245000
+Măng tây xào bò	145000	285000
+Bông bí xào tỏi	72000	138000
+Cơm chiên cá mặn	105000	198000
+Cơm cháy chà bông	85000	165000
+Mì xào giòn thập cẩm	115000	225000
+Miến xào cua	135000	265000
+Bún chả Hà Nội	78000	145000
+Phở bò tái nạm	68000	128000
+Cháo cá lóc rau đắng	65000	125000
+Xôi gà lá sen	85000	165000
+Chè hạt sen long nhãn	42000	82000
+Bánh flan cà phê	42000	82000
+Kem dừa trái dừa tươi	65000	125000
+Nước ép cà rốt cam	48000	92000
+Nước ép dưa hấu	42000	82000
+Sinh tố bơ sữa đặc	55000	105000
+Sinh tố xoài	48000	92000
+Trà sen vàng	48000	92000
+Cà phê phin truyền thống	35000	68000
+Soda việt quất	55000	105000
+Bia tươi theo vại	45000	95000

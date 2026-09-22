@@ -1,0 +1,71 @@
+# CLAUSES_CHUNG_C — mẻ điều khoản chung thứ ba, cùng định dạng hai mẻ trước.
+#
+# Vì sao có mẻ này, bằng số: trần số tờ của một tài liệu chảy bằng điều khoản
+# đúng bằng số điều kho này có, chia cho ~11 điều một tờ A4. Với hai mẻ đầu,
+# hồ sơ `admin` có 102 điều — tối đa chín tờ, và một tài liệu mười tờ phải
+# vét gần hết kho nên hai tài liệu dài bất kỳ đọc lên gần giống nhau.
+#
+# Sáu mươi điều dưới đây KHÔNG trùng chủ đề với tám mươi điều đã có: chúng
+# đi vào phần thi công, hiện trường, dữ liệu, mức dịch vụ, xuất nhập khẩu —
+# những mảng hai mẻ trước không chạm tới.
+
+Điều kiện tiên quyết có hiệu lực	Văn bản này chỉ phát sinh hiệu lực khi các bên đã nộp đủ bảo đảm và giấy tờ pháp lý nêu tại phụ lục.	Quá ba mươi ngày kể từ ngày ký mà điều kiện tiên quyết chưa hoàn thành, mỗi bên được quyền rút lui không phải bồi thường.
+Đăng ký và công bố	Bên có nghĩa vụ đăng ký thực hiện thủ tục tại cơ quan có thẩm quyền trong mười ngày làm việc kể từ ngày ký.	Chi phí đăng ký, công chứng do bên có nghĩa vụ đăng ký chịu, trừ khi các bên thoả thuận khác.
+Địa điểm thực hiện	Công việc được thực hiện tại địa điểm ghi tại phụ lục; thay đổi địa điểm phải có chấp thuận bằng văn bản.	Chi phí phát sinh do thay đổi địa điểm theo yêu cầu của bên nào thì bên đó chịu.
+Quyền tiếp cận hiện trường	Bên đặt hàng bảo đảm cho nhân sự của bên thực hiện được vào hiện trường trong giờ làm việc đã thống nhất.	Việc chậm bàn giao mặt bằng quá bảy ngày được tính vào thời gian gia hạn tiến độ.	Nhân sự vào hiện trường phải đeo thẻ và tuân thủ nội quy an toàn của nơi làm việc.
+Giấy phép và chấp thuận	Mỗi bên tự chịu trách nhiệm xin và duy trì các giấy phép cần thiết cho phần việc của mình.	Bên bị thu hồi giấy phép phải thông báo ngay và đề xuất phương án khắc phục trong năm ngày làm việc.
+Tuân thủ pháp luật	Các bên cam kết tuân thủ pháp luật Việt Nam và các quy định chuyên ngành áp dụng cho hoạt động của mình.	Bên vi phạm chịu toàn bộ chế tài của cơ quan nhà nước và không được yêu cầu bên kia chia sẻ.
+Cấm lao động cưỡng bức và lao động trẻ em	Bên thực hiện cam kết không sử dụng lao động cưỡng bức và không sử dụng người chưa đủ tuổi lao động.	Phát hiện vi phạm là căn cứ chấm dứt ngay mà bên đặt hàng không phải bồi thường.
+Bình đẳng và không phân biệt đối xử	Các bên bảo đảm không phân biệt đối xử về giới, dân tộc, tôn giáo trong tuyển dụng và phân công công việc.	Khiếu nại về phân biệt đối xử được tiếp nhận và xử lý trong mười ngày làm việc.
+Quy tắc ứng xử của nhà cung cấp	Bên cung cấp và nhà thầu phụ của mình tuân thủ quy tắc ứng xử đính kèm phụ lục.	Bên đặt hàng được đánh giá việc tuân thủ mỗi năm một lần và yêu cầu khắc phục khi cần.
+Truy xuất nguồn gốc	Mỗi lô hàng phải có mã lô cho phép truy ngược đến nhà sản xuất và ngày sản xuất.	Hồ sơ truy xuất được lưu tối thiểu hai năm và cung cấp trong ba ngày làm việc khi được yêu cầu.
+Kiểm định và hiệu chuẩn thiết bị	Thiết bị đo dùng trong nghiệm thu phải còn hiệu lực kiểm định của tổ chức được chỉ định.	Bản sao giấy chứng nhận kiểm định được gửi kèm hồ sơ nghiệm thu.
+Lưu mẫu và mẫu đối chứng	Mỗi lô hàng giữ lại một mẫu đối chứng niêm phong có chữ ký của đại diện hai bên.	Mẫu đối chứng được lưu đến hết thời hạn bảo hành và là căn cứ khi có tranh chấp về chất lượng.
+Điều kiện bảo quản	Hàng hoá phải được bảo quản theo điều kiện nhiệt độ, độ ẩm ghi trên bao bì hoặc tài liệu kỹ thuật.	Tổn thất do bảo quản sai điều kiện thuộc trách nhiệm của bên đang giữ hàng tại thời điểm xảy ra.
+Vận chuyển và giao nhận	Phương thức vận chuyển và điều kiện giao hàng áp dụng theo điều kiện thương mại ghi tại phụ lục.	Bên vận chuyển phải thông báo lịch giao trước hai mươi bốn giờ.	Hàng hoá hư hỏng trong vận chuyển được lập biên bản ngay tại điểm giao.
+Thủ tục hải quan	Bên có nghĩa vụ thông quan chịu trách nhiệm khai báo trung thực và nộp đủ thuế, phí liên quan.	Chi phí lưu kho, lưu bãi phát sinh do khai báo sai do bên khai báo chịu.
+Chuyển rủi ro và quyền sở hữu	Rủi ro đối với hàng hoá chuyển sang bên mua tại thời điểm giao hàng ghi trên biên bản.	Quyền sở hữu chỉ chuyển sang bên mua khi đã thanh toán đủ giá trị lô hàng.
+Giao hàng từng phần	Bên bán được giao hàng thành nhiều đợt nếu phụ lục cho phép; mỗi đợt được nghiệm thu và thanh toán riêng.	Việc một đợt bị từ chối không làm mất hiệu lực của các đợt đã nghiệm thu.
+Giao hàng chậm	Giao chậm quá bảy ngày, bên mua được quyền mua hàng thay thế và yêu cầu bên bán bù phần chênh lệch giá.	Bên bán được miễn trách nhiệm nếu chứng minh được nguyên nhân thuộc trường hợp bất khả kháng.
+Từ chối nghiệm thu	Bên nghiệm thu được từ chối khi khối lượng, chất lượng không đúng hồ sơ và phải nêu lý do bằng văn bản.	Từ chối không có lý do chính đáng quá mười ngày thì coi như đã nghiệm thu.
+Nghiệm thu từng giai đoạn	Công việc được nghiệm thu theo từng giai đoạn ghi tại kế hoạch triển khai.	Nghiệm thu giai đoạn không thay thế nghiệm thu tổng thể khi hoàn thành toàn bộ.
+Chạy thử và vận hành thử	Thiết bị được chạy thử không tải và có tải trước khi nghiệm thu, thời gian chạy thử ghi tại phụ lục.	Kết quả chạy thử được lập biên bản có xác nhận của đại diện kỹ thuật hai bên.
+Tài liệu kỹ thuật kèm theo	Mỗi thiết bị bàn giao kèm hướng dẫn sử dụng, sơ đồ đấu nối và danh mục phụ tùng bằng tiếng Việt.	Thiếu tài liệu kỹ thuật là căn cứ chưa nghiệm thu, kể cả khi thiết bị đã hoạt động.
+Phụ tùng thay thế	Bên cung cấp bảo đảm cung ứng phụ tùng thay thế trong tối thiểu năm năm kể từ ngày bàn giao.	Giá phụ tùng được giữ theo bảng giá đính kèm, điều chỉnh không quá một lần mỗi năm.
+Nâng cấp và cập nhật	Bản cập nhật sửa lỗi được cung cấp miễn phí trong thời hạn bảo hành.	Bản nâng cấp có tính năng mới được chào giá riêng và chỉ triển khai khi có chấp thuận.
+Chấm dứt hỗ trợ phiên bản cũ	Bên cung cấp thông báo trước ít nhất sáu tháng khi dừng hỗ trợ một phiên bản.	Trong thời gian thông báo, bên cung cấp hỗ trợ chuyển đổi sang phiên bản đang được hỗ trợ.
+Cam kết mức dịch vụ	Mức sẵn sàng của dịch vụ không thấp hơn tỉ lệ ghi tại phụ lục, tính theo tháng.	Thời gian bảo trì có kế hoạch được thông báo trước và không tính vào thời gian gián đoạn.
+Thời gian phản hồi và khắc phục	Sự cố nghiêm trọng được phản hồi trong một giờ và khắc phục trong tám giờ làm việc.	Sự cố thông thường được phản hồi trong bốn giờ và khắc phục trong hai ngày làm việc.
+Phạt vi phạm mức dịch vụ	Không đạt mức sẵn sàng cam kết, bên cung cấp giảm trừ phí dịch vụ theo bảng giảm trừ tại phụ lục.	Giảm trừ được khấu trừ vào kỳ thanh toán liền sau.
+Quyền truy cập hệ thống	Tài khoản cấp cho bên kia chỉ đủ quyền cho phần việc được giao và bị thu hồi ngay khi kết thúc.	Mọi thao tác trên hệ thống được ghi nhật ký và lưu tối thiểu một năm.
+Sao lưu dữ liệu	Dữ liệu được sao lưu hằng ngày và lưu bản sao ở một địa điểm tách biệt.	Khả năng khôi phục từ bản sao lưu được kiểm chứng ít nhất sáu tháng một lần.
+Xoá và trả lại dữ liệu	Khi kết thúc, bên xử lý dữ liệu trả lại toàn bộ dữ liệu ở định dạng đọc được và xoá bản lưu của mình.	Việc xoá được xác nhận bằng văn bản trong ba mươi ngày kể từ ngày kết thúc.
+Thông báo vi phạm dữ liệu	Phát hiện dữ liệu bị truy cập trái phép, bên phát hiện thông báo cho bên kia trong hai mươi bốn giờ.	Thông báo nêu rõ phạm vi dữ liệu liên quan và biện pháp đã áp dụng.
+Kiểm tra an ninh định kỳ	Hệ thống được đánh giá an ninh ít nhất mỗi năm một lần bởi đơn vị độc lập.	Lỗ hổng mức cao phải được khắc phục trong ba mươi ngày kể từ ngày phát hiện.
+Quản lý thay đổi	Mọi thay đổi cấu hình ảnh hưởng đến dịch vụ phải được đăng ký và phê duyệt trước khi thực hiện.	Thay đổi khẩn cấp được thực hiện trước và hoàn tất hồ sơ trong hai ngày làm việc.
+Quản lý sự cố	Mỗi sự cố được ghi nhận, phân loại mức độ và theo dõi đến khi đóng.	Sự cố lặp lại quá ba lần trong một quý phải có báo cáo phân tích nguyên nhân gốc.
+Danh mục tài sản bàn giao	Tài sản bàn giao được liệt kê theo danh mục có mã, số lượng và tình trạng tại thời điểm giao.	Danh mục là bộ phận không tách rời của biên bản bàn giao.
+Kiểm kê định kỳ	Hai bên phối hợp kiểm kê tài sản vào cuối mỗi năm tài chính.	Chênh lệch kiểm kê được lập biên bản và xử lý theo quy định về tài sản.
+Hao hụt định mức	Hao hụt trong định mức ghi tại phụ lục không phải bồi thường.	Phần vượt định mức do bên giữ hàng chịu trách nhiệm, trừ trường hợp bất khả kháng.
+Xử lý hàng tồn	Hàng tồn quá sáu tháng được hai bên xem xét phương án luân chuyển hoặc giảm giá.	Chi phí lưu kho phát sinh sau thời hạn trên do bên đặt hàng chịu.
+Thanh lý tài sản	Tài sản hết niên hạn được thanh lý theo quy định, có hội đồng và lập biên bản.	Số tiền thu được từ thanh lý hạch toán theo quy định tài chính hiện hành.
+Định giá và thẩm định	Khi cần xác định giá trị tài sản, hai bên thuê tổ chức thẩm định giá độc lập.	Chi phí thẩm định chia đều, trừ khi kết quả cho thấy lỗi thuộc về một bên.
+Thanh toán qua thư tín dụng	Thanh toán được thực hiện qua thư tín dụng không huỷ ngang mở tại ngân hàng hai bên chấp thuận.	Bộ chứng từ xuất trình đúng quy định là điều kiện để ngân hàng thanh toán.
+Phí ngân hàng	Phí phát sinh tại ngân hàng của bên nào do bên đó chịu.	Phí chuyển tiền quốc tế do bên chuyển chịu, trừ khi có thoả thuận khác bằng văn bản.
+Biến động tỷ giá	Tỷ giá áp dụng là tỷ giá bán ra công bố tại ngày thanh toán của ngân hàng phục vụ bên nhận.	Biến động tỷ giá vượt quá năm phần trăm, hai bên thương lượng điều chỉnh trong mười ngày làm việc.
+Bảo lãnh tạm ứng	Tiền tạm ứng chỉ được giải ngân sau khi bên nhận nộp bảo lãnh tạm ứng tương đương.	Bảo lãnh được giảm dần theo tỉ lệ thu hồi tạm ứng.
+Giữ lại tiền bảo hành	Bên đặt hàng giữ lại một phần giá trị hợp đồng làm tiền bảo hành cho đến hết thời hạn bảo hành.	Tiền giữ lại không sinh lãi, trừ khi các bên thoả thuận khác.
+Hoàn trả tiền giữ lại	Tiền bảo hành được hoàn trả trong mười lăm ngày kể từ ngày hết thời hạn bảo hành và không còn khiếu nại.	Bên đặt hàng được khấu trừ chi phí sửa chữa mà bên thực hiện không khắc phục đúng hạn.
+Quyền cầm giữ	Bên thực hiện được cầm giữ sản phẩm cho đến khi được thanh toán khoản đã đến hạn.	Quyền cầm giữ không áp dụng với tài liệu, dữ liệu thuộc sở hữu của bên đặt hàng.
+Thứ tự ưu tiên tài liệu	Khi các tài liệu mâu thuẫn, thứ tự ưu tiên là: văn bản chính, phụ lục, biên bản thương thảo, hồ sơ chào giá.	Tài liệu ký sau có giá trị cao hơn tài liệu ký trước về cùng một nội dung.
+Phụ lục và biểu mẫu	Các biểu mẫu sử dụng trong quá trình thực hiện được thống nhất trước và đính kèm phụ lục.	Thay đổi biểu mẫu không làm thay đổi quyền và nghĩa vụ đã thoả thuận.
+Bản vẽ và tài liệu thiết kế	Bản vẽ thi công phải được bên đặt hàng phê duyệt trước khi triển khai.	Bên thực hiện chịu trách nhiệm về sai sót phát sinh do thi công không theo bản vẽ đã duyệt.
+Quyền yêu cầu thay nhân sự	Bên đặt hàng được yêu cầu thay nhân sự không đáp ứng yêu cầu công việc, nêu lý do bằng văn bản.	Bên thực hiện bố trí người thay thế tương đương trong mười ngày làm việc.
+Đào tạo an toàn bắt buộc	Mọi nhân sự vào hiện trường phải hoàn thành khoá huấn luyện an toàn trước khi bắt đầu công việc.	Danh sách nhân sự đã huấn luyện được gửi cho bên đặt hàng trước ngày khởi công.
+Kiểm tra sức khoẻ định kỳ	Người lao động làm công việc nặng nhọc được khám sức khoẻ định kỳ ít nhất hai lần một năm.	Người không đủ điều kiện sức khoẻ không được bố trí vào vị trí có yêu cầu nghiêm ngặt về an toàn.
+Trang bị bảo hộ	Bên sử dụng lao động cấp đủ phương tiện bảo hộ cá nhân phù hợp với từng vị trí.	Người lao động không sử dụng bảo hộ bị đình chỉ công việc cho đến khi khắc phục.
+Quy định ra vào công trường	Người và phương tiện ra vào công trường phải đăng ký trước và xuất trình giấy tờ khi được yêu cầu.	Vật tư mang ra khỏi công trường phải có phiếu xuất được ký duyệt.
+Làm việc ngoài giờ tại hiện trường	Làm việc ngoài giờ hành chính tại hiện trường phải được chấp thuận trước và bảo đảm đủ chiếu sáng, an toàn.	Chi phí phát sinh do làm ngoài giờ theo yêu cầu của bên nào thì bên đó chịu.
+Tạm ngừng do thời tiết	Công việc ngoài trời được tạm ngừng khi thời tiết nguy hiểm theo cảnh báo của cơ quan khí tượng.	Thời gian tạm ngừng do thời tiết được tính vào thời gian gia hạn tiến độ.
+Nhật ký thi công	Nhật ký thi công được ghi hằng ngày, có chữ ký của giám sát hai bên.	Nhật ký là căn cứ đối chiếu khối lượng và tiến độ khi nghiệm thu.
+Biên bản hiện trường	Mọi sự việc phát sinh tại hiện trường được lập biên bản ngay, có chữ ký của người chứng kiến.	Biên bản hiện trường là căn cứ khi xác định trách nhiệm, không thay thế kết luận giám định.

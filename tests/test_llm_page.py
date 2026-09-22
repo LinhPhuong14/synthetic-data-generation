@@ -19,7 +19,8 @@ import pytest
 from synthgen import content as C
 from synthgen import design as D
 from synthgen import markup as M
-from synthgen.llm_page import kinds, path_coverage, problems
+from synthgen.llm_page import (_COINED, _rooted, coined, kinds,
+                               path_coverage, problems)
 
 SHEET = ('<div class="sheet">'
          '<span data-kind="title">HOÁ ĐƠN</span>'
@@ -71,7 +72,7 @@ def test_a_self_closing_tag_inside_a_run_is_refused_too():
 
 
 @pytest.mark.parametrize("html,mark", [
-    ('<div class="sheet"><span data-kind="hoa_don.so">1</span></div>', "từ vựng"),
+    ('<div class="sheet"><span data-kind="Hoa-Don">1</span></div>', "đọc được"),
     ('<div><span data-kind="title">X</span></div>', "sheet"),
     (SHEET + "<script>x()</script>", "script"),
     (SHEET + '<img src="https://a.com/x.png">', "tài nguyên ngoài"),
@@ -267,3 +268,96 @@ def test_path_coverage_counts_without_gating():
     cov = path_coverage(mixed)
     assert cov == {"spans": 2, "with_path": 1, "coverage": 0.5}
     assert problems(mixed) == []          # thiếu path một mình không loại trang
+
+
+# ------------------------------------------- từ vựng kind MỞ, có ngữ pháp
+
+
+@pytest.mark.parametrize("kind", [
+    "contract.party_a",              # khái niệm engine chưa từng vẽ
+    "inspection.finding.label",      # kèm quy ước hậu tố
+    "permit.issued_on",
+    "clause.1.body",                 # đoạn thuần số, như `_PATH` vẫn nhận
+])
+def test_a_coined_kind_that_reads_as_family_field_is_accepted(kind):
+    """Từ vựng engine là GỢI Ý. Model viết loại giấy engine chưa có thì nó có
+    trường engine chưa đặt tên, và loại cả tờ vì một cái tên là phạt nhầm
+    chỗ -- đo trên 30 trang lượt đầu: 103 lần trượt vì từ vựng."""
+    html = f'<div class="sheet"><span data-kind="{kind}">X</span></div>'
+    assert not [line for line in problems(html) if "data-kind" in line]
+
+
+@pytest.mark.parametrize("kind", [
+    "bia",             # một đoạn, không họ -- không nói được nó thuộc cụm nào
+    "Hoa_Don.so",      # chữ hoa
+    "hoa-don.so",      # gạch ngang
+    "a.b.c.d.e",       # năm đoạn
+    "chứng.từ",        # ngoài ASCII
+])
+def test_a_coined_kind_that_does_not_read_is_still_refused(kind):
+    """Ngữ pháp không phải thẩm mỹ. Đoạn ĐẦU là họ, và
+    `record.regions_from_words` cắt cụm vùng theo nó; hậu tố `.label` là thứ
+    `record._word_field_role` đọc để trả vai `key`. Một cái tên không có hai
+    thứ ấy làm cả hai trục im lặng trả về mặc định."""
+    html = f'<div class="sheet"><span data-kind="{kind}">X</span></div>'
+    assert [line for line in problems(html) if "data-kind" in line]
+
+
+def test_a_kind_with_a_real_root_is_not_counted_as_coined():
+    """`sign.name2` là `sign.name` nói cụ thể hơn, không phải tên mới."""
+    html = ('<div class="sheet">'
+            '<span data-kind="sign.name2">A</span>'
+            '<span data-kind="contract.party_a">B</span></div>')
+    assert coined(html) == ["contract.party_a"]
+
+
+def test_coining_is_measured_even_though_it_is_not_gated():
+    """Mở từ vựng có giá: hai tờ đặt hai tên cho một khái niệm thì
+    `kie_schema.groups()` xếp chúng vào hai nhóm. Không đếm thì không ai biết
+    điều ấy đang tới đâu."""
+    engine = a_page(3)
+    assert coined(engine) == [], "trang engine viết không tự đặt tên nào"
+
+
+def test_the_repairer_keeps_a_coined_name_and_only_fixes_its_shape():
+    """Chuẩn hoá HÌNH THỨC, không đổi NGHĨA."""
+    from synthgen.repair import settle
+
+    known = kinds()
+    assert settle("Hoa_Don.So", known) == "hoa_don.so"
+    assert settle("contract.party_a", known) == "contract.party_a"
+    # Không đọc được kể cả sau khi chuẩn hoá -> hai kind chung, như trước.
+    assert settle("note-label", known) == "invoice.field.label"
+
+
+def test_the_decoder_is_still_constrained_just_to_a_grammar_not_a_list():
+    """`field_plan[].kind` từng dùng `enum`, nên bộ giải mã KHÔNG THỂ sinh tên
+    ngoài danh sách -- chặt hơn cả cổng, và chặt sai chỗ: model viết loại giấy
+    engine chưa có thì nó không khai nổi trường mới vào kế hoạch, dù HTML (một
+    `string` tự do) vẫn in được. `pattern` giữ nguyên tính chặt mà cho đặt tên
+    có họ."""
+    import re as _re
+
+    from agent.compose_page import kind_pattern
+
+    pattern = _re.compile(kind_pattern())
+    for good in ("title", "note", "contract.party_a", "clause.1.body"):
+        assert pattern.match(good), good
+    for bad in ("Hoa Don", "seal.Round", "bia", "a.b.c.d.e"):
+        assert not pattern.match(bad), bad
+
+
+def test_the_gate_and_the_decoder_agree_on_what_a_name_may_look_like():
+    """Hai chỗ ép cùng một ngữ pháp. Lệch nhau thì model sinh được cái tên mà
+    cổng ngay sau đó loại -- đốt cả lượt gọi để bị từ chối."""
+    import re as _re
+
+    from agent.compose_page import kind_pattern
+
+    decoder = _re.compile(kind_pattern())
+    known = kinds()
+    for name in ("contract.party_a", "inspection.finding.label", "permit.x",
+                 "clause.1.body", "title", "note"):
+        passes_gate = (name in known or _rooted(name, known)
+                       or bool(_COINED.match(name)))
+        assert bool(decoder.match(name)) == passes_gate, name

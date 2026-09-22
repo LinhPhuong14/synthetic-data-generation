@@ -31,9 +31,14 @@ sign_sets:
   - HIỆU TRƯỞNG
 notes:
 - Giấy chứng nhận có giá trị trong thời hạn 01 năm kể từ ngày ký.
+# Sức chứa nới ra để phôi này với tới hai tờ: giấy chứng nhận ở tờ đầu, BẢNG ĐIỂM các môn ở tờ sau.
+# Trần cũ quá thấp nên `--multipage-only` loại sạch mọi seed của nó
+# (đo được 0% seed nhắm >=2 tờ), và loại chứng từ này biến mất khỏi
+# bộ nhiều trang. Xem `design.FLOW_PER_PAGE`: hai tờ cần trần >= 30
+# dòng bảng.
 rows:
-- 0
-- 6
+- 8
+- 50
 always:
 - letterhead
 - doctitle
@@ -45,4 +50,5 @@ optional:
 - notes
 - legal_basis
 - photo
+- table
 en_ok: false

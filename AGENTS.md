@@ -69,9 +69,15 @@ Một bản ghi (`schema_version: 8`) mang **bốn hạt nhãn cho cùng một c
 | tầng | một phần tử là | hình học |
 | --- | --- | --- |
 | `layout_annotations` | một **vùng** (19 nhãn lớp) | `bbox` |
-| `blocks` | một **dòng** của một run | `bbox`, `quad`, `bbox_1000` |
+| `blocks` | một **dòng** của một run | `bbox`, `quad` |
 | `word_annotations` | một **từ** | `bbox`, `polygon` 4 góc (đã theo warp) |
 | `entity_annotations` | **cả run** — trường là chuỗi trọn vẹn | `bbox` bao ngoài, **`lines`** hộp từng dòng, `key_entity_index` |
+
+> **Hệ toạ độ: 0..1000.** Mọi `bbox`, `polygon`, `quad`, `lines` và khoá
+> `*_bbox` là PHẦN NGHÌN của cạnh tờ giấy (`bbox_mode: "xyxy_per_mille"`).
+> Số pixel đo được nằm ở khoá `*_px` bên cạnh. Phép chuyển ở đúng một chỗ:
+> `pipeline/record.py::to_per_mille`. Khoá `bbox_1000` của bản cũ đã bỏ —
+> `bbox` chính là nó.
 
 `kie.pairs` ngồi trên `entity_annotations`, **bốn nguồn cặp**:
 

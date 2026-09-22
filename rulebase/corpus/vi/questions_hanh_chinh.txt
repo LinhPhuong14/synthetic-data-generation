@@ -1,0 +1,40 @@
+# QUESTIONS_HANH_CHINH — một chủ đề câu hỏi của khối biểu mẫu (`Form`).
+#
+# Cột 1 là DẠNG, cột 2 là câu hỏi, các cột sau là tham số của chính dạng ấy:
+#
+#   blank         (không tham số) — một dòng kẻ để điền
+#   yesno         (không tham số) — hai ô Có/Không
+#   options       lựa chọn | lựa chọn | ...
+#   boxchar       số ô           — dãy ô vuông mỗi ô một ký tự (CCCD, MST)
+#   date_boxes    (không tham số) — ngày / tháng / năm, mỗi chữ số một ô
+#   grid          hàng|hàng|...  cột|cột|...   — ma trận tích chéo
+#   scale         nhãn thấp      nhãn cao      số mức
+#   rank          mục|mục|...    — xếp thứ tự ưu tiên
+#   inline_blank  (câu hỏi mang dấu … ở mỗi chỗ trống)
+#   subquestion   ý|ý|...        — câu chính rồi các ý a) b) c)
+#   table_form    cột|cột|...    số dòng      — bảng người ta điền tay
+#   attachment    mục|mục|...    — danh mục hồ sơ kèm theo, mỗi mục một ô tích
+#   answer        (cột 2 là một câu trả lời tự do của chủ đề này)
+#
+# Ra file thay vì nằm trong `synthgen/content.py`: thêm một chủ đề là thêm một
+# file, không phải sửa mã — cùng lệ `clauses_*.txt` và `rulebase/` nói chung.
+
+boxchar	Số căn cước công dân / Chứng minh nhân dân	12
+date_boxes	Ngày, tháng, năm sinh
+boxchar	Mã số thuế cá nhân	10
+inline_blank	Tôi tên là …, sinh ngày …, hiện thường trú tại …
+options	Hình thức nhận kết quả	Nhận trực tiếp|Qua bưu điện|Qua thư điện tử
+attachment	Hồ sơ kèm theo	Bản sao căn cước công dân|Giấy xác nhận cư trú|Sơ yếu lý lịch|Ảnh 4x6|Bản sao bằng cấp
+subquestion	Thông tin liên hệ	a) Điện thoại|b) Thư điện tử|c) Địa chỉ nhận thư
+grid	Đánh giá mức độ đáp ứng của bộ phận một cửa	Thái độ tiếp dân|Thời gian xử lý|Hướng dẫn thủ tục|Cơ sở vật chất	Tốt|Khá|Trung bình|Kém
+scale	Mức độ hài lòng chung	Rất không hài lòng	Rất hài lòng	5
+yesno	Quý vị đã từng nộp hồ sơ này lần nào chưa?
+blank	Lý do đề nghị giải quyết
+rank	Xin xếp thứ tự ưu tiên các nội dung cần cải thiện	Rút ngắn thời gian|Giảm giấy tờ|Thái độ phục vụ|Hướng dẫn rõ hơn
+table_form	Người cùng nộp hồ sơ	Họ và tên|Quan hệ|Năm sinh|Số giấy tờ	3
+options	Nơi nộp hồ sơ	Trụ sở xã|Trụ sở huyện|Cổng dịch vụ công|Bưu điện
+answer	đề nghị cấp lại do mất
+answer	bổ sung hồ sơ theo hướng dẫn
+answer	chuyển nơi thường trú
+answer	hồ sơ đã nộp ngày 12/3
+answer	không có ý kiến gì thêm

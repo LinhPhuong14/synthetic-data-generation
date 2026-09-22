@@ -1,0 +1,23 @@
+# ITEMS_WATER_B — mẻ thứ hai, cùng định dạng mẻ đầu: tên<TAB>giá tối thiểu<TAB>giá tối đa.
+#
+# Vì sao có mẻ này, bằng số. `corpus.sample()` lặp lại mặt hàng khi bảng dài
+# hơn kho, và điều đó đúng với một hoá đơn bốn dòng. Nhưng bảng dài nhất của
+# hồ sơ này là 18 dòng trong khi mẻ đầu chỉ có 7 mặt hàng — mỗi thứ
+# in lại 2 lần trên CÙNG MỘT tờ giấy, và một mô hình đọc tờ ấy học rằng
+# bảng tiếng Việt là một danh sách lặp.
+#
+# Tên viết CÓ DẤU; bố cục nào cần chữ không dấu thì `rulebase.text.ascii_fold`
+# bỏ dấu lúc render.
+
+Nước sinh hoạt bậc năm	16000	19000
+Nước cho cơ quan hành chính	12000	16000
+Nước cho đơn vị sự nghiệp	11000	15000
+Nước cho sản xuất vật chất	11500	15500
+Nước cho kinh doanh dịch vụ	22000	28000
+Nước cho cơ sở lưu trú	24000	32000
+Phí bảo vệ môi trường nước thải	1200	3600
+Phí đấu nối đồng hồ mới	850000	4200000
+Phí kiểm định đồng hồ nước	180000	720000
+Phí súc xả đường ống	320000	1600000
+Phí cấp nước trở lại	95000	380000
+Phí thay đồng hồ hỏng do khách	620000	2800000

@@ -1,0 +1,38 @@
+# QUESTIONS_GIAO_DUC — một chủ đề câu hỏi của khối biểu mẫu (`Form`).
+#
+# Cột 1 là DẠNG, cột 2 là câu hỏi, các cột sau là tham số của chính dạng ấy:
+#
+#   blank         (không tham số) — một dòng kẻ để điền
+#   yesno         (không tham số) — hai ô Có/Không
+#   options       lựa chọn | lựa chọn | ...
+#   boxchar       số ô           — dãy ô vuông mỗi ô một ký tự (CCCD, MST)
+#   date_boxes    (không tham số) — ngày / tháng / năm, mỗi chữ số một ô
+#   grid          hàng|hàng|...  cột|cột|...   — ma trận tích chéo
+#   scale         nhãn thấp      nhãn cao      số mức
+#   rank          mục|mục|...    — xếp thứ tự ưu tiên
+#   inline_blank  (câu hỏi mang dấu … ở mỗi chỗ trống)
+#   subquestion   ý|ý|...        — câu chính rồi các ý a) b) c)
+#   table_form    cột|cột|...    số dòng      — bảng người ta điền tay
+#   attachment    mục|mục|...    — danh mục hồ sơ kèm theo, mỗi mục một ô tích
+#   answer        (cột 2 là một câu trả lời tự do của chủ đề này)
+#
+# Ra file thay vì nằm trong `synthgen/content.py`: thêm một chủ đề là thêm một
+# file, không phải sửa mã — cùng lệ `clauses_*.txt` và `rulebase/` nói chung.
+
+boxchar	Số báo danh	8
+date_boxes	Ngày dự thi
+options	Nguyện vọng đăng ký	Nguyện vọng 1|Nguyện vọng 2|Nguyện vọng 3
+grid	Kết quả học tập ba năm gần nhất	Lớp 10|Lớp 11|Lớp 12	Giỏi|Khá|Trung bình
+table_form	Quá trình học tập	Năm học|Tên trường|Lớp|Xếp loại	3
+attachment	Hồ sơ dự tuyển kèm theo	Học bạ|Bằng tốt nghiệp|Giấy khai sinh|Ảnh 3x4|Giấy chứng nhận ưu tiên
+yesno	Thí sinh có thuộc diện được cộng điểm ưu tiên không?
+subquestion	Thông tin người giám hộ	a) Họ và tên|b) Quan hệ|c) Điện thoại
+inline_blank	Tôi đăng ký ngành …, hệ …, tại cơ sở …
+scale	Mức độ quan tâm tới học bổng	Không quan tâm	Rất quan tâm	5
+blank	Nguyện vọng khác của thí sinh
+rank	Xếp thứ tự ưu tiên các ngành	Công nghệ thông tin|Kinh tế|Sư phạm|Kỹ thuật
+options	Hình thức đào tạo	Chính quy|Vừa làm vừa học|Từ xa
+answer	xin xét tuyển theo học bạ
+answer	đã đạt giải khuyến khích cấp tỉnh
+answer	mong được ở ký túc xá
+answer	không có nguyện vọng gì thêm

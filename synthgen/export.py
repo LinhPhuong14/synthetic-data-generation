@@ -22,7 +22,9 @@ Nên ở đây một tài liệu là MỘT file, và `pages` là một MẢNG:
         "size": [1101, 1811],
         "fields":     { "so": {"type": "string", "value": "563/2026", ...} },
         "tables":     [ {"type": "table", "table_id": "items", ...} ],
-        "signatures": [ {"index": 1, "title": {...}, "name": {...}} ],
+        "lists":      { "clauses": [...], "questions": [...], "legal_basis": [...] },
+        "signatures": [ {"index": 1, "signer_role": {...}, "signer_name": {...},
+                         "signed": true} ],
         "marks":      [ {"kind": "sign.note", "text": "(Ký, ghi rõ họ tên)"} ]
       } ]
     }
@@ -33,7 +35,7 @@ khoá thay vì đi theo một hình dạng cố định. `size` có mặt để 
 về pixel -- làm tròn là phép một chiều, và một bộ chỉ có số đã làm tròn thì
 không ai kiểm lại được.
 
-Bốn khoá của một trang LUÔN có mặt, kể cả khi rỗng, vì cùng một lý do: hình
+Sáu khoá của một trang LUÔN có mặt, kể cả khi rỗng, vì cùng một lý do: hình
 dạng cố định thì bộ sinh có ràng buộc đi theo được.
 
 ## `tables` là MẢNG, không phải một khoá trong `fields`
@@ -66,6 +68,19 @@ cột ("Số lượt", "Ghi chú") trên bảy cột có thật.
 Không nối hai nguồn bằng phép đo chồng hộp: `kie_full` đã thử và hỏng hai lần
 (cột số căn phải mất tiêu đề; cột bên cạnh cướp tiêu đề). Chúng là hai bảng cho
 tới khi bộ sinh khai rằng chúng là một.
+
+## `lists` -- thứ gì LẶP LẠI thì thành mảng, không thành N cái tên
+
+Hai mươi hai điều khoản, mười một câu hỏi bảng hỏi: chúng từng thành hai mươi
+hai trường phẳng tên `dieu_1_thong_bao_su_kien_bao_hiem`, `dieu_2_tam_ung`,
+nghĩa là TÊN KHOÁ CHÍNH LÀ NỘI DUNG -- đổi theo từng tờ giấy, nên không mô
+hình nào học được một hình dạng cố định và không bộ sinh có ràng buộc nào biết
+trước khoá sắp tới.
+
+Mảng tách hai thứ ấy: tên khoá là VAI (`title`, `body`, `label`, `ticked`,
+`signer_role`) -- đóng và giống nhau ở mọi tờ -- còn nội dung nằm ở giá trị.
+Cùng hình với `line_items`, và là luật "lặp thì thành mảng" của
+`docs/kie-schema-v2.md`.
 
 ## `marks` -- mực có hộp nhưng KHÔNG phải trường
 
@@ -148,6 +163,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from pipeline.kie import FURNITURE  # noqa: E402
+from synthgen.kie_full import GROUPED, group_lists  # noqa: E402
 from synthgen.kie_schema import (  # noqa: E402
     INTEGER_COLUMNS,
     NUMBER_COLUMNS,
@@ -163,7 +179,10 @@ ARRAY_PATH = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)\[(\d+)\]\.(.+)$")
 # Mực có hộp nhưng không phải trường. `FURNITURE` là chữ nhà in đặt sẵn dưới ô
 # ký; hai cái còn lại là dấu và chữ chìm -- chúng có vùng riêng trong
 # `layout_annotations` và không trả lời câu hỏi nào.
-MARK_KINDS = frozenset(FURNITURE) | {"watermark"}
+# `footer.page` ở đây chứ không ở `fields`: "Trang 1/2" do MÁY CẮT sinh ra,
+# không phải nội dung người soạn viết. Nhưng nó vẫn là mực có hộp -- 544 dòng
+# trên `data/thu1k` từng không có mặt ở đâu trong bản xuất.
+MARK_KINDS = frozenset(FURNITURE) | {"watermark", "footer.page"}
 MARK_PREFIX = ("seal.",)
 
 # Khối chữ ký: chức danh và tên. `sign.note` KHÔNG ở đây -- nó là `marks`.
@@ -181,15 +200,33 @@ IMAGES = "images"
 def to_grid(box, width: float, height: float) -> list[int]:
     """`[x1, y1, x2, y2]` pixel -> hệ 1000, cắt vào `[0, 1000]`.
 
-    Cắt chứ không để tràn: một hộp lệch ra ngoài mép giấy vài pixel vì làm
-    tròn là chuyện có thật, còn một toạ độ 1003 trong hệ 1000 thì mọi thứ đọc
-    nó đều phải tự đoán xem có nên tin không."""
+    GIỜ CHỈ DÙNG CHO HỘP CHƯA CHUYỂN. `pipeline/record.py::to_per_mille` đã
+    chuyển cả bản ghi sang hệ 1000 ngay lúc lắp, nên `value_bbox` đọc lên đã
+    là phần nghìn và gọi hàm này lần nữa là chia cho cạnh giấy hai lần --
+    mọi hộp co về một chấm ở góc trên trái, không một lời báo lỗi. Giữ lại vì
+    một bộ dữ liệu vẽ TRƯỚC thay đổi ấy vẫn còn hộp pixel, và `_grid()` bên
+    dưới là chỗ quyết định đọc cái nào."""
     if not box or width <= 0 or height <= 0:
         return []
     x1, y1, x2, y2 = (float(v) for v in box)
     scale = lambda v, size: max(0, min(GRID, int(round(v / size * GRID))))  # noqa: E731
     return [scale(x1, width), scale(y1, height),
             scale(x2, width), scale(y2, height)]
+
+
+def _grid(holder: dict, key: str, width: float, height: float) -> list[int]:
+    """Hộp hệ 1000 của `holder[key]`, dù bản ghi cũ hay mới.
+
+    Bản ghi MỚI có `<key>_px`, và khi ấy `<key>` đã là phần nghìn -- lấy thẳng.
+    Bản ghi CŨ không có, và khi ấy `<key>` là pixel -- chuyển. Nhận ra bằng sự
+    CÓ MẶT của `_px` chứ không bằng cách đoán theo độ lớn con số: một trang
+    rộng 1000 pixel thì hai hệ trùng khoảng giá trị, và mọi phép đoán theo độ
+    lớn đều sai đúng trên những trang ấy."""
+    if f"{key}_px" in holder:
+        box = _rect(holder.get(key))
+        return [max(0, min(GRID, int(round(v)))) for v in box] if box else []
+    box = _rect(holder.get(key))
+    return to_grid(box, width, height) if box else []
 
 
 def _rect(box) -> list[float] | None:
@@ -276,7 +313,14 @@ def type_of(*, column: str = "", kind: str = "") -> str:
     return "string"
 
 
-def _cell(value, box, width: float, height: float) -> dict:
+def _cell(value, box, width: float, height: float, *,
+          holder: dict | None = None, key: str = "") -> dict:
+    """Một ô: chữ và hộp hệ 1000.
+
+    `holder`/`key` để `_grid()` nhìn được anh em `_px` -- xem docstring của
+    nó. Không truyền thì lùi về đường cũ, nên mọi lời gọi sẵn có vẫn chạy."""
+    if holder is not None and key:
+        return {"value": str(value or ""), "bbox": _grid(holder, key, width, height)}
     px = _rect(box)
     return {"value": str(value or ""),
             "bbox": to_grid(px, width, height) if px else []}
@@ -473,47 +517,114 @@ def _mark_kind(kind: str) -> bool:
     return kind in MARK_KINDS or kind.startswith(MARK_PREFIX)
 
 
-def _marks(pairs: list[dict], kinds: dict,
-           width: float, height: float) -> list[dict]:
-    """Mực có hộp mà không phải trường: chữ nhà in, con dấu, chữ chìm."""
+def _marks(pairs: list[dict], kinds: dict, width: float, height: float,
+           entities: list[dict] | None = None, page: int = 1,
+           claimed: set | None = None) -> list[dict]:
+    """Mực có hộp mà không phải trường: chữ nhà in, con dấu, chữ chìm, số trang.
+
+    Dựng từ THỰC THỂ, không chỉ từ cặp. Chữ in sẵn bị loại ngay ở
+    `pipeline/kie.py` nên nó không bao giờ thành cặp -- và bản trước đọc cặp,
+    nên thứ nó định gom lại chính là thứ nó không bao giờ thấy. Đo trên
+    `data/thu1k`: 544 số trang, 298 dòng "(Ký, ghi rõ họ tên)" và 34 chữ chìm
+    có hộp đầy đủ trong bản ghi mà `marks` rỗng trơn.
+
+    Mực trên giấy phải khai vào nhãn -- luật 3 của `AGENTS.md`. Không thành
+    trường thì thành `marks`, chứ không biến mất."""
     out = []
     for pair in sorted(pairs, key=_order):
         kind = kinds.get(pair.get("value_entity_index"), "")
-        box = _rect(pair.get("value_bbox"))
         out.append({"kind": kind or "mark",
                     "text": str(pair.get("value_text", "")),
-                    "bbox": to_grid(box, width, height) if box else []})
+                    "bbox": _grid(pair, "value_bbox", width, height)})
+    taken = set(claimed or ())
+    for entity in entities or []:
+        if int(entity.get("page_number", 1) or 1) != page:
+            continue
+        kind = str(entity.get("kind") or "")
+        index = entity.get("entity_index")
+        if index in taken or not _mark_kind(kind) or not str(entity.get("text") or "").strip():
+            continue
+        box = _rect(entity.get("bbox"))
+        out.append({"kind": kind, "text": str(entity.get("text")),
+                    "bbox": [int(v) for v in box] if box else []})
     return out
 
 
 def _signatures(pairs: list[dict], kinds: dict,
                 width: float, height: float) -> list[dict]:
-    """Khối chữ ký: chức danh ĐI VỚI tên, theo thứ tự đọc.
+    """Khối chữ ký: CHỨC DANH đi với TÊN, theo thứ tự đọc.
 
-    Cặp `family` mà `kie_full` dựng đã nối sẵn `sign.title` với `sign.name` --
-    ở đây chỉ gói lại. Chức danh lẻ và tên lẻ vẫn thành khối riêng, mang đúng
-    nửa nó có: một tờ bốn chức danh và hai tên là một tờ hai người chưa ký, và
-    đoán xem ai khớp ai là đoán."""
-    blocks: list[dict] = []
+    `kie_full.sign_pairs` đọc từng ô ký theo thứ tự phát và khai `group` (ô ký
+    nào) cùng `role` (`name` khi đã có người ký, `role_only` khi chưa), nên ở
+    đây chỉ còn gói lại.
+
+    Trước đó bản xuất dựng khối từ những cặp rời và một tờ bảng lương ra ba
+    khối chỉ có `name`, không khối nào biết mình là kế toán hay giám đốc -- ô
+    thứ tư ("GIÁM ĐỐC", chưa ai ký) thì biến mất hẳn. Chức danh là thứ DUY
+    NHẤT phân biệt những người ký với nhau, nên nó phải là khoá.
+
+    Cặp không mang `group` -- bộ cũ, hoặc đường ghép theo họ -- vẫn dựng được
+    khối từ nửa nó có, chỉ là không có chức danh."""
+    blocks: dict[object, dict] = {}
+    loose: list[dict] = []
     for pair in sorted(pairs, key=_order):
         value_kind = kinds.get(pair.get("value_entity_index"), "")
         key_kind = kinds.get(pair.get("key_entity_index"), "")
-        block: dict = {}
+        group = pair.get("group")
+        if pair.get("source") == "sign" and group is not None:
+            block = blocks.setdefault(group, {"role": {}, "signers": []})
+            if pair.get("role") == "role_only":
+                block["role"] = _cell(pair.get("value_text"),
+                                      pair.get("value_bbox"), width, height)
+            else:
+                block["role"] = _cell(pair.get("key_text"),
+                                      pair.get("key_bbox"), width, height)
+                block["signers"].append(
+                    _cell(pair.get("value_text"), pair.get("value_bbox"),
+                          width, height))
+            continue
+        block = {}
         if key_kind == SIGN_TITLE:
-            block["title"] = _cell(pair.get("key_text"), pair.get("key_bbox"),
-                                   width, height)
+            block["role"] = _cell(pair.get("key_text"), pair.get("key_bbox"),
+                                  width, height)
         if value_kind == SIGN_NAME:
-            block["name"] = _cell(pair.get("value_text"),
-                                  pair.get("value_bbox"), width, height)
+            block["signers"] = [_cell(pair.get("value_text"),
+                                      pair.get("value_bbox"), width, height)]
         elif value_kind == SIGN_TITLE:
-            block["title"] = _cell(pair.get("value_text"),
-                                   pair.get("value_bbox"), width, height)
+            block["role"] = _cell(pair.get("value_text"),
+                                  pair.get("value_bbox"), width, height)
         if block:
-            blocks.append(block)
-    for at, block in enumerate(blocks, start=1):
-        block["index"] = at
-        block["signed"] = bool((block.get("name") or {}).get("value"))
-    return [{"index": b.pop("index"), **b} for b in blocks]
+            loose.append({"role": block.get("role") or {},
+                          "signers": block.get("signers") or []})
+
+    # Thứ tự là thứ tự đọc CHỨC DANH, không phải thứ tự hộp của giá trị: ô chưa
+    # ai ký chỉ có hộp chức danh (y=494) còn ô đã ký lấy hộp cái tên (y=608),
+    # nên sắp theo giá trị thì ô trống nhảy lên đầu hàng.
+    def seat(block: dict) -> tuple:
+        # Hộp của CHỨC DANH khi có; không có thì lùi về hộp của người ký, chứ
+        # không phải về gốc toạ độ -- một khối thiếu chức danh mà lấy (0, 0)
+        # thì nó nhảy lên đầu hàng dù nó in ở cuối trang.
+        box = ((block.get("role") or {}).get("bbox")
+               or (block["signers"][0]["bbox"] if block.get("signers") else None)
+               or [0, 0, 0, 0])
+        return (box[1], box[0])
+
+    out: list[dict] = []
+    for block in sorted(list(blocks.values()) + loose, key=seat):
+        names = block["signers"]
+        out.append({
+            "index": len(out) + 1,
+            # `signer_role` -- chức danh in phía trên ô ký. Đây là KHOÁ của
+            # khối: "KẾ TOÁN TRƯỞNG" là thứ tách người này khỏi người bên cạnh.
+            "signer_role": block["role"],
+            "signer_name": names[0] if names else {"value": "", "bbox": []},
+            "signed": bool(names and names[0].get("value")),
+        })
+        for extra in names[1:]:
+            out.append({"index": len(out) + 1,
+                        "signer_role": block["role"],
+                        "signer_name": extra, "signed": True})
+    return out
 
 
 def is_table_row(pair: dict, kinds: dict) -> bool:
@@ -544,12 +655,15 @@ def _split(on_page: list[dict], kinds: dict) -> dict[str, list]:
     4. rồi dòng nhóm / dòng cộng -- chúng thuộc về bảng, không phải về trang.
     5. còn lại mới là trường của tờ giấy."""
     out: dict[str, list] = {"marks": [], "signs": [], "declared": [],
-                            "cells": [], "extra": [], "plain": []}
+                            "cells": [], "extra": [], "plain": [],
+                            "grouped": []}
     for pair in on_page:
         value_kind = kinds.get(pair.get("value_entity_index"), "")
         key_kind = kinds.get(pair.get("key_entity_index"), "")
         if _mark_kind(value_kind):
             out["marks"].append(pair)
+        elif pair.get("source") in GROUPED:
+            out["grouped"].append(pair)
         elif value_kind in (SIGN_TITLE, SIGN_NAME) or key_kind == SIGN_TITLE:
             out["signs"].append(pair)
         elif pair.get("source") == "table":
@@ -561,6 +675,30 @@ def _split(on_page: list[dict], kinds: dict) -> dict[str, list]:
         else:
             out["plain"].append(pair)
     return out
+
+
+
+def _one(pair: dict, key: str, width: float, height: float) -> dict:
+    """Một ô `{value, bbox}` từ nửa `key`/`value` của một cặp."""
+    box = _rect(pair.get(f"{key}_bbox"))
+    return {"value": str(pair.get(f"{key}_text", "")),
+            "bbox": to_grid(box, width, height) if box else []}
+
+
+def _grouped(pairs: list[dict], width: float, height: float) -> dict[str, list]:
+    """Mảng có cấu trúc cho những thứ LẶP LẠI. Luật ở `kie_full.group_lists`.
+
+    Ở đây chỉ còn việc vẽ từng ô thành `{value, bbox}` -- `synthgen/kie_schema.py`
+    gọi CÙNG hàm gom ấy với một cách vẽ khác (chỉ lấy chữ, vì schema không mang
+    toạ độ). Một luật, hai người vẽ; chứ không hai luật.
+    """
+    def cell(pair: dict, side: str) -> dict:
+        box = _rect(pair.get(f"{side}_bbox"))
+        return {"value": str(pair.get(f"{side}_text", "")),
+                "bbox": to_grid(box, width, height) if box else []}
+
+    return group_lists(pairs, cell)
+
 
 
 def _tables(bucket: dict[str, list], kinds: dict,
@@ -605,6 +743,13 @@ def document(record: dict, kind: str, *, doc_id: str = "",
     for number in sorted(set(by_page) | set(sizes)):
         width, height = sizes.get(number, (0.0, 0.0))
         bucket = _split(by_page.get(number, []), kinds)
+        grouped = _grouped(bucket["grouped"], width, height)
+        # Thực thể nào ĐÃ có một cặp nhận: `marks` chỉ gom phần còn lại, nếu
+        # không thì một con dấu vừa là trường vừa là mark.
+        claimed = {i for pair in by_page.get(number, [])
+                   for i in (pair.get("value_entity_index"),
+                             pair.get("key_entity_index"))
+                   if isinstance(i, int)}
 
         fields: dict[str, dict] = {}
         seen_kind: dict[str, str] = {}
@@ -617,9 +762,9 @@ def document(record: dict, kind: str, *, doc_id: str = "",
             key_px = _rect(pair.get("key_bbox"))
             entry = {
                 "value": str(pair.get("value_text", "")),
-                "bbox": to_grid(value_px, width, height) if value_px else [],
+                "bbox": _grid(pair, "value_bbox", width, height),
                 "key_text": str(pair.get("key_text", "")),
-                "key_bbox": to_grid(key_px, width, height) if key_px else [],
+                "key_bbox": _grid(pair, "key_bbox", width, height),
             }
             if rich:
                 entry["bbox_px"] = ([int(round(v)) for v in value_px]
@@ -658,8 +803,14 @@ def document(record: dict, kind: str, *, doc_id: str = "",
             "size": [int(width), int(height)],
             "fields": fields,
             "tables": _tables(bucket, kinds, width, height),
-            "signatures": _signatures(bucket["signs"], kinds, width, height),
-            "marks": _marks(bucket["marks"], kinds, width, height),
+            # `signatures` tách khỏi `lists`: nó đã là một khoang riêng của
+            # trang từ trước, và gộp vào `lists` chỉ để đổi chỗ một thứ người
+            # đọc đã biết tìm ở đâu.
+            "lists": {k: v for k, v in grouped.items() if k != "signatures"},
+            "signatures": (grouped["signatures"]
+                           + _signatures(bucket["signs"], kinds, width, height)),
+            "marks": _marks(bucket["marks"], kinds, width, height,
+                            record.get("entity_annotations"), number, claimed),
         })
     # ĐƠN VỊ NÓI RA TRONG CHÍNH TỆP. `bbox` là hệ 1000, `size` là pixel để quy
     # ngược -- thiết kế có chủ ý, ghi ở đầu file này. Nhưng hai khoá cạnh nhau

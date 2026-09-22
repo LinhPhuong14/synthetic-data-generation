@@ -1,0 +1,28 @@
+# CLAUSES_INVOICE_B — mẻ thứ hai của hồ sơ này, cùng định dạng `clauses_chung.txt`.
+#
+# Tách file thay vì nối vào mẻ đầu: `corpus.CLAUSE_FILES` gộp các file của một
+# hồ sơ lại, nên thêm một file là hồ sơ ấy dài thêm được mấy tờ mà không phải
+# đọc lại file cũ để tránh trùng.
+
+Chính sách giá theo sản lượng	Đơn giá được điều chỉnh theo bậc sản lượng luỹ kế ghi tại phụ lục.	Bậc giá được xác định lại vào cuối mỗi quý và áp dụng cho quý kế tiếp.
+Điều kiện dừng cung cấp	Bên bán được dừng cung cấp khi bên mua vượt hạn mức công nợ hoặc quá hạn thanh toán ba mươi ngày.	Việc dừng cung cấp được thông báo trước năm ngày làm việc.
+Ký gửi hàng hoá	Hàng ký gửi vẫn thuộc sở hữu bên giao cho đến khi được bán cho khách hàng cuối.	Bên nhận ký gửi báo cáo tồn kho hằng tháng và chịu trách nhiệm bảo quản.
+Đại lý và hoa hồng	Hoa hồng đại lý tính trên doanh số thực thu, thanh toán theo kỳ ghi tại phụ lục.	Đại lý không được tự ý đặt thêm khoản thu ngoài giá niêm yết.
+Bán hàng trả chậm	Bán trả chậm chỉ áp dụng cho khách hàng đã được duyệt hạn mức tín dụng.	Quá hạn trả chậm, khoản nợ chịu lãi theo mức đã thoả thuận.
+Hạn mức công nợ	Mỗi khách hàng có một hạn mức công nợ được duyệt và rà soát sáu tháng một lần.	Đơn hàng vượt hạn mức phải được người có thẩm quyền phê duyệt riêng.
+Đặt cọc	Tiền đặt cọc được khấu trừ vào giá trị đơn hàng khi giao đủ.	Bên đặt cọc từ chối nhận hàng không có lý do chính đáng thì mất tiền cọc.
+Giao hàng gấp	Yêu cầu giao gấp ngoài lịch phải được xác nhận và có thể phát sinh phụ phí vận chuyển.	Phụ phí giao gấp được báo trước và ghi rõ trên chứng từ.
+Bảo hiểm hàng hoá	Hàng hoá trong quá trình vận chuyển được mua bảo hiểm với giá trị không thấp hơn giá trị lô hàng.	Bên chịu rủi ro trong vận chuyển là bên có nghĩa vụ mua bảo hiểm.
+Chứng nhận chất lượng	Mỗi lô hàng kèm phiếu kiểm nghiệm hoặc chứng nhận chất lượng của nhà sản xuất.	Thiếu chứng nhận là căn cứ từ chối nhận hàng.
+Hàng mẫu	Hàng mẫu được cung cấp không tính tiền trong hạn mức thoả thuận và không dùng để kinh doanh.	Kết quả đánh giá hàng mẫu được phản hồi trong mười ngày làm việc.
+Bao tiêu sản phẩm	Bên mua cam kết tiêu thụ sản lượng tối thiểu ghi tại phụ lục trong mỗi kỳ.	Không đạt sản lượng cam kết, hai bên thương lượng điều chỉnh chính sách giá.
+Độc quyền phân phối	Quyền phân phối độc quyền chỉ có hiệu lực trong phạm vi lãnh thổ và thời hạn ghi tại phụ lục.	Bên được độc quyền không được phân phối sản phẩm cạnh tranh trực tiếp.
+Lãnh thổ phân phối	Đại lý chỉ bán hàng trong địa bàn được phân công; bán ngoài địa bàn phải có chấp thuận.	Vi phạm địa bàn nhiều lần là căn cứ chấm dứt quan hệ đại lý.
+Giá niêm yết và giá bán lẻ	Đại lý bán theo giá niêm yết do bên cung cấp công bố.	Chương trình giảm giá riêng của đại lý không được làm ảnh hưởng đến giá niêm yết chung.
+Quảng cáo và trưng bày	Vật phẩm quảng cáo do bên cung cấp cấp phát và chỉ dùng cho sản phẩm của bên cung cấp.	Nội dung quảng cáo do đại lý tự thực hiện phải được duyệt trước.
+Thu hồi sản phẩm	Khi phát hiện lỗi ảnh hưởng an toàn, bên cung cấp thông báo thu hồi và chịu toàn bộ chi phí.	Đại lý phối hợp ngừng bán và thu hồi trong thời hạn được thông báo.
+Bảo vệ thương hiệu	Đại lý không đăng ký nhãn hiệu, tên miền trùng hoặc tương tự với nhãn hiệu của bên cung cấp.	Phát hiện hàng giả, hàng nhái phải thông báo ngay cho bên cung cấp.
+Đào tạo nhân viên bán hàng	Bên cung cấp tổ chức đào tạo sản phẩm cho nhân viên đại lý ít nhất một lần mỗi năm.	Nhân viên chưa qua đào tạo không tư vấn các sản phẩm có yêu cầu kỹ thuật.
+Báo cáo doanh số	Đại lý gửi báo cáo doanh số và tồn kho trước ngày năm của tháng kế tiếp.	Số liệu báo cáo là căn cứ tính hoa hồng và xét chính sách giá.
+Kiểm tra kho đại lý	Bên cung cấp được kiểm tra kho của đại lý sau khi thông báo trước ba ngày làm việc.	Kết quả kiểm tra được lập biên bản có chữ ký của hai bên.
+Chấm dứt quan hệ đại lý	Mỗi bên được chấm dứt bằng thông báo trước ba mươi ngày.	Khi chấm dứt, đại lý trả lại vật phẩm quảng cáo và hai bên đối chiếu công nợ trong mười lăm ngày.

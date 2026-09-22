@@ -850,9 +850,10 @@ POOL: dict[str, tuple[str, ...]] = {
 }
 
 
-# Cách nói do model viết, nếu có. `agent/augment_descriptions.py` ghi file này
-# trong một bước RIÊNG -- không phải lúc vẽ trang -- rồi người đọc diff trước
-# khi nó vẽ gì; xem `agent/ollama.py` về lý do ranh giới nằm ở đấy. Không có
+# Cách nói do model viết, nếu có. File này được ghi trong một bước RIÊNG --
+# không phải lúc vẽ trang -- rồi người đọc diff trước khi nó vẽ gì; ranh giới
+# nằm ở đấy là cố ý. (Bước sinh ra nó là `agent/augment_descriptions.py`, đã
+# bỏ cùng Ollama ngày 18-09-2026; file đang có vẫn đọc được.) Không có
 # file thì bảng viết tay bên trên vẫn đủ chạy, nên đây là thứ làm giàu, không
 # phải thứ bắt buộc.
 ADDED = Path(__file__).resolve().parents[1] / "rulebase" / "kie_phrasings.json"
@@ -940,13 +941,40 @@ def describe(text: str, seed, field: str = "", ordinal: int | None = None) -> st
     choices = pool().get(canon)
     if not choices:
         return text
-    start = zlib.crc32(f"{field}|{canon}".encode("utf-8"))
+    # `seed` PHẢI có trong `start`, và việc thiếu nó là lỗi đo được.
+    #
+    # Quay vòng theo `ordinal` lo việc hai tài liệu LIỀN NHAU lệch nhau một
+    # bước. Nhưng nếu `start` chỉ băm `field|canon` thì cả phép chọn thành hàm
+    # thuần của `(tên trường, câu gốc, ordinal)`: hai tài liệu cùng `ordinal`
+    # nhận y hệt một câu, và khi `ordinal` không đổi trên cả lượt chạy thì MỌI
+    # tài liệu về cùng một biến thể.
+    #
+    # Đo trên một mẻ 50 tài liệu (`ordinal` = 0 ở cả 50 vì tên file không có
+    # số đuôi): kho mười biến thể ra ĐÚNG MỘT câu. Và trên chính bản ghi:
+    # họ trường có mặt ở >=3 tài liệu, chỉ 7% có hơn một cách viết -- so với
+    # 41% ở mẻ mà `ordinal` có thay đổi.
+    #
+    # Có `seed` thì hai vế cộng lại chứ không trừ nhau: `start` đổi theo TÀI
+    # LIỆU, `step` đổi theo hạng của nó. Hai tờ của cùng một tài liệu vẫn
+    # chung giọng, vì chúng chung cả `seed` lẫn `ordinal`.
+    start = zlib.crc32(f"{seed}|{field}|{canon}".encode("utf-8"))
     if ordinal is None:
         # Không biết số thứ tự thì lùi về cách cũ: bốc theo seed. Vẫn đúng,
         # chỉ là sàn trùng cao hơn.
         return choices[zlib.crc32(f"{seed}|{field}|{canon}".encode("utf-8"))
                        % len(choices)]
-    return choices[(start + int(ordinal)) % len(choices)]
+    # QUAY VÒNG CÓ TRƯỢT. Quay vòng trần (`start + ordinal`) có chu kỳ đúng
+    # bằng cỡ kho, nên hai tài liệu cách nhau đúng một chu kỳ vẫn trùng --
+    # `bang_diem_00049` và `bien_ban_nghiem_thu_00039` cách nhau 10 trên một
+    # kho 10 câu, đo được trùng thật. Với 60 tài liệu thì mọi khoảng cách
+    # 10/20/30/40/50 đều trùng, và đó là rất nhiều cặp.
+    #
+    # Cộng thêm số VÒNG đã đi (`ordinal // n`) làm chu kỳ dài ra `n * (n+1)`:
+    # hai tài liệu liền nhau vẫn lệch đúng một bước (vế đáng giá của quay
+    # vòng), còn cặp trùng bị đẩy từ khoảng cách 10 ra 110.
+    n = len(choices)
+    step = int(ordinal) + int(ordinal) // n
+    return choices[(start + step) % n]
 
 
 def variants_of(text: str) -> tuple[str, ...]:
@@ -962,4 +990,103 @@ def variants_of(text: str) -> tuple[str, ...]:
     return pool().get(canon) or ()
 
 
-__all__ = ["ADDED", "POOL", "canonical_of", "describe", "pool", "variants_of"]
+def ordinal_of(stem: str) -> int:
+    """Số thứ tự của tài liệu, đọc từ tên file. `hoa_don_gtgt_00014_p2` -> 14.
+
+    Bỏ đuôi `_pN` trước: các tờ của một tài liệu phải ra CÙNG một số, nếu không
+    tờ hai đọc lên một giọng khác tờ một. Không có số thì 0 -- mất quay vòng,
+    không mất mô tả."""
+    import re                                                  # noqa: PLC0415
+
+    name = re.sub(r"_p\d+$", "", str(stem or ""))
+    found = re.findall(r"(\d+)$", name)
+    return int(found[0]) if found else 0
+
+
+def voice_record(record: dict, pairs: list[dict], *, stem: str = "",
+                 ordinal: int | None = None) -> None:
+    """Đổi giọng mô tả cho MỘT bản ghi, tại chỗ. Luỹ đẳng.
+
+    ## Vì sao hàm này tồn tại chứ không nằm trong `derive.py`
+
+    Phép đổi giọng vốn chỉ chạy ở cuối cả lượt, trong `derive.py`. Một lượt
+    không tới lượt `derive` -- batch bị ngắt, `finish(skip_derive=True)`, hay
+    vẽ tay từng tờ -- thì `records/*.json` nằm lại mãi với câu tả GỐC, và câu
+    gốc thì lặp: đo trên `data/thu1k`, **8 564 câu tả chỉ có 171 câu khác
+    nhau (2,0%)**, trang nặng nhất 360 câu / 36 khác nhau. "Questionnaire tick
+    box printed on the document." một mình xuất hiện 671 lần.
+
+    Nên luật ở đây, và hai nơi gọi nó: `synthgen/draw_llm.py` ngay lúc vẽ, và
+    `derive.py` khi nó chạy. Gọi hai lần không sao -- `describe()` băm theo
+    CÂU GỐC nên nó luỹ đẳng, và đó là điều kiện để đặt được luật ở một chỗ.
+
+    `seed` lấy từ `job_id` (UUID suy từ chính seed tờ giấy): ổn định, khác
+    nhau giữa các tài liệu, giống nhau ở mọi tờ của cùng một tài liệu -- nên
+    ba tờ của một hoá đơn đọc lên cùng một giọng.
+    """
+    seed = record.get("job_id") or record.get("filename", "")
+    if ordinal is None:
+        ordinal = ordinal_of(stem or str(record.get("filename") or ""))
+
+    for pair in pairs:
+        # Khoá theo CỘT chứ không theo ô: `qty_r1` và `qty_r7` là cùng một cột
+        # nên phải cùng một giọng trong một tờ giấy. Khoá theo ô thì bảng bốn
+        # mươi dòng đọc lên như bốn mươi người khác nhau cùng tả một cột.
+        pair["description"] = describe(pair.get("description", ""), seed,
+                                       str(pair.get("column")
+                                           or pair.get("field", "")),
+                                       ordinal=ordinal)
+
+    # MỖI TRƯỜNG MỘT CÂU RIÊNG, trong phạm vi một trang.
+    #
+    # Đổi giọng theo hạng tài liệu làm hai TÀI LIỆU khác nhau, không làm hai
+    # TRƯỜNG trên cùng một tờ khác nhau: `nguoi_khai` và `chuyen_vien_tu_van`
+    # cùng gốc "chức danh người ký", bảng bốn cách nói, nên một phần tư số lần
+    # chúng bốc trúng cùng một câu. Khi ấy mô tả mang zero thông tin để phân
+    # biệt hai cái hộp -- đo được: 84% số trang có ít nhất hai trường cùng mô
+    # tả.
+    #
+    # Ô BẢNG thì KHÔNG áp: mọi ô của một cột phải cùng giọng, và `column` là
+    # thứ phân biệt chúng với các cột khác.
+    used: dict[int, set[str]] = {}
+    for pair in pairs:
+        if pair.get("source") == "table":
+            continue
+        page_no = int(pair.get("page_number", 1) or 1)
+        taken = used.setdefault(page_no, set())
+        text = str(pair.get("description") or "")
+        if text and text in taken:
+            for other in variants_of(text):
+                if other not in taken:
+                    pair["description"] = other
+                    text = other
+                    break
+        if text:
+            taken.add(text)
+
+    # `entity_annotations` mang mô tả của RIÊNG nó, do `pipeline/kie.py` ghi
+    # lúc vẽ trang, và đổi giọng cho cặp mà bỏ nó lại thì một file tự nói hai
+    # câu khác nhau về cùng một trường -- tệ hơn là không đa dạng. Ghép theo
+    # CHỈ SỐ THỰC THỂ, không theo tên trường: ô bảng có `field_name` là
+    # `qty_r7` trong khi cặp khoá theo cột `qty`, nên so tên là lệch.
+    #
+    # Bảng giọng dựng SAU khi đã ép duy nhất, không phải trước: lần đầu dựng
+    # nó trong vòng đổi giọng rồi mới ép duy nhất, nên `entity_annotations`
+    # giữ câu CŨ còn cặp mang câu mới. `check.py` bắt đúng 436 ca ấy.
+    voice: dict[int, str] = {}
+    for pair in pairs:
+        index = pair.get("value_entity_index")
+        if isinstance(index, int):
+            voice[index] = str(pair.get("description") or "")
+    for entity in record.get("entity_annotations") or []:
+        index = entity.get("entity_index")
+        if index in voice:
+            entity["description"] = voice[index]
+        elif entity.get("description"):
+            entity["description"] = describe(str(entity["description"]), seed,
+                                             str(entity.get("field_name", "")),
+                                             ordinal=ordinal)
+
+
+__all__ = ["ADDED", "POOL", "canonical_of", "describe", "ordinal_of", "pool",
+           "variants_of", "voice_record"]
