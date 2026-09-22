@@ -365,6 +365,11 @@ DOCSYNTH_LABELS = frozenset({
 # `kind` onto one of them would be a label lying about the page, not a use
 # of the vocabulary's breadth.
 DOCSYNTH_LABEL_FOR_KIND: dict[str, str] = {
+    # `section.body` là VĂN XUÔI của một mục, không phải tiêu đề của nó. Tiền
+    # tố `section.` một mình đưa cả ba `data-kind` về `Section-Header`, và một
+    # đoạn bốn dòng mang nhãn tiêu đề mục là một nhãn nói sai. Tiền tố DÀI HƠN
+    # thắng, nên dòng này là đủ.
+    "section.body": "Text",
     # The document's own title is its own label, distinct from the page's
     # running header: it reads once per page, largest type, and a
     # layout-detection model loses a real signal if that is folded into
@@ -1406,13 +1411,37 @@ GRAPHIC_LABEL = "Image"
 STAMP_GRAPHICS = frozenset({"seal", "stamp", "dau", "seal_round", "seal_square"})
 STAMP_LABEL = "Stamp"
 
+# Mực-không-chữ nào là SƠ ĐỒ, và vì sao nó không phải `Image`.
+#
+# `Figure` trong từ vựng nhãn bố cục là một hình CÓ CHÚ THÍCH -- cặp
+# `Figure`/`Caption` mà mọi bộ nhãn đều có. `Image` là một mảng mực không hứa
+# gì với người đọc: logo, hoa văn, nền.
+#
+# Đo được vì sao phải phân biệt: `synthgen/markup.py::_figure` in ra `<div
+# class="fig" data-region="Figure" data-graphic="diagram">` cùng một câu chú
+# thích bên dưới. Vùng `Figure` khai tay thì bị luật "khung rỗng thì bỏ" loại
+# (hình SVG không có từ nào bên trong), còn `data-graphic` gán nó thành
+# `Image` -- nên bộ dữ liệu ra `Caption` 8% số trang mà `Figure` 0%: một câu
+# chú thích không chú thích cho cái gì. So với pilot LLM: `Figure` 27%.
+DIAGRAM_GRAPHICS = frozenset({"diagram", "chart", "figure", "graph", "plan",
+                              "sketch", "so_do"})
+DIAGRAM_LABEL = "Figure"
+
 
 def graphic_label(mark: dict[str, Any]) -> str:
-    """Nhãn cho một mảng mực-không-chữ: `Stamp` nếu là con dấu, else `Image`."""
+    """Nhãn cho một mảng mực-không-chữ: `Stamp`, `Figure`, hay `Image`.
+
+    Quyết theo `kind` -- tức `data-graphic` mà markup tự khai -- chứ không
+    theo hình học: chỉ tác giả trang biết một mảng mực là con dấu, một sơ đồ,
+    hay một hoa văn nền."""
     kind = str(mark.get("kind") or "").strip().lower()
     head = kind.split()[0] if kind else ""
-    return STAMP_LABEL if (kind in STAMP_GRAPHICS or head in STAMP_GRAPHICS
-                           or "seal" in kind or "stamp" in kind) else GRAPHIC_LABEL
+    if (kind in STAMP_GRAPHICS or head in STAMP_GRAPHICS
+            or "seal" in kind or "stamp" in kind):
+        return STAMP_LABEL
+    if kind in DIAGRAM_GRAPHICS or head in DIAGRAM_GRAPHICS:
+        return DIAGRAM_LABEL
+    return GRAPHIC_LABEL
 
 # Nhãn của MỰC ĐÈ: vùng nằm chồng lên nội dung chứ không chứa nội dung.
 #

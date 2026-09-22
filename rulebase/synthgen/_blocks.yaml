@@ -48,6 +48,7 @@ chance:
   # Đây là những con số phải ĐO LẠI mỗi lần đổi, không phải đoán lại: chạy
   # `python synthgen/run.py --dry-run` cho phân bố khối, và đếm `data-region`
   # trên chính markup cho phân bố nhãn vùng.
+  sections: 0.45
   notes: 0.45
   questions: 0.45
   legal_basis: 0.4
@@ -85,6 +86,7 @@ chance:
 # 240 dòng, một bộ điều khoản chỉ 46 điều), nên mỗi lần nó thắng là nó lấy
 # nhiều tờ hơn hai khối kia. Cân theo số TỜ chứ không theo số tài liệu.
 flow_weight:
+  sections: 1.2
   questions: 1.1
   clauses: 0.9
   table: 0.3
@@ -136,6 +138,19 @@ allow:
     # tiền sử, triệu chứng, kê khai rủi ro -- kể cả khi tên không nói.
     profile_any: [medical, insurance]
 
+  # MỤC VĂN XUÔI -- nhãn `Section-Header` + `Text`. Đối chiếu ảnh pilot16:
+  # `Section-Header` có trên 48% trang pilot và 5% trang synthgen, và đó là
+  # khác biệt làm trang pilot đọc như một văn bản còn trang synthgen không
+  # bảng vẫn đọc như biểu mẫu.
+  #
+  # Giấy mang mục văn xuôi là giấy có phần THUYẾT MINH: biên bản, báo cáo,
+  # tờ trình, công văn, đề án, quy chế. Một vé gửi xe thì không.
+  sections:
+    title_any: [biên bản, báo cáo, tờ trình, công văn, thông báo, đề án,
+                phương án, kế hoạch, quy chế, nội quy, quyết định, hợp đồng,
+                nghiệm thu, bàn giao, giám định, kiểm kê, hội chẩn, điều lệ,
+                thuyết minh, tổng hợp, đánh giá, khiếu nại, giải trình]
+
   # Ô tích chọn -- cụm biểu mẫu người ta đánh dấu. Đang 10% số phôi.
   checks:
     title_any: [phiếu, biên nhận, giao nhận, bàn giao, kiểm kê, nghiệm thu,
@@ -172,6 +187,7 @@ multipage_boost:
   default: 1.0
   # --- khối chiếm chỗ, đổi được hình dạng một tờ
   figure: 2.6
+  sections: 2.4
   # `table: 1.0` -- KHÔNG nhân. Đo bốn mức 1.0/1.3/1.7/2.4: bảng trên
   # trang giữa chỉ nhích 16%->21%, còn "tờ chỉ có khối chảy" đứng im ở
   # 28%. Tức là nhân bảng lên gần như không mua được sự đa dạng nào,
@@ -277,6 +293,11 @@ region:
   checks: Form
   questions: Form
   clauses: List-Group
+  # `sections` in RA HAI vùng, cùng lối `figure`: tiêu đề mục là
+  # `Section-Header`, thân mục là `Text`. Không khai `sections` -- khối bọc
+  # không phải một vùng, xem `regions_from_words`.
+  section_header: Section-Header
+  section_body: Text
   formula: Formula
   figure: Figure
   figure_caption: Caption  # `_figure` in RA HAI vùng; đây là vùng thứ hai.
@@ -297,7 +318,20 @@ region:
   # HỘP -- xem `pipeline/tags.py`.
 
   # --- neo cuối tờ
-  signatures: Form         # ô ký là ô để ĐIỀN: chức danh, họ tên, nét ký.
+  signatures: Text         # KHỐI CHỮ KÝ LÀ CHỮ, KHÔNG PHẢI BIỂU MẪU.
+                           #
+                           # Thứ IN RA là chữ: chức danh, "(Ký, ghi rõ họ
+                           # tên)", họ tên. Nét ký là MỰC, và mực có vùng
+                           # riêng của nó -- `Form` là chỗ người ta ĐIỀN, như
+                           # `fields` có dòng chấm hay `photo` có khung dán
+                           # ảnh.
+                           #
+                           # `pipeline/record.py::DOCSYNTH_LABEL_FOR_KIND` đã
+                           # chốt `sign.` là `Text` và viết hẳn lý do, nhưng
+                           # dòng này khai ngược -- và `data-region` thắng.
+                           # Đo trên `data/review100b`: 175 vùng chữ ký mang
+                           # nhãn `Form`, chỉ 52 mang `Text`. Một luật, hai
+                           # người dựng, hai câu trả lời.
   footer: Page-Footer
   barcode: Text            # dãy số in dưới mã vạch / QR. Chữ ĐỌC ĐƯỢC đứng
                            # cạnh một `data-graphic`, nên nó cần vùng riêng:

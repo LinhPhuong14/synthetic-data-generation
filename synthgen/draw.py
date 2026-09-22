@@ -64,6 +64,12 @@ from synthgen import paginate as P  # noqa: E402
 # `run.py` tính trước được nó cho cả mười nghìn trang trước khi mở trình
 # duyệt. Trộn chung một dòng thì không tính trước được, và khử trùng dáng sẽ
 # phải chờ tới lúc đã vẽ xong.
+# Bao nhiêu mục dàn ra trong LẦN DÒ đầu tiên. Bốn mươi: phủ hết khối chảy
+# ngắn (`sections` trần 14-24, `questions` một chủ đề) nên xếp trang được theo
+# chiều cao thật, mà vẫn không dàn cả một bảng hai trăm bốn mươi dòng chỉ để
+# đo. Khối chảy dài hơn thì `plan()` lùi về chiều cao trung vị.
+PROBE_ITEMS = 40
+
 CONTENT_SALT = 0x9E3779B9
 REFILL_SALT = 0x51ED2701
 
@@ -340,7 +346,12 @@ class Studio:
         # thẳng: `arch.rows` là sức chứa của riêng cái bảng, và dùng nó cho
         # một tài liệu chảy bằng điều khoản là hỏi sai câu hỏi.
         flow_floor, flow_ceiling = D.flow_span(design.flow, arch)
-        probe = max(min(8, flow_ceiling), 1) if design.flow else 0
+        # DÒ NHIỀU MỤC, không tám. Lần dò là MỘT lần dàn trang, và dàn bốn
+        # mươi mục thay vì tám gần như không đắt thêm; đổi lại
+        # `paginate.plan` biết chiều cao THẬT của từng mục và xếp trang theo
+        # nó chứ theo chiều cao trung vị -- xem `paginate._pack` về việc
+        # trung vị sai ở đâu và sai bao nhiêu.
+        probe = max(min(PROBE_ITEMS, flow_ceiling), 1) if design.flow else 0
         doc = C.build(design, rng, probe)
 
         # `drawn` là thứ trình duyệt ĐANG hiển thị, không phải thứ vừa được

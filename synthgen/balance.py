@@ -42,6 +42,10 @@ from synthgen import markup as M  # noqa: E402
 
 REGION = re.compile(r'data-region="([^"]+)"')
 FLOW = re.compile(r'data-flow="([^"]+)"')
+# Nhãn vùng của RIÊNG khối chữ ký. Trong bảng "cả bộ" nó lẫn vào `Text` cùng
+# mọi khối chữ khác, nên đếm riêng -- và đây đúng là chỗ đã sai lặng lẽ một
+# lần: `_blocks.yaml` khai `Form` trong khi `pipeline/record.py` khai `Text`.
+SIGNS = re.compile(r'class="signs[^"]*"[^>]*data-region="([^"]+)"')
 SHEET = '<div class="sheet">'
 
 # Khối không có `data-region` riêng thì nhận diện bằng class của chính nó.
@@ -92,6 +96,11 @@ def main() -> int:
     inner_blocks, inner_regions = collections.Counter(), collections.Counter()
     broke = collections.Counter()
     sheets_seen = inner_seen = inner_flow_only = docs = long_docs = 0
+    # DÁNG TỜ GIẤY -- các mục tiêu đặt ra bằng lời ("chỉ A4", "bảng >=5 cột",
+    # "3 tầng tiêu đề", "chữ ký là chữ") chỉ là lời cho tới khi đếm được.
+    papers, tiers, rows_g, signs = (collections.Counter() for _ in range(4))
+    wide_cols = tabled = 0
+    orders: set[tuple[str, ...]] = set()
 
     for seed in range(count):
         try:
@@ -102,6 +111,14 @@ def main() -> int:
         docs += 1
         flows[d.flow or '(khong)'] += 1
         aimed[d.target_pages] += 1
+        papers[d.paper.id] += 1
+        orders.add(d.order)
+        signs.update(SIGNS.findall(html))
+        if 'table' in d.blocks or d.flow == 'table':
+            tabled += 1
+            tiers[d.head_tiers] += 1
+            rows_g[d.row_groups] += 1
+            wide_cols += len(d.columns) >= 5
         pages = html.split(SHEET)[1:]
         for sheet in pages:
             sheets_seen += 1
@@ -133,6 +150,22 @@ def main() -> int:
           + ', '.join(f'{k} {v / max(docs, 1):.0%}' for k, v in flows.most_common()))
     print('  nhắm số tờ: '
           + ', '.join(f'{k}:{v}' for k, v in sorted(aimed.items())))
+
+    pct = lambda n, d: f'{n / max(d, 1):.0%}'
+    print(f'\nDÁNG TỜ GIẤY — {docs} tài liệu')
+    print('  khổ giấy:  '
+          + ', '.join(f'{k} {pct(v, docs)}' for k, v in papers.most_common()))
+    print(f'  trình tự khối khác nhau: {len(orders)}/{docs}')
+    print('  khối chữ ký nhãn: '
+          + (', '.join(f'{k} {v}' for k, v in signs.most_common()) or '(khong)'))
+    if tabled:
+        print(f'  có bảng: {tabled} ({pct(tabled, docs)} số tài liệu)')
+        print(f'    >=5 cột:      {pct(wide_cols, tabled)}')
+        print('    tầng tiêu đề: '
+              + ', '.join(f'{k} tầng {pct(v, tabled)}'
+                          for k, v in sorted(tiers.items())))
+        print('    nhóm dòng:    '
+              + ', '.join(f'{k} {pct(v, tabled)}' for k, v in rows_g.most_common()))
 
     print(f"\n{'NHÃN VÙNG — CẢ BỘ':26s} {'hộp':>7s} {'% tờ có':>9s}")
     for label, n in reg.most_common():

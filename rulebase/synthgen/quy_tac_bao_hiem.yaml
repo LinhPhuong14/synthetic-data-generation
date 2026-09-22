@@ -1,0 +1,52 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+#
+# PHÔI KHÔNG BẢNG. `columns: []` và `rows: [0, 0]` là cố ý và là cả điểm của
+# nó: không có dòng hàng nào thì `design.pick_flow` không chọn được bảng, nên
+# tài liệu dài ra bằng `sections` / `clauses` / `questions`.
+#
+# Mẻ này pha loãng tỉ lệ phôi có bảng trong kho: 17/99 (17%) xuống 17/170
+# (10%). Không bỏ bảng khỏi phôi nào -- một `bảng lương` không có bảng thì
+# không còn là bảng lương.
+id: quy_tac_bao_hiem
+titles:
+- QUY TẮC BẢO HIỂM
+- ĐIỀU KHOẢN VÀ QUY TẮC BẢO HIỂM
+subtitles:
+- ''
+- ''
+profile: insurance
+org_kind: company
+national: 0.08
+fields:
+- seller_name
+- object
+field_span:
+- 1
+- 2
+columns: []
+totals: none
+words: false
+sign_sets:
+- - BÊN MUA BẢO HIỂM
+  - DOANH NGHIỆP BẢO HIỂM
+- - CÁN BỘ KHAI THÁC
+  - GIÁM ĐỐC
+notes:
+- Giấy này là bộ phận không tách rời của hợp đồng bảo hiểm.
+- Mọi khiếu nại xin gửi trong vòng 30 ngày.
+rows:
+- 0
+- 0
+always:
+- letterhead
+- doctitle
+- signatures
+- clauses
+optional:
+- meta
+- fields
+- notes
+- footer
+- footnote
+- toc
+en_ok: true

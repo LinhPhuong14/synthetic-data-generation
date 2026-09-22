@@ -375,6 +375,17 @@ def _table(pairs: list[dict], others: list[dict], kinds: dict,
     taken: set[str] = set()
     for pair in sorted(pairs, key=lambda p: int(p.get("column_index") or 0)):
         index = int(pair.get("column_index") or 0)
+        # NHÃN CẢ DÒNG KHÔNG ĐỊNH NGHĨA MỘT CỘT. Ô `<td colspan="6">` mang
+        # tiêu đề nhóm ("Tạm ứng") có `column_index = 0` như mọi ô cột đầu,
+        # nhưng `column` của nó là `None` -- `kie_full` đã khai đúng thế vì nó
+        # trải hết bề ngang.
+        #
+        # Không loại ở đây thì nó CHIẾM chỗ định nghĩa cột 0 trước ô thật, và
+        # cột ấy mất cả tên lẫn tiêu đề: đo trên `data/thu1k`, 17 cột mang tên
+        # `cell` với tiêu đề rỗng, trong khi `table_pairs` của chính chúng đã
+        # trả về `col="stt"`, `key_text="Số TT"`.
+        if not pair.get("column"):
+            continue
         if index in named:
             continue
         key = _column_key(pair, taken)
@@ -704,6 +715,13 @@ def _grouped(pairs: list[dict], width: float, height: float) -> dict[str, list]:
 def _tables(bucket: dict[str, list], kinds: dict,
             width: float, height: float) -> list[dict]:
     """Mọi bảng của một trang, mỗi bảng một phần tử. Xem docstring đầu file."""
+    # BẢNG CON KHÔNG PHẢI MỘT BẢNG. `markup.py` in chi tiết mặt hàng bằng
+    # `<table class="sub">` nằm trong ô tên, nên nó không có `<thead>` và
+    # không có cột nào -- đo được 23 "bảng" một cột, tiêu đề rỗng, toàn bộ
+    # phần tiêu đề rỗng còn lại của cả bộ. Chúng thuộc về DÒNG của mặt hàng
+    # cha; `kie_full` khai `under` để nói của ai.
+    detail = [p for p in bucket["cells"] if p.get("under")]
+    bucket = {**bucket, "cells": [p for p in bucket["cells"] if not p.get("under")]}
     tables: list[dict] = []
     arrays: dict[str, list[dict]] = {}
     for pair in bucket["declared"]:
@@ -725,7 +743,35 @@ def _tables(bucket: dict[str, list], kinds: dict,
                        table_id=name)
         if table:
             tables.append(table)
+    _attach_details(tables, detail, width, height)
     return tables
+
+
+def _attach_details(tables: list[dict], detail: list[dict],
+                    width: float, height: float) -> int:
+    """Gắn dòng chi tiết về dòng của mặt hàng cha. Số dòng đã gắn.
+
+    Tìm theo CHỮ: `under` là chữ in trong ô tên của dòng cha, nên dòng nào có
+    một ô mang đúng chữ ấy là dòng ấy. Không tìm thấy thì để lại bảng riêng --
+    thà một bảng lạ còn hơn mất một dòng chữ có hộp."""
+    if not detail:
+        return 0
+    seats: dict[str, dict] = {}
+    for table in tables:
+        for row in table.get("rows") or []:
+            for cell in (row.get("cells") or {}).values():
+                text = " ".join(str(cell.get("value") or "").split())
+                if text:
+                    seats.setdefault(text, row)
+    done = 0
+    for pair in sorted(detail, key=_order):
+        row = seats.get(" ".join(str(pair.get("under") or "").split()))
+        if row is None:
+            continue
+        row.setdefault("details", []).append(
+            _cell(pair.get("value_text"), pair.get("value_bbox"), width, height))
+        done += 1
+    return done
 
 
 def document(record: dict, kind: str, *, doc_id: str = "",

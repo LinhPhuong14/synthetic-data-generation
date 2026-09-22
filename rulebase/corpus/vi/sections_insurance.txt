@@ -1,0 +1,19 @@
+# SECTIONS_INSURANCE — MỤC văn xuôi: một tiêu đề mục và các đoạn văn của nó.
+#
+# Cột 1 là tiêu đề mục (số thứ tự `I.`/`1.`/`A.` do bộ dựng tự đánh, không
+# viết ở đây). Các cột sau là các ĐOẠN của mục ấy, mỗi đoạn một cột.
+#
+# Vì sao có kho này, và vì sao nó khác `clauses_*.txt`. Đối chiếu ảnh thật của
+# `data/pilot16` với ảnh synthgen: trang pilot đọc như một VĂN BẢN -- `I.
+# THÀNH PHẦN THAM DỰ`, `II. NỘI DUNG NGHIỆM THU`, mỗi mục hai ba đoạn văn
+# xuôi canh đều -- còn trang synthgen không bảng vẫn đọc như một BIỂU MẪU, vì
+# khối chữ dài nhất nó có là `clauses`: một dòng tiêu đề cộng một câu.
+#
+# Đo được: nhãn `Section-Header` có trên 48% trang pilot và 5% trang synthgen.
+# Kho này là thứ lấp khoảng ấy, và nó là khối chảy KHÔNG BẢNG thứ ba -- xem
+# `design.FLOW_BLOCKS`.
+
+ĐỐI TƯỢNG VÀ PHẠM VI BẢO HIỂM	Đối tượng được bảo hiểm là người, tài sản hoặc trách nhiệm được ghi rõ tại giấy chứng nhận bảo hiểm kèm theo văn bản này. Phạm vi bảo hiểm được xác định theo điều khoản gốc và các sửa đổi bổ sung đính kèm.	Doanh nghiệp bảo hiểm chi trả cho các tổn thất xảy ra trong thời hạn bảo hiểm, thuộc phạm vi đã thoả thuận và không nằm trong các điểm loại trừ.
+DIỄN BIẾN SỰ KIỆN BẢO HIỂM	Sự kiện bảo hiểm xảy ra trong thời hạn hợp đồng còn hiệu lực. Người được bảo hiểm đã thông báo cho doanh nghiệp bảo hiểm trong thời hạn quy định và cung cấp các tài liệu ban đầu theo hướng dẫn.	Hiện trường được giữ nguyên cho đến khi giám định viên đến làm việc. Người được bảo hiểm đã áp dụng các biện pháp cần thiết để hạn chế tổn thất lan rộng.
+KẾT QUẢ GIÁM ĐỊNH	Giám định viên do doanh nghiệp bảo hiểm chỉ định đã tiến hành giám định tại hiện trường, đối chiếu hồ sơ và xác định nguyên nhân cùng mức độ tổn thất.	Kết quả giám định cho thấy nguyên nhân tổn thất thuộc phạm vi bảo hiểm. Mức độ thiệt hại được xác định trên cơ sở hiện trạng thực tế và các chứng từ do người được bảo hiểm cung cấp.
+CƠ SỞ TÍNH TOÁN BỒI THƯỜNG	Số tiền bồi thường được xác định theo giá trị thiệt hại thực tế, trừ mức miễn thường có khấu trừ ghi trên giấy chứng nhận và có tính khấu hao đối với bộ phận thay thế nếu hợp đồng quy định.	Trường hợp đối tượng được bảo hiểm ở nhiều nơi, mỗi doanh nghiệp bảo hiểm bồi thường theo tỉ lệ số tiền bảo hiểm mà mình nhận.

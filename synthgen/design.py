@@ -27,7 +27,7 @@ import random
 import sys as _sys
 from dataclasses import dataclass
 from pathlib import Path as _Path
-from typing import Any
+from typing import Any, Sequence
 
 import yaml as _yaml
 
@@ -44,20 +44,32 @@ class Paper:
     h: float
 
 
+# TRỌNG SỐ THEO ĐỜI THẬT, không bốc đều.
+#
+# Chứng từ hành chính Việt Nam gần như chỉ dùng A4 DỌC. Bản trước liệt kê 10
+# khổ và `_pick` bốc đều, nên 7/10 lượt ra khổ mà đời thật hiếm gặp -- đo trên
+# `data/review100`: 7/12 tờ sai khổ hoặc sai hướng, trong đó một tờ ra dải
+# 105x250mm làm tên công ty vỡ bốn dòng. Người Việt loại tờ giấy ấy trong nửa
+# giây đầu, trước cả khi đọc chữ.
+#
+# CHỈ A4 DỌC VÀ A4 NGANG. Bản trước còn giữ A5, letter, legal, B5 ở trọng số
+# thấp cho đa dạng, nhưng chúng là khổ KHÔNG theo quy chuẩn văn bản hành chính
+# Việt Nam -- và một bộ dữ liệu dạy mô hình rằng chứng từ có thể là khổ legal
+# thì dạy sai. Đa dạng phải đến từ bố cục bên trong tờ giấy, không từ việc đổi
+# khổ giấy. 9/10 dọc, 1/10 ngang (bảng rộng, thời khoá biểu, bản vẽ).
 PAPERS: tuple[Paper, ...] = (
-    Paper('a4', 210, 297),
-    Paper('a4', 210, 297),
-    Paper('a4', 210, 297),
-    Paper('a5', 148, 210),
-    Paper('a5_ngang', 210, 148),
-    Paper('letter', 216, 279),
-    Paper('legal', 216, 356),
-    Paper('b5', 176, 250),
-    Paper('phieu_hep', 105, 250),
+    *[Paper('a4', 210, 297)] * 9,
     Paper('a4_ngang', 297, 210),
 )
 
-MARGINS: tuple[tuple[float, float, float, float], ...] = ((18, 15, 15, 20), (20, 18, 18, 25), (14, 12, 12, 14), (12, 10, 10, 12), (25, 20, 20, 30), (16, 16, 16, 16), (10, 8, 10, 8), (22, 16, 14, 28), (15, 20, 15, 20), (8, 6, 8, 6), (28, 22, 22, 22), (13, 11, 16, 18))
+# Thể thức văn bản hành chính VN: trên 20-25mm, dưới 20-25mm, trái 30-35mm,
+# phải 15-20mm. Bản trước có `(8,6,8,6)` và `(10,8,10,8)` -- dải nền tiêu đề
+# chạm gần mép giấy, đo được lề 3% bề ngang trên `bang_ke_quyen_loi`. Bỏ hai bộ
+# chật nhất, nâng sàn lề trái vì đó là chỗ đóng ghim và kẹp hồ sơ.
+MARGINS: tuple[tuple[float, float, float, float], ...] = (
+    (20, 18, 18, 25), (25, 20, 20, 30), (22, 16, 14, 28), (18, 15, 15, 20),
+    (28, 22, 22, 22), (20, 15, 20, 30), (24, 18, 18, 32), (16, 16, 16, 20),
+    (15, 20, 15, 22), (14, 12, 12, 18))
 
 
 # ------------------------------------------------------------------------ mực
@@ -162,7 +174,13 @@ META_STYLES = ('duoi_tieu_de_giua', 'duoi_tieu_de_phai', 'goc_phai_tren', 'dai_n
 
 FIELD_STYLES = ('mot_cot_hai_cham', 'hai_cot_hai_cham', 'mot_cot_cham_cham', 'hai_cot_cham_cham', 'ba_cot_ngan', 'bang_khong_vien', 'nhan_dam_tren', 'hai_cot_gach_duoi', 'mot_cot_gach_duoi')
 
-TABLE_FRAMES = ('khung_day_du', 'chi_ke_ngang', 'khong_ke', 'vien_ngoai', 'ke_ngang_dam_dau', 'khung_day_du_van', 'chi_ke_doc')
+# `khong_ke` và `chi_ke_doc` đã BỎ. Một bảng không đường kẻ nào thì nhãn cột
+# lơ lửng không thuộc cột nào -- đo trên `bang_cham_cong_00050`; còn "chỉ kẻ
+# dọc" đúng định nghĩa nửa nọ nửa kia mà chứng từ thật không có. `vien_ngoai`
+# giữ lại vì biểu mẫu kê khai có dùng, nhưng một vé.
+TABLE_FRAMES = ('khung_day_du', 'khung_day_du', 'khung_day_du',
+                'chi_ke_ngang', 'chi_ke_ngang',
+                'ke_ngang_dam_dau', 'khung_day_du_van', 'vien_ngoai')
 
 HEADER_FILLS = ('dai_mau', 'nen_nhat', 'khong_nen', 'gach_doi', 'chu_dam_gach')
 
@@ -184,7 +202,11 @@ TRACKING = (0.0, 0.0, 0.0, 0.15, 0.3, -0.1)
 # Số cột của cả trang. Một nghiêng về một cột vì phần lớn chứng từ hành chính
 # vẫn in một cột; hai và ba có mặt vì báo, tạp chí, tờ rơi và đơn nhiều mục thì
 # không.
-PAGE_COLUMNS = (1, 1, 1, 2, 2, 3)
+# Một cột là mặc định. Bản trước `(1,1,1,2,2,3)` cho 50% ra cột báo, nên biên
+# lai thu tiền, uỷ nhiệm chi và phiếu chi đều bị dàn 2-3 cột -- ở uỷ nhiệm chi,
+# cột giữa hẹp làm số tài khoản ngắt ba dòng trong khi nửa phải trang bỏ trắng.
+# Cột báo có thật trên tờ rơi và bản tin, nên giữ, nhưng còn 2/12 = 17%.
+PAGE_COLUMNS = (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3)
 
 ORNAMENTS = ('khong', 'dau_tron', 'dau_vuong', 'ma_vach', 'ma_qr', 'dau_tron_va_ma_vach', 'hoa_van_goc', 'chim_mo')
 
@@ -208,6 +230,33 @@ COL_GROUPS: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...] = (
     (('Đơn giá và thành tiền', 'Giá trị hàng hoá'), ('unit_price', 'amount')),
     (('Hàng hoá, dịch vụ', 'Nội dung chi tiết', 'Khoản mục'), ('name', 'unit')),
     (('Tiền thuế và thành tiền', 'Cộng có thuế'), ('vat_amount', 'amount')),
+    # Thêm theo TỔ HỢP CỘT CÓ THẬT trong `column_pool`, không theo phỏng đoán:
+    # đo trên 900 lượt bốc, 44 bộ từ năm cột trở lên không khớp một nhóm nào,
+    # và chúng dồn vào mấy hình dưới đây. Bộ cột không có nhóm thì tiêu đề chỉ
+    # một tầng -- tức là cái bảng rộng nhất lại có cấu trúc nghèo nhất.
+    (('Đơn vị bảo hiểm', 'Phần bảo hiểm chi trả', 'Bên bảo hiểm'),
+     ('price_bh', 'amount_bh')),
+    (('Đơn vị thụ hưởng', 'Phần người bệnh trả', 'Bên tự trả'),
+     ('price_bv', 'amount_bv')),
+    (('Định danh hàng hoá', 'Mã và tên', 'Nhận dạng'), ('ref', 'name')),
+    (('Thời gian và chứng từ', 'Ngày và số hiệu'), ('date', 'ref')),
+    (('Quy cách', 'Số lượng và đơn vị', 'Khối lượng'), ('qty', 'unit')),
+    (('Diễn giải', 'Nội dung và ghi chú'), ('name', 'note')),
+    (('Thời điểm phát sinh', 'Ngày và nội dung'), ('date', 'name')),
+    # Vòng đo thứ hai, 1500 lượt bốc: đếm CẶP CỘT LIỀN NHAU thật sự xuất hiện
+    # rồi trừ đi cặp đã có nhóm. Cái lọt ra nhiều nhất là `unit, qty` -- 109
+    # lần, và nhóm "Quy cách" ĐÃ CÓ cho đúng cặp ấy, chỉ khai ngược thứ tự
+    # `('qty', 'unit')`. `groups_in` đòi các cột liền nhau ĐÚNG THỨ TỰ, nên
+    # một nhóm khai ngược là một nhóm không bao giờ khớp: nó nằm trong bảng
+    # như thể đang chạy. Khai cả hai chiều thay vì nới luật khớp -- luật khớp
+    # đúng, chỉ bản khai thiếu.
+    (('Quy cách', 'Đơn vị và số lượng'), ('unit', 'qty')),
+    (('Đơn giá và thuế suất', 'Giá và thuế'), ('unit_price', 'vat_rate')),
+    (('Thuế và tổng cộng', 'Cộng có thuế'), ('vat_rate', 'amount_with_vat')),
+    (('Đơn giá theo nguồn', 'Giá dịch vụ'), ('price_bv', 'price_bh')),
+    (('Thành tiền theo nguồn', 'Chia theo nguồn chi'), ('amount_bv', 'amount_bh')),
+    (('Tỷ lệ và phần tự trả', 'Người bệnh cùng chi trả'), ('rate_bhyt', 'self_pay')),
+    (('Định danh hàng hoá', 'Mã vạch và tên'), ('barcode', 'name')),
 )
 
 # Tầng thứ BA: một nhóm-lớn phủ hai nhóm liền nhau trở lên. Ba tầng là dáng
@@ -215,15 +264,38 @@ COL_GROUPS: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...] = (
 # thuế" phủ "Số lượng, đơn giá" và "Thuế GTGT", mỗi nhóm ấy lại phủ hai cột.
 COL_SUPERS = (
     'Giá trị và thuế', 'Chi tiết hàng hoá, dịch vụ', 'Số liệu chi tiết',
-    'Phần II - Chi tiết thanh toán', 'Trị giá tính thuế và thuế',
-    'Chi tiết khoản mục', 'Số liệu quyết toán',
+    'Trị giá tính thuế và thuế', 'Chi tiết khoản mục', 'Số liệu quyết toán',
+    'Nguồn kinh phí và thanh toán', 'Chi tiết theo từng khoản mục',
+    'Số liệu đối chiếu', 'Cơ cấu chi phí', 'Phân tích theo nguồn',
+)
+
+# Tầng THỨ TƯ: một dải chạy hết chiều ngang bảng, nằm TRONG khung, trên mọi
+# tầng tiêu đề. Không phải cái nhan đề đặt trên bảng -- nó là một hàng thật
+# của `<thead>`, nên nó lặp lại ở đầu mỗi tờ đúng như tiêu đề cột.
+#
+# Vì sao không dựng tầng bốn bằng đúng luật lồng như tầng ba: đo 1500 lượt
+# bốc, KHÔNG MỘT bộ cột nào có hai đoạn nhóm liền nhau tách rời -- điều kiện
+# cần để một dải phủ được hai dải dưới nó. Bộ cột rộng nhất chỉ tám cột và
+# nhiều nhất ba nhóm, nên tầng bốn theo luật ấy là 0%, và nới luật để ép nó
+# nổ sẽ đẻ ra những cái phủ vô nghĩa. Giấy thật giải bài này theo cách khác,
+# và đây đúng là cách bảng kê chi phí khám chữa bệnh 01/BV và tờ khai hải
+# quan in ra: một dòng "Phần ..." chạy ngang trên đầu bảng.
+COL_BANNERS = (
+    'Phần II - Chi tiết thanh toán', 'Phần A - Kê khai chi tiết',
+    'Phần B - Chi tiết phát sinh trong kỳ', 'Chi tiết theo từng khoản mục',
+    'Phần I - Bảng kê chi tiết', 'Phụ lục - Số liệu chi tiết kèm theo',
+    'Bảng kê chi tiết kèm theo', 'Phần C - Tổng hợp số liệu',
 )
 
 # Cách gộp DÒNG. `khong` là bảng phẳng như cũ; `phan_muc` chèn dòng tiêu đề
 # nhóm chạy hết chiều ngang (kiểu thực đơn, kiểu bảng thống kê cốt thép);
 # `cot_gom` để một ô `rowspan` bên trái mang tên nhóm, trải qua các dòng của
 # nhóm ấy (kiểu bảng xếp hạng vòng bảng).
-ROW_GROUPS = ('khong', 'khong', 'khong', 'phan_muc', 'phan_muc', 'cot_gom')
+# Nhóm dòng ("Chi thường xuyên", "Chi đầu tư") là cấu trúc thật của bảng kê và
+# bảng cân đối. Bản trước để 50% không nhóm; giờ 25% -- bảng phẳng vẫn có, chỉ
+# thôi là đa số.
+ROW_GROUPS = ('khong', 'khong', 'phan_muc', 'phan_muc', 'phan_muc', 'cot_gom',
+              'cot_gom', 'phan_muc')
 
 # Tên nhóm dòng, theo hồ sơ. Bốc theo `profile` của chứng từ chứ không bốc
 # chung: "Móng / Cột / Dầm" trên một thực đơn là vô nghĩa.
@@ -287,6 +359,12 @@ class Design:
     watermark: bool
     reverse_title_band: bool
     lang_en: bool
+    # TỜ NÀY CÓ IN QUỐC HIỆU KHÔNG. Bốc theo `archetype.national` -- xác suất
+    # mà 137/139 phôi đã khai sẵn nhưng trước đây KHÔNG đường vẽ nào đọc: nó
+    # chỉ đi từ YAML qua `archetypes.py` rồi dừng. `markup.py` tự quyết bằng
+    # `org_kind`, nên mọi tờ do công ty phát hành mất quốc hiệu (4/12 tờ đo
+    # được), còn hoá đơn và thực đơn của cơ quan nhà nước thì lại có.
+    national: bool
     target_pages: int
     # KHỐI CHẢY: khối nào quyết định tài liệu này DÀI bao nhiêu, và do đó
     # khối nào bị cắt ra khi nó phải in làm nhiều tờ.
@@ -327,7 +405,8 @@ class Design:
             self.sign_captions,
             tuple(f.key for f in self.fields), self.order,
             tuple(sorted(self.blocks)), self.photo_box, self.watermark,
-            self.reverse_title_band, self.lang_en, self.flow, self.mark_place,
+            self.reverse_title_band, self.lang_en, self.national,
+            self.flow, self.mark_place,
         )
 
     def has(self, block: str) -> bool:
@@ -656,6 +735,13 @@ def _question_ceiling(arch: "Archetype") -> int:
     return sum(len(theme["items"]) for theme in content.QUESTION_THEMES.values())
 
 
+def _section_ceiling(arch: "Archetype") -> int:
+    """Bao nhiêu MỤC văn xuôi một phôi viết ra được, đếm từ kho."""
+    from synthgen import corpus  # noqa: PLC0415
+
+    return len(corpus.sections(arch.profile))
+
+
 def _clause_ceiling(arch: "Archetype") -> int:
     """Bao nhiêu ĐIỀU một phôi viết ra được, ĐẾM TỪ KHO chứ không đoán.
 
@@ -685,6 +771,8 @@ FLOW_BLOCKS: dict[str, Any] = {
                 "ceiling": _clause_ceiling},
     "questions": {"floor": lambda arch: 4,
                   "ceiling": _question_ceiling},
+    "sections": {"floor": lambda arch: 2,
+                 "ceiling": _section_ceiling},
 }
 
 
@@ -706,7 +794,11 @@ FLOW_BLOCKS: dict[str, Any] = {
 #   moi_to      cuối MỌI tờ -- sổ, biên bản nhiều trang có đánh dấu từng tờ
 MARK_PLACES: tuple[str, ...] = ("cuoi", "dau", "goc_phai", "moi_to")
 
-FLOW_PER_PAGE: dict[str, int] = {"table": 15, "clauses": 11, "questions": 8}
+# `sections` chỉ 3 mỗi tờ: một mục là tiêu đề cộng hai ba đoạn canh đều,
+# cao gấp ba bốn lần một điều khoản. Đo trên ảnh pilot16: một tờ A4 chứa
+# hai đến ba mục.
+FLOW_PER_PAGE: dict[str, int] = {"table": 15, "clauses": 11,
+                                 "questions": 8, "sections": 3}
 
 
 def block_boost(name: str) -> float:
@@ -1079,7 +1171,12 @@ BY_ID: dict[str, Archetype] = {}   # dựng lại sau khi gộp, ở cuối file
 # tờ giấy thật; phần giữa mới là chỗ hai nhà in làm khác nhau.
 _ANCHOR_HEAD = ('letterhead', 'doctitle', 'meta', 'legal_basis')
 
-_MIDDLE = ('fields', 'notes', 'checks', 'questions', 'clauses', 'formula',
+# `sections` ngay sau `fields`: phần THUYẾT MINH của một biên bản đứng sau
+# khối thông tin và TRƯỚC bảng số liệu -- đúng mạch `form_sectioned` của
+# pilot16 (letterhead, ba dòng nhãn:giá trị, rồi `I.` `II.` `III.`). Khối
+# nào `_MIDDLE_ORDERS` không nhắc tới thì rơi vào cuối khúc giữa theo thứ
+# tự tuple này, nên vị trí ở đây LÀ vị trí nó in ra.
+_MIDDLE = ('fields', 'sections', 'notes', 'checks', 'questions', 'clauses', 'formula',
            'figure', 'toc', 'table', 'totals', 'words', 'summary', 'footnote')
 
 _ANCHOR_TAIL = ('signatures', 'footer')
@@ -1106,7 +1203,11 @@ BOUND_GROUPS: tuple[tuple[str, ...], ...] = (
 # đọc những khối các phôi hiện có tình cờ dùng: một khối vừa thêm vào kho mà
 # chưa phôi nào khai thì vẫn phải khai được, nếu không phôi đầu tiên dùng nó bị
 # cổng từ chối vì chính nó là phôi đầu tiên. Đã xảy ra thật với sáu khối mới.
-BLOCKS = _ANCHOR_HEAD + _MIDDLE + _ANCHOR_TAIL + ('table', 'photo')
+# `'table'` ĐÃ CÓ trong `_MIDDLE`; nối thêm lần nữa ở đây thì nó xuất hiện
+# SAU `_ANCHOR_TAIL`, tức sau `signatures` -- và đó là lý do khối chữ ký in ra
+# GIỮA TRANG, trước bảng và trước dòng tổng cộng (đo trên
+# `to_khai_thue_gtgt_00005`). Chữ ký phải là thứ cuối cùng của tờ giấy.
+BLOCKS = _ANCHOR_HEAD + _MIDDLE + _ANCHOR_TAIL + ('photo',)
 
 # Gộp phôi khai bằng file, rồi gắn khối và bộ cột theo tính chất. Phải đứng SAU
 # `BLOCKS` vì `_declared()` gọi cổng, và cổng đọc `BLOCKS`.
@@ -1118,6 +1219,44 @@ _MIDDLE_ORDERS: tuple[tuple[str, ...], ...] = (('fields', 'questions', 'clauses'
 
 def _pick(rng: random.Random, pool):
     return pool[rng.randrange(len(pool))]
+
+
+def _middle_order(rng: random.Random, blocks: set) -> tuple[str, ...]:
+    """Thứ tự các khối THÂN của một tờ, xáo có ràng buộc.
+
+    Bản trước bốc một trong TÁM tuple viết tay, và cả tám đều cùng một dáng:
+    `fields` gần đầu, `table/totals/words/summary` liền nhau gần cuối,
+    `notes/checks` chốt hậu. Nên hai tờ khác loại chứng từ vẫn đọc lên cùng
+    một trình tự -- đo trên 600 lượt bốc, bốn tổ hợp đầu chiếm phần lớn.
+
+    Xáo thì mỗi tờ một trình tự, và không cần ai bảo trì một bảng tám dòng mà
+    thêm khối mới là phải sửa tám chỗ (chính chú thích cũ ở đây cũng đã lo
+    đúng chuyện ấy).
+
+    HAI ràng buộc giữ nguyên, vì chúng là nghĩa chứ không phải thẩm mỹ:
+
+    * `BOUND_GROUPS` -- dòng cộng phải đi liền cái bảng nó cộng, và đi SAU.
+      Một dòng "Cộng" đứng trước bảng là một tờ giấy không tồn tại.
+    * `footnote` luôn chốt cuối khúc giữa: chú thích chân khối thì phải ở chân.
+    """
+    present = [name for name in _MIDDLE if name in blocks]
+    units: list[tuple[str, ...]] = []
+    seen: set[str] = set()
+    for name in present:
+        if name in seen:
+            continue
+        bound = next((g for g in BOUND_GROUPS if name in g), None)
+        if bound:
+            unit = tuple(n for n in bound if n in blocks)
+            seen.update(unit)
+        else:
+            unit = (name,)
+            seen.add(name)
+        units.append(unit)
+    last = [u for u in units if u == ("footnote",)]
+    units = [u for u in units if u != ("footnote",)]
+    rng.shuffle(units)
+    return tuple(n for unit in units + last for n in unit)
 
 
 def groups_in(columns: tuple[str, ...]) -> tuple[tuple[int, int, tuple[str, ...]], ...]:
@@ -1141,26 +1280,35 @@ def groups_in(columns: tuple[str, ...]) -> tuple[tuple[int, int, tuple[str, ...]
     return tuple(sorted(out))
 
 
-def super_in(columns: tuple[str, ...]) -> tuple[int, int] | None:
-    """Đoạn cột dài nhất được HAI nhóm liền nhau trở lên phủ kín, nếu có.
+def runs_over(units: Sequence[tuple[int, int]]) -> tuple[tuple[int, int], ...]:
+    """Các đoạn gồm TỪ HAI dải liền nhau trở lên trong `units` -> `(đầu, rộng)`.
 
-    Đó là chỗ duy nhất một tầng thứ ba có nghĩa: nó phải phủ nhiều nhóm, chứ
-    phủ đúng một nhóm thì nó chỉ là cái nhóm ấy viết to hơn."""
-    groups = groups_in(columns)
-    best = None
+    Một tầng tiêu đề mới chỉ có nghĩa khi nó phủ NHIỀU dải của tầng dưới: phủ
+    đúng một dải thì nó chỉ là cái dải ấy viết to hơn, và phủ nửa dải thì
+    `colspan` không khớp. Cùng một luật dùng lại cho mọi tầng, nên thêm tầng
+    không phải viết thêm phép tìm -- `units` vào là `(đầu, rộng)`, ra cũng
+    `(đầu, rộng)`.
+
+    `units` phải đã xếp theo cột và không chồng nhau; `groups_in` trả ra đúng
+    thế, và mỗi tầng dựng từ hàm này cũng vậy."""
+    out = []
     index = 0
-    while index < len(groups):
+    while index < len(units):
         end = index
-        reach = groups[index][0]
-        while end < len(groups) and groups[end][0] == reach:
-            reach += groups[end][1]
+        reach = units[index][0]
+        while end < len(units) and units[end][0] == reach:
+            reach += units[end][1]
             end += 1
         if end - index >= 2:
-            span = reach - groups[index][0]
-            if best is None or span > best[1]:
-                best = (groups[index][0], span)
+            out.append((units[index][0], reach - units[index][0]))
         index = max(end, index + 1)
-    return best
+    return tuple(out)
+
+
+def super_in(columns: tuple[str, ...]) -> tuple[int, int] | None:
+    """Đoạn cột dài nhất mà một tầng thứ ba phủ được, nếu có."""
+    found = runs_over([(first, span) for first, span, _ in groups_in(columns)])
+    return max(found, key=lambda run: run[1]) if found else None
 
 
 _SMALL = tuple(paper for paper in PAPERS
@@ -1206,7 +1354,15 @@ def draw(rng: random.Random, seed: int,
     # "phần lớn ngắn, một phần tư thật dài" là hình dạng hồ sơ ngoài đời.
     want_lo, want_hi = pick_span(rng, pages)
     long_run = want_hi > 2
-    boost_cap = block_cap() if long_run else 1.0
+    # Nhân MẠNH DẦN theo độ dài lượt xin, chứ không phải một cờ bật/tắt.
+    #
+    # `long_run` trước đây là `want_hi > 2`, nên một lượt `--pages 2-3` và một
+    # lượt `--pages 2-11` nhân y hệt nhau. Nguồn cung không đổi mà số tờ gấp
+    # bốn thì phần thiếu hụt đi thẳng vào tờ giữa: đo trên 500 tài liệu
+    # `--pages 2-11`, trung bình 3,23 khối tự do rải lên 3,9 tờ, và 46% tờ
+    # giữa không có gì ngoài khối chảy -- đúng cái "một màu" phải xoá.
+    stretch = 1.0 + max(want_hi - 3, 0) / 4.0
+    boost_cap = min(block_cap() * stretch, 0.9) if long_run else 1.0
 
     blocks = set(arch.always)
     for name in arch.optional:
@@ -1222,7 +1378,12 @@ def draw(rng: random.Random, seed: int,
         # cũng thế: một hợp đồng sáu trang có phụ lục bảng, có sơ đồ, có mục
         # lục, còn một phiếu thu một trang thì không.
         base = block_chance(name)
-        boost = block_boost(name) if long_run else 1.0
+        # `stretch` chỉ kéo dài tay của khối mà `_blocks.yaml` ĐÃ xin nhân.
+        # Khối khai đúng 1.0 là khai "đừng nhân", và mấy khai ấy có số đo đi
+        # kèm -- `table: 1.0` là kết luận sau khi đo bốn mức. Nhân nó lên ở
+        # đây là lặng lẽ lật một quyết định đã đo, từ một file khác.
+        rule = block_boost(name) if long_run else 1.0
+        boost = rule * stretch if rule > 1.0 else rule
         if rng.random() < min(base * boost, max(boost_cap, base)):
             blocks.add(name)
     if 'totals' in blocks and 'table' not in blocks:
@@ -1274,16 +1435,14 @@ def draw(rng: random.Random, seed: int,
         blocks.discard('totals')
         blocks.discard('words')
 
-    middle = _pick(rng, _MIDDLE_ORDERS)
+    middle = _middle_order(rng, blocks)
     # Khối nào được bốc mà thứ tự vừa chọn KHÔNG nhắc tới thì xếp nốt vào cuối
     # khúc giữa, theo thứ tự `_MIDDLE`. Không có dòng này thì một khối biến mất
     # LẶNG LẼ: `blocks` có nó, `order` thì không, và tờ giấy ra thiếu đúng thứ
     # phôi khai là `always`. Nó cũng là lý do thêm một khối mới không phải sửa
     # cả tám tuple thứ tự -- sửa tám chỗ là quên một chỗ.
-    tail = tuple(name for name in _MIDDLE
-                 if name in blocks and name not in middle)
     order = tuple(name for name in _ANCHOR_HEAD if name in blocks)
-    order += tuple(name for name in middle if name in blocks) + tail
+    order += middle
     order += tuple(name for name in _ANCHOR_TAIL if name in blocks)
 
     # Bộ cột RỖNG là hợp lệ, và phải hợp lệ: một phôi không bao giờ có bảng --
@@ -1292,7 +1451,21 @@ def draw(rng: random.Random, seed: int,
     # trên kho rỗng thì `randrange(0)` ném `ValueError`, và nó ném ở
     # `unique_seeds()` tức là TRƯỚC khi mở trình duyệt, nên cả lượt chạy chết
     # chứ không phải một tờ hỏng.
-    columns = _pick(rng, arch.column_pool) if arch.column_pool else ()
+    # BẢNG CÓ THÌ PHẢI ĐÁNG LÀ MỘT CÁI BẢNG.
+    #
+    # `column_pool` của một phôi thường có cả bộ ba cột lẫn bộ tám cột, và bốc
+    # đều thì 36% số bảng ra dưới năm cột -- một "bảng" ba cột không dạy được
+    # mô hình đọc bảng thật: không có nhóm cột, không có tầng tiêu đề, không có
+    # ô gộp. Bộ rộng mới là chỗ mọi cấu trúc khó sống được.
+    #
+    # Bốc HAI LẦN rồi giữ bộ rộng hơn: giữ nguyên mọi bộ cột phôi đã khai (kể
+    # cả bộ hẹp, vì biên lai thật đúng là ba cột), chỉ dịch phân bố về phía
+    # rộng. Không cần sửa 139 file YAML.
+    columns = ()
+    if arch.column_pool:
+        first = _pick(rng, arch.column_pool)
+        second = _pick(rng, arch.column_pool)
+        columns = first if len(first) >= len(second) else second
     head = _pick(rng, HEAD_LAYOUTS)
     if arch.org_kind == 'state' and head == 'khong_letterhead':
         head = 'chia_doi'
@@ -1301,20 +1474,37 @@ def draw(rng: random.Random, seed: int,
     # nhóm nào thì tầng trên không có gì để phủ.
     tiers = 1
     if 'table' in blocks and groups_in(columns):
+        # Tiêu đề nhiều tầng là thứ phân biệt một bảng chứng từ thật với một
+        # lưới ô: "Giá trị và thuế › Số lượng và đơn giá › Đơn giá". Bản trước
+        # cho 1 tầng ở 78% số bảng, nên phần lớn bảng trong bộ không có cấu
+        # trúc nào để học. Đảo lại: có nhóm cột thì mặc định hai tầng, ba tầng
+        # khi bộ cột có tầng trên nữa.
         roll = rng.random()
-        tiers = 2 if roll < 0.46 else 1
-        if roll < 0.20 and super_in(columns):
-            tiers = 3
+        tiers = 2 if roll < 0.85 else 1
+        if super_in(columns):
+            # Trần của tầng ba KHÔNG phải con số dưới đây, mà là 36% -- tỉ lệ
+            # bộ cột thật sự có hai nhóm liền nhau, đo trên 1500 lượt bốc.
+            # Nên hai cổng này chia phần BÊN TRONG 36% ấy chứ không chia toàn
+            # bộ số bảng, và đặt thấp thì tầng ba thành của hiếm: bản trước để
+            # 0.46 và đo ra 11% số bảng có ba tầng.
+            if roll < 0.62:
+                tiers = 3
+            # Tầng BỐN là dải "Phần ..." chạy ngang, nên nó không đòi bộ cột
+            # có gì thêm -- chỉ đòi dưới nó đã có ba tầng để đội. Đội lên một
+            # bảng hai tầng thì nó đọc ra cái nhan đề đặt nhầm vào trong
+            # khung, chứ không ra một tờ khai.
+            if roll < 0.28:
+                tiers = 4
     # Hàng số thứ tự cột "(1) (2) (3)" -- dấu hiệu của biểu mẫu nhà nước, nên
     # nó theo hạng giấy chứ không bốc đều.
-    col_numbers = rng.random() < (0.34 if arch.org_kind in ('state', 'hospital')
-                                  else 0.12)
+    col_numbers = rng.random() < (0.62 if arch.org_kind in ('state', 'hospital')
+                                  else 0.24)
     row_groups = _pick(rng, ROW_GROUPS) if 'table' in blocks else 'khong'
     if row_groups == 'cot_gom' and len(columns) > 7:
         # Thêm một cột gom vào bảng đã tám cột là ép chữ xuống thành sợi.
         row_groups = 'phan_muc'
     nested_detail = ('name' in columns and 'table' in blocks
-                     and rng.random() < 0.14)
+                     and rng.random() < 0.28)
 
     sign_sets = arch.sign_sets or ((),)
     sign = _pick(rng, sign_sets)
@@ -1415,6 +1605,7 @@ def draw(rng: random.Random, seed: int,
         blocks=frozenset(blocks),
         photo_box='photo' in blocks,
         watermark=rng.random() < 0.12,
+        national=rng.random() < float(getattr(arch, "national", 0.0) or 0.0),
         reverse_title_band=rng.random() < 0.1,
         lang_en=arch.en_ok and rng.random() < 0.18,
         target_pages=target,

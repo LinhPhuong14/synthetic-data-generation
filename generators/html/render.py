@@ -712,6 +712,31 @@ def _emit_page(args, name, recipe, receipt, drawn, hand_report, sign_report,
     and that split is only expressible if the second half is one call.
     """
     names = record.page_names(name, len(drawn))
+    # KIE ĐẦY ĐỦ NGAY LÚC VẼ, cùng lẽ `synthgen/draw.py` và `synthgen/draw_llm.py`.
+    #
+    # `record.build` chỉ ghép được cặp có nhãn in kề nhau -- toàn bộ ô bảng,
+    # điều khoản, bảng hỏi, khối chữ ký không có mặt. Đường phôi và đường LLM
+    # đã gọi luật đầy đủ lúc vẽ; đường luật thì chưa, nên cùng một bộ luật ra
+    # hai chất lượng nhãn tuỳ đường sinh.
+    #
+    # Gọi Ở ĐÂY chứ không trong `pipeline/record.py`: `record.py` là tầng dưới
+    # và `synthgen/kie_full.py` là tầng trên, nên để tầng dưới gọi ngược lên là
+    # đảo chiều phụ thuộc. Người GỌI thì được phép ghép hai tầng.
+    #
+    # Hỏng thì lùi về nhãn nghèo, không làm hỏng lượt vẽ: nhãn thiếu còn
+    # `derive.py` vá được, ảnh không vẽ ra thì mất hẳn.
+    try:
+        from synthgen.kie_full import complete as kie_complete  # noqa: PLC0415
+        from synthgen.phrasing import voice_record  # noqa: PLC0415
+
+        full_pairs, counts = kie_complete(item, markup)
+        voice_record(item, full_pairs, stem=Path(name).stem)
+        item.setdefault("kie", {})["pairs"] = full_pairs
+        if counts:
+            item["kie"]["coverage"] = counts
+    except Exception:                                        # noqa: BLE001
+        pass
+
     with profiling.stage("export"):
         for page_name, page in zip(names, drawn):
             cv2.imwrite(str(args.out / page_name), page["image"],

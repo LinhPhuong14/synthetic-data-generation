@@ -990,6 +990,74 @@ def variants_of(text: str) -> tuple[str, ...]:
     return pool().get(canon) or ()
 
 
+def unique_says(pairs: list[dict]) -> int:
+    """Ép MỖI CÂU TẢ CHỈ TẢ MỘT CHỖ, trong phạm vi một trang. Số câu đã sửa.
+
+    Luật bảo đảm cuối, chạy sau mọi đường dựng cặp. Từng đường đã cố đặt câu
+    riêng -- ô bảng kèm dòng, ô tích kèm lựa chọn, điều khoản kèm tiêu đề --
+    nhưng chỗ nào sót thì sót im lặng, và một câu tả tả hai chỗ là một câu
+    không chỉ được chỗ nào. Đặt ở đây thì không đường nào đi vòng qua được.
+
+    Thứ phân biệt hai chỗ mực mang cùng một câu là CHÍNH CHỮ CỦA CHÚNG, nên
+    câu tả trích chữ ấy -- cùng cách `survey_pairs` và `clause_pairs` làm. Chữ
+    trùng nhau nốt thì mới tới số thứ tự.
+
+    LƯỚI AN TOÀN, KHÔNG PHẢI CƠ CHẾ CHÍNH. Trước khi câu tả ô bảng đổi sang
+    dạng ⟨nghĩa cột⟩ của ⟨chủ thể dòng⟩, hàm này phải sửa 3 590 câu trên
+    11 131 (32%) và chính nó là nguồn gượng lớn nhất -- dán đuôi ": ⟨giá trị⟩"
+    vào một câu đã trọn nghĩa. Giờ nó chạm 31 câu (0,28%): những chỗ mà chữ in
+    trên giấy thật sự không tách được hai chỗ mực, như hai dòng bảng cùng mã
+    hàng. Ở quy mô ấy, cái giá của một câu gượng đổi lấy một bảo đảm tuyệt đối
+    là đáng."""
+    by_page: dict[int, list[dict]] = {}
+    for pair in pairs:
+        by_page.setdefault(int(pair.get("page_number", 1) or 1), []).append(pair)
+    fixed = 0
+    for on_page in by_page.values():
+        crowd: dict[str, list[dict]] = {}
+        for pair in on_page:
+            crowd.setdefault(str(pair.get("description") or ""), []).append(pair)
+        for says, group in crowd.items():
+            if len(group) < 2 or not says:
+                continue
+            for at, pair in enumerate(group, start=1):
+                text = " ".join(str(pair.get("value_text") or "").split())[:60]
+                tail = f" “{text}”" if text else ""
+                if sum(1 for other in group
+                       if " ".join(str(other.get("value_text") or "").split())[:60]
+                       == text) > 1:
+                    tail += f" (thứ {at})"
+                pair["description"] = (f"{says[:-1]}:{tail}." if says.endswith(".")
+                                       else f"{says}:{tail}")
+                fixed += 1
+    return fixed
+
+
+def _rank_of(text: str) -> int:
+    """Hạng của một ô khi tranh làm nhãn dòng. Xem `table_pairs`."""
+    letters = any(c.isalpha() for c in text)
+    return 2 if letters and " " in text.strip() else (1 if letters else 0)
+
+
+def _detail_says(under: str, text: str) -> str:
+    """Câu tả một dòng trong BẢNG CON nằm trong ô -- `""` nếu không phải.
+
+    `markup.py` in chi tiết của một mặt hàng bằng `<table class="sub">` ngay
+    trong ô tên, và mỗi dòng có dạng "nhãn: giá trị" -- 188/188 dòng trên
+    `data/thu1k` đều thế. Nên câu tả đọc được cả hai vế:
+
+        Chi tiết “Mã lô” của “Tủ chữa cháy vách tường”.
+
+    Không có `under` thì đây không phải bảng con, trả rỗng để người gọi dùng
+    câu tả ô bảng thường."""
+    if not under:
+        return ""
+    label = str(text or "").split(":", 1)[0].strip()
+    if label and label != str(text or "").strip():
+        return f"Chi tiết “{label}” của “{under}”."
+    return f"Dòng chi tiết của “{under}”."
+
+
 def ordinal_of(stem: str) -> int:
     """Số thứ tự của tài liệu, đọc từ tên file. `hoa_don_gtgt_00014_p2` -> 14.
 
@@ -1087,6 +1155,12 @@ def voice_record(record: dict, pairs: list[dict], *, stem: str = "",
                                              str(entity.get("field_name", "")),
                                              ordinal=ordinal)
 
+    # ÉP DUY NHẤT LẦN CUỐI, sau khi đã đổi giọng. `kie_full.complete` đã ép một
+    # lần, nhưng đổi giọng chạy SAU nó và có thể đưa hai trường về cùng một câu
+    # -- bảng cách nói chỉ có vài biến thể, nên hai câu gốc khác nhau vẫn có thể
+    # bốc trúng cùng một đích. Gọi lại ở đây thì thứ tự nào cũng ra một kết quả.
+    unique_says(pairs)
 
-__all__ = ["ADDED", "POOL", "canonical_of", "describe", "ordinal_of", "pool",
+
+__all__ = ["ADDED", "POOL", "canonical_of", "describe", "ordinal_of", "pool", "unique_says",
            "variants_of", "voice_record"]

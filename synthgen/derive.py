@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
 import sys
@@ -48,6 +49,11 @@ from synthgen.plain import sheet_html  # noqa: E402
 SHAPES = {
     "tier2": '<tr class="tier2">',
     "tier3": '<tr class="tier3">',
+    "tier4": '<tr class="tier4">',
+    # Dải "Phần ..." chạy hết chiều ngang, trên mọi tầng tiêu đề cột. Thiếu
+    # dòng này thì bảng bốn tầng đếm ra như bảng ba tầng, và một phép đo im
+    # lặng đọc thiếu là cách một thay đổi có vẻ không có tác dụng.
+    "banner": '<tr class="banner">',
     "colnum": '<tr class="colnum">',
     "phan_muc": '<tr class="grouphdr">',
     "cong_nhom": '<tr class="grouptot">',
@@ -387,6 +393,22 @@ def main() -> int:
     if not manifest.is_file():
         print(f"không có {manifest} — đây có phải thư mục đã sinh xong không?")
         return 1
+
+    # BẢNG MÔ TẢ CỦA CHÍNH LƯỢT CHẠY, trỏ lại trước khi dựng lại nhãn.
+    #
+    # `synthgen/run.py` ghi `kie_descriptions.json` vào thư mục lượt chạy rồi
+    # đặt `VLM_KIE_DESCRIPTIONS` cho tiến trình vẽ -- đó là nguồn TỐT NHẤT
+    # trong bốn nguồn của `pipeline.kie.describe`. Nhưng `derive.py` là một
+    # tiến trình khác, chạy sau, và nó không đặt biến ấy: `_all_descriptions()`
+    # đọc chuỗi rỗng, trả `{}`, rồi mọi trường tụt xuống nguồn thứ hai.
+    #
+    # Hệ quả đo được trên `data/thu1k`: file có `dia_chi` -> "Registered
+    # address of the seller." nhưng cặp dựng lại mang câu suy từ `kind`, và
+    # lượt vẽ với lượt dựng lại nói hai câu khác nhau về cùng một trường. Mười
+    # lăm megabyte mô tả viết sẵn nằm cạnh bản ghi mà không ai đọc.
+    ledger = root / "kie_descriptions.json"
+    if ledger.is_file():
+        os.environ["VLM_KIE_DESCRIPTIONS"] = str(ledger)
 
     # Bộ sinh TRƯỚC ngày đổi tên để bản ghi từng tờ ở `json/`. Bản gộp theo
     # tài liệu cũng muốn ghi vào `json/<loại>/<tài liệu>.json`, mà tên ấy TRÙNG

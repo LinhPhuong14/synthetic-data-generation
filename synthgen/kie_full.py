@@ -39,6 +39,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from pipeline.kie import FURNITURE, describe as say, slug  # noqa: E402
+from synthgen.phrasing import unique_says  # noqa: E402
 from synthgen.design import COLUMNS  # noqa: E402
 
 # `kind` của một cột KHÔNG phải cứ `menu.` + tên cột: cột `discount` in ra
@@ -187,6 +188,8 @@ class _Spans(HTMLParser):
         self._col = 0           # con trỏ cột của hàng đang mở
         self._held: dict[int, int] = {}   # cột -> còn mấy hàng bị rowspan chiếm
         self._table = 0         # bảng thứ mấy trên trang
+        self._stack: list[tuple] = []   # bảng cha đang mở, khi có bảng lồng
+        self._under = ""        # mặt hàng mà bảng con đang tả
 
     def _seat(self, span: int, rows: int) -> int:
         """Cột trống đầu tiên từ con trỏ, rồi giữ chỗ cho `rowspan`."""
@@ -206,6 +209,36 @@ class _Spans(HTMLParser):
             self.in_head = False
             self.head_row = -1
         elif tag == "table":
+            # NGĂN XẾP, vì `<table>` LỒNG ĐƯỢC TRONG MỘT Ô.
+            #
+            # `markup.py` in dòng chi tiết của một mặt hàng bằng một bảng con
+            # nằm ngay trong ô tên:
+            #
+            #     <td data-cell="menu.name" data-row="1" data-col="1">
+            #       <span data-kind="menu.name">Tủ chữa cháy vách tường</span>
+            #       <table class="sub"> ... menu.detail ... </table>
+            #     </td>
+            #
+            # Bản trước tăng `_table` ở mọi thẻ `<table>` và reset con trỏ, rồi
+            # KHÔNG trả lại gì khi `</table>` con đóng -- nên bảng cha mất con
+            # trỏ dòng/cột từ mặt hàng đầu tiên có chi tiết trở đi, và mọi ô
+            # sau đó bị gán sang bảng con.
+            #
+            # Đo trên `data/thu1k`: 11 trang có bảng con (86 cái), và trong bản
+            # xuất 37/88 bảng (42%) không cột nào có tiêu đề, 212/458 cột
+            # (46%) tiêu đề rỗng. Một tờ `bang_ke_chi_tiet` ra 8 bảng trong
+            # khi mắt người đếm được 2.
+            #
+            # Ô ĐANG MỞ cũng phải giữ: bảng con nằm TRONG ô ấy, nên chữ trong
+            # nó thuộc về ô cha chứ không phải một chỗ ngồi mới.
+            # CHỦ THỂ của bảng con là chữ vừa in trong chính ô cha: span
+            # `menu.name` đóng lại ngay trước `<table class="sub">`. Nhờ nó dòng
+            # "Mã lô: LOT16433" nói được nó là chi tiết CỦA AI.
+            self._under = (self.out[-1]["text"].strip()
+                           if self.out and self.cell else self._under)
+            self._stack.append((self._row, self._col, dict(self._held),
+                                self._table, self.cell, self.in_head,
+                                self.head_row, self._under))
             self._row, self._col, self._held = -1, 0, {}
             self._table += 1
         elif tag == "thead":
@@ -253,6 +286,12 @@ class _Spans(HTMLParser):
             self.cells.append(self.cell)
         elif tag == "span" and "data-kind" in table:
             self.out.append({"page": self.sheet, "cell": self.cell,
+                             # Nằm trong bảng con thì nói rõ của ai. `> 1` chứ
+                             # không phải `if self._stack`: bảng NGOÀI CÙNG
+                             # cũng đẩy một mục, nên phép thử kia đúng với mọi
+                             # ô của mọi bảng -- đo được `menu.unit` "Chiếc"
+                             # của bảng cha cũng đội `under`.
+                             "under": self._under if len(self._stack) > 1 else "",
                              "kind": table["data-kind"], "text": "",
                              # ĐƯỜNG DẪN MODEL TỰ KHAI. Có nó thì KIE không
                              # phải suy trường nào đi với nhãn nào -- xem
@@ -275,7 +314,13 @@ class _Spans(HTMLParser):
             self.cell["text"] += data
 
     def handle_endtag(self, tag):
-        if tag == "thead":
+        if tag == "table":
+            # Trả con trỏ về bảng cha. Không có nhánh này thì bảng cha tiếp tục
+            # đếm dòng/cột từ chỗ bảng con bỏ lại.
+            if self._stack:
+                (self._row, self._col, self._held, self._table, self.cell,
+                 self.in_head, self.head_row, self._under) = self._stack.pop()
+        elif tag == "thead":
             self.in_head = False
         elif tag in ("td", "th"):
             self.cell = None
@@ -572,9 +617,20 @@ def table_pairs(record: dict, markup: str) -> list[dict]:
         text = " ".join(str(entity.get("text") or "").split())
         if not text:
             continue
-        wordy = any(c.isalpha() for c in text)
+        # HẠNG của một ô làm nhãn dòng. Cao hơn thì thay.
+        #
+        #   2  CỤM TỪ có chữ -- "Tủ chữa cháy vách tường". Đây là cái tên.
+        #   1  một khối có chữ -- "VT29808", "Lọ". Mã hàng hoặc đơn vị tính.
+        #   0  toàn số.
+        #
+        # Không tách hai bậc trên thì bảng nào có cột mã đứng trước cột tên sẽ
+        # đọc cả dòng theo mã: đo được 833/3 184 nhãn dòng (26%) là mã, và tệ
+        # nhất là chính ô TÊN bị tả thành "Tên dịch vụ của “VT29808”" -- trong
+        # khi cái tên nằm ngay trong ô ấy.
+        letters = any(c.isalpha() for c in text)
+        rank = 2 if letters and " " in text.strip() else (1 if letters else 0)
         old = label_of.get(seat)
-        if old is None or (wordy and not any(c.isalpha() for c in old)):
+        if old is None or rank > _rank_of(old):
             label_of[seat] = text
     # HAI DÒNG TRÙNG TÊN trong cùng một bảng là chuyện thường -- "Máy khoan bê
     # tông" mua hai lần. Khi ấy tên một mình không chỉ được dòng nào, nên nó
@@ -590,6 +646,19 @@ def table_pairs(record: dict, markup: str) -> list[dict]:
             continue
         for seat in where:
             label_of[seat] = f"{text} (dòng {int(seat[2]) + 1})"
+
+    # SỐ DÒNG THEO THỨ TỰ THẬT TRONG BẢNG, không lấy `data-row` cộng một.
+    # `markup.py` của engine đánh `data-row` từ 1, còn lưới tự tính cho trang
+    # model viết đánh từ 0 -- cộng một là đúng đường này và sai đường kia. Đo
+    # được: ô "Camera quan sát ngoài trời" ở dòng đầu bảng mà câu tả ghi
+    # "dòng 2". Xếp hạng các dòng của chính bảng ấy thì hai đường ra cùng một
+    # con số, và đó cũng là con số mắt người đếm.
+    order_of: dict[tuple, int] = {}
+    for key in sorted({(p_, c.get("table", 0), c["row"]) for p_, c, _ in cells}):
+        same = [k for k in order_of if k[0] == key[0] and k[1] == key[1]]
+        order_of[key] = len(same) + 1
+
+    seat_of = {e["entity_index"]: s.get("under", "") for e, s in pairs}
 
     out = []
     for page, cell, entity in cells:
@@ -675,6 +744,10 @@ def table_pairs(record: dict, markup: str) -> list[dict]:
             # `data/pilot13`, tờ `insurance_partner_cert_application` mất 69
             # trên 273 cặp đúng vì thế, im lặng.
             "table_id": f"t{int(cell.get('table', 1) or 1)}",
+            # MẶT HÀNG CHA, khi ô này nằm trong bảng con của một ô. `export.py`
+            # dùng nó để gắn dòng chi tiết về đúng dòng hàng, thay vì để bảng
+            # con thành một bảng ngang hàng không tiêu đề.
+            "under": str(seat_of.get(entity["entity_index"]) or ""),
             # CHỖ NGỒI ĐẦY ĐỦ. `row`/`column_index` một mình chưa đủ tả một ô:
             # `tier` nói ô tiêu đề nào ở tầng nào, `colspan`/`rowspan` nói ô
             # chiếm mấy chỗ. Không có ba khoá này thì người đọc nhãn không
@@ -689,71 +762,96 @@ def table_pairs(record: dict, markup: str) -> list[dict]:
             # ra từ chỗ ngồi -- không cần ai đặt tên, và hai bảng trên cùng
             # một trang không đụng nhau vì `table_id` đã nằm trong id.
             "line_item_id": f"t{int(cell.get('table', 1) or 1)}#r{cell['row']}",
-            "description": _cell_says(spec.get("describe") or f"Table column {key}.",
-                                     str(head_entity["text"]) if head_entity else "",
-                                     label_of.get((page, cell.get("table", 0),
-                                                   cell["row"])),
-                                     cell["row"]),
+            "description": _detail_says(str(seat_of.get(entity["entity_index"]) or ""),
+                                        str(entity["text"]))
+            or _cell_says(
+                spec.get("describe") or f"Table column {key}.",
+                str(head_entity["text"]) if head_entity else "",
+                label_of.get((page, cell.get("table", 0), cell["row"])),
+                order_of.get((page, cell.get("table", 0), cell["row"]), 1),
+                # Tầng trên của tiêu đề nhiều tầng: "Số lượng và đơn giá" bọc
+                # "Đơn giá/ĐVT". Lá một mình không nói nó là đơn giá của cái gì.
+                group=str(cover[-2][1]["text"]) if len(cover) > 1 else "",
+                mine=str(entity["text"])),
             "description_source": "column",
             "source": "table",
         })
     return out
 
 
-def _unique_says(pairs: list[dict]) -> int:
-    """Ép MỖI CÂU TẢ CHỈ TẢ MỘT CHỖ, trong phạm vi một trang. Số câu đã sửa.
+def _rank_of(text: str) -> int:
+    """Hạng của một ô khi tranh làm NHÃN DÒNG.
 
-    Luật bảo đảm cuối, chạy sau mọi đường dựng cặp. Từng đường đã cố đặt câu
-    riêng -- ô bảng kèm dòng, ô tích kèm lựa chọn, điều khoản kèm tiêu đề --
-    nhưng chỗ nào sót thì sót im lặng, và một câu tả tả hai chỗ là một câu
-    không chỉ được chỗ nào. Đặt ở đây thì không đường nào đi vòng qua được.
+        2  cụm từ có chữ -- "Tủ chữa cháy vách tường". Đây là một cái tên.
+        1  một khối có chữ -- "VT29808", "Lọ". Mã hàng hoặc đơn vị tính.
+        0  toàn số.
 
-    Thứ phân biệt hai chỗ mực mang cùng một câu là CHÍNH CHỮ CỦA CHÚNG, nên
-    câu tả trích chữ ấy -- cùng cách `survey_pairs` và `clause_pairs` làm. Chữ
-    trùng nhau nốt thì mới tới số thứ tự.
+    Không tách hai bậc trên thì bảng nào có cột mã đứng trước cột tên sẽ đọc
+    cả dòng theo mã: đo được 833/3 184 nhãn dòng (26%) là mã, và tệ nhất là
+    chính ô TÊN bị tả thành "Tên dịch vụ của “VT29808”" -- trong khi cái tên
+    nằm ngay trong ô ấy."""
+    letters = any(c.isalpha() for c in text)
+    return 2 if letters and " " in text.strip() else (1 if letters else 0)
 
-    Đo trên `data/thu1k` trước khi có hàm này: 59 câu trên 11 131 còn tả hai
-    chỗ (0,53%), hầu hết là trường in nhiều lần trên một trang -- `store.branch`
-    hai dòng, `colhdr` ba cái."""
-    by_page: dict[int, list[dict]] = {}
-    for pair in pairs:
-        by_page.setdefault(int(pair.get("page_number", 1) or 1), []).append(pair)
-    fixed = 0
-    for on_page in by_page.values():
-        crowd: dict[str, list[dict]] = {}
-        for pair in on_page:
-            crowd.setdefault(str(pair.get("description") or ""), []).append(pair)
-        for says, group in crowd.items():
-            if len(group) < 2 or not says:
-                continue
-            for at, pair in enumerate(group, start=1):
-                text = " ".join(str(pair.get("value_text") or "").split())[:60]
-                tail = f" “{text}”" if text else ""
-                if sum(1 for other in group
-                       if " ".join(str(other.get("value_text") or "").split())[:60]
-                       == text) > 1:
-                    tail += f" (thứ {at})"
-                pair["description"] = (f"{says[:-1]}:{tail}." if says.endswith(".")
-                                       else f"{says}:{tail}")
-                fixed += 1
-    return fixed
+
+def _detail_says(under: str, text: str) -> str:
+    """Câu tả một dòng trong BẢNG CON nằm trong ô -- `""` nếu không phải.
+
+    `markup.py` in chi tiết của một mặt hàng bằng `<table class="sub">` ngay
+    trong ô tên, và mỗi dòng có dạng "nhãn: giá trị" -- 188/188 dòng trên
+    `data/thu1k` đều thế. Nên câu tả đọc được cả hai vế:
+
+        Chi tiết “Mã lô” của “Tủ chữa cháy vách tường”.
+
+    Không có `under` thì đây không phải bảng con, trả rỗng để người gọi dùng
+    câu tả ô bảng thường."""
+    if not under:
+        return ""
+    label = str(text or "").split(":", 1)[0].strip()
+    if label and label != str(text or "").strip():
+        return f"Chi tiết “{label}” của “{under}”."
+    return f"Dòng chi tiết của “{under}”."
 
 
 def _cell_says(column_says: str, header: str, row_label: str | None,
-               row: int) -> str:
-    """Câu tả của MỘT Ô bảng: nghĩa của cột, cộng dòng nó nằm.
+               row: int, group: str = "", mine: str = "") -> str:
+    """Câu tả của MỘT Ô bảng: ⟨nghĩa cột⟩ của ⟨chủ thể dòng⟩.
 
-    Cột nói ô ấy LÀ GÌ ("Đơn giá dùng để tính dòng này"), dòng nói ô ấy LÀ CỦA
-    AI ("Phụ phí mùa cao điểm"). Thiếu vế sau thì bốn mươi ô của một cột mang
-    y hệt một câu và câu ấy không chỉ được ô nào.
+    Đọc như người nói: `Đơn giá của "Camera quan sát ngoài trời".` Hai vế đều
+    lấy từ chữ IN TRÊN GIẤY -- tiêu đề cột và ô tên của dòng -- nên câu đúng ở
+    mọi loại chứng từ mà không cần bảng tra nào.
 
-    Dòng không có nhãn chữ -- bảng toàn số -- thì lùi về số thứ tự: kém hơn một
-    cái tên, nhưng vẫn tách được ô này khỏi ô kia."""
-    where = (f"dòng “{row_label}”" if row_label
-             else f"dòng thứ {int(row) + 1}")
-    if header:
-        return f"{column_says} Ô này ở cột “{header}”, {where}."
-    return f"{column_says} Ô này ở {where}."
+    ## Vì sao thay hẳn, không nối thêm
+
+    Bản trước giữ câu nghĩa cột rồi dán đuôi định danh:
+
+        Name of the goods or service listed on this line.
+        Ô này ở cột “Tên vật tư”, dòng “Cung cấp và lắp đặt hệ thống điện nhẹ”.
+
+    Ba cái sai cùng lúc: thân tiếng Anh lẫn đuôi tiếng Việt trong một câu; câu
+    dài gấp ba mà nửa sau chỉ để phân biệt; và với chính cột tên thì nhãn dòng
+    BẰNG giá trị ô, nên nó đọc thành "tên hàng ... ở dòng ⟨chính nó⟩".
+
+    Nghĩa đầy đủ của cột không mất: nó nằm ở `tables[].columns[].description`
+    trong bản xuất, ghi MỘT lần cho cả cột. Chép nó vào bốn mươi ô là chép một
+    câu bốn mươi lần.
+
+    ## Bốn ca, bốn cách nói
+
+    * ô thường ......... `Đơn giá của “Camera quan sát ngoài trời”.`
+    * ô LÀ chủ thể ..... `Tên vật tư ở dòng 3.` -- không nói "X của X"
+    * tiêu đề nhiều tầng `Đơn giá/ĐVT (nhóm “Số lượng và đơn giá”) của “...”.`
+    * không có chủ thể . `Đơn giá ở dòng 3.` -- bảng toàn số
+    """
+    # Không có tiêu đề in thì gọi nó là "Ô", chứ không lấy câu nghĩa tiếng Anh
+    # làm tên cột -- "Table column cell. của “Mã lô…”" không phải tiếng người.
+    what = (header.strip().rstrip(":：") if header.strip() else "Ô")
+    if group and group != what:
+        what = f"{what} (nhóm “{group}”)"
+    same = row_label and mine and " ".join(mine.split()) == " ".join(row_label.split())
+    if row_label and not same:
+        return f"{what} của “{row_label}”."
+    return f"{what} ở dòng {int(row)}."
 
 
 def _box(bbox) -> dict:
@@ -862,6 +960,16 @@ def survey_pairs(ents: list[dict], page: int,
               for i, e in enumerate(order)
               if kinds[i] == "survey.tick" and i + 1 < len(order)
               and kinds[i + 1] == "survey.option"}
+    # Lựa chọn của TỪNG câu hỏi, để biết một chữ có trùng trong phạm vi câu
+    # hỏi ấy hay không.
+    mates: dict[int, list[str]] = {}
+    asked_at: dict | None = None
+    for i, e in enumerate(order):
+        if kinds[i] == SURVEY_QUESTION:
+            asked_at = e
+        elif kinds[i] == "survey.tick" and asked_at is not None:
+            mates.setdefault(int(asked_at["entity_index"]), []).append(
+                beside.get(int(e["entity_index"]), ""))
 
     # MỘT vòng, và số thứ tự được phát ngay lúc câu hỏi của nó mở -- không hàng
     # đợi, vì bối cảnh (cột, dòng, con trỏ) thuộc về câu hỏi đang mở và một
@@ -929,7 +1037,12 @@ def survey_pairs(ents: list[dict], page: int,
             # Hai lựa chọn in cùng một chữ dưới cùng một câu hỏi ("Đã kiểm" hai
             # lần) thì chữ ấy không tách được chúng -- kèm thứ tự ở ĐÚNG chỗ va
             # chạm, chứ không kèm cho mọi lựa chọn.
-            twice = sum(1 for other in beside.values() if other == seat) > 1
+            # SO TRONG CÙNG MỘT CÂU HỎI, không so cả trang. Câu tả đã nêu tên
+            # câu hỏi, nên "Ô tích “Có” của câu hỏi “X”" chỉ trùng khi "Có" in
+            # hai lần DƯỚI CHÍNH X. So cả trang thì mọi câu hỏi Có/Không đều
+            # bị kèm số: đo được 1 888/11 115 câu (17%) đội "(thứ N)" trong khi
+            # chỉ vài chục chỗ thật sự trùng.
+            twice = sum(1 for other in mates.get(qi, []) if other == seat) > 1
             where = f" “{seat}”" + (f" (thứ {rank[qi]})" if twice else "")
 
         # Ô TÍCH giữ tên trần; mọi thứ khác đeo đuôi VAI của nó. Không có đuôi
@@ -1817,7 +1930,7 @@ def complete(record: dict, markup: str = "") -> tuple[list[dict], dict]:
 
     pairs = _dedup_by_value(pairs)
 
-    _unique_says(pairs)
+    unique_says(pairs)
 
     seen: set[int] = set()
     for pair in pairs:

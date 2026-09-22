@@ -1,0 +1,19 @@
+# SECTIONS_MEDICAL — MỤC văn xuôi: một tiêu đề mục và các đoạn văn của nó.
+#
+# Cột 1 là tiêu đề mục (số thứ tự `I.`/`1.`/`A.` do bộ dựng tự đánh, không
+# viết ở đây). Các cột sau là các ĐOẠN của mục ấy, mỗi đoạn một cột.
+#
+# Vì sao có kho này, và vì sao nó khác `clauses_*.txt`. Đối chiếu ảnh thật của
+# `data/pilot16` với ảnh synthgen: trang pilot đọc như một VĂN BẢN -- `I.
+# THÀNH PHẦN THAM DỰ`, `II. NỘI DUNG NGHIỆM THU`, mỗi mục hai ba đoạn văn
+# xuôi canh đều -- còn trang synthgen không bảng vẫn đọc như một BIỂU MẪU, vì
+# khối chữ dài nhất nó có là `clauses`: một dòng tiêu đề cộng một câu.
+#
+# Đo được: nhãn `Section-Header` có trên 48% trang pilot và 5% trang synthgen.
+# Kho này là thứ lấp khoảng ấy, và nó là khối chảy KHÔNG BẢNG thứ ba -- xem
+# `design.FLOW_BLOCKS`.
+
+TÌNH TRẠNG NGƯỜI BỆNH KHI VÀO	Người bệnh vào viện trong tình trạng tỉnh, tiếp xúc được, các chỉ số sinh tồn trong giới hạn cho phép. Tiền sử bệnh và tiền sử dị ứng đã được khai thác và ghi đầy đủ vào hồ sơ bệnh án.	Khám lâm sàng ghi nhận các triệu chứng phù hợp với chẩn đoán sơ bộ. Người bệnh và người đại diện đã được giải thích về tình trạng bệnh, hướng điều trị dự kiến và chi phí ước tính.
+QUÁ TRÌNH ĐIỀU TRỊ	Người bệnh được điều trị theo phác đồ phù hợp với chẩn đoán, có theo dõi sát các chỉ số sinh tồn và đáp ứng với thuốc. Các chỉ định xét nghiệm và chẩn đoán hình ảnh đều nhằm phục vụ chẩn đoán và theo dõi điều trị.	Trong quá trình điều trị, người bệnh được hội chẩn khi cần thiết. Kết luận hội chẩn được ghi vào hồ sơ và có chữ ký của các thành viên tham gia.	Diễn biến bệnh thuận lợi, các triệu chứng giảm dần, không xuất hiện biến chứng phải can thiệp ngoài phác đồ đã định.
+KẾT QUẢ ĐIỀU TRỊ	Sau thời gian điều trị, tình trạng người bệnh ổn định, các chỉ số cận lâm sàng trở về giới hạn bình thường. Người bệnh tự phục vụ được và đủ điều kiện ra viện.	Người bệnh được hướng dẫn chế độ theo dõi tại nhà, dùng thuốc theo đơn và hẹn lịch tái khám cụ thể ghi trên giấy ra viện.
+HƯỚNG DẪN SAU RA VIỆN	Người bệnh cần tuân thủ chế độ dùng thuốc theo đơn, không tự ý thay đổi liều hoặc ngừng thuốc khi chưa có ý kiến của bác sĩ điều trị.	Trường hợp xuất hiện các dấu hiệu bất thường như sốt cao, đau tăng, hoặc khó thở, người bệnh cần đến ngay cơ sở y tế gần nhất để được xử trí kịp thời.

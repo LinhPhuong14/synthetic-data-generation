@@ -95,30 +95,104 @@ class Plan:
 
 
 def _row_height(sheets: list[Sheet]) -> float:
+    """BƯỚC dọc của một mục: chiều cao của nó cộng khoảng cách tới mục sau.
+
+    Cộng khoảng cách, vì đó là chỗ nó thật sự chiếm trên tờ giấy -- xem
+    `_gap` về việc trừ tổng khoảng cách khỏi chỗ trống mỗi tờ sai thế nào."""
     heights = [h for sheet in sheets for h in sheet.rows if h > 0]
     if not heights:
         return 0.0
+    gap = max((_gap(s) for s in sheets), default=0.0)
     # Trung vị, không phải trung bình: một dòng hàng có chữ xuống hai hàng
     # kéo trung bình lên, còn sức chứa thì do dòng THƯỜNG quyết định.
     heights.sort()
-    return heights[len(heights) // 2]
+    return heights[len(heights) // 2] + gap
+
+
+def _gap(probe: Sheet) -> float:
+    """Khoảng cách dọc TRUNG BÌNH giữa hai mục liền nhau của khối chảy.
+
+    Bản trước không có hàm này, và thay vào đó trừ CẢ TỔNG khoảng cách khỏi
+    chỗ trống của MỌI tờ, dưới tên `chrome`:
+
+        chrome = flow_bottom - flow_top - flow_head - sum(rows)
+
+    Với `n` mục, hiệu ấy là `(n-1)` lần khoảng cách cộng lề khối -- một con
+    số LỚN DẦN theo số mục dò được. Đo được khi nới lần dò từ 8 lên 40 mục:
+    chỗ trống tờ đầu ra 105 trên khổ A5 và **âm 23** trên A4 ngang, trong khi
+    tờ giữa 397. Tờ đầu gần như không nhận nổi mục nào, nên `paginate` hạ số
+    tờ rồi `--multipage-only` vứt tài liệu.
+
+    Lỗi có sẵn từ trước, chỉ là lần dò tám mục làm nó nhỏ tới mức không ai
+    thấy. Chỗ đúng của khoảng cách là CỘNG VÀO CHIỀU CAO MỖI MỤC, không phải
+    trừ khỏi chỗ trống mỗi tờ: nó phát sinh theo mục, không theo tờ."""
+    items = [h for h in probe.rows if h > 0]
+    if len(items) < 2:
+        return 0.0
+    span = probe.flow_bottom - probe.flow_top - probe.flow_head
+    extra = span - sum(items)
+    return max(extra / (len(items) - 1), 0.0)
+
+
+def _room(probe: Sheet, *, head: bool, tail: bool) -> float:
+    """CHỖ trống cho các mục trên MỘT tờ, tuỳ tờ ấy có khối đầu / khối cuối.
+
+    KHÔNG trừ khoảng cách giữa các mục ở đây -- xem `_gap`. Chỉ trừ thứ mỗi
+    tờ đều phải trả: lề trên, lề dưới, và phần in lại ở đầu tờ (`<thead>`)."""
+    top = probe.flow_top if head else probe.pad_top
+    bottom = (probe.used - probe.flow_bottom) if tail else probe.pad_bottom
+    return max(probe.paper - top - bottom - probe.flow_head, 0.0)
 
 
 def _capacity(probe: Sheet, row_h: float, *, head: bool, tail: bool) -> int:
-    """Bao nhiêu MỤC của khối chảy lọt vào MỘT tờ, tuỳ tờ ấy có khối đầu /
-    khối cuối.
+    """Bao nhiêu MỤC lọt vào một tờ, ƯỚC theo chiều cao TRUNG VỊ.
 
-    `chrome` là phần khối chảy chiếm mà không phải mục: chú thích bảng,
-    viền, lề khối. Đo bằng hiệu, chứ không cộng từng thành phần -- cộng tay
-    là cách bỏ sót đúng cái thứ CSS vừa thêm vào."""
+    Đường lùi, dùng khi không biết chiều cao của từng mục -- bảng hai trăm
+    dòng thì không đo hết được trong một lần dò. Xem `_pack` cho đường chính."""
     if row_h <= 0:
         return 0
-    body = sum(h for h in probe.rows if h > 0)
-    chrome = max(probe.flow_bottom - probe.flow_top - probe.flow_head - body, 0.0)
-    top = probe.flow_top if head else probe.pad_top
-    bottom = (probe.used - probe.flow_bottom) if tail else probe.pad_bottom
-    room = probe.paper - top - bottom - probe.flow_head - chrome
-    return max(int(room // row_h), 0)
+    return max(int(_room(probe, head=head, tail=tail) // row_h), 0)
+
+
+def _pack(heights: list[float], rooms: list[float], aim: float) -> list[int]:
+    """Chia các mục vào từng tờ theo CHIỀU CAO THẬT của chúng.
+
+    Vì sao cần, và đo được. `_capacity` chia chỗ trống cho chiều cao TRUNG VỊ
+    -- đúng cho dòng hàng của một bảng, nơi mọi dòng cao gần như nhau. Sai
+    cho khối chảy là văn xuôi: một mục `sections` cao một đến ba đoạn, chênh
+    nhau ba lần, nên "mười hai mục vừa một tờ" tính theo trung vị hoá ra chỉ
+    lấp 70%. `paginate` thấy tờ chưa đầy 80% thì hạ số tờ, và
+    `--multipage-only` vứt luôn tài liệu: đo trên một lượt 90 chứng từ, 35
+    trên 47 ca bị vứt mang đúng câu `không tờ nào đầy tới 80%`.
+
+    Xếp tham lam theo thứ tự: mục nào còn vừa chỗ thì vào tờ này, hết chỗ thì
+    sang tờ sau. Không tối ưu toàn cục, và không cần -- thứ tự mục là thứ tự
+    đọc, đảo nó để xếp khít hơn là đổi nội dung tài liệu.
+
+    Mỗi tờ nhận ÍT NHẤT một mục kể cả khi mục ấy cao hơn chỗ trống: thà một
+    tờ tràn rồi để `plan()` hạ số tờ, hơn là một tờ rỗng.
+    """
+    counts: list[int] = []
+    at = 0
+    for room in rooms:
+        budget = room * aim
+        used = 0.0
+        taken = 0
+        while at + taken < len(heights):
+            nxt = heights[at + taken]
+            if taken and used + nxt > budget:
+                break
+            used += nxt
+            taken += 1
+        if taken == 0 and at < len(heights):
+            taken = 1
+        counts.append(taken)
+        at += taken
+        if at >= len(heights):
+            break
+    while len(counts) < len(rooms):
+        counts.append(0)
+    return counts
 
 
 def _slices(counts: list[int]) -> list[tuple[int, int]]:
@@ -229,6 +303,26 @@ def plan(measure, *, rows_probe: int, target_pages: int, rows_floor: int,
     cap_mid = _capacity(probe[0], row_h, head=False, tail=False)
     cap_last = _capacity(probe[0], row_h, head=False, tail=True)
 
+    # CHIỀU CAO THẬT của từng mục, khi lần dò đã đo được HẾT.
+    #
+    # `refill()` trả về TIỀN TỐ của một hoán vị cố định (xem
+    # `content.clauses_of`), nên mục thứ k luôn là cùng một mục và cao đúng
+    # bằng thế ở mọi lần đo. Điều đó cho phép xếp theo chiều cao thật thay vì
+    # chia chỗ cho trung vị -- xem `_pack` về việc trung vị sai ở đâu.
+    #
+    # Chỉ dùng khi dò được hết: một bảng hai trăm bốn mươi dòng thì lần dò
+    # tám dòng không nói gì về dòng thứ hai trăm, và khi ấy trung vị vẫn là
+    # câu trả lời đúng nhất có được.
+    # BƯỚC của từng mục: chiều cao cộng khoảng cách tới mục sau.
+    gap = _gap(probe[0])
+    item_heights = [h + gap for h in probe[0].rows if h > 0]
+    rooms_of = {
+        'one': _room(probe[0], head=True, tail=True),
+        'first': _room(probe[0], head=True, tail=False),
+        'mid': _room(probe[0], head=False, tail=False),
+        'last': _room(probe[0], head=False, tail=True),
+    }
+
     pages = max(int(target_pages), 1)
     note = ''
     best = None
@@ -244,8 +338,21 @@ def plan(measure, *, rows_probe: int, target_pages: int, rows_floor: int,
             refill(want)
             return _fit_single(measure, [want], set_boost, note, set_paper)
 
-        tail_rows = max(int(round(cap_last * AIM_FILL)), 1)
-        counts = [cap_first] + [cap_mid] * (pages - 2) + [tail_rows]
+        # Biết đủ chiều cao cho SỐ TỜ NÀY hay không -- quyết theo từng vòng,
+        # không một lần cho cả hàm: xếp hai tờ cần ít mục hơn xếp mười tờ, và
+        # một lần dò bốn mươi mục đủ cho vòng trước mà không đủ cho vòng sau.
+        want = cap_first + cap_mid * max(pages - 2, 0) + cap_last
+        if len(item_heights) >= want > 0:
+            # Xếp theo chiều cao thật. `AIM_FILL` là đích lấp, và nó nằm
+            # trong khoảng [MIN_FILL, MAX_FILL] nên một tờ xếp tới đích thì
+            # đã qua ngưỡng 80% -- đúng thứ vòng lặp dưới kia phải sửa mãi
+            # khi ước lượng theo trung vị bắn trượt.
+            rooms = ([rooms_of['first']] + [rooms_of['mid']] * (pages - 2)
+                     + [rooms_of['last']])
+            counts = _pack(item_heights, rooms, AIM_FILL)
+        else:
+            tail_rows = max(int(round(cap_last * AIM_FILL)), 1)
+            counts = [cap_first] + [cap_mid] * (pages - 2) + [tail_rows]
         if min(counts) <= 0:
             pages -= 1
             note = 'khổ giấy không chứa nổi một mục trên tờ tiếp theo'

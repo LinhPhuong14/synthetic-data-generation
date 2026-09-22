@@ -24,9 +24,9 @@ if str(REPO_ROOT) not in sys.path:
 
 from rulebase.text import money, words_vi  # noqa: E402
 from synthgen import corpus  # noqa: E402
-from synthgen.design import (COL_SUPERS, COLUMNS, ROW_GROUP_NAMES,  # noqa: E402
-                             Design, FieldDef, groups_in, item_rules,
-                             super_in)
+from synthgen.design import (COL_BANNERS, COL_SUPERS, COLUMNS,  # noqa: E402
+                             ROW_GROUP_NAMES, Design, FieldDef, groups_in,
+                             item_rules, runs_over)
 
 CITIES = ('Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng', 'Hải Phòng', 'Cần Thơ', 'Huế', 'Nha Trang', 'Biên Hoà', 'Vũng Tàu', 'Buôn Ma Thuột', 'Quy Nhơn', 'Vinh', 'Thanh Hoá', 'Nam Định', 'Thái Nguyên', 'Hạ Long', 'Bắc Ninh', 'Hải Dương', 'Long Xuyên', 'Rạch Giá', 'Mỹ Tho', 'Bến Tre', 'Pleiku', 'Đà Lạt', 'Phan Thiết', 'Tuy Hoà', 'Quảng Ngãi', 'Tam Kỳ', 'Đồng Hới', 'Lào Cai')
 
@@ -219,6 +219,7 @@ class Doc:
     questions: list[dict]
     legal_basis: list[str]
     clauses: list[tuple[str, str]]
+    sections: list[tuple[str, list[str]]]
     formula: str
     caption: str
     footnotes: list[str]
@@ -228,17 +229,22 @@ class Doc:
     table_caption: str
     seed: int
     unit_pool: list[str] = field(default_factory=list)
-    # Tiêu đề hai tầng: (chữ của nhóm, cột đầu, số cột nó phủ). Rỗng nghĩa là
-    # bảng một tầng như cũ.
-    col_groups: list[tuple[str, int, int]] = field(default_factory=list)
+    # TIÊU ĐỀ NHIỀU TẦNG, xếp NGOÀI CÙNG TRƯỚC: `col_bands[0]` là tầng trên
+    # cùng, `col_bands[-1]` là tầng sát hàng tên cột. Mỗi dải là `(chữ, cột
+    # đầu, số cột nó phủ)`. Rỗng nghĩa là bảng một tầng như cũ.
+    #
+    # Trước đây là hai trường rời -- `col_groups` và `col_supers` -- và
+    # `markup.py` có ba danh sách `top/middle/bottom` viết tay để dựng chúng.
+    # Ba tầng là trần cứng của cách ấy, và thêm tầng thứ tư nghĩa là viết lại
+    # cả ba. Một danh sách theo tầng thì phép dựng chỉ còn một vòng lặp, và
+    # tầng thứ năm không tốn thêm dòng nào.
+    col_bands: list[list[tuple[str, int, int]]] = field(default_factory=list)
     # Gộp dòng: `row_group_size` dòng hàng thì sang một nhóm mới, tên lấy vòng
     # quanh `row_group_names`. Hai con số này KHÔNG đổi khi `refill()` đổi số
     # dòng -- nhóm tính theo chỉ số dòng, nên trang nào cũng gộp giống trang
     # nào, và `paginate.py` cắt ở đâu cũng ra nhóm đúng.
     row_group_size: int = 0
     row_group_names: list[str] = field(default_factory=list)
-    # Tầng thứ ba, nếu có: (chữ, cột đầu, số cột) -- một ô phủ nhiều nhóm.
-    col_supers: list[tuple[str, int, int]] = field(default_factory=list)
     # Cộng cột thành tiền của từng nhóm dòng, đã định dạng. Tính lại mỗi lần
     # `refill()` đổi số dòng -- một dòng cộng không khớp phần nó cộng là đúng
     # cái lỗi bộ dữ liệu này tồn tại để không mắc.
@@ -613,10 +619,35 @@ def _digits(rng: random.Random, n: int) -> str:
 
 
 def address(rng: random.Random) -> str:
+    """Một địa chỉ mà PHƯỜNG, QUẬN và THÀNH PHỐ thuộc về nhau.
+
+    Ba thành phần ấy đi cùng một dòng của `wards.txt`, nên bốc nguyên dòng --
+    bốc rời từng kho là cách bản trước in ra "An Hải Bắc, Vũng Tàu".
+
+    Kho phường mới phủ 9 tỉnh, còn `CITIES` có 30 thành phố. Chỗ nào không có
+    phường trong kho thì in phường ĐÁNH SỐ và bỏ quận: "Phường 5, Tuy Hoà"
+    đúng và đủ, và vẫn hơn hẳn bịa một cái tên quận cho một thành phố không
+    chia quận."""
     street = rng.choice(corpus.streets() or ('Lê Lợi',))
-    ward = rng.choice(corpus.wards() or ('Phường 1',))
-    return (f'Số {rng.randrange(1, 480)}{rng.choice(("", "", "", "A", "B", "/2"))} '
-            f'{street}, {ward}, {rng.choice(DISTRICTS)}, {rng.choice(CITIES)}')
+    number = f'{rng.randrange(1, 480)}{rng.choice(("", "", "", "A", "B", "/2"))}'
+    known = corpus.wards()
+    if known and rng.random() < 0.7:
+        ward, district, city = rng.choice(known)
+        # Bốn dòng trong kho đã tự mang chữ "Phường" (phường đánh số của
+        # TPHCM), nên dán thêm là ra "Phường Phường 11". Kiểm chữ đầu chứ
+        # đừng sửa file: file viết đúng cách nó vẫn in trên hoá đơn.
+        where = [ward if ward.lower().startswith(('phường', 'p.', 'xã'))
+                 else f'Phường {ward}']
+        # Quận đánh số cần chữ "Quận" mới đọc ra quận; quận có tên thì hoá
+        # đơn thật in trống không ("Thanh Xuân, Hà Nội"). Và cột quận của một
+        # tỉnh không chia quận chính là tên thành phố -- in lại nó lần nữa là
+        # "Huế, Huế", nên bỏ.
+        if district and district != city:
+            where.append(f'Quận {district}' if district.isdigit() else district)
+        where.append(city)
+    else:
+        where = [f'Phường {rng.randrange(1, 16)}', rng.choice(CITIES)]
+    return f'Số {number} {street}, ' + ', '.join(where)
 
 
 def tax_code(rng: random.Random) -> str:
@@ -843,6 +874,47 @@ def _rows(rng: random.Random, design: Design, count: int,
 # thứ đi cùng sẽ là "tài liệu nào dài thì tài liệu ấy cũng chọn điều khoản
 # giống nhau".
 CLAUSE_SALT = 0x0C1A11EF
+
+
+SECTION_SALT = 0x5EC7102
+
+
+def sections_of(seed: int, design: Design,
+                count: int) -> list[tuple[str, list[str]]]:
+    """`count` MỤC văn xuôi: `(tiêu đề, [đoạn, ...])`.
+
+    Cùng lối `clauses_of` -- tiền tố của một hoán vị cố định, nên `refill(n)`
+    đơn điệu và `paginate.py` hội tụ. Khác ở chỗ trả về DANH SÁCH đoạn chứ
+    không phải một chuỗi: mỗi đoạn là một thẻ riêng trên giấy, và gộp chúng
+    thành một chuỗi thì mất chỗ ngắt đoạn -- thứ duy nhất phân biệt một mục
+    văn xuôi với một điều khoản dài."""
+    pool = corpus.sections(design.archetype.profile)
+    if not pool:
+        return []
+    # BỐC ngẫu nhiên chọn mục nào, nhưng IN theo thứ tự kho.
+    #
+    # Kho được viết theo đúng mạch một văn bản hành chính: căn cứ -> thành
+    # phần -> nội dung -> ý kiến -> kết luận -> phương hướng. Xáo rồi in theo
+    # thứ tự xáo thì ra những trang như bản vẽ thử: `1. PHƯƠNG HƯỚNG THỜI
+    # GIAN TỚI` đứng trước `2. CĂN CỨ VÀ PHẠM VI` -- một văn bản kết luận
+    # trước khi nêu căn cứ.
+    #
+    # Xáo để CHỌN, sắp lại để IN: hai tài liệu vẫn lấy hai bộ mục khác nhau,
+    # mà mạch đọc của từng tài liệu vẫn đúng.
+    order = list(range(len(pool)))
+    random.Random(seed ^ SECTION_SALT).shuffle(order)
+    order = sorted(order[:max(int(count), 0)])
+    out: list[tuple[str, list[str]]] = []
+    for rank in order:
+        span = pool[rank]
+        head, paras = span[0], list(span[1:])
+        if not paras:
+            out.append((head, []))
+            continue
+        take = random.Random(seed ^ SECTION_SALT ^ (rank * 2654435761)).randint(
+            1, len(paras))
+        out.append((head, paras[:take]))
+    return out
 
 
 def clauses_of(seed: int, design: Design, count: int) -> list[tuple[str, str]]:
@@ -1140,7 +1212,21 @@ def build(design: Design, rng: random.Random, rows_wanted: int) -> Doc:
     elif arch.org_kind == 'hospital':
         parent = rng.choice(('SỞ Y TẾ ' + rng.choice(CITIES).upper(), 'BỘ Y TẾ'))
     else:
-        parent = rng.choice(('', '', '', 'TẬP ĐOÀN ĐẦU TƯ VÀ PHÁT TRIỂN',
+        # CHỦ QUẢN CỦA MỘT CÔNG TY KHÔNG PHẢI CƠ QUAN NHÀ NƯỚC.
+        #
+        # Nhánh `state` ở trên bốc từ danh sách bộ/sở/uỷ ban, và nhánh này bốc
+        # từ danh sách tập đoàn -- đúng. Lỗi nằm ở chỗ `org_kind` của phôi
+        # không luôn khớp tên đơn vị mà `corpus.shops()` trả về, nên đo được
+        # "UỶ BAN NHÂN DÂN THÀNH PHỐ → CÔNG TY TNHH TƯ VẤN VÀ GIÁM SÁT XÂY DỰNG
+        # BẢO TÍN" và "TỔNG CỤC THUẾ → TRƯỜNG TRUNG CẤP NGHỀ" -- 6/12 tờ.
+        #
+        # Luật: tên đơn vị nói nó là ai. "CÔNG TY"/"DOANH NGHIỆP" thì chủ quản
+        # chỉ được là tập đoàn/tổng công ty, hoặc không có -- và không có là
+        # trường hợp thường gặp nhất trên giấy thật.
+        parent = rng.choice(('', '', '', '', '', 'TẬP ĐOÀN ĐẦU TƯ VÀ PHÁT TRIỂN',
+                             'TỔNG CÔNG TY THƯƠNG MẠI'))
+    if parent and org.upper().startswith(('CÔNG TY', 'DOANH NGHIỆP', 'HỢP TÁC XÃ')):
+        parent = rng.choice(('', '', 'TẬP ĐOÀN ĐẦU TƯ VÀ PHÁT TRIỂN',
                              'TỔNG CÔNG TY THƯƠNG MẠI'))
 
     title = rng.choice(arch.titles)
@@ -1151,7 +1237,15 @@ def build(design: Design, rng: random.Random, rows_wanted: int) -> Doc:
         doc_no = f'{rng.randrange(1, 999):03d}/{doc_date.year}'
     serial = (f'{rng.randrange(1, 3)}C{doc_date.year % 100:02d}'
               f'{rng.choice("TKMNPQ")}{rng.choice("ABCDE")}')
-    form = f'{rng.randrange(1, 9)}/{rng.randrange(1, 99):03d}-GTGT'
+    # HẬU TỐ MẪU SỐ THEO LOẠI GIẤY. `-GTGT` là mã mẫu hoá đơn giá trị gia
+    # tăng; dán cứng thì nó in lên cả nhật ký thi công, thẻ bảo hành, hợp đồng
+    # và uỷ nhiệm chi -- 5/12 tờ đo được trên `data/review100`. Giấy không phải
+    # chứng từ thuế thì mang mã mẫu hành chính.
+    _tax_doc = arch.profile in ('invoice', 'export', 'power', 'water')
+    form = (f'{rng.randrange(1, 9)}/{rng.randrange(1, 99):03d}-GTGT' if _tax_doc
+            else f'{rng.randrange(1, 9)}{rng.choice("ABC")}'
+                 f'/{rng.randrange(2020, 2027)}'
+                 f'/{rng.choice(("QĐ", "BB", "HĐ", "TT"))}')
 
     fields = [(f, _gen(f.gen, rng, doc_date)) for f in design.fields]
 
@@ -1256,6 +1350,11 @@ def build(design: Design, rng: random.Random, rows_wanted: int) -> Doc:
     legal_basis = []
     if design.has('legal_basis'):
         legal_basis = rng.sample(list(LEGAL_BASIS), rng.randint(2, 5))
+    sections = []
+    if design.has('sections'):
+        want = (rows_wanted if design.flow == 'sections'
+                else rng.randint(2, 4))
+        sections = sections_of(design.seed, design, want)
     clauses = []
     if design.has('clauses'):
         # Là khối CHẢY thì số điều do `paginate.py` đặt, qua `rows_wanted` --
@@ -1302,8 +1401,10 @@ def build(design: Design, rng: random.Random, rows_wanted: int) -> Doc:
     # Tiêu đề hai tầng: chọn CHỮ cho từng nhóm cột mà `design.py` đã tìm
     # được. Dáng do design quyết định, chữ do đây -- cùng ranh giới với mọi
     # trục khác của gói này.
-    col_groups: list[tuple[str, int, int]] = []
-    col_supers: list[tuple[str, int, int]] = []
+    # Các tầng tiêu đề, dựng TỪ TRONG RA NGOÀI: nhóm cột trước, rồi mỗi tầng
+    # kế phủ các dải liền nhau của tầng vừa dựng. Dáng do `design.py` quyết,
+    # CHỮ do đây -- cùng ranh giới với mọi trục khác của gói này.
+    inner: list[tuple[str, int, int]] = []
     if design.head_tiers > 1 and design.has('table'):
         for first, span, captions in groups_in(design.columns):
             # Tiêu đề nhóm trùng chữ với chính cột nằm dưới nó là một bảng
@@ -1312,18 +1413,40 @@ def build(design: Design, rng: random.Random, rows_wanted: int) -> Doc:
             under = {col_titles.get(design.columns[i], '')
                      for i in range(first, first + span)}
             free = [c for c in captions if c not in under] or list(captions)
-            col_groups.append((rng.choice(free), first, span))
-    if design.head_tiers > 2 and col_groups:
-        found = super_in(design.columns)
-        if found:
-            col_supers = [(rng.choice(COL_SUPERS), found[0], found[1])]
+            inner.append((rng.choice(free), first, span))
+
+    tiers: list[list[tuple[str, int, int]]] = [inner] if inner else []
+    taken = {caption for caption, _, _ in inner}
+    while tiers and len(tiers) + 1 < min(design.head_tiers, 4):
+        runs = runs_over([(first, span) for _, first, span in tiers[-1]])
+        if not runs:
+            break
+        pool = [c for c in COL_SUPERS if c not in taken] or list(COL_SUPERS)
+        band = [(rng.choice(pool), first, span) for first, span in runs]
+        taken.update(caption for caption, _, _ in band)
+        tiers.append(band)
+
+    # Tầng thứ tư: dải chạy hết chiều ngang. Không đi qua `runs_over` vì nó
+    # không phủ dải nào của tầng dưới -- nó phủ CẢ BẢNG, và đó chính là dáng
+    # nó có trên giấy thật. Chỉ đội khi dưới nó đã đủ ba tầng.
+    if design.head_tiers > 3 and len(tiers) >= 2 and design.columns:
+        pool = [c for c in COL_BANNERS if c not in taken] or list(COL_BANNERS)
+        tiers.append([(rng.choice(pool), 0, len(design.columns))])
+
+    col_bands = list(reversed(tiers))
 
     row_group_size = 0
     row_group_names: list[str] = []
     if design.row_groups != 'khong' and design.has('table'):
         pool = ROW_GROUP_NAMES.get(arch.profile) or ROW_GROUP_NAMES['invoice']
         row_group_names = list(pool)
-        rng.shuffle(row_group_names)
+        # KHÔNG XÁO. Với `menu`, `power`, `water` thứ tự nhóm là CÓ NGHĨA --
+        # thực đơn đi Khai vị → Món chính → Lẩu → Tráng miệng → Đồ uống, bậc
+        # điện đi từ thấp lên cao. Xáo thì ra thực đơn mở bằng "ĐỒ UỐNG", đo
+        # được trên `thuc_don_00051`. Nhóm kế toán thì thứ tự tự do, nhưng xáo
+        # chúng cũng chẳng được gì.
+        if arch.profile not in ('menu', 'power', 'water', 'insurance'):
+            rng.shuffle(row_group_names)
         row_group_size = rng.randint(4, 9)
 
     caption = ''
@@ -1344,12 +1467,13 @@ def build(design: Design, rng: random.Random, rows_wanted: int) -> Doc:
         totals=totals, grand_label=grand_label, grand=grand,
         grand_amount=grand_amount, words_label=words_label, words=words,
         summary=summary, notes=notes, checks=checks, questions=questions,
-        legal_basis=legal_basis, clauses=clauses, formula=formula,
+        legal_basis=legal_basis, clauses=clauses, sections=sections,
+        formula=formula,
         caption=figure_caption, footnotes=footnotes, toc=toc,
         signatures=signatures,
         footer=footer, table_caption=caption, seed=design.seed, unit_pool=units,
-        col_groups=col_groups, row_group_size=row_group_size,
-        row_group_names=row_group_names, col_supers=col_supers,
+        col_bands=col_bands, row_group_size=row_group_size,
+        row_group_names=row_group_names,
     )
     _regroup(built)
     return built
@@ -1369,6 +1493,9 @@ def refill(doc: Doc, rng: random.Random, rows_wanted: int) -> Doc:
         return doc
     if flow == 'questions':
         doc.questions = questions_of(doc.seed, doc.design, max(rows_wanted, 1))
+        return doc
+    if flow == 'sections':
+        doc.sections = sections_of(doc.seed, doc.design, max(rows_wanted, 1))
         return doc
     if flow != 'table' or not doc.design.has('table'):
         return doc

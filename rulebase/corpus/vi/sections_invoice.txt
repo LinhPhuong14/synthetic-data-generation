@@ -1,0 +1,21 @@
+# SECTIONS_INVOICE — MỤC văn xuôi: một tiêu đề mục và các đoạn văn của nó.
+#
+# Cột 1 là tiêu đề mục (số thứ tự `I.`/`1.`/`A.` do bộ dựng tự đánh, không
+# viết ở đây). Các cột sau là các ĐOẠN của mục ấy, mỗi đoạn một cột.
+#
+# Vì sao có kho này, và vì sao nó khác `clauses_*.txt`. Đối chiếu ảnh thật của
+# `data/pilot16` với ảnh synthgen: trang pilot đọc như một VĂN BẢN -- `I.
+# THÀNH PHẦN THAM DỰ`, `II. NỘI DUNG NGHIỆM THU`, mỗi mục hai ba đoạn văn
+# xuôi canh đều -- còn trang synthgen không bảng vẫn đọc như một BIỂU MẪU, vì
+# khối chữ dài nhất nó có là `clauses`: một dòng tiêu đề cộng một câu.
+#
+# Đo được: nhãn `Section-Header` có trên 48% trang pilot và 5% trang synthgen.
+# Kho này là thứ lấp khoảng ấy, và nó là khối chảy KHÔNG BẢNG thứ ba -- xem
+# `design.FLOW_BLOCKS`.
+
+THÔNG TIN GIAO DỊCH	Giao dịch được thực hiện trên cơ sở đơn đặt hàng đã được hai bên xác nhận và hợp đồng nguyên tắc đang còn hiệu lực. Chủng loại, số lượng và quy cách hàng hoá đúng như thoả thuận tại phụ lục.	Toàn bộ hàng hoá được giao tại địa điểm do bên mua chỉ định, có biên bản giao nhận với chữ ký của đại diện hai bên tại thời điểm giao.
+KIỂM TRA VÀ NGHIỆM THU HÀNG HOÁ	Bên mua đã kiểm tra số lượng khi nhận và kiểm tra chất lượng trong thời hạn thoả thuận. Hàng hoá còn nguyên bao bì, tem nhãn của nhà sản xuất và có đầy đủ chứng từ chứng minh nguồn gốc.	Không phát hiện trường hợp hàng hoá sai chủng loại hoặc hư hỏng do vận chuyển. Hai bên thống nhất xác nhận hàng hoá đủ điều kiện nhập kho và đưa vào sử dụng.
+GIÁ CẢ VÀ THANH TOÁN	Giá áp dụng cho giao dịch này là giá đã bao gồm thuế giá trị gia tăng và được giữ cố định trong suốt thời hạn hiệu lực của đơn hàng, không điều chỉnh theo biến động thị trường.	Bên mua thực hiện thanh toán bằng chuyển khoản trong thời hạn đã thoả thuận, kể từ ngày nhận đủ hàng và hoá đơn hợp lệ. Ngày thanh toán được tính là ngày tiền vào tài khoản của bên bán.
+CHÍNH SÁCH BẢO HÀNH, ĐỔI TRẢ	Hàng hoá được bảo hành theo thời hạn của nhà sản xuất, tính từ ngày nghiệm thu. Bên bán tiếp nhận yêu cầu bảo hành trong giờ làm việc và bố trí nhân sự xử lý trong thời hạn cam kết.	Việc đổi, trả áp dụng với hàng còn nguyên tem nhãn kèm chứng từ mua hàng, trong thời hạn đã niêm yết. Không áp dụng với hàng khuyến mại, hàng thanh lý và hàng đã qua sử dụng.
+ĐỐI CHIẾU CÔNG NỢ	Hai bên thực hiện đối chiếu công nợ định kỳ theo kỳ đã thống nhất và lập biên bản xác nhận số liệu. Bên nhận đề nghị đối chiếu có trách nhiệm phản hồi trong thời hạn quy định.	Phần chênh lệch sau đối chiếu được xử lý bằng chứng từ điều chỉnh, không tẩy xoá trên chứng từ gốc.
+CAM KẾT CỦA CÁC BÊN	Bên bán cam kết hàng hoá có nguồn gốc hợp pháp, đúng chất lượng đã công bố và chịu toàn bộ trách nhiệm trước cơ quan nhà nước về nguồn gốc hàng hoá đã cung cấp.	Bên mua cam kết sử dụng hàng hoá đúng mục đích, thanh toán đúng hạn và phối hợp cung cấp chứng từ khi bên bán cần hoàn tất thủ tục kế toán.

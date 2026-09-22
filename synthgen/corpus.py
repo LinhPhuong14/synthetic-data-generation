@@ -141,6 +141,18 @@ CLAUSE_FILES: dict[str, tuple[str, ...]] = {
 }
 CLAUSE_FALLBACK: tuple[str, ...] = ('clauses_invoice', 'clauses_invoice_b')
 
+# MỤC văn xuôi -- `sections_*.txt`. Cùng hình dạng `CLAUSE_*` và cùng lý do
+# tách phần chung: mục "CĂN CỨ VÀ PHẠM VI", "KẾT LUẬN" có trên mọi loại văn
+# bản, còn "CẢI CÁCH THỦ TỤC HÀNH CHÍNH" thì chỉ giấy hành chính mới có.
+SECTION_COMMON: tuple[str, ...] = ('sections_chung',)
+SECTION_FILES: dict[str, tuple[str, ...]] = {
+    'admin': ('sections_admin',),
+    'invoice': ('sections_invoice',),
+    'medical': ('sections_medical',),
+    'insurance': ('sections_insurance',),
+}
+SECTION_FALLBACK: tuple[str, ...] = ('sections_invoice',)
+
 SHOP_FILES: dict[str, str] = {
     'invoice': 'shops_invoice',
     'market': 'shops_market',
@@ -281,6 +293,20 @@ def items_for(arch, rules: dict | None = None) -> tuple[tuple[str, int, int], ..
     return tuple(out) or catalogue(arch.profile)
 
 
+def sections(profile: str) -> tuple[tuple[str, ...], ...]:
+    """Mọi MỤC văn xuôi một hồ sơ viết được: `(tiêu đề, đoạn, đoạn, ...)`.
+
+    Khác `clauses()` ở HÌNH DẠNG TRÊN GIẤY, không ở định dạng file: một điều
+    khoản là một dòng tiêu đề đậm cộng một câu; một mục là một tiêu đề có số
+    thứ tự `I.`/`II.` cộng hai ba đoạn văn xuôi canh đều. Đối chiếu ảnh thật
+    của `data/pilot16`: đó là khác biệt làm trang pilot đọc như một VĂN BẢN
+    còn trang synthgen không bảng đọc như một BIỂU MẪU."""
+    out = []
+    for stem in SECTION_COMMON + SECTION_FILES.get(profile, SECTION_FALLBACK):
+        out.extend(spans(stem))
+    return tuple(out) or spans('sections_chung')
+
+
 def clauses(profile: str) -> tuple[tuple[str, ...], ...]:
     """Mọi điều khoản một hồ sơ viết được: `(tiêu đề, khoản, khoản, ...)`.
 
@@ -302,8 +328,32 @@ def streets() -> tuple[str, ...]:
     return lines('streets')
 
 
-def wards() -> tuple[str, ...]:
-    return lines('wards')
+# `wards.txt` viết tên tỉnh theo lối hành chính, `content.CITIES` viết theo
+# lối in trên giấy. Quy về MỘT lối ngay tại cửa đọc, để không chỗ nào phía
+# sau phải biết là có hai lối.
+_CITY_ALIAS = {'TPHCM': 'TP. Hồ Chí Minh', 'Thừa Thiên Huế': 'Huế'}
+
+
+@functools.lru_cache(maxsize=1)
+def wards() -> tuple[tuple[str, str, str], ...]:
+    """`(phường, quận, tỉnh)` -- CẢ BA cột của `wards.txt`.
+
+    Bản trước trả về đúng cột đầu, và `content.address()` bốc thành phố ở một
+    kho khác, nên nó in ra "An Hải Bắc, Vũng Tàu" -- một phường Đà Nẵng đặt
+    dưới một thành phố Bà Rịa. Ba cột nằm sẵn cạnh nhau trong file từ đầu;
+    chỉ người đọc đánh rơi hai cột sau.
+
+    `rulebase/corpus.py::wards()` đã trả đủ ba cột từ lâu và `rulebase/
+    content.py` giữ chúng đi cùng nhau. Đây là cùng một luật, và giờ là cùng
+    một hình dạng."""
+    out = []
+    for row in _rows('wards'):
+        if len(row) < 3:
+            continue
+        ward, district, city = (cell.strip() for cell in row[:3])
+        if ward and city:
+            out.append((ward, district, _CITY_ALIAS.get(city, city)))
+    return tuple(out)
 
 
 def payments() -> tuple[tuple[str, str], ...]:

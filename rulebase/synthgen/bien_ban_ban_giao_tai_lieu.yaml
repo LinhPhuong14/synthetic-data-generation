@@ -1,0 +1,58 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+#
+# PHÔI KHÔNG BẢNG. `columns: []` và `rows: [0, 0]` là cố ý và là cả điểm của
+# nó: không có dòng hàng nào thì `design.pick_flow` không chọn được bảng, nên
+# tài liệu dài ra bằng `sections` / `clauses` / `questions`.
+#
+# Mẻ này pha loãng tỉ lệ phôi có bảng trong kho: 17/99 (17%) xuống 17/170
+# (10%). Không bỏ bảng khỏi phôi nào -- một `bảng lương` không có bảng thì
+# không còn là bảng lương.
+id: bien_ban_ban_giao_tai_lieu
+titles:
+- BIÊN BẢN BÀN GIAO TÀI LIỆU
+- BIÊN BẢN GIAO NHẬN HỒ SƠ
+subtitles:
+- ''
+- ''
+profile: admin
+org_kind: state
+national: 0.85
+fields:
+- party_a
+- party_b
+- object
+- period
+field_span:
+- 3
+- 4
+columns: []
+totals: none
+words: false
+sign_sets:
+- - ĐẠI DIỆN BÊN A
+  - ĐẠI DIỆN BÊN B
+- - BÊN GIAO
+  - BÊN NHẬN
+- - ĐẠI DIỆN BÊN A
+  - ĐẠI DIỆN BÊN B
+  - NGƯỜI LÀM CHỨNG
+notes:
+- Các nội dung khác không nêu trong văn bản này thực hiện theo quy định hiện hành.
+- Văn bản này được lập thành 02 bản có giá trị như nhau, mỗi bên giữ 01 bản.
+- Kính đề nghị Thủ trưởng đơn vị xem xét, giải quyết theo thẩm quyền.
+rows:
+- 0
+- 0
+always:
+- letterhead
+- doctitle
+- signatures
+- sections
+optional:
+- meta
+- fields
+- notes
+- footer
+- footnote
+- checks
+en_ok: false

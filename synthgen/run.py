@@ -297,20 +297,26 @@ def main() -> int:
                              'model/both cần WriteViT; thiếu thì tự lùi về font')
     parser.add_argument('--hand-share', type=float, default=0.0, metavar='X',
                         help='tỉ lệ tài liệu được điền tay, 0..1. Mặc định 0 = '
-                             'bốc ngẫu nhiên cho mỗi lượt, sàn %g' % HAND_FLOOR)
+                             f'bốc ngẫu nhiên cho mỗi lượt, sàn {HAND_FLOOR:g}')
     parser.add_argument('--augment', default='off',
                         help='off (mặc định, giấy sạch) | fast | all | none — '
                              'làm cũ ngay lúc vẽ qua degradation/ của pipeline '
                              'chính; xem synthgen/augment.py')
+    # argparse nội suy chuỗi help THÊM MỘT LẦN nữa lúc in (`help % params`,
+    # để `%(default)s` chạy được). Nên đừng nội suy sẵn bằng toán tử `%`:
+    # `%%` qua lần một còn lại `%`, lần hai vấp ngay -- và vấp ở `--help`,
+    # tức đúng lệnh đầu tiên người ta gõ. Dùng f-string cho phần thay số, và
+    # giữ `%%` cho dấu phần trăm CHỮ để lần nội suy của argparse hạ về một dấu.
     parser.add_argument('--pages', default='', metavar='SPEC',
                         help='số TỜ mỗi chứng từ nhắm tới. Ba dạng: `3` (đúng '
                              'ba tờ), `2-10` (rải đều), `2-5:75,7-10:25` (75%% '
                              'hai-tới-năm tờ, 25%% bảy-tới-mười). Mặc định '
-                             '%d-%d. Chỉ là Ý ĐỊNH: `synthgen/paginate.py` ĐO '
+                             f'{D.PAGE_SPAN[0]}-{D.PAGE_SPAN[1]}. Chỉ là Ý ĐỊNH: '
+                             '`synthgen/paginate.py` ĐO '
                              'trong trình duyệt rồi mới chốt, và hạ số tờ xuống '
                              'khi không tờ nào lấp nổi 80%%. Sàn lớn hơn 1 còn '
                              'ép thêm một khối CHẢY vào tờ giấy nào bốc phải '
-                             'không có khối nào' % D.PAGE_SPAN)
+                             'không có khối nào')
     parser.add_argument('--no-balance', action='store_true',
                         help='TẮT quota theo loại chứng từ. Mặc định là BẬT: '
                              'mỗi loại có một trần bằng `-n` chia số phôi, và '

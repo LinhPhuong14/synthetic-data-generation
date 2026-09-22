@@ -1,0 +1,55 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+#
+# PHÔI KHÔNG BẢNG. `columns: []` và `rows: [0, 0]` là cố ý và là cả điểm của
+# nó: không có dòng hàng nào thì `design.pick_flow` không chọn được bảng, nên
+# tài liệu dài ra bằng `sections` / `clauses` / `questions`.
+#
+# Mẻ này pha loãng tỉ lệ phôi có bảng trong kho: 17/99 (17%) xuống 17/170
+# (10%). Không bỏ bảng khỏi phôi nào -- một `bảng lương` không có bảng thì
+# không còn là bảng lương.
+id: don_mien_giam_hoc_phi
+titles:
+- ĐƠN XIN MIỄN, GIẢM HỌC PHÍ
+subtitles:
+- ''
+- ''
+profile: admin
+org_kind: state
+national: 0.9
+fields:
+- full_name
+- dob
+- address_home
+- object
+field_span:
+- 3
+- 4
+columns: []
+totals: none
+words: false
+sign_sets:
+- - NGƯỜI LÀM ĐƠN
+  - XÁC NHẬN CỦA NHÀ TRƯỜNG
+- - HIỆU TRƯỞNG
+- - GIÁO VIÊN CHỦ NHIỆM
+  - HIỆU TRƯỞNG
+notes:
+- Giấy này chỉ có giá trị trong năm học được ghi.
+- Đề nghị nhà trường xem xét, giải quyết.
+rows:
+- 0
+- 0
+always:
+- letterhead
+- doctitle
+- signatures
+- sections
+optional:
+- meta
+- fields
+- notes
+- footer
+- footnote
+- legal_basis
+- checks
+en_ok: false

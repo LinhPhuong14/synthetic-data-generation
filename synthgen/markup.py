@@ -150,11 +150,22 @@ body{{margin:0;background:#8f8f8f;}}
   text-transform:uppercase;letter-spacing:0.4pt;}}
 .head .line{{display:block;font-size:{_px(base_pt * 0.92)};color:{pal.ink};}}
 .head .lbl{{color:{pal.soft};}}
+.head .val{{font-size:{_px(base_pt * 0.92)};color:{pal.ink};}}
 .head.center{{text-align:center;}}
 .head.right{{text-align:right;}}
 .head.boxed{{border:{rule} solid {pal.rule};padding:2.4mm 3mm;}}
 .head.band{{background:{pal.band_bg};color:{pal.band_fg};padding:2.6mm 3mm;}}
-.head.band .org,.head.band .line,.head.band .parent{{color:{pal.band_fg};}}
+/* `.lbl` và `.val` PHẢI có mặt ở đây. Chúng giữ `pal.soft`/`pal.ink` -- hai
+   màu chọn cho nền GIẤY -- nên trên một dải nền đậm thì chữ xám đậm nằm trên
+   nền đen: đo trên `bang_ke_quyen_loi_00003`, nhãn "Địa chỉ:/Điện thoại:/Mã
+   số thuế:" màu #4a4a4a trên #000000, không đọc được. Bốn trên mười sáu bảng
+   màu có cặp `soft`/`band_bg` tương phản dưới ngưỡng đọc.
+
+   Nhãn mờ hơn giá trị một chút vẫn giữ được bằng `opacity`, thứ ăn theo màu
+   nền chứ không chống lại nó. */
+.head.band .org,.head.band .line,.head.band .parent,
+.head.band .val{{color:{pal.band_fg};}}
+.head.band .lbl{{color:{pal.band_fg};opacity:0.78;}}
 .hrow{{display:table;width:100%;}}
 .hcell{{display:table-cell;vertical-align:top;}}
 .hcell.r{{text-align:center;}}
@@ -198,16 +209,25 @@ body{{margin:0;background:#8f8f8f;}}
 /* ---- trường khoá:giá trị */
 .fields{{width:100%;}}
 .frow{{margin-bottom:{1.0 if d.compact_rows else 1.7}mm;}}
+.fields .fpair{{display:flex;align-items:baseline;gap:1.5mm;}}
 .fgrid{{display:table;width:100%;border-spacing:0;}}
 .fcell{{display:table-cell;vertical-align:top;padding-right:5mm;
   padding-bottom:{1.0 if d.compact_rows else 1.7}mm;}}
 .fields .k{{color:{pal.ink};}}
 .fields .kb{{font-weight:700;}}
 .fields .v{{color:{pal.ink};}}
+/* DÒNG CHẤM CHẠY TỚI LỀ, không dừng sau chữ.
+   `min-width` làm dòng chấm dài đúng bằng giá trị, nên mỗi dòng một độ dài và
+   không dòng nào thẳng cột -- trên giấy thật người ta in sẵn dòng chấm tới
+   lề rồi mới viết vào. Đo trên `giay_chung_nhan_qsdd`: "Sinh ngày: 19/12/1985"
+   có dòng chấm dừng ngay sau chữ số.
+
+   Mẫu đúng ĐÃ có sẵn trong chính file này ở `.toc .dots{{flex:1}}` -- cùng một
+   ý đồ hình ảnh, hai cách làm, và cách sai là cách được dùng nhiều hơn. */
 .fields .dots{{border-bottom:{d.rule_px * 0.8:.2f}mm dotted {pal.rule};
-  display:inline-block;min-width:18mm;}}
+  display:inline-block;flex:1;min-width:18mm;}}
 .fields .ul{{border-bottom:{d.rule_px * 0.8:.2f}mm solid {pal.rule};
-  display:inline-block;min-width:20mm;}}
+  display:inline-block;flex:1;min-width:20mm;}}
 .fields .stack .k{{display:block;font-weight:700;
   font-size:{_px(base_pt * 0.88)};color:{pal.soft};
   text-transform:uppercase;letter-spacing:0.3pt;}}
@@ -226,7 +246,15 @@ table.items{{width:100%;border-collapse:collapse;table-layout:fixed;
   {table_border}}}
 table.items th,table.items td{{{cell_border}padding:{row_pad};
   vertical-align:top;word-wrap:break-word;overflow-wrap:anywhere;}}
-table.items thead th{{{head_fill}font-weight:700;text-align:center;
+/* KHÔNG đặt `text-align` ở đây. `design.COLUMNS[key]['align']` là luật, và
+   bộ phát `<th>` đã gắn đúng class `al`/`ac`/`ar` -- nhưng selector này
+   (đặc tả 0-1-2) thắng `.al/.ac/.ar` (0-1-0) nên mọi tiêu đề cột bị ép canh
+   giữa trong khi ô dữ liệu canh trái/phải. Đo trên `data/review100`: 5/6 tờ
+   có bảng lệch nhãn-dữ liệu, chỗ nặng nhất 280px.
+
+   Một luật, hai người dựng: `COLUMNS` khai, bộ phát HTML tuân, bảng CSS phủ
+   quyết mà không ai báo. */
+table.items thead th{{{head_fill}font-weight:700;
   font-size:{_px(base_pt * 0.94)};}}
 {zebra}
 .al{{text-align:left;}} .ac{{text-align:center;}} .ar{{text-align:right;}}
@@ -235,6 +263,9 @@ table.items td span{{display:inline;}}
 /* ---- bảng phức: tiêu đề hai tầng, hàng số cột, dòng phân mục, cột gom */
 table.items thead tr.tier2 th{{font-size:{_px(base_pt * 0.9)};}}
 table.items thead tr.tier3 th{{font-size:{_px(base_pt * 0.88)};}}
+table.items thead tr.tier4 th{{font-size:{_px(base_pt * 0.86)};}}
+table.items thead tr.banner th{{font-size:{_px(base_pt * 0.98)};
+  letter-spacing:.02em;text-transform:none;}}
 table.items tr.colnum th{{text-align:center;font-style:italic;
   font-weight:400;font-size:{_px(base_pt * 0.82)};}}
 table.items tr.grouphdr td{{font-weight:700;text-align:left;
@@ -286,7 +317,12 @@ table.items table.sub td{{border:none;padding:0 0 0 3mm;
   font-size:{_px(base_pt * 0.94)};}}
 .scell .hint{{display:block;font-style:italic;color:{pal.soft};
   font-size:{_px(base_pt * 0.84)};margin-top:0.6mm;}}
-.scell .who{{display:block;margin-top:{16 if not d.compact_rows else 12}mm;
+/* CHỖ KÝ CHỪA BẰNG CHIỀU CAO CỦA Ô, không bằng margin của một span RỖNG.
+   `.who` rỗng khi tờ chưa có tên người ký, và margin của một span rỗng không
+   chiếm chiều cao ô table-cell -- nên khối ký không còn chỗ ký, chân trang
+   bám ngay dưới "(Ký, ghi rõ họ tên)". Đo được trên 3/12 tờ. */
+.scell{{padding-bottom:{16 if not d.compact_rows else 12}mm;}}
+.scell .who{{display:block;margin-top:{4 if not d.compact_rows else 3}mm;
   font-weight:700;}}
 .signs.boxed .scell{{border:{rule} solid {pal.rule};padding:2mm;}}
 .signs.ruled .scell .who{{border-top:{rule} solid {pal.rule};
@@ -356,6 +392,25 @@ table.items tbody td.tightest,table.items tfoot td.tightest{{
 .clauses .cl{{margin-bottom:{gap * 0.5:.2f}mm;}}
 .clauses .ch{{display:block;font-weight:700;}}
 .clauses .cb{{display:block;text-align:justify;}}
+/* MỤC VĂN XUÔI. Bốn kiểu tiêu đề, lấy từ ảnh thật của `data/pilot16`:
+   `vach_mau` là vạch màu dọc bên trái (`I. THÀNH PHẦN THAM DỰ`), `dam_tron`
+   là in đậm trơn (`ĐIỀU 1: ĐỐI TƯỢNG ỦY QUYỀN`), thêm gạch dưới và khung.
+   Kiểu chốt theo dáng tờ giấy, không bốc lại từng mục -- một văn bản đánh số
+   `I.` ở mục đầu thì mục nào cũng thế. */
+.sect{{margin-bottom:{gap * 0.85:.2f}mm;}}
+.shead{{display:flex;gap:2mm;align-items:baseline;font-weight:700;
+  margin-bottom:{gap * 0.35:.2f}mm;}}
+.shead .snum{{white-space:nowrap;}}
+.shead.vach_mau{{border-left:{max(d.rule_px * 2.4, 0.7):.2f}mm solid {pal.rule};
+  padding-left:2.2mm;}}
+.shead.gach_duoi{{border-bottom:{rule} solid {pal.rule};padding-bottom:0.6mm;}}
+.shead.trong_khung{{border:{rule} solid {pal.rule};padding:0.8mm 1.6mm;
+  background:{pal.zebra};}}
+/* Đoạn văn: CANH ĐỀU và thụt dòng đầu. Đó là dáng một văn bản hành chính
+   thật, và là thứ phân biệt khối này với `notes` (ghi chú ngắn, canh trái). */
+.sbody .spara{{text-align:justify;text-indent:{6 if d.compact_rows else 8}mm;
+  margin-bottom:{gap * 0.4:.2f}mm;}}
+.sbody .spara:last-child{{margin-bottom:0;}}
 .fml{{text-align:center;margin:{gap * 0.4:.2f}mm 0;
   padding:{gap * 0.35:.2f}mm 0;border-top:{rule} solid {pal.rule};
   border-bottom:{rule} solid {pal.rule};font-style:italic;}}
@@ -456,12 +511,22 @@ def _letterhead(doc: Doc, d: Design) -> str:
     lines.append(_span("store.name", doc.org_name, "org"))
     if doc.org_branch:
         lines.append(_span("store.branch", doc.org_branch, "line"))
-    lines.append(_span("store.address.label", "Địa chỉ:", "lbl", role="key"))
-    lines.append(_span("store.address", doc.org_address, "line", role="value"))
-    lines.append(_span("store.phone.label", "Điện thoại:", "lbl", role="key"))
-    lines.append(_span("store.phone", doc.org_phone, "line", role="value"))
-    lines.append(_span("store.tax_code.label", "Mã số thuế:", "lbl", role="key"))
-    lines.append(_span("store.tax_code", doc.org_tax, "line", role="value"))
+    # NHÃN VÀ GIÁ TRỊ CÙNG MỘT DÒNG. `.head .line` là `display:block`, nên khi
+    # cả nhãn lẫn giá trị đều mang class ấy thì "Địa chỉ:" xuống một dòng rồi
+    # địa chỉ xuống dòng nữa -- giấy thật in liền. Đo trên `data/review100`:
+    # 12/12 tờ mắc, và đó là dấu hiệu nhận diện template rõ nhất của cả bộ.
+    #
+    # Bọc cặp trong một `<div class="line">` thay vì đổi class của span: hai
+    # span vẫn là hai run riêng, nên `key_entity_index` và cặp KIE không đổi
+    # một li.
+    for kind, label, value in (("store.address", "Địa chỉ:", doc.org_address),
+                               ("store.phone", "Điện thoại:", doc.org_phone),
+                               ("store.tax_code", "Mã số thuế:", doc.org_tax)):
+        lines.append(
+            '<div class="line">'
+            + _span(f"{kind}.label", label, "lbl", role="key")
+            + " " + _span(kind, value, "val", role="value")
+            + "</div>")
     if doc.org_website:
         lines.append(_span("store.website", doc.org_website, "line"))
     body = "".join(lines)
@@ -576,7 +641,10 @@ def _fields(doc: Doc, d: Design) -> str:
         k = _span("invoice.field.label", f"{label}:", "k kb" if bold else "k",
                   role="key")
         v = _span("invoice.field", value, f"v {leader}".strip(), role="value")
-        cells.append((fdef.wide, f'<div class="{"stack" if stack else ""}">{k} {v}</div>'))
+        # `fpair` là FLEX, để dòng chấm (`flex:1`) chạy tới lề. `stack` xếp
+        # nhãn trên giá trị nên vẫn là block như cũ.
+        cells.append((fdef.wide,
+                      f'<div class="{"stack" if stack else "fpair"}">{k} {v}</div>'))
 
     if columns == 1 or stack:
         rows = "".join(f'<div class="frow">{body}</div>' for _wide, body in cells)
@@ -648,6 +716,82 @@ def _clauses(doc: Doc, d: Design) -> str:
     mẫu người ta điền riêng, nên một vùng mỗi câu là đúng. Ở đây các điều
     là các MỤC của cùng một danh sách."""
     return _clauses_slice(doc, d, 0, len(doc.clauses), 0)
+
+
+# Cách đánh số một mục, và cách in tiêu đề của nó. Bốn kiểu số và bốn kiểu
+# trình bày, bốc theo dáng tờ giấy -- lấy từ ảnh thật của `data/pilot16`:
+# `I. THÀNH PHẦN THAM DỰ` có vạch màu bên trái, `ĐIỀU 1: ĐỐI TƯỢNG` in đậm
+# trơn, và bản báo cáo dùng `1.` `2.` `3.`.
+ROMAN = ('I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X',
+         'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX')
+SECTION_NUMBERS = ('roman', 'arabic', 'letter', 'dieu')
+SECTION_HEADS = ('vach_mau', 'dam_tron', 'gach_duoi', 'trong_khung')
+
+
+def _section_label(style: str, index: int) -> str:
+    """Số thứ tự của mục thứ `index` (đếm từ 0), theo kiểu `style`."""
+    if style == 'roman':
+        return f'{ROMAN[index] if index < len(ROMAN) else index + 1}.'
+    if style == 'letter':
+        return f'{chr(ord("A") + index % 26)}.'
+    if style == 'dieu':
+        return f'ĐIỀU {index + 1}:'
+    return f'{index + 1}.'
+
+
+def _sections_slice(doc: Doc, d: Design, low: int, high: int,
+                    part: int, foot: bool = False, groups: int = 1) -> str:
+    """Các MỤC từ `low` đến `high`: tiêu đề có số thứ tự + các đoạn văn xuôi.
+
+    Vì sao khối này tồn tại, bằng phép đo. Đối chiếu nhãn vùng giữa 291 trang
+    `data/pilot13..16` (LLM viết) và 899 trang synthgen:
+
+        Section-Header   pilot 48%   synthgen 5%
+        Text             pilot 72%   synthgen 60%
+
+    Và nhìn ảnh thì rõ hơn con số: trang pilot là một VĂN BẢN -- `I. THÀNH
+    PHẦN THAM DỰ`, `II. NỘI DUNG NGHIỆM THU`, mỗi mục hai ba đoạn canh đều --
+    còn trang synthgen không bảng vẫn đọc như một BIỂU MẪU, vì khối chữ dài
+    nhất nó có là `clauses`: một dòng tiêu đề cộng một câu.
+
+    Tiêu đề mang `Section-Header`, các đoạn mang `Text`. Đánh số TIẾP qua các
+    tờ, cùng luật `_clauses_slice`: một văn bản thật đánh số mục theo cả văn
+    bản, tờ sau không quay về `I.`
+    """
+    chunk = doc.sections[low:high]
+    if not chunk:
+        return ""
+    # Kiểu số và kiểu tiêu đề chốt theo DÁNG tờ giấy, không bốc lại từng mục:
+    # một văn bản đánh số `I.` ở mục đầu thì mục nào cũng `I.`-`II.`-`III.`.
+    number = SECTION_NUMBERS[d.seed % len(SECTION_NUMBERS)]
+    head_style = SECTION_HEADS[(d.seed // 7) % len(SECTION_HEADS)]
+    out = []
+    for offset, (head, paras) in enumerate(chunk):
+        index = low + offset
+        label = _section_label(number, index)
+        body = "".join(
+            f'<div class="spara">{_span("section.body", para, "sb")}</div>'
+            for para in paras)
+        shell = ""
+        if body:
+            wrap = D.region_attr("section_body")
+            shell = f'<div class="sbody"{wrap}>{body}</div>'
+        out.append(
+            f'<div class="sect" data-flow-item="1">'
+            f'<div class="shead {head_style}"'
+            f'{D.region_attr("section_header")}>'
+            f'{_span("section.number", label, "snum")}'
+            f'{_span("section.head", head, "stext", role="key")}</div>'
+            f'{shell}'
+            f'</div>')
+    return "".join(
+        f'<div class="blk" data-flow="sections">{"".join(part_items)}</div>'
+        for part_items in _chunks(out, groups) if part_items)
+
+
+def _sections(doc: Doc, d: Design) -> str:
+    """Cả khối mục trên MỘT tờ, cho khi `sections` không phải khối chảy."""
+    return _sections_slice(doc, d, 0, len(doc.sections), 0)
 
 
 def _chunks(items: list[str], groups: int) -> list[list[str]]:
@@ -1014,7 +1158,7 @@ def _group_of(doc: Doc, index: int) -> str:
 
 
 def _head(doc: Doc, d: Design, keys: list[str], rail: bool) -> str:
-    """Khối `<thead>`: một, hai hay ba tầng, và hàng số cột nếu có.
+    """Khối `<thead>`: bao nhiêu tầng cũng được, cộng hàng số cột nếu có.
 
     Nhiều tầng dựng bằng `colspan` cho ô gộp và `rowspan` cho ô đứng riêng --
     đúng cách một bảng kê nhà nước hay một tờ khai hải quan in ra, và là dáng
@@ -1022,83 +1166,97 @@ def _head(doc: Doc, d: Design, keys: list[str], rail: bool) -> str:
     duyệt đo (`page.py::CELL_REGIONS_JS` đọc `colSpan`/`rowSpan`), nên không
     có gì phải khai thêm.
 
-    Luật xếp, đúng một câu cho cả ba tầng: mỗi cột thuộc về ô hẹp nhất phủ
-    nó, và ô nào không có tầng dưới thì `rowspan` xuống tới đáy `<thead>`."""
-    tiers = d.head_tiers if doc.col_groups else 1
-    if not doc.col_supers:
-        tiers = min(tiers, 2)
+    LUẬT XẾP, đúng một câu cho mọi tầng: **mỗi ô bắt đầu ngay dưới dải hẹp
+    nhất bao nó, và kéo dài xuống tới khi gặp dải đầu tiên nằm trong nó** --
+    tức tới đáy `<thead>` nếu nó không chứa gì.
+
+    Bản trước dựng ba danh sách `top/middle/bottom` viết tay, nên ba tầng là
+    trần cứng và tầng thứ tư nghĩa là viết lại cả ba. Câu luật trên không đếm
+    tầng, nên nó dựng được bốn tầng bằng đúng số dòng đã dựng ba."""
     offset = 1 if rail else 0
 
+    # Cắt mọi dải về số cột THẬT của bảng trước khi tính gì: `keys` đã lọc bỏ
+    # khoá không có trong `COLUMNS`, còn các dải dựng theo `design.columns`,
+    # nên một dải có thể thò ra ngoài mép bảng. Một `colspan` thò ra là một
+    # hàng tiêu đề rộng hơn thân bảng -- trình duyệt vẫn vẽ, và cái bảng lệch
+    # ấy đi thẳng vào nhãn.
+    bands: list[list[tuple[str, int, int]]] = []
+    for tier in doc.col_bands:
+        kept = [(caption, first, min(width, len(keys) - first))
+                for caption, first, width in tier if first < len(keys)]
+        kept = [band for band in kept if band[2] >= 1]
+        if kept:
+            bands.append(kept)
+    rows_n = len(bands) + 1
+
     # `data-row` của tiêu đề đếm ÂM theo tầng: tầng trên cùng là 0 (đúng như
-    # bảng một tầng vẫn ghi), tầng dưới là -1, -2, và hàng số cột là -3. Dòng
-    # hàng đánh số từ 1 trở lên, nên hai dãy không bao giờ đụng nhau và một
-    # trình đọc phân biệt được "ô này ở tầng nào" mà không phải đoán.
-    def cell(key: str, col: int, tier: int = 0, span: str = "") -> str:
+    # bảng một tầng vẫn ghi), rồi -1, -2, -3, và hàng số cột tiếp ngay sau
+    # tầng cuối. Dòng hàng đánh số từ 1 trở lên, nên hai dãy không bao giờ
+    # đụng nhau và một trình đọc phân biệt được "ô này ở tầng nào" mà không
+    # phải đoán. Hàng số cột KHÔNG còn đóng cứng ở -3: với bảng bốn tầng, -3
+    # đã là một tầng tiêu đề thật.
+    def cell(key: str, col: int, tier: int, down: int) -> str:
         title = doc.col_titles.get(key, COLUMNS[key]["titles"][0])
+        span = f' rowspan="{down}"' if down > 1 else ""
         return (f'<th class="a{COLUMNS[key]["align"][0]}" data-cell="colhdr" '
                 f'data-row="{-tier}" data-col="{col}"{span}>'
                 f'{_span("colhdr", title)}</th>')
 
-    def gathered(caption: str, col: int, width: int, tier: int = 0,
-                 span: str = "") -> str:
+    def gathered(caption: str, col: int, width: int, tier: int, down: int) -> str:
+        span = f' rowspan="{down}"' if down > 1 else ""
         return (f'<th class="ac" data-cell="colhdr" data-row="{-tier}" '
                 f'data-col="{col + offset}" colspan="{width}"{span}>'
                 f'{_span("colhdr", caption)}</th>')
 
-    lead = ""
-    if rail:
-        span = f' rowspan="{tiers}"' if tiers > 1 else ""
-        lead = (f'<th class="ac" data-cell="colhdr" data-row="0" data-col="0"'
-                f'{span}>{_span("colhdr", "Nhóm")}</th>')
-
-    if tiers < 2:
-        rows = f'<tr>{lead}{"".join(cell(k, c + offset) for c, k in enumerate(keys))}</tr>'
+    if rows_n < 2:
+        lead = ""
+        if rail:
+            lead = ('<th class="ac" data-cell="colhdr" data-row="0" '
+                    f'data-col="0">{_span("colhdr", "Nhóm")}</th>')
+        rows = (f'<tr>{lead}'
+                + "".join(cell(k, c + offset, 0, 1) for c, k in enumerate(keys))
+                + '</tr>')
     else:
-        group_at = {first: (caption, width) for caption, first, width in doc.col_groups}
-        in_group = {i for _, first, width in doc.col_groups
-                    for i in range(first, first + width)}
-        super_at = {first: (caption, width) for caption, first, width in doc.col_supers}
-        in_super = {i for _, first, width in doc.col_supers
-                    for i in range(first, first + width)}
+        # Tầng SÂU NHẤT phủ mỗi cột. Ô lá của cột ấy bắt đầu ngay dưới nó.
+        under = [-1] * len(keys)
+        for tier, level in enumerate(bands):
+            for _, first, width in level:
+                for col in range(first, first + width):
+                    under[col] = max(under[col], tier)
 
-        top, middle, bottom = [], [], []
-        col = 0
-        while col < len(keys):
-            if tiers > 2 and col in super_at:
-                caption, width = super_at[col]
-                top.append(gathered(caption, col, width))
-                inner = col
-                while inner < col + width:
-                    if inner in group_at:
-                        sub_caption, sub_width = group_at[inner]
-                        middle.append(gathered(sub_caption, inner, sub_width, 1))
-                        for leaf in range(inner, inner + sub_width):
-                            bottom.append(cell(keys[leaf], leaf + offset, 2))
-                        inner += sub_width
-                    else:
-                        middle.append(cell(keys[inner], inner + offset, 1,
-                                           ' rowspan="2"'))
-                        inner += 1
-                col += width
-                continue
-            if col in group_at:
-                caption, width = group_at[col]
-                deep = ' rowspan="2"' if tiers > 2 else ""
-                top.append(gathered(caption, col, width, 0, deep))
-                for leaf in range(col, col + width):
-                    (bottom if tiers > 2 else middle).append(
-                        cell(keys[leaf], leaf + offset, tiers - 1))
-                col += width
-                continue
-            if col not in in_group and col not in in_super:
-                top.append(cell(keys[col], col + offset, 0,
-                                f' rowspan="{tiers}"'))
-            col += 1
+        def opens_at(first: int, tier: int) -> int:
+            """Hàng mà một ô ở tầng `tier`, bắt đầu ở cột `first`, mở ra."""
+            above = [t for t in range(tier)
+                     if any(f <= first < f + w for _, f, w in bands[t])]
+            return max(above) + 1 if above else 0
 
-        rows = f'<tr>{lead}{"".join(top)}</tr>'
-        rows += f'<tr class="tier2">{"".join(middle)}</tr>'
-        if tiers > 2:
-            rows += f'<tr class="tier3">{"".join(bottom)}</tr>'
+        at: list[list[tuple[int, str]]] = [[] for _ in range(rows_n)]
+        for tier, level in enumerate(bands):
+            for caption, first, width in level:
+                row = opens_at(first, tier)
+                at[row].append(
+                    (first, gathered(caption, first, width, row, tier - row + 1)))
+        for col, key in enumerate(keys):
+            row = under[col] + 1
+            at[row].append((col, cell(key, col + offset, row, rows_n - row)))
+
+        lead = ""
+        if rail:
+            lead = (f'<th class="ac" data-cell="colhdr" data-row="0" '
+                    f'data-col="0" rowspan="{rows_n}">'
+                    f'{_span("colhdr", "Nhóm")}</th>')
+        # Dải chạy hết chiều ngang được gọi tên riêng: nó không phải một
+        # tầng tiêu đề CỘT, nó là một dòng phân mục nằm trong khung bảng, và
+        # trên giấy thật nó in đậm hơn chứ không nhỏ dần như các tầng dưới.
+        banner = (len(bands[0]) == 1 and bands[0][0][1] == 0
+                  and bands[0][0][2] >= len(keys))
+        rows = ""
+        for row in range(rows_n):
+            cls = f' class="tier{row + 1}"' if row else ""
+            if row == 0 and banner:
+                cls = ' class="banner"'
+            line = "".join(html for _, html in sorted(at[row]))
+            rows += f'<tr{cls}>{lead if row == 0 else ""}{line}</tr>'
 
     numbers = ""
     if d.col_numbers:
@@ -1107,10 +1265,11 @@ def _head(doc: Doc, d: Design, keys: list[str], rail: bool) -> str:
         # được lặp lại ở đầu mỗi tờ đúng như tiêu đề cột.
         cells = ""
         if rail:
-            cells += ('<th class="ac" data-cell="colnum" data-row="-3" '
+            cells += ('<th class="ac" data-cell="colnum" '
+                      f'data-row="{-rows_n}" '
                       f'data-col="0">{_span("colnum", "(0)")}</th>')
         cells += "".join(
-            f'<th class="ac" data-cell="colnum" data-row="-3" '
+            f'<th class="ac" data-cell="colnum" data-row="{-rows_n}" '
             f'data-col="{col + offset}">{_span("colnum", f"({col + 1})")}</th>'
             for col in range(len(keys)))
         numbers = f'<tr class="colnum">{cells}</tr>'
@@ -1525,6 +1684,13 @@ SEALS = {
 SEAL_ONLY_FOR: dict[str, tuple[str, ...]] = {
     "seal_round_hotel": ("hotel",),
     "seal_round_export": ("export", "invoice"),
+    # "ĐÃ THU TIỀN / PAID" là con dấu của bên NHẬN tiền. Không có cổng thì nó
+    # đóng lên phiếu CHI (ngược nghĩa: phiếu chi là lúc trả tiền ra), lên thẻ
+    # bảo hành (bảo hành không thu tiền) và lên hợp đồng -- 3/12 tờ đo được
+    # trên `data/review100`. Một con dấu sai nghĩa tệ hơn không có dấu: nó dạy
+    # mô hình rằng dấu ấy xuất hiện ở đâu cũng được.
+    "seal_square_paid": ("invoice", "export", "shop", "menu", "hotel",
+                         "power", "water"),
 }
 
 
@@ -1681,6 +1847,7 @@ _BUILDERS = {
     "questions": _questions,
     "legal_basis": _legal_basis,
     "clauses": _clauses,
+    "sections": _sections,
     "formula": _formula,
     "figure": _figure,
     "footnote": _footnote,
@@ -1701,9 +1868,13 @@ _BUILDERS = {
 # danh sách mục, và `_chunks` cắt chúng thành mấy khối vừa một cột. Bảng thì
 # không: bảy cột bảng nhét vào một cột rộng 8cm thì chữ vỡ ra từng ký tự, và
 # cái hộp đo được của nó không còn tả một cái bảng nào.
+# `sections` KHÔNG chia cột: một đoạn văn canh đều dài bốn năm dòng nhét
+# vào cột rộng 8cm thì mỗi dòng còn ba bốn từ, và đó không phải dáng một
+# văn bản nào in ra.
 COLUMN_SAFE_FLOWS = frozenset({"clauses", "questions"})
 
 FLOW_BUILDERS = {
+    "sections": _sections_slice,
     "table": _table,
     "clauses": _clauses_slice,
     "questions": _questions_slice,
@@ -1790,12 +1961,28 @@ def _page_plan(seed: int, head_names: list[str], tail_names: list[str],
         return out
 
     def spread(groups: list[list[str]], side: int) -> None:
-        span = pages
-        for k, group in enumerate(groups):
-            base = (k * span) // max(len(groups), 1)
-            # Xê dịch một tờ, nghiêng 0: phần lớn giữ đúng chỗ chia đều, một
-            # phần trôi đi -- đủ để hai tài liệu cùng số tờ không cùng bố cục.
-            page = min(max(base + rng.choice((0, 0, 0, 1, -1)), 0), pages - 1)
+        """Rải theo TỜ, không theo khối.
+
+        Bản trước chia đều số khối lên số tờ -- `(k * pages) // len(groups)`.
+        Với ba khối và chín tờ chúng rơi vào tờ 0, 3, 6 và SÁU tờ còn lại
+        trắng, dù ba khối ấy thừa sức xoá ba tờ trắng nếu đứng đúng chỗ. Phép
+        chia ấy tối ưu cho khoảng cách ĐỀU giữa các khối, trong khi thứ phải
+        tối ưu là số tờ KHÔNG trắng.
+
+        Đảo lại: chọn chỗ ngồi ở các tờ GIỮA trước -- tờ đầu và tờ cuối đã có
+        neo, nên một khối tự do rơi vào đó không xoá được tờ trắng nào. Chọn
+        xong mới xếp theo thứ tự tăng dần rồi phát lần lượt, nên THỨ TỰ ĐỌC
+        giữ nguyên: chỉ chỗ đứng đổi, không phải trình tự."""
+        if not groups:
+            return
+        where = list(range(1, pages - 1))
+        rng.shuffle(where)
+        where = where[:len(groups)]
+        # Nhiều khối hơn tờ giữa thì phần thừa bốc đều cả tờ đầu lẫn tờ cuối:
+        # tới đây mọi tờ giữa đã có ít nhất một khối, nên chồng thêm là đúng.
+        while len(where) < len(groups):
+            where.append(rng.randrange(pages))
+        for group, page in zip(groups, sorted(where)):
             plan[page][side].extend(group)
 
     spread(units(free_head), 0)
@@ -1830,9 +2017,23 @@ def markup(doc: Doc, slices: list[tuple[int, int]], faces: str = "") -> str:
     # NGAY SAU thẩm quyền ban hành. Quyết định một lần, trước vòng lặp -- ở
     # trong vòng lặp nó sẽ phụ thuộc vào tờ nào đang vẽ, mà quốc hiệu thì
     # không.
-    wants_national = (d.archetype.org_kind in ("state", "hospital")
-                      and d.head_layout not in ("chia_doi", "chia_doi_co_logo",
-                                                "hai_cot_cach"))
+    # QUỐC HIỆU KHÔNG PHẢI CHUYỆN CỦA RIÊNG CƠ QUAN NHÀ NƯỚC.
+    #
+    # Cổng cũ đòi `org_kind in ("state","hospital")`, nên mọi tờ do một công ty
+    # phát hành -- biên bản họp, giấy uỷ quyền, thông báo tuyển dụng -- in ra
+    # KHÔNG có quốc hiệu nào. Đo trên `data/review100`: 4/12 tờ nhóm hành chính
+    # mất hẳn quốc hiệu. Trên giấy thật, doanh nghiệp Việt Nam vẫn in quốc hiệu
+    # ở mọi văn bản có số hiệu và con dấu; thứ phân biệt không phải loại pháp
+    # nhân mà là LOẠI GIẤY: hoá đơn, thực đơn, thẻ bảo hành thì không.
+    #
+    # `national` là cờ của chính phôi (`rulebase/synthgen/*.yaml`) -- chỗ biết
+    # mình là loại giấy gì. Dùng nó, và chỉ lùi về `org_kind` khi phôi không
+    # khai.
+    # `d.national` do `design.draw()` bốc từ `archetype.national` -- xác suất
+    # của chính phôi, thứ biết mình là loại giấy gì. Hoá đơn và thực đơn khai
+    # 0.08-0.1, công văn và quyết định khai 0.9-0.95.
+    wants_national = d.national and d.head_layout not in (
+        "chia_doi", "chia_doi_co_logo", "hai_cot_cach")
 
     sheets: list[str] = []
     pages = max(len(slices), 1)

@@ -1,0 +1,58 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+#
+# PHÔI KHÔNG BẢNG. `columns: []` và `rows: [0, 0]` là cố ý và là cả điểm của
+# nó: không có dòng hàng nào thì `design.pick_flow` không chọn được bảng, nên
+# tài liệu dài ra bằng `sections` / `clauses` / `questions`.
+#
+# Mẻ này pha loãng tỉ lệ phôi có bảng trong kho: 17/99 (17%) xuống 17/170
+# (10%). Không bỏ bảng khỏi phôi nào -- một `bảng lương` không có bảng thì
+# không còn là bảng lương.
+id: hop_dong_dai_ly
+titles:
+- HỢP ĐỒNG ĐẠI LÝ
+- HỢP ĐỒNG ĐẠI LÝ PHÂN PHỐI
+subtitles:
+- 'Số: ..../HĐĐL'
+- ''
+profile: invoice
+org_kind: company
+national: 0.1
+fields:
+- party_a
+- party_b
+- seller_tax
+- term
+field_span:
+- 3
+- 4
+columns: []
+totals: none
+words: false
+sign_sets:
+- - ĐẠI DIỆN BÊN A
+  - ĐẠI DIỆN BÊN B
+- - BÊN GIAO
+  - BÊN NHẬN
+- - ĐẠI DIỆN BÊN A
+  - ĐẠI DIỆN BÊN B
+  - NGƯỜI LÀM CHỨNG
+notes:
+- Hai bên cam kết thực hiện đúng các nội dung đã thoả thuận.
+- Mọi sửa đổi phải được lập thành văn bản có chữ ký của hai bên.
+- Văn bản có hiệu lực kể từ ngày ký.
+rows:
+- 0
+- 0
+always:
+- letterhead
+- doctitle
+- signatures
+- clauses
+optional:
+- meta
+- fields
+- notes
+- footer
+- footnote
+- toc
+en_ok: false

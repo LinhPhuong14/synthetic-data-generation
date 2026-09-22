@@ -1,0 +1,23 @@
+# SECTIONS_ADMIN — MỤC văn xuôi: một tiêu đề mục và các đoạn văn của nó.
+#
+# Cột 1 là tiêu đề mục (số thứ tự `I.`/`1.`/`A.` do bộ dựng tự đánh, không
+# viết ở đây). Các cột sau là các ĐOẠN của mục ấy, mỗi đoạn một cột.
+#
+# Vì sao có kho này, và vì sao nó khác `clauses_*.txt`. Đối chiếu ảnh thật của
+# `data/pilot16` với ảnh synthgen: trang pilot đọc như một VĂN BẢN -- `I.
+# THÀNH PHẦN THAM DỰ`, `II. NỘI DUNG NGHIỆM THU`, mỗi mục hai ba đoạn văn
+# xuôi canh đều -- còn trang synthgen không bảng vẫn đọc như một BIỂU MẪU, vì
+# khối chữ dài nhất nó có là `clauses`: một dòng tiêu đề cộng một câu.
+#
+# Đo được: nhãn `Section-Header` có trên 48% trang pilot và 5% trang synthgen.
+# Kho này là thứ lấp khoảng ấy, và nó là khối chảy KHÔNG BẢNG thứ ba -- xem
+# `design.FLOW_BLOCKS`.
+
+TÌNH HÌNH CHUNG	Trong kỳ báo cáo, đơn vị đã tiếp nhận và xử lý lượng hồ sơ tăng so với cùng kỳ năm trước. Công tác tiếp nhận tại bộ phận một cửa được duy trì ổn định, không để xảy ra tình trạng ùn ứ kéo dài.	Việc niêm yết công khai thủ tục, thời hạn và lệ phí được thực hiện đầy đủ tại trụ sở và trên trang thông tin điện tử của đơn vị, tạo điều kiện cho tổ chức và công dân tra cứu trước khi đến làm việc.
+CÔNG TÁC TỔ CHỨC CÁN BỘ	Đơn vị đã hoàn thành việc rà soát, sắp xếp lại vị trí việc làm theo đề án được phê duyệt, bảo đảm mỗi nhiệm vụ có một đầu mối chịu trách nhiệm chính.	Công tác đào tạo, bồi dưỡng được triển khai theo kế hoạch năm, ưu tiên các vị trí đang thiếu hụt kỹ năng chuyên môn và nghiệp vụ tiếp dân.
+CẢI CÁCH THỦ TỤC HÀNH CHÍNH	Đơn vị tiếp tục rà soát, đơn giản hoá thành phần hồ sơ và rút ngắn thời hạn giải quyết đối với các thủ tục có số lượng phát sinh lớn. Một số thủ tục đã được chuyển sang tiếp nhận trực tuyến toàn trình.	Kết quả khảo sát mức độ hài lòng cho thấy phần lớn tổ chức và công dân đánh giá tích cực về thái độ phục vụ, tuy vẫn còn ý kiến đề nghị rút ngắn hơn nữa thời gian chờ.
+CÔNG TÁC TIẾP DÂN VÀ GIẢI QUYẾT ĐƠN THƯ	Người đứng đầu đơn vị duy trì lịch tiếp công dân định kỳ, các nội dung phản ánh đều được vào sổ và chuyển đến bộ phận có trách nhiệm xử lý theo thẩm quyền.	Các đơn thư thuộc thẩm quyền đã được giải quyết trong thời hạn quy định. Đối với đơn thư không thuộc thẩm quyền, đơn vị đã hướng dẫn hoặc chuyển đến cơ quan có thẩm quyền và thông báo cho người gửi.
+QUẢN LÝ TÀI CHÍNH, TÀI SẢN	Việc chi tiêu được thực hiện trong phạm vi dự toán được duyệt và theo quy chế chi tiêu nội bộ. Các khoản chi đều có chứng từ hợp lệ và được kiểm soát trước khi thanh toán.	Công tác kiểm kê tài sản cuối kỳ đã hoàn thành, số liệu kiểm kê khớp với sổ theo dõi. Tài sản hết niên hạn được lập hồ sơ đề nghị thanh lý theo quy định.
+CÔNG TÁC VĂN THƯ, LƯU TRỮ	Văn bản đến và văn bản đi đều được vào sổ, phân luồng xử lý và theo dõi đến khi kết thúc. Hồ sơ công việc được lập theo danh mục và nộp lưu trữ đúng thời hạn.	Đơn vị đã hoàn thành việc số hoá một phần tài liệu lưu trữ, bảo đảm có bản sao dự phòng tại địa điểm tách biệt.
+PHƯƠNG HƯỚNG, NHIỆM VỤ	Đơn vị xác định các nhiệm vụ trọng tâm của kỳ tới gồm: hoàn thiện quy chế nội bộ, nâng tỉ lệ hồ sơ giải quyết trước hạn, và tiếp tục chuẩn hoá quy trình phối hợp giữa các bộ phận.	Các bộ phận xây dựng kế hoạch chi tiết trong mười ngày làm việc kể từ ngày văn bản này được ban hành, gửi bộ phận hành chính tổng hợp để trình người đứng đầu phê duyệt.
+TỔ CHỨC THỰC HIỆN	Thủ trưởng các bộ phận trực thuộc chịu trách nhiệm phổ biến nội dung văn bản này đến toàn thể người lao động thuộc quyền quản lý và tổ chức thực hiện.	Bộ phận hành chính theo dõi, đôn đốc và định kỳ báo cáo kết quả thực hiện. Trong quá trình thực hiện, nếu có vướng mắc, các bộ phận phản ánh bằng văn bản để xem xét, điều chỉnh.
