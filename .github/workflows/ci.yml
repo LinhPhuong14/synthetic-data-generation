@@ -1,9 +1,8 @@
 name: ci
 
-# Data-layer checks only. No renderer environment is built: synthtiger pins
-# pillow<10 while WeasyPrint needs a modern one, so the three cannot share an
-# interpreter and installing them here would cost minutes to test code that
-# never touches a pixel.
+# No browser: Playwright's Chromium is not set up here. The tests job does
+# install the renderer's Python half -- numpy, opencv, pillow, scipy --
+# because most of tests/ imports it.
 
 on:
   push:
@@ -26,9 +25,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      # Deliberately nothing else. If a test ever needs numpy or opencv it has
-      # stopped being a data-layer test, and this job is what says so.
-      - run: python -m pip install --upgrade pip pytest pyyaml
+      # numpy, opencv, pillow, scipy: most of tests/ reaches them through the
+      # renderer's Python half -- `sheets/base.py` loads
+      # `tools/make_ornaments.py` (numpy, PIL), `synthgen/markup.py` needs cv2,
+      # the blender warp needs scipy. Measured 2026-09-23: with pytest and
+      # pyyaml alone, test_qr.py and test_synthgen_augment.py fail to import
+      # and pytest stops before running a single test.
+      - run: python -m pip install --upgrade pip pytest pyyaml numpy "opencv-python-headless<5" pillow scipy
       - run: python -m pytest
 
   rules:
@@ -38,11 +41,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      # numpy and opencv are here only so `check-rules` can import
-      # `degradation` and verify that every name in an augmentation chain
-      # exists. Without them it reports the chains as unchecked -- which it
-      # counts as a problem, correctly: "I could not look" is not "it is fine".
-      - run: python -m pip install --upgrade pip pyyaml numpy "opencv-python-headless<5"
+      # numpy, opencv and scipy are here only so `check-rules` can import
+      # `degradation` -- scipy for its blender warp -- and verify that every
+      # name in an augmentation chain exists. Without them it reports the
+      # chains as unchecked -- which it counts as a problem, correctly: "I
+      # could not look" is not "it is fine".
+      - run: python -m pip install --upgrade pip pyyaml numpy "opencv-python-headless<5" scipy
       - run: python tasks.py check-rules
       - run: python tasks.py check-corpus
       - run: python tasks.py check
