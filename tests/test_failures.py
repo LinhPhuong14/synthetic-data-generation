@@ -73,7 +73,16 @@ def test_no_sheet_at_all_is_schema_violation():
 
 
 def test_an_unknown_data_kind_is_schema_violation():
-    bad = '<div class="sheet"><span data-kind="totally.bogus.kind">X</span></div>'
+    """Tên phải sai NGỮ PHÁP, không chỉ sai từ vựng.
+
+    `totally.bogus.kind` từng là fixture ở đây và nó KHÔNG còn sai: cổng cho
+    model đặt tên mới miễn theo `họ.trường[.nhãn]` -- xem `llm_page._COINED`
+    và `compose_page.kind_pattern()`. Một fixture "sai" mà cổng nhận là một
+    test xanh nhờ nhầm lẫn, và nó sẽ không bao giờ bắt được lỗi nó được viết
+    ra để bắt.
+
+    `Seal.Round` thì sai thật, và sai đúng kiểu model hay sai: chữ hoa."""
+    bad = '<div class="sheet"><span data-kind="Seal.Round">X</span></div>'
     assert _one(problems(bad)) == F.SCHEMA_VIOLATION
 
 

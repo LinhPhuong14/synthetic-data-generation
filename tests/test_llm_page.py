@@ -361,3 +361,35 @@ def test_the_gate_and_the_decoder_agree_on_what_a_name_may_look_like():
         passes_gate = (name in known or _rooted(name, known)
                        or bool(_COINED.match(name)))
         assert bool(decoder.match(name)) == passes_gate, name
+
+
+def test_all_three_places_that_judge_a_kind_name_agree():
+    """Ba chỗ ép cùng một luật, và chúng từng lệch nhau.
+
+        `synthgen/llm_page.py::problems`        -- cổng chữ
+        `agent/compose_page.py::schema`         -- ngữ pháp bộ giải mã
+        `agent/compose_page.py::plan_problems`  -- kiểm `field_plan`
+
+    Chỗ thứ ba quên vế `_COINED`, nên nó loại `menu.number` và
+    `contract.party_a`: tên mà lời dặn CHO PHÉP đặt, bộ giải mã sinh ra được,
+    và cổng chữ chấp nhận. Model làm đúng mọi điều được dặn rồi mất cả tờ --
+    đo được trên `data/23-09-llm-i`, và nó đốt trọn một lượt gọi 82 giây.
+
+    Lệch nhau kiểu này không hỏng to: nó hỏng ở chỗ thứ ba, ba bước sau chỗ
+    quyết, và đọc lên như "model không nghe lời"."""
+    import re as _re
+
+    from agent.compose_page import kind_pattern, plan_problems
+    from synthgen.llm_page import acceptable_kind
+
+    decoder = _re.compile(kind_pattern())
+    known = kinds()
+    sheet = '<div class="sheet"></div>'
+    for name in ("menu.number", "contract.party_a", "title", "note",
+                 "inspection.finding.label", "clause.1.body",
+                 "Seal.Round", "bia", "a.b.c.d.e"):
+        good = acceptable_kind(name, known)
+        assert bool(decoder.match(name)) == good, f"bộ giải mã lệch: {name}"
+        plan = {"field_plan": [{"label": "x", "kind": name}]}
+        said = any("từ vựng" in w for w in plan_problems(plan, sheet))
+        assert said != good, f"`plan_problems` lệch: {name}"

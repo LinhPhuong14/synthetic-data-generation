@@ -214,3 +214,136 @@ def test_a_pair_without_guidelines_has_no_such_key(monkeypatch, tmp_path):
     page = kie.build_page(blocks, layout="cong_van")
     pair = next(p for p in page["pairs"] if p["field"] == "dia_chi")
     assert "guidelines" not in pair
+
+
+# ===========================================================================
+# NGÔN NGỮ CỦA CÂU TẢ
+#
+# `synthgen/phrasing.py` giữ bốn cách nói cho mỗi câu gốc: hai Anh, hai Việt.
+# Trộn CÁCH NÓI là chủ ý -- một câu lặp 7 920 lần dạy mô hình học thuộc câu
+# chứ không học nghĩa. Trộn NGÔN NGỮ là trục khác, và trước 23-09-2026 không
+# ai chọn nó: đo trên `data/thu1k`, 7,0% câu tả ra tiếng Anh, dồn vào vài
+# nguồn (`implied` 69%, `llm` 53%, `rule` 100%) trong khi bốn nguồn dựng câu
+# TỪ chữ in thì 0%. Bảy phần trăm là tỉ lệ tệ nhất cho cả hai đường.
+# ===========================================================================
+
+
+def test_the_pool_offers_both_languages_for_every_base_sentence():
+    """Một câu gốc chỉ có một thứ tiếng thì `description_lang` không ép được
+    nó, và nó lặng lẽ thành ngoại lệ trên cả bộ dữ liệu."""
+    from synthgen.phrasing import language_of, pool
+
+    one_sided = {base: sorted({language_of(c) for c in choices})
+                 for base, choices in pool().items()
+                 if len({language_of(c) for c in choices}) < 2}
+    assert not one_sided, (
+        f"{len(one_sided)} câu gốc chỉ có một thứ tiếng: "
+        f"{list(one_sided)[:3]}")
+
+
+def test_choosing_a_language_keeps_more_than_one_way_of_saying_it():
+    """Ép ngôn ngữ mà chỉ còn một cách nói thì đổi một bệnh lấy bệnh kia:
+    hết lẫn tiếng, nhưng cả bộ lại đọc lên như một cái máy."""
+    from synthgen.phrasing import describe, language_of, pool
+
+    for base in list(pool())[:40]:
+        for lang in ("vi", "en"):
+            said = {describe(base, seed, "x", ordinal=seed, lang=lang)
+                    for seed in range(12)}
+            assert {language_of(s) for s in said} == {lang}, base
+            assert len(said) > 1, f"{base} / {lang}: chỉ một cách nói"
+
+
+GLUED = (
+    ("Tax identification number of the seller: “0312345678”.",
+     "Tax identification number of the seller.", ": ", "“0312345678”."),
+    ("Answer ticked for the question printed beside it — “Có”.",
+     "Answer ticked for the question printed beside it.", " — ", "“Có”."),
+    ("Value printed on the sheet beside the caption “1. Thời hạn”.",
+     "Value printed on the sheet beside the caption.", " ", "“1. Thời hạn”."),
+)
+
+
+def test_a_sentence_with_the_printed_text_glued_on_still_gets_a_voice():
+    """`kie_full` dựng câu tả bằng câu gốc + chữ in dán vào đuôi. Chuỗi ghép
+    ấy không khớp kho, nên trước bản sửa nó đi thẳng qua `describe()` không
+    đổi: giữ tiếng Anh, giữ một cách nói duy nhất. Đo trên `data/thu1k`: 416
+    câu tiếng Anh còn lại thuộc ĐÚNG 12 mẫu, và 11 trong 12 là câu gốc CÓ
+    trong kho cộng một cái đuôi."""
+    from synthgen.phrasing import _split_quoted, describe, language_of
+
+    for whole, head, sep, tail in GLUED:
+        assert _split_quoted(whole) == (head, sep, tail), whole
+        said = describe(whole, 7, "x", ordinal=3, lang="vi")
+        assert language_of(said.split("“")[0]) == "vi", said
+        assert said.endswith(tail), f"mất phần trích: {said}"
+
+
+def test_a_plain_sentence_is_not_mistaken_for_a_glued_one():
+    """Phép tách chỉ được chạy khi câu KHÔNG có trong kho. Một câu gốc kết
+    thúc bằng dấu ngoặc kép vẫn phải đi đường thường."""
+    from synthgen.phrasing import _split_quoted
+
+    assert _split_quoted("Motto line printed under the national heading.") == ("", "", "")
+    assert _split_quoted("") == ("", "", "")
+
+
+# ===========================================================================
+# NHÁNH LÙI CỦA `implied_for` — nơi 658/666 câu tiếng Anh sinh ra
+# ===========================================================================
+
+
+def test_a_generated_description_is_never_english():
+    """`implied_for` chế câu cho MỌI `kind` không có trong `IMPLIED`, và câu
+    nó chế không bao giờ khớp kho cách nói (mỗi `kind` một câu riêng). Nên
+    `description_lang` không với tới được nó: nó đi thẳng ra bộ dữ liệu đúng
+    như được viết.
+
+    Đo trên `data/23-09-llm-g`: 66,6% câu tả ra tiếng Anh, và 658 trên 666
+    câu ấy đến từ đúng nhánh này."""
+    from synthgen.kie_full import IMPLIED, NEVER, implied_for
+    from synthgen.llm_page import kinds
+    from synthgen.phrasing import language_of
+
+    english = {}
+    for kind in sorted(kinds()):
+        if kind in IMPLIED or kind in NEVER or kind.startswith("menu."):
+            continue
+        got = implied_for(kind)
+        if got and language_of(got[1]) == "en":
+            english[kind] = got[1]
+    assert not english, f"{len(english)} kind ra câu tiếng Anh: {list(english)[:4]}"
+
+
+def test_the_vietnamese_glossary_covers_every_token_the_engine_emits():
+    """Token lạ giữ nguyên tiếng Anh -- câu vẫn đọc được, chỉ lẫn một chữ.
+    Nhưng một token của CHÍNH engine mà thiếu thì là lỗ hổng biết trước."""
+    import re
+
+    from synthgen.kie_full import _WORDS_VI
+    from synthgen.llm_page import kinds
+
+    missing = {w for kind in kinds() for w in re.split(r"[._]+", kind)
+               if w and w not in _WORDS_VI}
+    assert not missing, f"thiếu token: {sorted(missing)}"
+
+
+def test_a_compound_name_reads_head_first_the_way_vietnamese_does():
+    """`kind` viết theo lối Anh (`legal.basis` = "legal" bổ nghĩa "basis").
+    Dịch xuôi ra "Pháp lý căn cứ" -- đúng chữ, sai tiếng."""
+    from synthgen.kie_full import implied_for
+
+    assert implied_for("legal.basis")[1].startswith("Căn cứ pháp lý")
+    assert implied_for("clause.head")[1].startswith("Tiêu đề điều khoản")
+    assert implied_for("store.address")[1].startswith("Địa chỉ đơn vị")
+
+
+def test_only_label_marks_a_printed_caption_not_title():
+    """`.label` là caption của trường kia -- `page.md` mục 9. `.title` thì
+    KHÔNG: `sign.title` là CHỨC DANH người ký. Một hậu tố nhập nhằng không
+    được làm luật."""
+    from synthgen.kie_full import implied_for
+
+    assert implied_for("store.tax_code.label")[1].startswith("Nhãn in của")
+    assert not implied_for("sign.title")[1].startswith("Nhãn in của")
+    assert "Chức danh" in implied_for("sign.title")[1]

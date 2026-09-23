@@ -10,6 +10,7 @@ file vẫn mở được còn cái đọc nó thì vỡ.
 
 from __future__ import annotations
 
+import numpy as np
 import pytest
 
 pytest.importorskip("numpy", reason="augment.py imports numpy")
@@ -55,6 +56,16 @@ def a_record():
     }
 
 
+def a_sheet():
+    """Tấm ảnh giả, ĐÚNG khổ mà bản ghi khai (60x60).
+
+    `warp_record` đọc `aged.shape` để ghi hộp theo cả hai hệ -- pixel và phần
+    nghìn. Một `object()` trần đủ dùng hồi hàm ấy chỉ ghi pixel; từ khi nó ghi
+    cả phần nghìn thì khuôn giả phải mang hình dạng thật, nếu không phép chia
+    cho bề rộng trang không có bề rộng nào để chia."""
+    return np.zeros((60, 60, 3), np.uint8)
+
+
 @pytest.fixture()
 def shifted(monkeypatch):
     """Thay phép cong thật bằng một phép dịch +3 pixel.
@@ -73,29 +84,77 @@ def shifted(monkeypatch):
 # ------------------------------------------------------ hộp đi theo trang cong
 
 
+# Hộp gốc (10,10)-(20,20) dịch +3 thành (13,13)-(23,23) PIXEL trên tờ 60x60,
+# tức (217,217)-(383,383) PHẦN NGHÌN. Viết cả hai ra đây chứ không tính trong
+# test: một kỳ vọng tính bằng đúng công thức mà mã đang dùng thì nó đồng ý với
+# mọi công thức, kể cả công thức sai.
+PX = [13.0, 13.0, 23.0, 23.0]
+MIL = [217, 217, 383, 383]
+
+
 def test_every_kind_of_box_moves_and_keeps_its_own_shape(shifted):
+    """Hộp đi theo trang cong, và về ĐÚNG hình dạng của chính nó.
+
+    Bốn kiểu hộp, bốn hình dạng khác nhau trong bản ghi: `word` có `polygon`
+    vòng kín, `entity` chỉ có `lines`, `block.bbox` là DICT còn `word.bbox` là
+    DANH SÁCH. Một phép cong viết cho một kiểu rồi áp cho cả bốn sẽ đổi hình
+    dạng của ba kiểu kia, và bản ghi vẫn đọc được -- chỉ là sai."""
     record = a_record()
-    A.warp_record("bất kỳ", None, None, object(), record, page=1)
+    A.warp_record("bất kỳ", None, None, a_sheet(), record, page=1)
 
     word = record["word_annotations"][0]
-    assert word["polygon"][0] == [13, 13]
-    assert word["polygon"][0] == word["polygon"][-1], "polygon phải là vòng kín"
-    assert word["bbox"] == [13, 13, 23, 23]
+    assert word["bbox_px"] == PX
+    assert word["bbox"] == MIL
+    assert word["polygon_px"][0] == [13.0, 13.0]
+    assert word["polygon"][0] == [217, 217]
+    for key in ("polygon", "polygon_px"):
+        assert word[key][0] == word[key][-1], f"{key} phải là vòng kín"
 
     # `entity` không có polygon và không được mọc thêm một cái.
     entity = record["entity_annotations"][0]
     assert "polygon" not in entity
-    assert entity["bbox"] == [13.0, 13.0, 23.0, 23.0]
-    assert entity["lines"] == [[13, 13, 23, 23]]
+    assert entity["bbox_px"] == PX
+    assert entity["bbox"] == MIL
+    assert entity["lines"] == [MIL]
 
     # `block.bbox` là DICT, `entity.bbox` và `word.bbox` là DANH SÁCH.
     block = record["blocks"][0]
-    assert block["bbox"] == {"x1": 13, "y1": 13, "x2": 23, "y2": 23}
-    assert block["quad"] == [[13, 13], [23, 13], [23, 23], [13, 23]]
+    assert block["bbox_px"] == {"x1": 13, "y1": 13, "x2": 23, "y2": 23}
+    assert block["bbox"] == {"x1": 217, "y1": 217, "x2": 383, "y2": 383}
 
     pair = record["kie"]["pairs"][0]
-    assert pair["key_bbox"] == {"x1": 4, "y1": 4, "x2": 8, "y2": 8}
-    assert pair["value_bbox"] == {"x1": 13, "y1": 13, "x2": 23, "y2": 23}
+    assert pair["key_bbox_px"] == {"x1": 4, "y1": 4, "x2": 8, "y2": 8}
+    assert pair["value_bbox_px"] == {"x1": 13, "y1": 13, "x2": 23, "y2": 23}
+    assert pair["value_bbox"] == {"x1": 217, "y1": 217, "x2": 383, "y2": 383}
+
+
+def test_both_coordinate_systems_are_written_or_neither_is():
+    """PIXEL và PHẦN NGHÌN phải cùng có mặt trên MỌI hộp đã cong.
+
+    Chú thích trong `augment.warp_record` nói thẳng vì sao: ghi pixel mà quên
+    phần nghìn thì bản ghi nói hộp ở chỗ CŨ, ghi phần nghìn mà quên pixel thì
+    lần làm cũ sau không còn gì để cong. Một trong hai thiếu là một bộ dữ liệu
+    hỏng mà không ảnh nào nhìn ra."""
+    record = a_record()
+
+    def fake(name, image, params, rng, *lists):
+        return (image, *[[{**b, "quad": [[x + 3, y + 3] for x, y in b["quad"]]}
+                          for b in r] for r in lists])
+
+    A.W.warp_regions, was = fake, A.W.warp_regions
+    try:
+        A.warp_record("bất kỳ", None, None, a_sheet(), record, page=1)
+    finally:
+        A.W.warp_regions = was
+
+    for key in ("word_annotations", "entity_annotations", "layout_annotations"):
+        for item in record.get(key) or []:
+            if int(item.get("page_number", 1) or 1) != 1:
+                continue
+            assert "bbox_px" in item and "bbox" in item, f"{key}: thiếu một hệ"
+    for pair in record["kie"]["pairs"]:
+        for side in ("key", "value"):
+            assert f"{side}_bbox_px" in pair and f"{side}_bbox" in pair
 
 
 def test_a_page_that_was_not_aged_keeps_its_boxes(shifted):
@@ -105,7 +164,7 @@ def test_a_page_that_was_not_aged_keeps_its_boxes(shifted):
     theo trang mà quên lọc sẽ cong tất cả -- và tờ hai sẽ mang hộp của một
     phép cong nó chưa từng đi qua."""
     record = a_record()
-    A.warp_record("bất kỳ", None, None, object(), record, page=1)
+    A.warp_record("bất kỳ", None, None, a_sheet(), record, page=1)
     assert record["word_annotations"][1]["polygon"][0] == [30, 30]
 
 
@@ -118,7 +177,7 @@ def test_one_call_warps_every_list_so_they_share_one_field(monkeypatch):
         return (image, *[list(regions) for regions in region_lists])
 
     monkeypatch.setattr(A.W, "warp_regions", counting)
-    A.warp_record("bất kỳ", None, None, object(), a_record(), page=1)
+    A.warp_record("bất kỳ", None, None, a_sheet(), a_record(), page=1)
     assert calls == [7]
 
 

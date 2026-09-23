@@ -1554,7 +1554,13 @@ def _table(doc: Doc, d: Design, low: int, high: int, part: int,
 
     caption = ""
     if doc.table_caption and part == 0:
-        caption = _span("caption.table", doc.table_caption, "tcap")
+        # CHÚ THÍCH BẢNG PHẢI TỰ KHAI VÙNG, vì `<table>` cố tình không khai.
+        # Vùng `Table` do `CELL_REGIONS_JS` dựng TỪ CHÍNH CÁC Ô, nên câu chú
+        # thích -- nằm NGOÀI `<table>` -- không tổ tiên nào ôm. Đo được: seed
+        # 20, run `caption.table: 'NỘI DUNG CHI TIẾT'` rơi khỏi mọi vùng.
+        # Cùng cặp `Figure`/`Caption` mà `_figure` đã dựng ngay trên.
+        caption = (f'<div{D.region_attr("table_caption")}>'
+                   f'{_span("caption.table", doc.table_caption, "tcap")}</div>')
     money_key = keys[money_col] if money_col >= 0 else keys[-1]
     tfoot = (_tfoot(doc, d, width, high,
                     money_col + offset if money_col >= 0 else -1,

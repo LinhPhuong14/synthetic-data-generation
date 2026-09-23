@@ -301,6 +301,9 @@ region:
   formula: Formula
   figure: Figure
   figure_caption: Caption  # `_figure` in RA HAI vùng; đây là vùng thứ hai.
+  table_caption: Caption   # chú thích bảng. `table` KHÔNG khai vùng (xem
+                           # ghi chú bên dưới) nên câu này không có tổ tiên
+                           # nào ôm -- phải tự khai, cùng lẽ `figure_caption`.
   toc: Table-Of-Contents
   totals: Text
   words: Text
@@ -381,5 +384,117 @@ region:
 # Đường siết theo số đo trên: 0.99 -> 0.85 (cắt phân vị 90) -> 0.45 (cắt phân
 # vị 75) -> 0.15. Mỗi bậc đo lại tỉ lệ qua cổng TRƯỚC khi đi tiếp: kho này đã
 # một lần siết luật kế hoạch mà không đo trước, và nó giết 4 trên 6 tờ.
+# ---------------------------------------------------------------------------
+# region_alias: TÊN VÙNG MODEL HAY VIẾT NHẦM -> tên thật
+#
+# `data-region` là từ vựng ĐÓNG (20 nhãn, `synthgen/llm_page.py::REGIONS`).
+# Model thỉnh thoảng viết một cái tên nghe đúng mà không có trong bảng, và
+# gần như luôn vì nó lẫn HAI TRỤC: `masthead` là một `data-kind` CÓ THẬT của
+# engine -- tên của một khối chữ -- chứ không phải tên một vùng bố cục.
+#
+# Đo trên `data/23-09-llm-b` (10 tờ, gpt-4.1-mini): 3 tờ trượt cổng chỉ vì
+# ba cái tên dưới đây. Không tên nào là một khái niệm MỚI; cả ba đều có đúng
+# một chỗ đúng trong bảng nhãn thật.
+#
+# Vì sao là DỮ LIỆU: thêm một bí danh là thêm một dòng ở đây, không phải sửa
+# `repair.py`. Và vì sao chỉ ở đây: một bảng bí danh viết trong mã là người
+# dựng thứ hai của cùng một luật -- đúng lỗi nặng nhất kho này có.
+#
+# Chỉ nhận bí danh có ĐÚNG MỘT cách chữa. Một cái tên model bịa mà không ai
+# biết nó định nói gì thì KHÔNG vào đây: để cổng loại, đúng nguyên tắc
+# `synthgen/repair.py` -- một cái hộp gán nhãn đoán còn tệ hơn không có hộp.
+region_alias:
+  masthead: Page-Header      # `masthead` là data-kind của engine, không phải vùng
+  header: Page-Header
+  footer: Page-Footer
+  note: Text
+  notes: Text
+  body: Text
+  paragraph: Text
+  heading: Section-Header
+  subtitle: Section-Header
+  list: List-Group
+  signature: Text            # KHỐI CHỮ KÝ LÀ CHỮ -- xem `signatures` ở `region:`
+  seal: Stamp
+  logo: Image
+  figure_caption: Caption
+  toc: Table-Of-Contents
+
+# --- plan_drop_share -------------------------------------------------------
+#
+# Tỉ lệ `kind` model hứa trong `field_plan` mà trang KHÔNG in ra. Vượt ngưỡng
+# thì trang bị loại.
+#
+# Con số này PHỤ THUỘC MODEL, và đó là lý do nó ở đây chứ không trong mã:
+#
+#   Qwen3-27B  (pilot9)  23/24 tờ bỏ <= 20%, một tờ bỏ 60%  -> 0.2 đúng
+#   gpt-4.1-mini (23-09) bỏ 35-90%, 8/10 tờ trượt           -> 0.2 vứt dữ liệu tốt
+#
+# Cả tám tờ ấy có nhãn ĐÚNG PIXEL ở mọi hộp chúng có. `field_plan` là bản
+# NHÁP của model, không vào bộ huấn luyện -- ảnh, hộp và KIE mới vào. Trang
+# in ít hơn nháp là trang NHỎ HƠN, không phải trang SAI; chiều nguy hiểm là
+# `kie` khai giá trị không có trên giấy, và phép kiểm khác lo chiều ấy.
+#
+# 0.9 = chỉ bắt tờ vứt gần sạch kế hoạch. Đổi model thì đo lại rồi đổi số này,
+# đừng đổi mã.
+# ---------------------------------------------------------------------------
+# kie: LUẬT CỦA NHÃN KIE
+#
+# --- description_lang ---
+#
+# Ngôn ngữ của câu mô tả trường. `vi`, `en`, hoặc rỗng = trộn như cũ.
+#
+# `synthgen/phrasing.py` giữ BỐN cách nói cho mỗi câu gốc: hai tiếng Anh, hai
+# tiếng Việt. Trộn CÁCH NÓI là chủ ý và đúng -- một mô hình học trên một câu
+# lặp 7 920 lần thì học thuộc câu chứ không học nghĩa. Trộn NGÔN NGỮ là trục
+# khác, và trước dòng này không ai chọn nó: nó rơi ra từ chỗ nguồn nào đông.
+#
+# Đo trên `data/thu1k` (120 bản ghi, 25 538 cặp), sau khi bỏ phần trích chữ
+# in ra khỏi phép nhận ngôn ngữ:
+#
+#   survey / column / clause / sign ... 0% tiếng Anh  (dựng câu TỪ chữ in)
+#   implied .......................... 69% tiếng Anh
+#   llm .............................. 53% tiếng Anh
+#   rule / caption ................... 100% tiếng Anh
+#   ---------------------------------------------------
+#   CẢ BỘ ............................ 7,0% tiếng Anh
+#
+# Bảy phần trăm là tỉ lệ tệ nhất cho cả hai đường: quá ít để mô hình học được
+# tiếng Anh, đủ nhiều để thành nhiễu. Và 57 trường mang CẢ HAI thứ tiếng --
+# cùng một trường, hai ngôn ngữ, trong cùng một bộ.
+#
+# `vi` vì tờ giấy là tiếng Việt. Muốn một bộ tiếng Anh thì đổi đúng dòng này;
+# muốn trộn có chủ đích thì để rỗng và nói rõ trong báo cáo lượt chạy.
+# ---------------------------------------------------------------------------
+# llm_density: MỘT TỜ GIẤY CHỨA BAO NHIÊU, theo từng mức `density`
+#
+# `agent/grammar.py` rút một trong bốn mức cho mỗi tài liệu, và lời nhờ trước
+# đây chỉ in ra CÁI TÊN (`- density: dense`). Model phải tự đoán "dense" là
+# bao nhiêu, và nó đoán thấp: đo trên 12 tài liệu LLM, 626-1 095 ký tự mỗi tờ
+# THẬT, trong khi lời nhờ xin 8 000.
+#
+# Số dưới đây ĐO TỪ NHÁNH LUẬT -- 58 tài liệu trong `data/thu1k`, thứ đã chạy
+# và đã được soi bằng mắt:
+#
+#   ký tự chữ / tờ : p25 854 · trung vị 1 175 · p75 1 661
+#   dòng bảng / tờ : p25 4   · trung vị 11    · p75 19
+#
+# Nên 8 000 ký tự/tờ trong lời nhờ cũ KHÔNG phải mục tiêu đúng -- nó gấp bảy
+# lần tờ giấy thật. Giấy tờ hành chính Việt Nam không phải văn xuôi dày; một
+# tờ đơn hay biên bản có chừng một nghìn ký tự và rất nhiều khoảng trắng.
+#
+# `rows` là số dòng bảng MỖI TỜ, không phải cả tài liệu: lời nhờ nhân với số
+# tờ đã xin. Đó là cách duy nhất "xin 8 tờ" ra được tám tờ -- bảng phải dài
+# gấp tám, chứ không phải chữ phải dày gấp tám.
+llm_density:
+  sparse:     {chars: 850,  rows: 5}
+  medium:     {chars: 1200, rows: 11}
+  dense:      {chars: 1650, rows: 19}
+  very_dense: {chars: 2200, rows: 26}
+
+kie:
+  description_lang: vi
+
 gate:
   orphan_share: 0.99
+  plan_drop_share: 0.9

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 import yaml
-from conftest import build_rules, write_rules_dir
+from conftest import build_rules, default_spec, write_rules_dir
 
 from rulebase.spec import (
     ATTRIBUTES,
@@ -722,13 +722,18 @@ def test_load_rules_sees_a_file_that_changed_under_it(tmp_path):
     dựng rules root riêng và sửa file trong đó sẽ nhận lại luật CŨ, không báo
     lỗi, không hiện ra ở đâu -- đúng loại hỏng mà tốc độ không bù nổi.
     """
-    spec = build_rules()
+    spec = default_spec()
     root = write_rules_dir(tmp_path / "rules", spec, order=list(ATTRIBUTES))
     before = len(load_rules(root)["color"])
 
     raw = yaml.safe_load((root / "color.yaml").read_text(encoding="utf-8"))
-    values = raw["color"] if isinstance(raw, dict) and "color" in raw else raw
-    values.append({"id": "mực_tím_thêm_sau", "weight": 1})
+    # KHẲNG ĐỊNH định dạng, không ĐOÁN nó. Bản trước thử khoá `"color"` rồi
+    # lùi về `raw` khi trượt -- và nó trượt mọi lần, vì mọi tệp luật trên đĩa
+    # (`rulebase/rules/color.yaml`) đều có gốc là `{"options": [...]}`. Một
+    # phép đoán có nhánh lùi im lặng là cách một test sai mà vẫn trông như
+    # đang kiểm thứ gì đó.
+    assert list(raw) == ["options"], f"định dạng tệp luật đổi: {list(raw)}"
+    raw["options"].append({"id": "mực_tím_thêm_sau", "weight": 1})
     (root / "color.yaml").write_text(
         yaml.safe_dump(raw, allow_unicode=True, sort_keys=False), encoding="utf-8")
 
@@ -739,8 +744,8 @@ def test_load_rules_sees_a_file_that_changed_under_it(tmp_path):
 
 def test_two_rules_roots_do_not_share_one_cached_answer(tmp_path):
     """Một lượt chạy dựng cây riêng của nó rồi chuyển sang; hai cây phải tách."""
-    one = write_rules_dir(tmp_path / "một", build_rules(), order=list(ATTRIBUTES))
-    spec = build_rules()
+    one = write_rules_dir(tmp_path / "một", default_spec(), order=list(ATTRIBUTES))
+    spec = default_spec()
     raw = spec["color"]
     raw.append({"id": "chỉ_có_ở_cây_hai", "weight": 1})
     two = write_rules_dir(tmp_path / "hai", spec, order=list(ATTRIBUTES))
@@ -754,7 +759,7 @@ def test_two_rules_roots_do_not_share_one_cached_answer(tmp_path):
 def test_a_caller_that_edits_the_returned_lists_does_not_poison_the_cache(tmp_path):
     """Bản trả về là bản sao nông: `Option` frozen nên chia sẻ được, dict và
     list thì không -- một caller lọc tại chỗ sẽ sửa luôn bản của mọi caller sau."""
-    root = write_rules_dir(tmp_path / "rules", build_rules(), order=list(ATTRIBUTES))
+    root = write_rules_dir(tmp_path / "rules", default_spec(), order=list(ATTRIBUTES))
     expected = len(load_rules(root)["color"])
     load_rules(root)["color"].clear()
     assert len(load_rules(root)["color"]) == expected

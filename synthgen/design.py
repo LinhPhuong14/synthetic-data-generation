@@ -970,6 +970,40 @@ def block_region(name: str) -> str:
     return str(value).strip() if isinstance(value, str) else ""
 
 
+def region_alias() -> dict:
+    """`{tên model hay viết nhầm: nhãn vùng thật}`, đọc từ `_blocks.yaml`.
+
+    Khoá chuẩn hoá về chữ thường: model viết `Masthead` và `masthead` trong
+    cùng một lô, và hai dòng YAML cho một cái tên là hai người dựng của cùng
+    một luật.
+
+    Rỗng khi thiếu file -- và khi ấy mọi tên lạ về đúng hành vi cũ: cổng gác
+    loại nguyên tờ. Bí danh là thứ làm giàu, không phải thứ bắt buộc."""
+    raw = _blocks_yaml().get("region_alias") or {}
+    return {str(k).strip().lower(): str(v).strip()
+            for k, v in raw.items() if str(v).strip()}
+
+
+def llm_density(level: str) -> dict:
+    """`{chars, rows}` mỗi TỜ cho một mức `density`, đọc từ `_blocks.yaml`.
+
+    Rỗng khi thiếu khai -- chỗ gọi tự lùi về hành vi cũ. Xem ghi chú trong
+    chính file YAML về việc những con số ấy đo ở đâu ra."""
+    table = _blocks_yaml().get("llm_density") or {}
+    got = table.get(str(level or "").strip().lower())
+    return dict(got) if isinstance(got, dict) else {}
+
+
+def kie_option(name: str, default=""):
+    """`_blocks.yaml::kie` tên `name`, hoặc `default`.
+
+    Cùng lẽ `gate_ceiling`: mặc định do CHỖ GỌI nói ra, vì chỗ gọi là nơi biết
+    "thiếu cấu hình thì hành vi an toàn là gì". Với `description_lang` thì an
+    toàn là RỖNG -- trộn như cũ, không lặng lẽ đổi cả bộ dữ liệu."""
+    value = (_blocks_yaml().get("kie") or {}).get(name, default)
+    return value if value is not None else default
+
+
 def gate_ceiling(name: str, default: float) -> float:
     """Ngưỡng `_blocks.yaml::gate` tên `name`, hoặc `default` nếu chưa khai.
 

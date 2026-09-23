@@ -26,6 +26,7 @@ tả.
 from __future__ import annotations
 
 import json
+import re
 import zlib
 from functools import lru_cache
 from pathlib import Path
@@ -600,6 +601,22 @@ POOL: dict[str, tuple[str, ...]] = {
         "Tiêu đề phụ in dưới tiêu đề chính.",
         "Dòng phụ đề nằm ngay dưới tên chứng từ.",
     ),
+    # Hai câu này KHÔNG có trong kho cho tới 23-09-2026, và vì thế chúng đi
+    # thẳng qua `describe()` không đổi: 30 câu tiếng Anh trong `data/thu1k`
+    # mà không cách nào đổi giọng. Một câu gốc thiếu ở đây thì mất đa dạng,
+    # không mất mô tả -- nhưng "mất đa dạng" ở đây nghĩa là một câu lặp 24 lần.
+    "Motto line printed under the national heading.": (
+        "Motto line printed under the national heading.",
+        "State motto printed beneath the national heading.",
+        "Dòng tiêu ngữ in dưới quốc hiệu.",
+        "Câu tiêu ngữ của nhà nước, in ngay dưới dòng quốc hiệu.",
+    ),
+    "Value printed on the sheet beside the caption.": (
+        "Value printed on the sheet beside the caption.",
+        "Entry printed next to the caption that names it.",
+        "Giá trị in trên tờ giấy, ngay cạnh nhãn gọi tên nó.",
+        "Nội dung điền vào bên cạnh dòng nhãn in sẵn.",
+    ),
     "Note or condition printed on the document.": (
         "Note or condition printed on the document.",
         "A remark or term the issuer printed on the sheet.",
@@ -910,7 +927,71 @@ def canonical_of() -> dict[str, str]:
     return out
 
 
-def describe(text: str, seed, field: str = "", ordinal: int | None = None) -> str:
+# Dấu tiếng Việt. Nhận ngôn ngữ của MỘT CÂU TRONG KHO -- câu tĩnh, không có
+# phần trích chữ trên giấy, nên một phép thử dấu là đủ và không có ca biên.
+# (Câu do `kie_full` DỰNG thì khác: nó nhét chữ Việt vào một câu Anh, và đo
+# ngôn ngữ của những câu ấy phải bỏ phần trong ngoặc trước. Kho ở đây không
+# có câu nào như thế.)
+_VN_MARKS = "ăâđêôơưàáảãạằắẳẵặầấẩẫậèéẻẽẹềếểễệìíỉĩịòóỏõọồốổỗộờớởỡợùúủũụừứửữựỳýỷỹỵ"
+
+
+# Phần TRÍCH DẪN không nói gì về ngôn ngữ của câu.
+_QUOTED = re.compile(r"[“\"'‘][^”\"'’]*[”\"'’]")
+
+
+@lru_cache(maxsize=4096)
+def language_of(say: str) -> str:
+    """`vi` hoặc `en` cho một cách nói -- đọc CÂU, không đọc phần trích.
+
+    Chữ in trên giấy Việt Nam luôn là tiếng Việt, và nhiều câu tả nhét nó vào
+    giữa một câu tiếng Anh: `The person signing as “THƯ KÝ” on this document.`
+    Đếm dấu trên cả chuỗi thì câu ấy thành "tiếng Việt", và bộ lọc ngôn ngữ
+    giữ lại đúng những câu nó phải loại. Đo được: 19 câu gốc trong kho bị
+    nhận nhầm đúng kiểu ấy."""
+    low = _QUOTED.sub(" ", str(say or "")).lower()
+    return "vi" if any(ch in low for ch in _VN_MARKS) else "en"
+
+
+def _in_language(choices: tuple[str, ...], lang: str) -> tuple[str, ...]:
+    """Lọc kho về đúng một thứ tiếng. Rỗng thì trả nguyên kho.
+
+    Không có câu nào đúng tiếng thì thà một câu sai tiếng còn hơn không có
+    mô tả -- cùng lẽ `describe()` trả nguyên câu khi kho không có nó."""
+    if lang not in ("vi", "en"):
+        return choices
+    kept = tuple(c for c in choices if language_of(c) == lang)
+    return kept or choices
+
+
+# Câu gốc + đuôi trích: `<câu>: “chữ”.` hoặc `<câu> — “chữ”.`
+# `sep` GIỮ NGUYÊN khoảng trắng hai bên như bản gốc đã viết: `head: “x”.` không
+# có dấu cách trước hai chấm, còn `head — “x”.` thì có. Nuốt mất nó thì câu ra
+# `…dòng này— “Có”.` -- đúng chữ, sai nhà in.
+# Ba cách dán, cả ba đều có thật trong `kie_full`:
+#   `<câu>: “chữ”.`      -- `SELF_NAMED`
+#   `<câu> — “chữ”.`     -- ô tích của câu hỏi
+#   `<câu> “chữ”.`       -- chú thích, không dấu nối nào
+# Dấu cách trần phải đứng CUỐI trong nhánh chọn: để trước thì nó nuốt luôn
+# hai ca kia và `sep` mất dấu nối.
+_GLUED = re.compile(
+    r"^(?P<head>.+?)(?P<sep>\s*:\s*|\s*—\s*|\s+)(?P<tail>[“\"][^”\"]*[”\"]\.?)$")
+
+
+def _split_quoted(say: str) -> tuple[str, str, str]:
+    """`(câu gốc, dấu nối, phần trích)` -- rỗng cả ba nếu không phải câu ghép.
+
+    Câu gốc trả về ĐÃ có dấu chấm cuối, vì khoá của kho là câu trọn vẹn."""
+    match = _GLUED.match(str(say or "").strip())
+    if not match:
+        return "", "", ""
+    head = match.group("head").rstrip()
+    if not head.endswith("."):
+        head += "."
+    return head, match.group("sep"), match.group("tail")
+
+
+def describe(text: str, seed, field: str = "", ordinal: int | None = None,
+             lang: str = "") -> str:
     """Một cách nói của `text`, chọn theo `(seed, field, CÂU GỐC)`.
 
     Băm theo câu GỐC chứ không theo `text` đưa vào, nên chạy lại trên một bộ
@@ -938,9 +1019,44 @@ def describe(text: str, seed, field: str = "", ordinal: int | None = None) -> st
     chứng từ."""
     wanted = str(text or "").strip()
     canon = wanted if wanted in pool() else canonical_of().get(wanted, "")
+    if not canon:
+        # ĐUÔI TRÍCH DẪN DÁN VÀO LÀM CÂU TRƯỢT KHO.
+        #
+        # `kie_full` dựng câu tả bằng cách lấy một câu gốc -- câu CÓ trong kho
+        # -- rồi dán chữ in trên giấy vào đuôi:
+        #
+        #     "Tax identification number of the seller: “0312345678”."
+        #     "Answer ticked for the question printed beside it — “Có”."
+        #
+        # Chuỗi ghép ấy không bao giờ khớp kho, nên nó đi thẳng qua hàm này
+        # không đổi: giữ nguyên tiếng Anh, giữ nguyên một cách nói duy nhất.
+        # Đo trên `data/thu1k`: 416 câu tiếng Anh còn lại sau khi lọc ngôn ngữ
+        # thuộc ĐÚNG 12 mẫu, và cả 12 đều là câu gốc có sẵn trong kho cộng một
+        # cái đuôi.
+        #
+        # Tách đuôi ra, đổi giọng phần ĐẦU, rồi gắn lại: câu giữ nguyên phần
+        # phân biệt (chữ in là thứ nói cho người đọc biết đây là trường NÀO),
+        # mà vẫn nhận được cả ngôn ngữ lẫn cách nói của kho.
+        head, sep, tail = _split_quoted(wanted)
+        if head:
+            fresh = describe(head, seed, field, ordinal, lang)
+            return f"{fresh[:-1] if fresh.endswith('.') else fresh}{sep}{tail}"
     choices = pool().get(canon)
     if not choices:
         return text
+    # MỘT BỘ, MỘT THỨ TIẾNG -- nếu lượt chạy đã chốt.
+    #
+    # Kho có bốn cách nói cho mỗi câu: hai Anh, hai Việt. Trộn CÁCH NÓI là
+    # đúng (docstring đầu file nói vì sao). Trộn NGÔN NGỮ là trục khác, và
+    # trộn nó không chủ đích thì ra tỉ lệ tệ nhất cho cả hai đường: đo trên
+    # `data/thu1k`, 7,0% câu tả là tiếng Anh -- quá ít để mô hình học được
+    # tiếng Anh, đủ nhiều để thành nhiễu; 57 trường mang cả hai thứ tiếng.
+    #
+    # Tỉ lệ ấy lại không phải 50/50 như kho ngụ ý: `survey`/`column`/
+    # `clause`/`sign` dựng câu TỪ CHỮ IN nên chúng luôn tiếng Việt, còn
+    # `implied` 69% Anh và `llm` 53% Anh. Không ai chọn con số 7% -- nó rơi ra
+    # từ chỗ nguồn nào đông hơn.
+    choices = _in_language(choices, lang)
     # `seed` PHẢI có trong `start`, và việc thiếu nó là lỗi đo được.
     #
     # Quay vòng theo `ordinal` lo việc hai tài liệu LIỀN NHAU lệch nhau một
@@ -1071,6 +1187,20 @@ def ordinal_of(stem: str) -> int:
     return int(found[0]) if found else 0
 
 
+def _configured_language() -> str:
+    """`rulebase/synthgen/_blocks.yaml::kie.description_lang`, hoặc rỗng.
+
+    Rỗng = trộn như cũ. Đọc lười và nuốt lỗi: `phrasing.py` phải chạy được cả
+    khi không có `synthgen.design` (nó là gói chữ, không phải gói bố cục), và
+    thiếu cấu hình phải là "giữ nguyên hành vi", không phải hỏng."""
+    try:
+        from synthgen.design import kie_option                 # noqa: PLC0415
+
+        return str(kie_option("description_lang", "") or "").strip().lower()
+    except Exception:                                          # noqa: BLE001
+        return ""
+
+
 def voice_record(record: dict, pairs: list[dict], *, stem: str = "",
                  ordinal: int | None = None) -> None:
     """Đổi giọng mô tả cho MỘT bản ghi, tại chỗ. Luỹ đẳng.
@@ -1095,6 +1225,7 @@ def voice_record(record: dict, pairs: list[dict], *, stem: str = "",
     seed = record.get("job_id") or record.get("filename", "")
     if ordinal is None:
         ordinal = ordinal_of(stem or str(record.get("filename") or ""))
+    lang = _configured_language()
 
     for pair in pairs:
         # Khoá theo CỘT chứ không theo ô: `qty_r1` và `qty_r7` là cùng một cột
@@ -1103,7 +1234,7 @@ def voice_record(record: dict, pairs: list[dict], *, stem: str = "",
         pair["description"] = describe(pair.get("description", ""), seed,
                                        str(pair.get("column")
                                            or pair.get("field", "")),
-                                       ordinal=ordinal)
+                                       ordinal=ordinal, lang=lang)
 
     # MỖI TRƯỜNG MỘT CÂU RIÊNG, trong phạm vi một trang.
     #
@@ -1153,7 +1284,7 @@ def voice_record(record: dict, pairs: list[dict], *, stem: str = "",
         elif entity.get("description"):
             entity["description"] = describe(str(entity["description"]), seed,
                                              str(entity.get("field_name", "")),
-                                             ordinal=ordinal)
+                                             ordinal=ordinal, lang=lang)
 
     # ÉP DUY NHẤT LẦN CUỐI, sau khi đã đổi giọng. `kie_full.complete` đã ép một
     # lần, nhưng đổi giọng chạy SAU nó và có thể đưa hai trường về cùng một câu

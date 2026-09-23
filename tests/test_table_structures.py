@@ -138,12 +138,42 @@ def test_cells_come_back_in_reading_order():
 # ------------------------------------------------------- nhiều bảng, nhiều trang
 
 
+TWO_ON_ONE_PAGE = """
+<div class="sheet">
+  <table>
+    <thead><tr><th>Tên</th><th>Số lượng</th></tr></thead>
+    <tbody><tr><td>Máy in</td><td>2</td></tr></tbody>
+  </table>
+  <table>
+    <thead><tr><th>Khoản</th><th>Số tiền</th></tr></thead>
+    <tbody><tr><td>Thuế GTGT</td><td>100</td></tr></tbody>
+  </table>
+</div>
+"""
+
+
 def test_two_tables_on_one_page_are_two_entries():
     """Hai bảng cùng trang phải là hai mục: gộp chúng là cách cột số 1 của
-    bảng dưới đè lên cột số 1 của bảng trên."""
+    bảng dưới đè lên cột số 1 của bảng trên -- đo trên `data/pilot13`, tờ
+    `insurance_partner_cert_application` mất 69 trên 273 cặp đúng vì thế."""
+    found = table_structures(TWO_ON_ONE_PAGE)
+    assert len(found) == 2
+    assert [t["page"] for t in found] == [1, 1]
+    assert len({t["table_id"] for t in found}) == 2
+
+
+def test_the_first_table_of_every_page_gets_its_own_id():
+    """Bản trước đánh id theo SỐ BẢNG TRONG TRANG, nên bảng đầu của mọi trang
+    đều là `t1`. Tài liệu một tờ không thấy gì; tài liệu 2-10 tờ thì
+    `export.py` gom theo `table_id` và hai bảng nhập làm một.
+
+    Kiểm bằng "hai id khác nhau", không kiểm đúng chuỗi: hình dạng id là việc
+    của `kie_full.table_key`, còn lời hứa ở đây là DUY NHẤT."""
     found = table_structures(DATA_TABLE + CONTINUATION)
     assert len(found) == 2
-    assert {t["table_id"] for t in found} == {"t1", "t2"}
+    assert [t["page"] for t in found] == [1, 2]
+    assert len({t["table_id"] for t in found}) == 2, (
+        f"hai bảng hai trang mang cùng id: {[t['table_id'] for t in found]}")
 
 
 def test_pages_are_counted_from_the_sheet_divs():

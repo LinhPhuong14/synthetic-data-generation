@@ -248,6 +248,322 @@ def zoned(html: str) -> tuple[str, int]:
     return "".join(out), len(inserts)
 
 
+def zones(html: str) -> tuple[str, int]:
+    """Đổi `data-region` model viết nhầm thành nhãn thật. `(html, số chỗ)`.
+
+    Bảng ở `rulebase/synthgen/_blocks.yaml::region_alias` -- DỮ LIỆU, xem ghi
+    chú trong chính file ấy. Ở đây chỉ có phép thay.
+
+    Khớp KHÔNG PHÂN BIỆT HOA THƯỜNG, và một nhãn ĐÚNG viết sai hoa thường
+    cũng được nắn: model viết `Masthead` và `masthead` trong cùng một lô, và
+    `Page-header` với `Page-Header` là cùng một vùng đối với mắt người mà là
+    hai thứ khác nhau đối với cổng gác.
+
+    KHÔNG đoán ngoài bảng: tên lạ không có trong bí danh thì để nguyên, và
+    cổng loại tờ ấy. Đúng nguyên tắc đầu file -- chỉ chữa thứ có đúng một
+    cách chữa."""
+    from synthgen.design import region_alias                   # noqa: PLC0415
+    from synthgen.llm_page import REGIONS                      # noqa: PLC0415
+
+    table = dict(region_alias())
+    # Nhãn THẬT cũng vào bảng, để phép nắn hoa thường chạy cho chúng.
+    table.update({label.lower(): label for label in REGIONS})
+    if not table:
+        return html, 0
+    fixed = 0
+
+    def swap(match: "re.Match") -> str:
+        nonlocal fixed
+        quote, name = match.group(1), match.group(2)
+        key = name.strip().lower()
+        # SỐ NHIỀU TRA VỀ SỐ ÍT. Model viết `Signatures`, `Notes`, `Figures`
+        # -- cùng khái niệm, thêm một chữ `s`. Kê từng dạng vào YAML là kê một
+        # quy tắc chính tả bằng danh sách; bỏ `s` khi trượt là nói ra quy tắc.
+        #
+        # An toàn vì KHÔNG nhãn thật nào trong hai mươi nhãn kết thúc bằng
+        # `s` -- `tests/test_tags.py` giữ điều đó, nên phép bỏ `s` không bao
+        # giờ biến một nhãn đúng thành nhãn khác.
+        real = table.get(key) or (table.get(key[:-1]) if key.endswith("s")
+                                  else None)
+        if not real or real == name:
+            return match.group(0)
+        fixed += 1
+        return f'data-region={quote}{real}{quote}'
+
+    out = re.sub(r"""data-region=(["'])([^"']*)\1""", swap, html)
+    return out, fixed
+
+
+_SPAN_TAG = re.compile(r"<(/?)span\b((?:[^>\"']|\"[^\"]*\"|'[^']*')*)>",
+                       re.IGNORECASE)
+_HAS_KIND = re.compile(r"\bdata-kind\s*=", re.IGNORECASE)
+
+
+def unnest(html: str) -> tuple[str, int]:
+    """Bóc `<span>` KHÔNG nhãn nằm trong `<span data-kind>`. `(html, số chỗ)`.
+
+    `CELL_RECTS_JS` đo `span.firstElementChild || span`: một thẻ bất kỳ lồng
+    trong run có nhãn LẶNG LẼ trở thành cái hộp được ghi. Trang vẫn vẽ ra,
+    nhãn vẫn có, và nhãn sai.
+
+    `dress()` ngay trên đã lo ca ấy, nhưng chỉ khi thẻ lồng là con DUY NHẤT
+    (`_INNER` đòi `<span k><b>X</b></span>`) và chỉ với thẻ trang trí đã kê
+    tên. Model viết kiểu khác: `<span data-kind="note"><span
+    class="clause-number">1.</span> Nội dung…</span>` -- một span đánh số
+    đứng TRƯỚC chữ. Đo trên `data/23-09-llm-f`: 5 trên 12 tờ trượt vì đúng
+    hình này.
+
+    Một `<span>` không mang `data-kind` thì THEO ĐỊNH NGHĨA là trang trí --
+    nó không khai mình là trường nào. Bóc thẻ, giữ chữ: hộp trở lại đúng chữ,
+    và cái mất là kiểu dáng của riêng mẩu ấy. Đổi một chút hình thức lấy một
+    cái hộp đúng là đổi đúng chiều; trang bị loại thì mất cả hai.
+
+    KHÔNG đụng span có nhãn lồng trong span có nhãn: đó là hai trường, và gộp
+    chúng là đoán xem trường nào thắng."""
+    out: list[str] = []
+    at = 0
+    depth = 0          # độ sâu span đang mở
+    labelled: list[int] = []   # độ sâu của những span CÓ nhãn đang mở
+    drop: list[int] = []       # độ sâu của những span đang bị bóc
+    removed = 0
+    for match in _SPAN_TAG.finditer(html):
+        closing, attrs = match.group(1), match.group(2)
+        if closing:
+            if drop and drop[-1] == depth:
+                drop.pop()
+                out.append(html[at:match.start()])
+                at = match.end()
+                removed += 1
+            if labelled and labelled[-1] == depth:
+                labelled.pop()
+            depth = max(depth - 1, 0)
+            continue
+        depth += 1
+        has_kind = bool(_HAS_KIND.search(attrs))
+        if has_kind:
+            labelled.append(depth)
+        elif labelled:
+            # span trần BÊN TRONG một run có nhãn -> bóc
+            drop.append(depth)
+            out.append(html[at:match.start()])
+            at = match.end()
+    out.append(html[at:])
+    return ("".join(out), removed) if removed else (html, 0)
+
+
+_PATH_SPAN = re.compile(
+    r'<span([^>]*\bdata-path\s*=\s*("([^"]*)"|\'([^\']*)\')[^>]*)>(.*?)</span>',
+    re.IGNORECASE | re.DOTALL)
+_PATH_ATTR = re.compile(r"""\s*\bdata-path\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)""",
+                        re.IGNORECASE)
+
+
+def unclash(html: str) -> tuple[str, int]:
+    """Bỏ `data-path` khỏi những run CÙNG đường dẫn mà KHÁC chữ.
+
+    Cổng đòi "cùng `data-path` thì cùng giá trị", và đòi đúng: một đường dẫn
+    là một DANH TÍNH, nên hai chữ khác nhau dưới một danh tính là bản ghi tự
+    mâu thuẫn. Nhưng nó loại cả tờ, và cái mâu thuẫn ấy nằm ở một thuộc tính
+    mà **chỉ 28% run có** -- `data-kind` (trục nhãn thật) và cái hộp thì vẫn
+    đúng cả.
+
+    Đo trên `data/23-09-llm-f`: 4 trên 12 tờ trượt vì đúng chuyện này, và
+    nhìn HTML thì thấy model dùng lại `document.number` cho cả tiêu đề lẫn số
+    hiệu -- hai `meta.value` khác chữ, một đường dẫn.
+
+    ## Vì sao bỏ CẢ HAI chứ không giữ một
+
+    Giữ cái đầu là đoán rằng cái đầu mới là chủ của đường dẫn. Đoán sai thì
+    một run mang danh tính của run khác -- một nhãn SAI, im lặng, và nhãn sai
+    tệ hơn nhãn thiếu. Bỏ cả hai thì không run nào mang danh tính sai; cái
+    mất chỉ là một lời khai, và `data_path_mismatches` vốn là hàm ĐO chứ
+    không phải hàm GÁC.
+
+    Đường dẫn dùng lại mà CÙNG chữ thì để yên: đó là một giá trị in hai chỗ,
+    và lời dặn cho phép -- xem mục 7 của `page.md`."""
+    texts: dict[str, set[str]] = {}
+    for match in _PATH_SPAN.finditer(html):
+        path = match.group(3) if match.group(3) is not None else match.group(4)
+        body = " ".join(_TAG.sub("", match.group(5)).split())
+        if body:
+            texts.setdefault(str(path), set()).add(body)
+    clashing = {p for p, seen in texts.items() if len(seen) > 1}
+    if not clashing:
+        return html, 0
+    dropped = 0
+
+    def strip(match: "re.Match") -> str:
+        nonlocal dropped
+        attrs = match.group(1)
+        path = match.group(3) if match.group(3) is not None else match.group(4)
+        if str(path) not in clashing:
+            return match.group(0)
+        dropped += 1
+        return f"<span{_PATH_ATTR.sub('', attrs, count=1)}>{match.group(5)}</span>"
+
+    return _PATH_SPAN.sub(strip, html), dropped
+
+
+_TBODY = re.compile(r"(<tbody\b[^>]*>)(.*?)(</tbody>)", re.IGNORECASE | re.DOTALL)
+_TR = re.compile(r"<tr\b.*?</tr>", re.IGNORECASE | re.DOTALL)
+_ITEM_PATH = re.compile(r"\b(\w+)\[(\d+)\]\.(\w+)")
+_DATA_ROW = re.compile(r'(\bdata-row=")(\d+)(")', re.IGNORECASE)
+_CELL_SPAN = re.compile(
+    r'(<span[^>]*\bdata-path="([^"]*)"[^>]*>)([^<]*)(</span>)', re.IGNORECASE)
+# Con số TRONG một ô, kèm phần chữ hai bên (`6.720 USD`, `đ 1.250.000`).
+_NUMBER_IN = re.compile(r"^(?P<head>\D*?)(?P<num>\d[\d.,]*)(?P<tail>\D*)$")
+_GROUPED = re.compile(r"^\d{1,3}(?:[.,]\d{3})+$")
+
+
+def _like(sample: str, value) -> str:
+    """`value` viết theo ĐÚNG kiểu `sample` đang viết.
+
+    Kiểu số lấy từ chính ô mẫu, không từ một quy ước đoán: ô đang in
+    `1.250.000` thì dòng mới cũng in `1.250.000`; ô in `1250000` thì giữ
+    nguyên thế. Ô mẫu là lời khai của model về cách tờ giấy này viết số, và
+    đó là lời khai duy nhất có.
+
+    ## Phần chữ hai bên cũng là kiểu
+
+    Bản đầu chỉ nhận ô số THUẦN, nên `6.720 USD` không khớp `_GROUPED` và
+    dòng mới in `6720`: mất cả dấu nhóm lẫn đơn vị. Đo trên `data/23-09-llm-h`:
+    18 tờ trượt vì `('6.720 USD', '6720')`, `('30', '30 USD')` -- cùng một
+    đường dẫn, hai cách viết, và cổng loại cả tờ.
+
+    Giữ nguyên phần không phải số, thay đúng phần số: `6.720 USD` ->
+    `7.200 USD`. Không đoán đơn vị nào cả -- nó đã có sẵn trong ô mẫu."""
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return str(value if value is not None else "")
+    number = int(value)
+    body = " ".join(str(sample or "").split())
+    got = _NUMBER_IN.match(body)
+    if not got:
+        return str(number)
+    head, digits, tail = got.group("head"), got.group("num"), got.group("tail")
+    if _GROUPED.match(digits):
+        sep = "." if "." in digits else ","
+        fresh = f"{number:,}".replace(",", sep)
+    else:
+        fresh = str(number)
+    return f"{head}{fresh}{tail}"
+
+
+def rows_out(html: str, rows) -> tuple[str, int]:
+    """Dựng nốt những dòng bảng model đã KHAI mà không vẽ. `(html, số dòng)`.
+
+    ## Vì sao việc này tồn tại
+
+    Model trả về hai thứ cho cùng một cái bảng: mảng `rows` trong JSON, và các
+    `<tr>` trong HTML. Chúng lệch nhau, và lệch rất xa. Đo trên 48 tài liệu
+    (`data/23-09-llm-d..g`): **22 tài liệu khai nhiều dòng hơn vẽ**, tệ nhất
+    là khai 129 dòng và vẽ 18.
+
+    Hệ quả đo được là cái cổng "xin N tờ, dàn ra M<N" -- 11 trên 12 tờ của lô
+    `g` trượt vì đúng nó, và mọi lỗi markup khác đã hết. Bảng không dài ra thì
+    không có gì để cắt sang tờ sau.
+
+    ## Vì sao KHÔNG phải bịa nội dung
+
+    Chữ của dòng mới là chữ MODEL ĐÃ VIẾT, nằm sẵn trong `rows`. Engine không
+    nghĩ ra một mặt hàng nào, không tra corpus nào. Nó chỉ đưa vào HTML thứ đã
+    có trong câu trả lời -- và `rows` chính là mảng mà phép kiểm số học
+    (`qty × unit_price == amount`) vẫn chấm, nên nội dung ấy đã được soi.
+
+    ## Vì sao không cần đoán cột nào là cột nào
+
+    Dòng mẫu mang sẵn câu trả lời: `data-path="line_items[13].name"` nói cả
+    CHỈ SỐ lẫn TÊN TRƯỜNG. Nhân bản dòng cuối rồi thay chỉ số và giá trị là
+    một phép chép, không phải một phép suy. Kiểu viết số cũng lấy từ ô mẫu
+    (xem `_like`), nên dòng mới không lạc kiểu với dòng cũ.
+
+    Không có `<tbody>`, không có `<tr>` nào, hay dòng cuối không mang
+    `data-path` dạng `x[i].y` -- thì KHÔNG làm gì: không có mẫu nào để chép,
+    và dựng một dòng từ hư không là đúng thứ file này không làm."""
+    items = [r for r in (rows or []) if isinstance(r, dict)]
+    if len(items) < 2:
+        return html, 0
+    # ĐÚNG MỘT BẢNG MANG ĐƯỜNG DẪN `x[i].y`, nếu không thì không làm gì.
+    #
+    # `rows` tả MỘT cái bảng. Tờ giấy có thể có nhiều: đo trên 18 tài liệu,
+    # **6 tờ có từ hai `<tbody>` trở lên** -- bảng dàn trang ở đầu tờ, bảng
+    # tổng ở cuối, bảng con trong một ô. Bơm dòng vào cái ĐẦU TIÊN là đoán
+    # rằng `rows` tả cái ấy, và đoán sai thì một bảng dài ra bằng nội dung
+    # của bảng khác.
+    #
+    # Lọc theo đường dẫn chứ không theo thứ tự: bảng dàn trang không mang
+    # `line_items[i].name` nào, nên nó tự rơi ra. Còn lại đúng một cái thì
+    # không có gì để đoán; hai cái thì có, và khi ấy dừng.
+    bodies = [m for m in _TBODY.finditer(html) if _ITEM_PATH.search(m.group(2))]
+    if len(bodies) != 1:
+        return html, 0
+    found = bodies[0]
+    body = found.group(2)
+    drawn = _TR.findall(body)
+    if not drawn:
+        return html, 0
+    template = drawn[-1]
+    seats = _ITEM_PATH.findall(template)
+    if not seats:
+        return html, 0
+    root, at, _field = seats[0]
+    at = int(at)
+    if at + 1 >= len(items):
+        return html, 0
+
+    # NẮN CHÍNH DÒNG MẪU TRƯỚC. Một dòng có MỘT danh tính, nên mọi ô của nó
+    # phải mang một chỉ số. Model viết lệch -- `line_items[0].name` cạnh
+    # `line_items[10].muc` trong cùng một `<tr>` -- và nếu để nguyên thì bản
+    # nhân ở chỉ số 10 đụng đúng ô lệch ấy: một đường dẫn, hai chữ, cổng loại
+    # cả tờ.
+    seat_now = re.compile(rf"\b{re.escape(root)}\[\d+\]\.")
+    fixed_template = seat_now.sub(f"{root}[{at}].", template)
+    if fixed_template != template:
+        body = body.replace(template, fixed_template, 1)
+        template = fixed_template
+
+    row_no = _DATA_ROW.search(template)
+    base_row = int(row_no.group(2)) if row_no else at
+
+    made: list[str] = []
+    for step, item in enumerate(items[at + 1:], start=1):
+        index = at + step
+
+        def swap(match: "re.Match", item=item, index=index) -> str:
+            head, path, text, tail = match.groups()
+            got = _ITEM_PATH.search(path)
+            if not got or got.group(1) != root:
+                return match.group(0)
+            field = got.group(3)
+            # Cột số thứ tự đếm theo CHỖ NGỒI, không có trong `rows`.
+            value = (index + 1 if field in ("stt", "no", "index", "num")
+                     else item.get(field))
+            if value is None:
+                return match.group(0)
+            fresh = head.replace(f"{root}[{at}].", f"{root}[{index}].")
+            return f"{fresh}{_like(text, value)}{tail}"
+
+        clone = _CELL_SPAN.sub(swap, template)
+        # MỌI chỉ số trong dòng nhân bản về `index`, không chỉ chỉ số của ô
+        # ĐẦU TIÊN.
+        #
+        # Bản trước thay chuỗi `root[at].` -- tức giả định mọi ô trong dòng
+        # mẫu dùng chung một chỉ số. Model không nhất quán thế: một ô mang
+        # `line_items[6].quantity` cạnh một ô `line_items[16].muc`. Ô lệch
+        # giữ nguyên chỉ số cũ ở MỌI dòng nhân ra, nên một đường dẫn mang hai
+        # chữ khác nhau và cổng loại cả tờ -- đo được trên `xin 8 -> cắt ra 4
+        # tờ`, một tờ 433 cặp KIE mất trắng vì đúng chuyện này.
+        clone = re.sub(rf"\b{re.escape(root)}\[\d+\]\.",
+                       f"{root}[{index}].", clone)
+        clone = _DATA_ROW.sub(
+            lambda m: f"{m.group(1)}{base_row + step}{m.group(3)}", clone)
+        made.append(clone)
+
+    if not made:
+        return html, 0
+    filled = found.group(1) + body + "".join(made) + found.group(3)
+    return html[:found.start()] + filled + html[found.end():], len(made)
+
+
 def repair(html: str) -> tuple[str, dict[str, int]]:
     """Chữa hết những gì chữa được. `(html mới, {việc: số lần})`."""
     from synthgen.llm_page import kinds                        # noqa: PLC0415
@@ -257,18 +573,32 @@ def repair(html: str) -> tuple[str, dict[str, int]]:
     # tên lạ -- ngược thứ tự thì hai bước sau không thấy chúng.
     html, n_tagged = tagged(html)
     html, n_zoned = zoned(html)
+    # NẮN TÊN VÙNG TRƯỚC khi đếm vùng: `zoned` chỉ thêm vùng cho thẻ
+    # CHƯA khai, nên một thẻ khai sai tên vẫn coi là đã khai và không
+    # được vá -- nắn sau thì nó đã lỡ chặn `zoned` rồi.
+    html, n_zones = zones(html)
     html, n_cells = cells(html)
     html, n_breaks = breaks(html)
     html, n_kinds = vocabulary(html, kinds())
     html, n_dress = dress(html)
+    # SAU `dress`: nó chuyển được kiểu dáng lên span khi thẻ lồng là con
+    # duy nhất, và đó là cách chữa TỐT HƠN. `unnest` là nước hai, cho
+    # những hình `dress` không với tới.
+    html, n_unnest = unnest(html)
+    # SAU `unnest`: nó bóc span trần, nên chữ của mỗi run mới ở dạng
+    # cuối. So chữ trước khi bóc là so hai chuỗi khác nhau.
+    html, n_unclash = unclash(html)
     html, n_grid = grid(html)
     html, n_air = breathe(html)
     html, n_gap = airy(html)
     return html, {"khoảng trắng trả lại giữa hai thẻ dính": n_air,
                   "khe tối thiểu giữa hai run": n_gap,"run dựng từ thẻ HTML": n_tagged,
-                  "vùng khai từ thẻ HTML": n_zoned, "data-cell thêm": n_cells, "span tách khỏi <br>": n_breaks,
+                  "vùng khai từ thẻ HTML": n_zoned,
+                  "tên vùng nắn lại": n_zones, "data-cell thêm": n_cells, "span tách khỏi <br>": n_breaks,
                   "kind lạ ánh xạ về thật": n_kinds,
                   "thẻ trang trí bóc khỏi span": n_dress,
+                  "span trần bóc khỏi run": n_unnest,
+                  "data-path đụng nhau đã bỏ": n_unclash,
                   "ô bảng được đánh số hàng/cột": n_grid}
 
 
