@@ -69,6 +69,12 @@ def names() -> list[str]:
     return [NAME]
 
 
+# Sigma mà `_wide_blur` nhắm tới SAU khi thu nhỏ. Mười hai: dưới mức này thì
+# nhân Gauss đã đủ nhỏ để phép thu nhỏ không mua được gì, trên mức này thì
+# ảnh thu nhỏ vẫn giữ đủ cấu trúc cho bộ lọc làm việc.
+_WIDE_TARGET = 12.0
+
+
 def _draw(rng: random.Random, spec: Any) -> float:
     """A fixed number is used as-is; a `(low, high)` pair is drawn from.
 
@@ -81,12 +87,48 @@ def _draw(rng: random.Random, spec: Any) -> float:
     return float(spec)
 
 
+def _wide_blur(field: np.ndarray, sigma: float) -> np.ndarray:
+    """Gaussian blur at a very large sigma, done on a shrunken copy.
+
+    A blur whose sigma is a tenth of the page is a low-pass filter with a
+    cut-off far below anything a shrunken copy would lose, so shrinking by
+    `k`, blurring at `sigma/k` and scaling back gives back the same field.
+
+    How close, measured on the three sheets in `textures/paper/` at the sigma
+    this function actually sees (148 on 1646x1164): mean error 0.12-0.19% of
+    the field's own amplitude, worst pixel 1-2%. On white noise the relative
+    error is an order of magnitude worse -- a wide blur of noise has almost no
+    amplitude left to be relative to -- but the input here is a photographed
+    sheet of paper, which is smooth by construction.
+
+    Why bother: this one call was the most expensive OpenCV operation in the
+    whole degradation stage. Measured over a ten-page run, `sigma=148` on a
+    1646x1164 sheet cost 0.28 s a call and 8% of the entire run -- more than
+    every other `GaussianBlur` in `degradation/` put together. Separable
+    Gaussian is O(sigma) per pixel, so the cost grows with the blur; shrinking
+    first turns that into O(sigma/k) on 1/k^2 of the pixels.
+
+    `k` is chosen so the shrunken sigma stays near `_WIDE_TARGET`: big enough
+    that the filter is still doing real smoothing at the small size, small
+    enough that the shrink never removes structure the blur would have kept.
+    Sigma under the target is left alone -- there is nothing to win there and
+    a needless resize costs more than it saves."""
+    if sigma <= _WIDE_TARGET:
+        return cv2.GaussianBlur(field, (0, 0), sigmaX=sigma)
+    height, width = field.shape[:2]
+    k = max(int(sigma / _WIDE_TARGET), 2)
+    small = cv2.resize(field, (max(width // k, 8), max(height // k, 8)),
+                       interpolation=cv2.INTER_AREA)
+    small = cv2.GaussianBlur(small, (0, 0), sigmaX=sigma / k)
+    return cv2.resize(small, (width, height), interpolation=cv2.INTER_LINEAR)
+
+
 def displacement(sheet_gray: np.ndarray, max_stretch: float, sigma_ratio: float
                  ) -> tuple[np.ndarray, np.ndarray]:
     """Aligned paper grayscale -> the `(dx, dy)` backward map, curvature-bounded."""
     height, width = sheet_gray.shape[:2]
     sigma = max(width, height) * float(sigma_ratio)
-    smoothed = cv2.GaussianBlur(sheet_gray.astype(np.float32), (0, 0), sigmaX=sigma)
+    smoothed = _wide_blur(sheet_gray.astype(np.float32), sigma)
     low, high = float(smoothed.min()), float(smoothed.max())
     field = (smoothed - low) / max(high - low, 1e-6)
 

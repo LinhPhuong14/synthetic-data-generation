@@ -214,25 +214,29 @@ Every semantic field should have a stable path.
 
 Use English snake_case for internal keys.
 
+`data` is a FLAT LIST of `{path, value}` entries -- not a nested object. The
+`path` is byte-for-byte the same string you write in the `data-path` attribute,
+and `value` is exactly the text the HTML prints for it.
+
 Example:
 
 ```json
-{
-  "issuer": {
-    "name": "...",
-    "tax_code": "...",
-    "address": "..."
-  },
-  "document": {
-    "number": "...",
-    "issue_date": "..."
-  },
-  "customer": {
-    "name": "...",
-    "address": "..."
-  }
-}
+[
+  {"path": "issuer.name",         "value": "Công ty TNHH Bình Minh"},
+  {"path": "issuer.tax_code",     "value": "0312345678"},
+  {"path": "document.number",     "value": "UQ-2024/087"},
+  {"path": "line_items[0].name",  "value": "Máy in laser"},
+  {"path": "line_items[0].amount","value": "1.250.000"}
+]
 ```
+
+Flat, because the path printed on paper is already flat: `issuer.tax_code`,
+`line_items[0].name`. A nested object says the same thing in a shape that has
+to be walked segment by segment to check it, and the check is the point --
+`data` and the HTML are two halves of one answer, and they must agree.
+
+Write the value EXACTLY as printed, formatting included: if the sheet shows
+`1.250.000 đ`, the entry says `1.250.000 đ`, not `1250000`.
 
 Do not create arbitrary duplicate semantic identities for the same field.
 
@@ -660,24 +664,59 @@ If bold styling is required, style the span itself:
 
 # 18. LABELS AND VALUES
 
-Do not unnecessarily merge unrelated semantic values into one unstructured text run.
+**EVERY printed label gets its own run. This is not a preference.**
 
-Prefer:
+A label is the caption printed next to a value: `Mã số thuế:`, `Họ và tên`,
+`ĐƠN VỊ XUẤT KHẨU`. It is ink on the paper. Ink with no run has no box, and a
+reader of the dataset is told that patch of the page contains nothing.
+
+Name it with the value's kind plus `.label`:
 
 ```html
 <div class="field">
-  <span data-kind="..." data-path="...">Mã số thuế:</span>
-  <span data-kind="store.tax_code" data-path="issuer.tax_code">
-    0312345678
-  </span>
+  <span data-kind="store.tax_code.label" data-role="key">Mã số thuế:</span>
+  <span data-kind="store.tax_code" data-path="issuer.tax_code">0312345678</span>
 </div>
 ```
 
-when the label and value need independent measurement or semantic interpretation.
+The colon is optional; the run is not. `Họ và tên` with no colon is still a
+label and still needs its own run.
 
-However, do not create meaningless fragmentation of ordinary prose.
+**The label run carries NO `data-path`.** `data-path` is the identity of a
+VALUE, and a caption is not a value. Two runs that print different text under
+one `data-path` is a contradiction the gate rejects, and it is the mistake
+this rule causes most often:
 
-Use judgment based on the semantic role of the text.
+```html
+WRONG  <span data-kind="store.tax_code.label" data-path="issuer.tax_code">Mã số thuế:</span>
+       <span data-kind="store.tax_code"       data-path="issuer.tax_code">0312345678</span>
+       -- one path, two different strings
+
+RIGHT  <span data-kind="store.tax_code.label">Mã số thuế:</span>
+       <span data-kind="store.tax_code" data-path="issuer.tax_code">0312345678</span>
+```
+
+And never put the caption and the value in ONE run. `Mã số thuế: 0312345678`
+as a single span gives one box for two things, and the value can no longer be
+read out on its own.
+
+A block heading printed above a group of fields -- `ĐƠN VỊ XUẤT KHẨU`,
+`NGƯỜI MUA HÀNG` -- is also printed text and also needs a run. Give it the
+family it heads plus `.title`, and put it in a `Section-Header` region:
+
+```html
+<h3 data-region="Section-Header">
+  <span data-kind="parties.seller.title">ĐƠN VỊ XUẤT KHẨU</span>
+</h3>
+```
+
+Measured, 29 sheets: **116 stretches of visible text carried no run at all**,
+and only 11 sheets were clean. Nearly every one was a label -- `Họ và tên:`,
+`Chức vụ:`, `Tên đơn vị ủy quyền`. The values around them were labelled
+correctly; only the captions were dropped.
+
+Do not fragment ordinary prose: a sentence inside a paragraph is one run, not
+one run per clause. The rule is about CAPTIONS, not about cutting text finer.
 
 ---
 

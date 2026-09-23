@@ -257,3 +257,74 @@ def test_a_missing_ceiling_gates_nothing():
     # Và ngưỡng đang khai phải là một tỉ lệ đọc được.
     ceiling = D.gate_ceiling("orphan_share", 1.0)
     assert 0.0 < ceiling <= 1.0, f"ngưỡng vô nghĩa: {ceiling}"
+
+
+# ===========================================================================
+# CÓ CHỮ THÌ CÓ HỘP
+#
+# Phần trên hỏi "run có nhãn có nằm trong vùng không". Phần này hỏi câu ĐỨNG
+# TRƯỚC nó, và là câu mạnh hơn: **mọi chữ in ra có nằm trong một run không**.
+#
+# Một đoạn chữ ngoài mọi `<span data-kind>` vẫn hiện trên ảnh và KHÔNG có hộp
+# nào. Mô hình học trên bộ ấy thấy mực mà nhãn bảo không có gì -- đúng hạng
+# mục olmOCR-Bench chấm bằng *text presence* (721 test).
+#
+# `markup._span()` giữ lời hứa này theo CẤU TẠO: mọi chữ in ra đi qua đúng
+# một hàm, và hàm ấy luôn kèm `data-kind`. Đo trên 40 tờ: **0**. Test này giữ
+# con số ấy -- một chuỗi viết thẳng vào f-string của một builder mới sẽ làm
+# nó khác 0 ngay.
+# ===========================================================================
+
+SKIP_TEXT = frozenset({"style", "script", "title", "head"})
+
+
+class _Unlabelled(HTMLParser):
+    """Chữ hiển thị KHÔNG nằm trong `<span data-kind>` nào."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.stack: list[tuple[str, bool, bool]] = []
+        self.bare: list[str] = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag in VOID:
+            return
+        has = dict(attrs)
+        top = self.stack[-1] if self.stack else ("", False, False)
+        self.stack.append((tag,
+                           top[1] or "data-kind" in has,
+                           top[2] or tag in SKIP_TEXT))
+
+    def handle_endtag(self, tag):
+        if tag in VOID:
+            return
+        for i in range(len(self.stack) - 1, -1, -1):
+            if self.stack[i][0] == tag:
+                del self.stack[i:]
+                return
+
+    def handle_data(self, text):
+        body = text.strip()
+        if not body or not self.stack:
+            return
+        _, in_run, skip = self.stack[-1]
+        if not skip and not in_run:
+            self.bare.append(body[:60])
+
+
+def test_no_visible_text_is_printed_without_a_label():
+    """Con số này là 0, và nó là lời hứa của `markup._span()`.
+
+    Không phải một chỉ số chất lượng -- một điều BẤT KHẢ: không có đường mã
+    nào in chữ mà không kèm `data-kind`. Cách duy nhất phá nó là viết thẳng
+    một chuỗi vào f-string của một builder, và đó đúng là thứ test này bắt."""
+    loose: dict[int, list[str]] = {}
+    for seed, html in _pages():
+        parser = _Unlabelled()
+        parser.feed(html)
+        parser.close()
+        if parser.bare:
+            loose[seed] = parser.bare
+    assert not loose, (
+        "chữ in ra mà không có `data-kind` -- nó lên ảnh và không có hộp:\n"
+        + "\n".join(f"  seed {s}: {v[:4]}" for s, v in list(loose.items())[:6]))

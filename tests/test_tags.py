@@ -197,3 +197,129 @@ def test_the_zoner_never_writes_a_label_measured_elsewhere():
     thay vì hai, đo được trên `llm_export_invoice_0003`."""
     written = set(T.region_by_tag().values())
     assert not (written & set(T.MEASURED_ELSEWHERE))
+
+
+# ------------------------------------------------------------------ zones()
+#
+# Model lẫn HAI TRỤC: `masthead` là một `data-kind` CÓ THẬT của engine -- tên
+# một khối chữ -- chứ không phải tên một vùng bố cục. Đo trên
+# `data/23-09-llm-b` (10 tờ, gpt-4.1-mini): 3 tờ trượt cổng chỉ vì ba cái tên
+# `Masthead`, `masthead`, `Note`.
+
+
+def test_the_alias_table_only_names_real_labels():
+    """Một bí danh trỏ tới nhãn không có thật là một phép chữa đổi lỗi này
+    lấy lỗi khác -- và lỗi mới thì im lặng hơn, vì cổng vẫn loại tờ ấy nhưng
+    giờ với một cái tên không ai gõ ra."""
+    from synthgen.design import region_alias
+    from synthgen.llm_page import REGIONS
+
+    unreal = {k: v for k, v in region_alias().items() if v not in REGIONS}
+    assert not unreal, f"bí danh trỏ tới nhãn không có thật: {unreal}"
+
+
+def test_a_misnamed_region_is_straightened_and_a_strange_one_is_not():
+    from synthgen.repair import zones
+
+    for html, want in (
+        ('<div data-region="Masthead">x</div>', 'data-region="Page-Header"'),
+        ("<div data-region='masthead'>x</div>", "data-region='Page-Header'"),
+        ('<div data-region="Note">x</div>', 'data-region="Text"'),
+        # Nhãn ĐÚNG viết sai hoa thường cũng được nắn: `Page-header` và
+        # `Page-Header` là cùng một vùng với mắt người, hai thứ với cổng gác.
+        ('<div data-region="page-header">x</div>', 'data-region="Page-Header"'),
+    ):
+        out, fixed = zones(html)
+        assert fixed == 1 and want in out, f"{html} -> {out}"
+
+    # Nhãn đã đúng thì không đụng; nhãn thật sự lạ thì KHÔNG đoán.
+    for html in ('<div data-region="Text">x</div>',
+                 '<div data-region="Hoàn toàn lạ">x</div>'):
+        assert zones(html) == (html, 0)
+
+
+def test_every_gate_ceiling_falls_back_to_not_gating():
+    """Thiếu khoá trong YAML phải nghĩa là KHÔNG LOẠI, không phải loại sạch --
+    một cổng không có gì để so mà vẫn loại là cổng hỏng câm."""
+    from synthgen.design import gate_ceiling
+
+    assert gate_ceiling("khong_bao_gio_co_khoa_nay", 1.0) == 1.0
+    for name in ("orphan_share", "plan_drop_share"):
+        assert 0.0 < gate_ceiling(name, 1.0) <= 1.0
+
+
+def test_stripping_the_plural_s_never_renames_a_real_label():
+    """`repair.zones()` bỏ chữ `s` cuối khi tra TRƯỢT, để `Signatures` về
+    `Signature` rồi về `Text`.
+
+    Bất biến không phải "không nhãn nào kết thúc bằng s" -- `Table-Of-Contents`
+    có, và nó vô hại vì nhãn thật tra TRÚNG trước khi tới nhánh bỏ `s`. Bất
+    biến thật là: phép bỏ `s` không bao giờ biến một nhãn ĐÚNG thành một nhãn
+    ĐÚNG KHÁC. Nếu có, một trang khai đúng sẽ bị nắn sang vùng khác và vẫn vẽ
+    ra bình thường -- hỏng câm."""
+    from synthgen.design import region_alias
+    from synthgen.llm_page import REGIONS
+    from synthgen.repair import zones
+
+    table = {k.lower(): v for k, v in region_alias().items()}
+    table.update({r.lower(): r for r in REGIONS})
+    for label in REGIONS:
+        out, fixed = zones(f'<div data-region="{label}">x</div>')
+        assert fixed == 0, f"{label} bị nắn thành {out}"
+
+
+def test_a_plural_region_name_is_straightened_too():
+    from synthgen.repair import zones
+
+    for html, want in (
+        ('<div data-region="Signatures">x</div>', 'data-region="Text"'),
+        ('<div data-region="Notes">x</div>', 'data-region="Text"'),
+        ('<div data-region="Headers">x</div>', 'data-region="Page-Header"'),
+    ):
+        out, fixed = zones(html)
+        assert fixed == 1 and want in out, f"{html} -> {out}"
+
+
+# ---------------------------------------------------------------- unnest()
+#
+# `CELL_RECTS_JS` đo `span.firstElementChild || span`: một thẻ lồng trong run
+# có nhãn LẶNG LẼ trở thành cái hộp được ghi. `dress()` lo ca thẻ trang trí là
+# con DUY NHẤT; model viết hình khác -- một span đánh số đứng TRƯỚC chữ. Đo
+# trên `data/23-09-llm-f`: 5 trên 12 tờ trượt vì đúng hình ấy.
+
+UNNEST_CASES = (
+    ("span trần trước chữ",
+     '<span data-kind="note"><span class="n">1.</span> Nội dung</span>', 1,
+     '<span data-kind="note">1. Nội dung</span>'),
+    ("chữ thuần không đụng",
+     '<span data-kind="a.b">chữ thuần</span>', 0, None),
+    ("span CÓ nhãn lồng thì để yên -- hai trường, không đoán",
+     '<span data-kind="a.b"><span data-kind="a.c">x</span></span>', 0, None),
+    ("ngoài run có nhãn thì không phải việc của hàm này",
+     '<span class="x">ngoài</span>', 0, None),
+    ("lồng hai tầng bóc cả hai",
+     '<span data-kind="k"><span><span class="y">hai tầng</span></span></span>',
+     2, '<span data-kind="k">hai tầng</span>'),
+)
+
+
+def test_a_bare_span_inside_a_labelled_run_is_unwrapped():
+    from synthgen.repair import unnest
+
+    for name, html, want_n, want_out in UNNEST_CASES:
+        out, count = unnest(html)
+        assert count == want_n, f"{name}: {count} chỗ, mong {want_n} -- {out}"
+        if want_out:
+            assert out == want_out, f"{name}: {out}"
+
+
+def test_unwrapping_never_loses_the_text():
+    """Bóc thẻ, GIỮ CHỮ. Một phép chữa làm mất chữ là một phép chữa đổi lỗi
+    nhãn lấy lỗi nội dung, và lỗi nội dung thì nhìn ảnh mới thấy."""
+    import re as _re
+    from synthgen.repair import unnest
+
+    for _name, html, _n, _out in UNNEST_CASES:
+        before = _re.sub(r"<[^>]+>", "", html)
+        after = _re.sub(r"<[^>]+>", "", unnest(html)[0])
+        assert before == after, f"{before!r} -> {after!r}"

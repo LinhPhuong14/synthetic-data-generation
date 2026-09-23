@@ -30,7 +30,9 @@ mà bộ sinh đã chốt trước khi vẽ -- và khớp 600/600 tài liệu th
 from __future__ import annotations
 
 import sys
+import json
 import re
+from functools import lru_cache
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -77,6 +79,24 @@ _WORDS = {
 }
 
 
+@lru_cache(maxsize=1)
+def _words_vi() -> dict:
+    """`{token: từ tiếng Việt}` từ `rulebase/kie_words_vi.json`.
+
+    Rỗng khi thiếu file: câu lùi về tiếng Anh như trước, kém hơn nhưng không
+    hỏng. Cùng lệ `phrasing.POOL` và `design._blocks_yaml`."""
+    path = REPO_ROOT / "rulebase" / "kie_words_vi.json"
+    try:
+        got = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:                                        # noqa: BLE001
+        return {}
+    table = got.get("words") if isinstance(got, dict) else None
+    return {str(k): str(v) for k, v in (table or {}).items() if v}
+
+
+_WORDS_VI = _words_vi()
+
+
 def implied_for(kind: str) -> tuple[str, str] | None:
     """`(tên trường, câu tả)` cho một run KHÔNG có nhãn in kèm.
 
@@ -103,7 +123,47 @@ def implied_for(kind: str) -> tuple[str, str] | None:
     parts = [w for w in re.split(r"[._]+", kind) if w]
     words = [_WORDS.get(w, w.replace("_", " ")) for w in parts]
     phrase = " ".join(w for w in words if w).strip() or kind
-    return slug(kind), f"{phrase[:1].upper()}{phrase[1:]} printed on the document."
+    # CÂU SINH RA PHẢI CÙNG THỨ TIẾNG VỚI BỘ DỮ LIỆU.
+    #
+    # Nhánh này chế một câu cho MỌI `kind` không có trong `IMPLIED`, nên câu
+    # nó sinh không bao giờ khớp kho cách nói (`synthgen/phrasing.py`) -- mỗi
+    # `kind` một câu riêng. `describe()` chỉ đổi giọng những câu CÓ trong kho,
+    # nên câu ở đây đi thẳng ra bộ dữ liệu đúng như nó được viết.
+    #
+    # Trước bản sửa nó viết tiếng Anh ("Section body printed on the
+    # document."), và vì thế `description_lang: vi` không với tới được: đo
+    # trên `data/23-09-llm-g`, **66,6% câu tả ra tiếng Anh** và 658 trên 666
+    # câu ấy đến từ đúng nhánh này.
+    #
+    # Dịch TỪNG TOKEN qua `rulebase/kie_words_vi.json` -- dữ liệu, không phải
+    # mã. 86 token phủ hết 116 `kind` đã đo; token lạ giữ nguyên, nên câu vẫn
+    # đọc được và chỉ lẫn một chữ tiếng Anh thay vì mất mô tả.
+    #
+    # Bỏ hẳn phần dịch và chỉ in `kind` thô thì câu thành "Giá trị của trường
+    # `legal.basis`" -- tiếng Việt nhưng MẤT NGHĨA, trong khi bản tiếng Anh cũ
+    # ít ra còn nói "Legal basis". Đổi một bệnh lấy bệnh khác không phải chữa.
+    # ĐẢO THỨ TỰ TOKEN. Tiếng Việt là ngôn ngữ CHÍNH-TRƯỚC còn `kind` viết
+    # theo lối Anh (`legal.basis` = "legal" bổ nghĩa cho "basis"), nên dịch
+    # xuôi ra "Pháp lý căn cứ" -- đúng chữ, sai tiếng. Đảo lại thành "Căn cứ
+    # pháp lý", và đó là phép biến đổi ĐÚNG cho mọi danh ngữ ghép chứ không
+    # phải một mẹo cho vài ca.
+    tail = parts[-1] if parts else ""
+    core = parts[:-1] if tail == "label" and len(parts) > 1 else parts
+    viet = " ".join(_WORDS_VI.get(w, _WORDS.get(w, w.replace("_", " ")))
+                    for w in reversed(core)).strip()
+    if not viet:
+        return slug(kind), f"{phrase[:1].upper()}{phrase[1:]} in trên tờ giấy."
+    # `.label` là NHÃN IN CỦA trường kia, không phải một trường riêng -- đúng
+    # điều `agent/prompts/page.md` mục 9 khai. Nói ra quan hệ ấy, đừng dán
+    # thêm một chữ "nhãn in" vào cuối danh ngữ ("nhãn in mã thuế đơn vị" đọc
+    # như một thứ khác hẳn).
+    # CHỈ `.label`. `.title` từng nằm ở đây và nó sai: `sign.title` là CHỨC
+    # DANH người ký, không phải nhãn in của chữ ký. Một hậu tố nhập nhằng
+    # không được làm luật -- `page.md` mục 9 nói `.label` là caption, và đó là
+    # cái duy nhất không có ca ngược.
+    if tail == "label" and len(parts) > 1:
+        return slug(kind), f"Nhãn in của {viet}, in sẵn trên tờ giấy."
+    return slug(kind), f"{viet[:1].upper()}{viet[1:]} in trên tờ giấy."
 
 
 IMPLIED: dict[str, tuple[str, str]] = {
@@ -187,7 +247,21 @@ class _Spans(HTMLParser):
         self._row = -1          # chỉ số hàng trong bảng đang mở
         self._col = 0           # con trỏ cột của hàng đang mở
         self._held: dict[int, int] = {}   # cột -> còn mấy hàng bị rowspan chiếm
-        self._table = 0         # bảng thứ mấy trên trang
+        # HAI BIẾN, VÌ CÓ HAI CÂU HỎI KHÁC NHAU.
+        #
+        # `_table` là bảng ĐANG mở -- phải trả về bảng cha khi một bảng con
+        # đóng, nếu không ô còn lại của bảng cha bị gán sang bảng con.
+        # `_table_seq` là SỐ HIỆU ĐÃ PHÁT -- không bao giờ trả lại, nếu không
+        # bảng anh em thứ hai nhận đúng số hiệu của bảng thứ nhất.
+        #
+        # Bản trước chỉ có `_table`, và `handle_endtag` khôi phục nó từ ngăn
+        # xếp. Hệ quả: mọi bảng ở TẦNG NGOÀI CÙNG đều mang số 1, trên mọi
+        # trang. Chú thích ở `table_pairs` hứa "hai bảng trên cùng một trang
+        # không đụng nhau vì `table_id` đã nằm trong id" -- lời hứa ấy không
+        # được giữ, và 69 trên 273 cặp của
+        # `insurance_partner_cert_application` mất đúng vì thế.
+        self._table = 0         # bảng ĐANG mở
+        self._table_seq = 0     # số hiệu lớn nhất đã phát trên trang này
         self._stack: list[tuple] = []   # bảng cha đang mở, khi có bảng lồng
         self._under = ""        # mặt hàng mà bảng con đang tả
 
@@ -208,6 +282,10 @@ class _Spans(HTMLParser):
             self.sheet += 1
             self.in_head = False
             self.head_row = -1
+            # Số hiệu bảng đánh lại theo TRANG -- `table_key()` đã ghép trang
+            # vào id nên tính duy nhất không phụ thuộc chỗ này; đánh lại chỉ
+            # để `p2t1` đọc lên đúng nghĩa "bảng đầu của trang 2".
+            self._table = self._table_seq = 0
         elif tag == "table":
             # NGĂN XẾP, vì `<table>` LỒNG ĐƯỢC TRONG MỘT Ô.
             #
@@ -240,7 +318,8 @@ class _Spans(HTMLParser):
                                 self._table, self.cell, self.in_head,
                                 self.head_row, self._under))
             self._row, self._col, self._held = -1, 0, {}
-            self._table += 1
+            self._table_seq += 1
+            self._table = self._table_seq
         elif tag == "thead":
             self.in_head = True
             self.head_row = -1
@@ -423,7 +502,7 @@ def table_structures(markup: str) -> list[dict]:
             role, basis = "data", "grid"
         else:
             role, basis = "layout", "small"
-        table_id = f"t{number}"
+        table_id = table_key(page, number)
         # MẢNH NỐI TIẾP TRỎ VỀ MẢNH MANG TIÊU ĐỀ.
         #
         # Chấm thì chấm TỪNG MẢNH: một ảnh là một trang, và model đọc trang 2
@@ -452,6 +531,26 @@ def table_structures(markup: str) -> list[dict]:
             } for c in sorted(cells, key=lambda c: (c["row"], c["col"]))],
         })
     return out
+
+
+def table_key(page, number) -> str:
+    """Id của một bảng, DUY NHẤT TRONG CẢ TÀI LIỆU.
+
+    `_Spans` đếm bảng THEO TRANG, nên bảng đầu của mọi trang đều mang số 1.
+    Với tài liệu một tờ điều ấy vô hại, và nó đã chạy thế từ đầu. Với tài liệu
+    2-10 tờ -- thứ `run.py --pages` sinh ra hàng loạt -- bảng đầu trang 2 mang
+    đúng id của bảng đầu trang 1, và `synthgen/export.py` gom theo `table_id`
+    (mỗi id là MỘT bảng) nên hai bảng nhập làm một: cột số 1 của bảng dưới đè
+    lên cột số 1 của bảng trên. Đo được: `table_structures` trả hai mục cho
+    hai bảng hai trang, cả hai `t1`.
+
+    Trang đi VÀO id chứ không đi cạnh id, vì `line_item_id` và `continues` đều
+    là chuỗi đứng một mình -- một id không mang trang là một id không truy
+    ngược được về đâu.
+
+    Một hàm cho cả bốn chỗ phát id. Bốn bản chép `f"t{...}"` là bốn người dựng
+    của cùng một luật, và sửa ba trong bốn là cách hỏng im lặng nhất."""
+    return f"p{int(page or 1)}t{int(number or 1)}"
 
 
 def _overlap(a1: float, a2: float, b1: float, b2: float) -> float:
@@ -520,9 +619,12 @@ def declared_pairs(record: dict, markup: str, page: int) -> list[dict]:
             # `implied_for` trả về TUPLE `(tên, câu tả)`. Dùng thẳng thì câu tả
             # in ra `"('period', 'Billing or reporting period...')"` -- đo được
             # trên mọi trường khai của pilot12.
+            # Cùng lẽ nhánh lùi của `implied_for`: câu lùi phải cùng thứ
+            # tiếng với bộ, và nó tả TRƯỜNG chứ không tả cơ chế. "Value bound
+            # to `x.y` in the document's own data tree" nói về cây dữ liệu --
+            # một thứ không có trên tờ giấy và không giúp gì người đọc nhãn.
             "description": (_described(entity.get("kind"))
-                            or f"Value bound to `{path}` in the document's own "
-                               f"data tree."),
+                            or f"Giá trị khai ở `{path}`, in trên tờ giấy."),
         })
     return out
 
@@ -682,7 +784,7 @@ def table_pairs(record: dict, markup: str) -> list[dict]:
         if (cell.get("colspan") or 1) > 1:
             name = BY_KIND.get(str(entity["kind"])) or _slug_col(
                 str(entity["text"])) or "row_label"
-            table_id = f"t{int(cell.get('table', 1) or 1)}"
+            table_id = table_key(page, cell.get('table', 1))
             out.append({
                 "field": f"{name}_r{cell['row']}",
                 "column": None, "row": cell["row"],
@@ -743,7 +845,7 @@ def table_pairs(record: dict, markup: str) -> list[dict]:
             # có cùng `(row, column)`, và bảng dưới ĐÈ lên bảng trên: đo trên
             # `data/pilot13`, tờ `insurance_partner_cert_application` mất 69
             # trên 273 cặp đúng vì thế, im lặng.
-            "table_id": f"t{int(cell.get('table', 1) or 1)}",
+            "table_id": table_key(page, cell.get('table', 1)),
             # MẶT HÀNG CHA, khi ô này nằm trong bảng con của một ô. `export.py`
             # dùng nó để gắn dòng chi tiết về đúng dòng hàng, thay vì để bảng
             # con thành một bảng ngang hàng không tiêu đề.
@@ -761,7 +863,7 @@ def table_pairs(record: dict, markup: str) -> list[dict]:
             # thành dòng hàng" (LIR) chấm được bằng chính id ấy. Ở đây id suy
             # ra từ chỗ ngồi -- không cần ai đặt tên, và hai bảng trên cùng
             # một trang không đụng nhau vì `table_id` đã nằm trong id.
-            "line_item_id": f"t{int(cell.get('table', 1) or 1)}#r{cell['row']}",
+            "line_item_id": f"{table_key(page, cell.get('table', 1))}#r{cell['row']}",
             "description": _detail_says(str(seat_of.get(entity["entity_index"]) or ""),
                                         str(entity["text"]))
             or _cell_says(

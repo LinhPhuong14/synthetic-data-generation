@@ -378,6 +378,31 @@ _SHEET_OPEN = re.compile(r'<div\b[^>]*\bclass="[^"]*\bsheet\b', re.IGNORECASE)
 # vì nó là họ và một con số không đặt tên được cho cụm nào.
 _COINED = re.compile(r"^[a-z][a-z0-9_]*(\.([a-z][a-z0-9_]*|\d+)){1,3}$")
 
+def acceptable_kind(name: str, known) -> bool:
+    """Cổng có nhận cái tên `data-kind` này không -- MỘT vị từ, mọi nơi hỏi.
+
+    Ba chỗ ép cùng luật này và chúng từng lệch nhau:
+
+      `synthgen/llm_page.py::problems`    -- cổng chữ
+      `agent/compose_page.py::schema`     -- ngữ pháp bộ giải mã
+      `agent/compose_page.py::plan_problems` -- kiểm `field_plan`
+
+    Chỗ thứ ba quên vế `_COINED`, nên nó loại `menu.number` và
+    `contract.party_a`: những cái tên lời dặn CHO PHÉP đặt, bộ giải mã sinh
+    ra được, và cổng chữ chấp nhận. Model làm đúng mọi điều được dặn rồi mất
+    cả tờ ở chỗ thứ ba -- đo được trên `data/23-09-llm-i`.
+
+    Ba vế, và không vế nào suy ra từ vế khác:
+
+    * tên CÓ trong từ vựng -- gồm cả `title`, `note` một đoạn mà `_COINED`
+      loại;
+    * tiền tố là một kind thật (`menu.name.label` khi `menu.name` có);
+    * theo ngữ pháp đặt tên mới `họ.trường[.nhãn]`."""
+    name = str(name or "")
+    return bool(name) and (name in known or _rooted(name, known)
+                           or bool(_COINED.match(name)))
+
+
 _PATH = re.compile(
     r"^[a-z][a-z0-9_]*(\[\d*\])?"
     r"(\.([a-z][a-z0-9_]*(\[\d*\])?|\d+))*$")
@@ -783,5 +808,6 @@ def path_coverage(html: str) -> dict:
            "coverage": round(with_path / total, 4) if total else 0.0}
 
 
-__all__ = ["FORBIDDEN", "REGIONS", "SAMPLE", "coined", "declared_paths",
+__all__ = ["FORBIDDEN", "REGIONS", "SAMPLE", "acceptable_kind",
+           "coined", "declared_paths",
           "kinds", "path_coverage", "printed_kinds", "problems"]

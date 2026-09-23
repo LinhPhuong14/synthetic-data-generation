@@ -104,17 +104,56 @@ def _pick_texture(directory: Path, name: str | None, rng: random.Random) -> np.n
         wanted = [p for p in files if p.stem == name]
         if wanted:
             files = wanted
-    return cv2.imread(str(rng.choice(files)), cv2.IMREAD_COLOR)
+    return _read_bgr(rng.choice(files))
+
+
+# Ảnh nền đọc MỘT LẦN cho mỗi tiến trình.
+#
+# `paper_texture` bốc một tờ giấy cho mỗi trang, và một shard trăm trang bốc
+# đi bốc lại cùng ba tệp -- giải mã JPEG 2 MP một trăm lần để lấy lại đúng cái
+# mảng vừa vứt đi. Đo trên một lượt mười hai chứng từ: `imread` tốn 0.49 s,
+# 3% cả lượt. Cùng lý do `synthgen/markup.py::seal_art` giữ `_SEAL_CACHE`.
+#
+# Trả về BẢN SAO: bên gọi vẽ đè lên mảng nhận được, và một cache trả về mảng
+# gốc thì trang thứ hai nhận một tờ giấy đã bị trang đầu bôi bẩn.
+_IMAGE_CACHE: dict[tuple[str, int], np.ndarray] = {}
+
+
+def _read(path, flags: int) -> np.ndarray | None:
+    key = (str(path), int(flags))
+    if key not in _IMAGE_CACHE:
+        _IMAGE_CACHE[key] = cv2.imread(str(path), flags)
+    art = _IMAGE_CACHE[key]
+    return None if art is None else art.copy()
+
+
+def _read_bgr(path) -> np.ndarray | None:
+    return _read(path, cv2.IMREAD_COLOR)
 
 
 def _value_noise(shape: tuple[int, int], cell: int, rng: random.Random) -> np.ndarray:
-    """Smooth noise: a small random field scaled up. Used for grain and stains."""
+    """Smooth noise: a small random field scaled up. Used for grain and stains.
+
+    The field is drawn with numpy, not with a Python loop over `rng.random()`.
+    The loop was the single most expensive thing in the whole degradation
+    stage, and not because of the arithmetic: at `cell=2` on a page rendered
+    at `device_scale_factor=2` the grid is 1550x1100, so it made 1.7 million
+    Python-level calls to build 6 MB of floats. Measured over a twelve-page
+    run it cost 2.36 s of 26.8 s -- 9% of everything, more than every OpenCV
+    call in the pipeline put together (1.28 s, 11%).
+
+    Determinism is kept, and kept the only way that survives the change: the
+    numpy generator is seeded from the `random.Random` that was passed in, so
+    the same document still meets the same noise. The stream it draws is a
+    different stream -- one `getrandbits` where there used to be a million
+    `random()` calls -- so the pixels differ from before this change. Nothing
+    pins them: the augmentation tests pin box geometry and recipe choice, not
+    pixel values.
+    """
     height, width = shape
-    small = np.asarray(
-        [[rng.random() for _ in range(max(width // cell, 2))]
-         for _ in range(max(height // cell, 2))],
-        dtype=np.float32,
-    )
+    grid = (max(height // cell, 2), max(width // cell, 2))
+    small = np.random.default_rng(rng.getrandbits(63)).random(
+        grid, dtype=np.float32)
     return cv2.resize(small, (width, height), interpolation=cv2.INTER_CUBIC)
 
 
@@ -364,20 +403,46 @@ def blend_sheet(
     pixels the warp did not move -- the one mismatch that gives the effect away,
     since a fold you can see and a fold you can measure would be in two places.
     """
-    sheet = cv2.cvtColor(sheet_bgr, cv2.COLOR_BGR2GRAY).astype(np.float32)[:, :, None] / 255.0
+    # The same blend as before, written with the screen term folded in.
+    #
+    # `screened` is not computed any more, because it need not be. Expanding
+    # it gives `screened = multiplied + (1 - multiplied) * lighten * sheet`,
+    # so the mix `multiplied*(1-gate) + screened*gate` collapses to
+    #
+    #     multiplied + gate * lighten * sheet * (1 - multiplied)
+    #
+    # -- identical arithmetic, but it drops four full-size temporaries on a
+    # three-channel 2 MP page. `gate`, `lighten` and `sheet` are all single
+    # channel, so they fold into one `(H, W, 1)` coefficient that broadcasts.
+    #
+    # This function was the most expensive pure-numpy step left in the stage
+    # (1.9 s of a 16 s run) once the wide blur and the texture re-reads were
+    # dealt with, and it was expensive for the ordinary reason: every one of
+    # those temporaries is a 24 MB allocation the page never needed.
+    sheet = cv2.cvtColor(sheet_bgr, cv2.COLOR_BGR2GRAY).astype(np.float32)[:, :, None]
+    sheet /= 255.0
 
-    page = page_bgr.astype(np.float32) / 255.0
-    multiplied = page * (1.0 - float(alpha) * (1.0 - sheet))
-    screened = 1.0 - (1.0 - multiplied) * (1.0 - float(lighten) * sheet)
+    page = page_bgr.astype(np.float32)
+    page /= 255.0
+    # multiplied = page * (1 - alpha*(1 - sheet)), in place on `page`.
+    shade = 1.0 - float(alpha) * (1.0 - sheet)
+    page *= shade
 
     # The gate: 1 on bare paper, 0 on ink. Squared so that mid-greys -- the
     # anti-aliased rim of a glyph -- stay closer to the ink than to the paper,
     # which is what keeps a thin stroke from dissolving into its own halo.
-    luma = cv2.cvtColor(page_bgr, cv2.COLOR_BGR2GRAY).astype(np.float32)[:, :, None] / 255.0
-    gate = float(lighten) * np.clip(luma, 0.0, 1.0) ** 2
+    luma = cv2.cvtColor(page_bgr, cv2.COLOR_BGR2GRAY).astype(np.float32)[:, :, None]
+    luma /= 255.0
+    np.clip(luma, 0.0, 1.0, out=luma)
+    luma *= luma                               # gate / lighten
+    coeff = luma * (float(lighten) * float(lighten)) * sheet
 
-    blended = multiplied * (1.0 - gate) + screened * gate
-    return np.clip(blended * 255.0, 0, 255).astype(np.uint8)
+    # page = page + coeff * (1 - page)  ==  page*(1 - coeff) + coeff
+    page *= (1.0 - coeff)
+    page += coeff
+    page *= 255.0
+    np.clip(page, 0, 255, out=page)
+    return page.astype(np.uint8)
 
 
 # ------------------------------------------------------- gradient domain
@@ -436,7 +501,7 @@ def gradient_domain(
     for _ in range(int(count)):
         size = max(int(short * rng.uniform(0.10, 0.30)), 24)
         if available:
-            stain = cv2.imread(str(rng.choice(available)), cv2.IMREAD_COLOR)
+            stain = _read_bgr(rng.choice(available))
             stain = cv2.resize(stain, (size, size), interpolation=cv2.INTER_LINEAR)
         else:
             stain = stain_patch(size, rng)
@@ -565,7 +630,7 @@ def phantom_character(
                 max(int(h * COEFF_MAX_HEIGHT), MIN_HEIGHT) + 1,
             )
             if files:
-                pattern = cv2.imread(str(rng.choice(files)), cv2.IMREAD_GRAYSCALE)
+                pattern = _read(rng.choice(files), cv2.IMREAD_GRAYSCALE)
                 pattern = cv2.resize(pattern, (pw, ph), interpolation=cv2.INTER_LINEAR)
             else:
                 pattern = phantom_pattern(pw, ph, rng)

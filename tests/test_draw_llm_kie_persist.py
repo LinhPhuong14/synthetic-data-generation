@@ -58,13 +58,24 @@ def _persist_like_drawer(record: dict, html: str) -> dict:
 
 @pytest.mark.skipif(not (RECORD_PATH.is_file() and HTML_PATH.is_file()),
                     reason="data/rerun-unwrap không có ở máy này")
-def test_the_sparse_pre_derive_record_is_missing_the_table_pairs():
-    """Xác nhận lại đúng cái đã đo được: TRƯỚC khi áp logic mới, record trên
-    đĩa nghèo hơn thực tế nhiều -- không có bất kỳ cặp nào cho bảng."""
+def test_the_record_on_disk_already_carries_the_table_pairs():
+    """Bản ghi trên đĩa phải ĐÃ đầy đủ, không đợi `derive.py`.
+
+    Test này từng khẳng định điều NGƯỢC LẠI -- `len(before) == 4`, "record
+    trên đĩa nghèo hơn thực tế" -- vì nó được viết để ghi lại cái lỗi đang
+    tồn tại lúc ấy. Commit `d14df8e` chữa lỗi đó: `draw_llm` gọi
+    `kie_full.complete()` ngay lúc vẽ. Từ đó `4` là con số của một thế giới
+    không còn nữa, và test vẫn xanh chỉ vì `data/` bị gitignore nên CI không
+    có file để đọc -- nó SKIP, không phải PASS.
+
+    Giữ lời hứa MỚI thay vì lời than cũ: một lượt không bao giờ tới lượt
+    `derive` -- batch đứt, `--no-derive`, hay vẽ tay một tờ -- vẫn phải để
+    lại bản ghi có cặp bảng."""
     record = json.loads(RECORD_PATH.read_text(encoding="utf-8"))
-    before = record.get("kie", {}).get("pairs") or []
-    assert len(before) == 4
-    assert all(p.get("source") != "table" for p in before)
+    pairs = record.get("kie", {}).get("pairs") or []
+    assert len(pairs) > 4, f"chỉ {len(pairs)} cặp -- bản ghi vẫn nghèo"
+    assert any(p.get("source") == "table" for p in pairs), (
+        "không cặp nào đến từ bảng; `kie_full.complete` chưa chạy lúc vẽ")
 
 
 @pytest.mark.skipif(not (RECORD_PATH.is_file() and HTML_PATH.is_file()),

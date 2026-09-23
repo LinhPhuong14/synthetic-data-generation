@@ -190,3 +190,227 @@ def test_from_env_needs_no_provider_specific_configuration(monkeypatch):
 def test_from_env_returns_none_without_a_url(monkeypatch):
     monkeypatch.delenv("VLM_LLM_URL", raising=False)
     assert from_env() is None
+
+
+# ==========================================================================
+# ÉP SCHEMA, TRANH CHẤP LUỒNG, VÀ 429
+#
+# Ba lỗi thêm vào ngày 23-09-2026, cả ba im lặng theo cùng một kiểu: request
+# hỏng, tờ giấy mất, báo cáo chỉ ghi "model không trả lời". Không lỗi nào
+# hiện ra trong ảnh, nên không lỗi nào tự lộ -- chúng chỉ lộ khi tỉ lệ qua
+# cổng tụt mà không ai giải thích được.
+# ==========================================================================
+
+from agent.client import closed                                # noqa: E402
+
+SHUT_SCHEMA = {"type": "object", "properties": {"a": {"type": "string"}},
+               "required": ["a"], "additionalProperties": False}
+REFUSAL = ("HTTP 400 Bad Request -- Unrecognized request arguments supplied: "
+           "chat_template_kwargs, reasoning_effort")
+
+
+def test_a_closed_schema_is_recognised_and_an_open_one_is_not():
+    assert closed(SHUT_SCHEMA)
+    assert not closed(SCHEMA), "`data: {type: object}` không properties là MỞ"
+    assert not closed({"type": "object"})
+    assert not closed({"type": "object", "properties": {"a": {"type": "string"}},
+                       "required": [], "additionalProperties": False}), \
+        "`required` thiếu khoá cũng là mở -- đúng luật OpenAI strict"
+    assert closed({"type": "array", "items": SHUT_SCHEMA})
+
+
+def test_a_closed_schema_asks_for_enforcement_even_on_a_hosted_backend():
+    """Đây là cả lý do `closed()` tồn tại.
+
+    Đo thật trên `gpt-4.1-mini` (23-09-2026), cùng schema cùng lời nhờ:
+    `strict: false` -> 812 token, trả về các khoá CON của `plan` ở mức gốc,
+    KHÔNG có `data`, `rows`, `html`. `strict: true` -> 5 192 token, đủ bốn
+    khoá, `html` 11 847 ký tự vẽ được. Không ép thì model không theo, và
+    "model kém" là chẩn đoán sai."""
+    client = a_client()
+    client._vllm_extras = False                    # như đã học: backend hosted
+    shut = client._payload("s", "u", SHUT_SCHEMA, 0)
+    assert shut["response_format"]["json_schema"]["strict"] is True
+    # Schema MỞ trên backend hosted vẫn phải tắt, nếu không OpenAI trả 400 --
+    # `planner.py`/`compose_layout.py` vẫn gửi schema mở, và chúng không được
+    # hỏng vì một thay đổi của `compose_page.py`.
+    assert client._payload("s", "u", SCHEMA, 0)[
+        "response_format"]["json_schema"]["strict"] is False
+
+
+def test_a_thread_that_lost_the_downgrade_race_still_retries(monkeypatch):
+    """`run()` chia MỘT `Client` cho cả `ThreadPoolExecutor`.
+
+    Luồng A nhận 400, hạ cờ, thử lại, xong. Luồng B đã gửi payload mang
+    trường sai TỪ TRƯỚC và cũng nhận 400 -- nhưng tới lúc B xử lý lỗi thì cờ
+    đã `False`. Điều kiện cũ hỏi `self._vllm_extras` nên B không thử lại mà
+    ném thẳng: đo được 3 trên 8 tờ mất trắng ở song song 4, và tỉ lệ ấy lớn
+    dần theo mức song song."""
+    client = a_client()
+    client._vllm_extras = False                    # luồng A đã học xong
+    calls = []
+
+    def once(payload):
+        calls.append(payload)
+        if len(calls) == 1:
+            raise LLMError(REFUSAL)                # lỗi của request B đã gửi
+        return OK_RESPONSE
+
+    monkeypatch.setattr(client, "_post", once)
+    client.decide_with_usage("s", "u", SHUT_SCHEMA)
+    assert len(calls) == 2, "luồng thua cuộc đua phải thử lại, không ném thẳng"
+
+
+def _raiser(code: str, headers=None, body=b"{}"):
+    import urllib.error
+
+    class Boom(urllib.error.HTTPError):
+        def __init__(self):
+            super().__init__("u", int(code), "nope", headers or {}, None)
+
+        def read(self):
+            return body
+
+    return Boom
+
+
+def test_a_rate_limit_waits_and_tries_again(monkeypatch):
+    """429 là 4xx DUY NHẤT đáng thử lại: nó không phán quyết NỘI DUNG, nó
+    phán quyết THỜI ĐIỂM. Cùng payload gửi lại sau vài giây thì qua. Đo
+    được: 2 trên 8 tờ mất trắng vì `Rate limit reached`, cả hai chỉ cần chờ.
+
+    Nghỉ theo `Retry-After` khi máy chủ nói ra -- đoán một con số trong khi
+    server vừa đưa con số đúng là tự chuốc thêm một lần 429 nữa."""
+    import json as _json
+
+    client = a_client(retries=2)
+    slept: list[float] = []
+    monkeypatch.setattr("agent.client.time.sleep", slept.append)
+    Boom = _raiser("429", {"Retry-After": "7"}, b'{"error": "rate"}')
+    hits = {"n": 0}
+
+    class Ok:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def read(self): return _json.dumps(OK_RESPONSE).encode()
+
+    def urlopen(request, timeout=None):
+        hits["n"] += 1
+        if hits["n"] == 1:
+            raise Boom()
+        return Ok()
+
+    monkeypatch.setattr("agent.client.urllib.request.urlopen", urlopen)
+    client._post({"model": "m"})
+    assert hits["n"] == 2, "429 phải được thử lại"
+    assert slept and slept[0] >= 7.0, f"phải nghỉ theo Retry-After, nghỉ {slept}"
+
+
+def test_a_four_hundred_is_still_not_retried(monkeypatch):
+    """Ngược lại, và đây là lý do 429 phải là ngoại lệ HẸP: 400 là phán quyết
+    về chính payload, gửi lại y nguyên chỉ tốn thêm thời gian."""
+    client = a_client(retries=2)
+    monkeypatch.setattr("agent.client.time.sleep", lambda *_: None)
+    Boom = _raiser("400", {}, b'{"error": "bad"}')
+    hits = {"n": 0}
+
+    def urlopen(request, timeout=None):
+        hits["n"] += 1
+        raise Boom()
+
+    monkeypatch.setattr("agent.client.urllib.request.urlopen", urlopen)
+    with pytest.raises(LLMError):
+        client._post({"model": "m"})
+    assert hits["n"] == 1, f"400 gửi lại {hits['n']} lần"
+
+
+def test_a_truncated_reply_is_retried_not_raised(monkeypatch):
+    """`http.client.IncompleteRead` KHÔNG phải `OSError`.
+
+    Ba nhánh `except` cũ không nhánh nào bắt nó, nên một phản hồi đứt giữa
+    chừng không thành "thử lại" mà thành một traceback ném lên
+    `ThreadPoolExecutor` -- và cả lượt chạy chết: đo được 23-09-2026, lô 12
+    tờ không để lại `compose_report.json` nào, không giữ được tờ nào.
+
+    Đúng loại lỗi đáng thử lại nhất: payload không sai, đường truyền sai."""
+    import http.client
+    import json as _json
+
+    client = a_client(retries=2)
+    monkeypatch.setattr("agent.client.time.sleep", lambda *_: None)
+    hits = {"n": 0}
+
+    class Ok:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def read(self): return _json.dumps(OK_RESPONSE).encode()
+
+    def urlopen(request, timeout=None):
+        hits["n"] += 1
+        if hits["n"] == 1:
+            raise http.client.IncompleteRead(b"mot nua")
+        return Ok()
+
+    monkeypatch.setattr("agent.client.urllib.request.urlopen", urlopen)
+    client._post({"model": "m"})
+    assert hits["n"] == 2, "phản hồi đứt phải được thử lại"
+
+
+def test_a_truncated_reply_is_retried_not_fatal(monkeypatch):
+    """`http.client.IncompleteRead` kế thừa thẳng `Exception` -- KHÔNG phải
+    `OSError`, KHÔNG phải `ValueError`, KHÔNG phải `URLError`.
+
+    Nên trước bản sửa nó trượt qua mọi nhánh `except` của `_post`, thoát ra
+    ngoài, giết worker và cả lượt chạy. Đo được: một lô 12 tờ chết ở tờ thứ
+    tư với `IncompleteRead(31654 bytes read)`.
+
+    Câu trả lời càng dài càng dễ đứt, và đúng những tờ dài mới là tờ cần --
+    nên đây không phải ca hiếm, nó là ca thường gặp nhất ở chỗ đắt nhất.
+
+    Đứt đường truyền là lỗi ĐƯỜNG TRUYỀN, không phải phán quyết về payload:
+    thử lại, cùng nhánh với `URLError`."""
+    import http.client
+    import json as _json
+
+    client = a_client(retries=2)
+    monkeypatch.setattr("agent.client.time.sleep", lambda *_: None)
+    hits = {"n": 0}
+
+    class Ok:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def read(self): return _json.dumps(OK_RESPONSE).encode()
+
+    class Torn:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def read(self): raise http.client.IncompleteRead(b"half a reply")
+
+    def urlopen(request, timeout=None):
+        hits["n"] += 1
+        return Torn() if hits["n"] == 1 else Ok()
+
+    monkeypatch.setattr("agent.client.urllib.request.urlopen", urlopen)
+    got = client._post({"model": "m"})
+    assert got == OK_RESPONSE
+    assert hits["n"] == 2, "đứt giữa chừng phải được thử lại"
+
+
+def test_a_transport_error_that_never_clears_raises_cleanly(monkeypatch):
+    """Thử lại có hạn: đứt mãi thì ném `LLMError` để `one()` ghi vào `why`
+    của TỜ ấy, chứ không để một ngoại lệ lạ giết cả `ThreadPoolExecutor`."""
+    import http.client
+
+    client = a_client(retries=1)
+    monkeypatch.setattr("agent.client.time.sleep", lambda *_: None)
+
+    class Torn:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def read(self): raise http.client.IncompleteRead(b"")
+
+    monkeypatch.setattr("agent.client.urllib.request.urlopen",
+                        lambda *a, **k: Torn())
+    with pytest.raises(LLMError) as caught:
+        client._post({"model": "m"})
+    assert "IncompleteRead" in str(caught.value)

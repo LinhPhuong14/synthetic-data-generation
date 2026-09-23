@@ -28,6 +28,7 @@ import json
 import os
 import re
 import time
+import http.client
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
@@ -150,11 +151,40 @@ class Client:
                 # 4xx is a verdict on THIS payload; sending it again unchanged
                 # buys nothing but 4.5s of sleep. 5xx and transport errors can
                 # be the server catching its breath, so those still retry.
+                #
+                # 429 IS THE EXCEPTION, và nó là 4xx duy nhất đáng thử lại:
+                # nó không phán quyết nội dung, nó phán quyết THỜI ĐIỂM. Cùng
+                # một payload gửi lại sau vài giây thì qua. Đo được ngày
+                # 23-09-2026 trên `gpt-4.1-mini`: 2 trên 8 tờ mất trắng vì
+                # `Rate limit reached`, và cả hai chỉ cần chờ.
+                #
+                # Nghỉ theo `Retry-After` khi máy chủ nói ra -- đoán một con
+                # số trong khi server vừa đưa con số đúng là tự chuốc thêm
+                # một lần 429 nữa.
+                if error.code == 429 and attempt < self.retries:
+                    try:
+                        wait = float(error.headers.get("Retry-After") or 0)
+                    except (TypeError, ValueError):
+                        wait = 0.0
+                    time.sleep(max(wait, 2.0 * (attempt + 1)))
+                    continue
                 if error.code < 500:
                     break
                 if attempt < self.retries:
                     time.sleep(1.5 * (attempt + 1))
-            except (urllib.error.URLError, OSError, ValueError) as error:
+            # `http.client.HTTPException` KHÔNG phải `OSError`.
+            #
+            # `IncompleteRead` -- phản hồi bị cắt giữa chừng -- là con của
+            # `HTTPException`, và ba nhánh cũ không nhánh nào bắt nó. Nên một
+            # câu trả lời đứt không thành "thử lại", nó thành một traceback
+            # ném lên `ThreadPoolExecutor` và giết cả lượt chạy: đo được ngày
+            # 23-09-2026, lô 12 tờ chết ở tờ thứ mấy đó, không `compose_
+            # report.json`, không một tờ nào được giữ.
+            #
+            # Đúng loại lỗi đáng thử lại nhất: payload không sai, đường
+            # truyền sai.
+            except (urllib.error.URLError, http.client.HTTPException,
+                    OSError, ValueError) as error:
                 last = f"{type(error).__name__}: {error}"
                 if attempt < self.retries:
                     time.sleep(1.5 * (attempt + 1))
@@ -195,7 +225,13 @@ class Client:
             # `repair.settle` -- hai thứ không phụ thuộc backend nào.
             "response_format": {"type": "json_schema",
                                 "json_schema": {"name": "plan", "schema": schema,
-                                                "strict": self._vllm_extras}},
+                                                # ÉP KHI SCHEMA TỰ ĐÓNG, dù
+                                                # server là ai -- xem `closed()`.
+                                                # Schema mở trên backend hosted
+                                                # thì vẫn phải `false`, nếu
+                                                # không OpenAI trả 400.
+                                                "strict": bool(self._vllm_extras
+                                                               or closed(schema))}},
             "temperature": self.temperature,
             # Trần của LỜI GỌI này đè trần của client: một tờ sáu trang cần
             # nhiều token hơn một tờ một trang, và một con số cố định cho cả
@@ -254,7 +290,20 @@ class Client:
                 signature = ("Unrecognized request argument" in text
                             or "additionalProperties" in text)
                 capped = _MAX_TOKENS_RE.search(text)
-                if self._vllm_extras and signature and not tried_downgrade:
+                # KHÔNG hỏi cờ hiện tại, chỉ hỏi SERVER VỪA NÓI GÌ.
+                #
+                # `run()` chia đúng một `Client` cho cả `ThreadPoolExecutor`,
+                # nên bốn luồng cùng gửi request đầu tiên trước khi ai kịp
+                # học. Luồng A nhận 400, hạ cờ, thử lại, xong. Luồng B, C, D
+                # đã gửi payload MANG trường sai từ trước và cũng nhận 400 --
+                # nhưng tới lúc chúng xử lý lỗi thì cờ đã `False`, nên vế
+                # `self._vllm_extras` sai và chúng ném thẳng thay vì thử lại.
+                # Đo được: 3 trên 8 tờ trượt vì đúng chuyện này ở song song 4,
+                # và con số ấy lớn dần theo mức song song.
+                #
+                # Cờ vẫn ghi (idempotent) để payload dựng lại không mang
+                # trường sai nữa; chỉ điều kiện thử lại là bỏ nó đi.
+                if signature and not tried_downgrade:
                     self._vllm_extras = False
                     tried_downgrade = True
                     continue
@@ -292,6 +341,40 @@ class Client:
 TIMEOUT_ENV = "VLM_LLM_TIMEOUT"
 
 
+def closed(schema) -> bool:
+    """Schema này có TỰ ĐÓNG không: mọi object khai đủ `properties`,
+    `additionalProperties: false`, và `required` liệt kê đủ mọi khoá.
+
+    Đây là điều kiện OpenAI Structured Outputs đòi để `strict: true` chạy.
+    Hỏi chính schema thay vì hỏi một cờ về server: người viết schema biết
+    mình có đóng nó hay không, còn `_vllm_extras` chỉ biết server là ai. Nhờ
+    thế `agent/compose_page.py` bật được ép thật trên OpenAI mà không buộc
+    `planner.py` hay `compose_layout.py` -- vốn gửi schema mở -- phải đổi
+    theo.
+
+    Vì sao phải ép: đo thật trên `gpt-4.1-mini` ngày 23-09-2026, cùng một
+    schema, cùng một lời nhờ. `strict: false` -> 812 token, và câu trả lời
+    mang các khoá CON của `plan` ở mức gốc, không có `data`, không có `rows`,
+    không có `html`. `strict: true` -> 5 192 token, đủ bốn khoá, `html` 11 847
+    ký tự vẽ ra được. Không phải model kém: schema không ép thì nó không theo.
+    """
+    if not isinstance(schema, dict):
+        return True
+    kind = schema.get("type")
+    if kind == "object":
+        props = schema.get("properties")
+        if not isinstance(props, dict) or not props:
+            return False
+        if schema.get("additionalProperties") is not False:
+            return False
+        if set(schema.get("required") or []) != set(props):
+            return False
+        return all(closed(v) for v in props.values())
+    if kind == "array":
+        return closed(schema.get("items") or {})
+    return True
+
+
 def from_env(timeout: float | None = None,
              max_tokens: int = 0) -> Client | None:
     """The configured client, or None when this run has no server.
@@ -312,5 +395,5 @@ def from_env(timeout: float | None = None,
                   max_tokens=max_tokens or 0)
 
 
-__all__ = ["KEY_ENV", "MODEL_ENV", "TIMEOUT_ENV", "URL_ENV",
+__all__ = ["KEY_ENV", "MODEL_ENV", "TIMEOUT_ENV", "URL_ENV", "closed",
           "Client", "LLMError", "from_env"]

@@ -35,6 +35,25 @@ def build_rules(spec: dict[str, list[dict]]):
     }
 
 
+def default_spec() -> dict[str, list[dict]]:
+    """Một spec THÔ đủ mọi thuộc tính, mỗi thuộc tính một lựa chọn bốc được.
+
+    Khác `build_rules()` ngay trên: hàm kia đổi thô -> `Option` cho
+    `sample_recipe(rules=...)`, hàm này trả về THÔ -- thứ `write_rules_dir()`
+    ghi ra YAML và thứ người gọi còn `append` thêm vào được. Ba test về bộ nhớ
+    đệm của `load_rules` cần đúng dạng thô ấy, và trước đây chúng gọi
+    `build_rules()` không tham số -- một hàm chưa bao giờ tồn tại, nên cả ba
+    hỏng ngay từ commit sinh ra chúng.
+
+    Mỗi lần gọi dựng LẠI từ đầu: một test sửa danh sách trả về (đúng việc
+    `test_two_rules_roots_do_not_share_one_cached_answer` làm) không được để
+    lại vết cho test sau.
+    """
+    from rulebase.spec import ATTRIBUTES
+
+    return {name: [{"id": f"{name[:2]}1", "weight": 1}] for name in ATTRIBUTES}
+
+
 def write_rules_dir(root: Path, spec: dict[str, list[dict]], order=None) -> Path:
     """Write a rules directory on disk, `_order.yaml` included."""
     root.mkdir(parents=True, exist_ok=True)
