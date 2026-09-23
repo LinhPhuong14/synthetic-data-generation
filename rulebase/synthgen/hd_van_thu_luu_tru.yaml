@@ -1,0 +1,50 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+#
+# Sinh theo lô "300 phôi chia đều": tên là `<thể loại> + <lĩnh vực>`, đúng cách
+# chứng từ hành chính Việt Nam đặt tên. Bậc `ngan` quyết trần số tờ qua
+# `rows` -- xem `synthgen/design.py::flow_reach`.
+id: hd_van_thu_luu_tru
+titles:
+- HỢP ĐỒNG VỀ VĂN THƯ LƯU TRỮ
+- HỢP ĐỒNG CÔNG TÁC VĂN THƯ LƯU TRỮ
+subtitles:
+- ''
+- Năm ....
+- 'Số: ..../....'
+profile: invoice
+org_kind: company
+national: 0.12
+fields:
+- party_a
+- party_b
+- value
+- term
+field_span:
+- 3
+- 4
+columns: []
+totals: none
+words: false
+sign_sets:
+- - ĐẠI DIỆN BÊN A
+  - ĐẠI DIỆN BÊN B
+- - BÊN GIAO
+  - BÊN NHẬN
+notes:
+- Hai bên cam kết thực hiện đúng nội dung đã thoả thuận.
+- Mọi sửa đổi phải lập thành văn bản có chữ ký hai bên.
+rows:
+- 0
+- 0
+always:
+- letterhead
+- doctitle
+- signatures
+optional:
+- meta
+- fields
+- notes
+- footer
+- footnote
+- checks
+en_ok: true

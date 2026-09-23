@@ -1,0 +1,49 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+#
+# Sinh theo lô "300 phôi chia đều": tên là `<thể loại> + <lĩnh vực>`, đúng cách
+# chứng từ hành chính Việt Nam đặt tên. Bậc `ngan` quyết trần số tờ qua
+# `rows` -- xem `synthgen/design.py::flow_reach`.
+id: pdv_mua_sam_cong
+titles:
+- PHIẾU DỊCH VỤ VỀ MUA SẮM CÔNG
+- PHIẾU DỊCH VỤ CÔNG TÁC MUA SẮM CÔNG
+subtitles:
+- ''
+- Năm ....
+- 'Số: ..../....'
+profile: hotel
+org_kind: company
+national: 0.08
+fields:
+- guest
+- checkin
+- checkout
+- room
+field_span:
+- 3
+- 4
+columns: []
+totals: none
+words: false
+sign_sets:
+- - NGƯỜI MUA HÀNG
+  - NGƯỜI BÁN HÀNG
+- - KHÁCH HÀNG
+  - THU NGÂN
+notes:
+- Quý khách vui lòng giữ chứng từ để đối chiếu khi cần.
+rows:
+- 0
+- 0
+always:
+- letterhead
+- doctitle
+- signatures
+optional:
+- meta
+- fields
+- notes
+- footer
+- footnote
+- checks
+en_ok: false

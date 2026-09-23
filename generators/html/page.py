@@ -439,10 +439,55 @@ _ZONE_REGIONS_TEMPLATE = """() => {
   const TAGS = Object.keys(BY_TAG).join(',');
   const seen = new Set();
   const out = [];
+  // HỘP BÁM MỰC, không bám thẻ.
+  //
+  // `getBoundingClientRect()` của một thẻ KHỐI là hết bề ngang dòng, kể cả
+  // khi chữ trong nó là một dòng tiêu đề căn giữa dài một phần tám tờ giấy.
+  // Đo trên một lượt vẽ: 37 trên 62 vùng có chữ rộng hơn hẳn chữ trong
+  // chúng, nặng nhất là `Title` -- hộp 843 phần nghìn bề ngang cho một dòng
+  // chữ rộng 124. Một cái hộp như thế không tả được thứ gì trên giấy, và đó
+  // đúng là luật `pipeline/record.py` đặt ra cho mọi hộp khác.
+  //
+  // `Range.getBoundingClientRect()` trả về bao lồi của các HỘP DÒNG bên
+  // trong -- tức đúng vùng có mực. Dùng nó thay hộp thẻ, TRỪ khi chính thẻ
+  // vẽ ra cái gì: có viền, có nền, hoặc là ô ảnh. Khi ấy khung mới là thứ
+  // người đọc thấy, và hộp phải ôm khung chứ không ôm chữ trong khung.
+  const paints = (el) => {
+    const cs = getComputedStyle(el);
+    if (cs.backgroundImage && cs.backgroundImage !== 'none') return true;
+    const bg = cs.backgroundColor || '';
+    if (bg && bg !== 'transparent' && !bg.startsWith('rgba(0, 0, 0, 0')) return true;
+    for (const side of ['Top', 'Right', 'Bottom', 'Left']) {
+      if (parseFloat(cs['border' + side + 'Width']) > 0.01
+          && cs['border' + side + 'Style'] !== 'none') return true;
+    }
+    return false;
+  };
+  const inkBox = (el) => {
+    const box = el.getBoundingClientRect();
+    if (paints(el)) return box;
+    let range;
+    try {
+      range = document.createRange();
+      range.selectNodeContents(el);
+    } catch (e) { return box; }
+    const ink = range.getBoundingClientRect();
+    range.detach && range.detach();
+    if (!(ink.width > 0 && ink.height > 0)) return box;
+    // Không bao giờ NỚI RA: bao lồi của hộp dòng có thể tràn khỏi thẻ khi
+    // con của nó nổi hoặc định vị tuyệt đối, và một hộp rộng hơn cả thẻ thì
+    // sai theo chiều ngược lại.
+    const left = Math.max(box.left, ink.left);
+    const right = Math.min(box.right, ink.right);
+    const top = Math.max(box.top, ink.top);
+    const bottom = Math.min(box.bottom, ink.bottom);
+    if (!(right > left && bottom > top)) return box;
+    return {left: left, top: top, width: right - left, height: bottom - top};
+  };
   const add = (el, label, from_) => {
     if (seen.has(el)) return;
     seen.add(el);
-    const box = el.getBoundingClientRect();
+    const box = inkBox(el);
     if (!(box.width > 0 && box.height > 0)) return;
     const at = own(el);
     out.push({
