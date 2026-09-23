@@ -1,0 +1,49 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+#
+# Sinh theo lô "300 phôi chia đều": tên là `<thể loại> + <lĩnh vực>`, đúng cách
+# chứng từ hành chính Việt Nam đặt tên. Bậc `ngan` quyết trần số tờ qua
+# `rows` -- xem `synthgen/design.py::flow_reach`.
+id: bb_thi_dua_khen_thuong
+titles:
+- BIÊN BẢN VỀ THI ĐUA KHEN THƯỞNG
+- BIÊN BẢN CÔNG TÁC THI ĐUA KHEN THƯỞNG
+subtitles:
+- ''
+- Năm ....
+- 'Số: ..../....'
+profile: admin
+org_kind: state
+national: 0.9
+fields:
+- seller_name
+- object
+- period
+field_span:
+- 2
+- 3
+columns: []
+totals: none
+words: false
+sign_sets:
+- - ĐẠI DIỆN BÊN A
+  - ĐẠI DIỆN BÊN B
+- - BÊN GIAO
+  - BÊN NHẬN
+notes:
+- Các nội dung khác thực hiện theo quy định hiện hành.
+- Văn bản này được lập thành 02 bản có giá trị như nhau.
+rows:
+- 0
+- 0
+always:
+- letterhead
+- doctitle
+- signatures
+optional:
+- meta
+- fields
+- notes
+- footer
+- footnote
+- checks
+en_ok: false

@@ -842,6 +842,22 @@ def item_rules() -> dict:
     return rules if isinstance(rules, dict) else {}
 
 
+def hand_kinds(arch: "Archetype") -> tuple[str, ...]:
+    """Những `data-kind` được điền TAY trên loại giấy này.
+
+    `handwriting.fill()` viết lại chính chữ đã in, nên nội dung vốn khớp tài
+    liệu; cái file này quyết là CHỖ ĐẶT BÚT. Một danh sách chung cho mọi loại
+    giấy là cách một `BẢNG LƯƠNG` in máy có ô viết tay còn một `SỔ KHO` --
+    ngoài đời ghi tay cả quyển -- chỉ được viết mấy ô trường."""
+    data = _blocks_yaml().get("hand_kinds") or {}
+    for rule in data.get("rules") or ():
+        if _allowed_for(rule, arch):
+            kinds = rule.get("kinds")
+            return tuple(kinds) if kinds else ()
+    fallback = data.get("default")
+    return tuple(fallback) if fallback else ()
+
+
 def block_allow() -> dict:
     """Luật `allow:` của `_blocks.yaml`: khối nào gắn được vào phôi nào."""
     data = _blocks_yaml()

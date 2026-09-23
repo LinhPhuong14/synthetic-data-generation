@@ -194,8 +194,13 @@ class Studio:
                  short_size: tuple[int, int] = (980, 1560),
                  jpeg_quality: int = 92, augment: str = "off",
                  handwriting: str = "off", hand_share: float = 1.0,
-                 pages: tuple[int, int] | None = None):
+                 pages: tuple[int, int] | None = None,
+                 plan_dir: "Path | None" = None):
         self.scale = scale
+        # Nơi ghi KẾ HOẠCH của mỗi tài liệu, TRƯỚC khi trình duyệt vẽ nó.
+        # `None` là tắt -- `run.py` bật lên, còn ai gọi `Studio` tay thì không
+        # bị ép ghi thêm file.
+        self.plan_dir = Path(plan_dir) if plan_dir else None
         # Khoảng số tờ lượt chạy này nhắm tới, `run.py --pages LO-HI`. Đi qua
         # hàm dựng chứ không qua biến môi trường: một shard là một tiến trình
         # con, và `unique_seeds()` ở tiến trình CHA phải tính chữ ký dáng bằng
@@ -290,12 +295,19 @@ class Studio:
 
         if self._pen is None:
             self._pen = handwriting.source(self._ink_source()).open()
-        # `survey.answer` thêm vào bộ `kind` mặc định: dòng trả lời của một tờ
-        # khai là chỗ người ta VIẾT, đúng như `invoice.field` trên một hoá đơn.
-        # Không thêm thì bút bỏ qua nó và tờ khai ra với câu trả lời đánh máy.
+        # CHỖ ĐẶT BÚT theo TỪNG LOẠI GIẤY, khai ở
+        # `rulebase/synthgen/_blocks.yaml::hand_kinds`.
+        #
+        # Bản trước dùng một danh sách cứng cho mọi loại chứng từ. Nội dung
+        # chữ viết tay thì vẫn đúng -- `fill()` viết lại chính chữ đã in --
+        # nhưng CHỖ viết thì không: một bảng lương in máy cũng có ô viết tay,
+        # còn một sổ kho, thứ ngoài đời ghi tay cả quyển, chỉ được viết mấy ô
+        # trường. Danh sách rỗng nghĩa là tờ giấy này không ai cầm bút.
+        kinds = D.hand_kinds(state["arch"])
+        if not kinds:
+            return markup
         filled, report = handwriting.fill(
-            markup, self._pen, seed=seed,
-            kinds=handwriting.HAND_KINDS + ("survey.answer",))
+            markup, self._pen, seed=seed, kinds=kinds)
         state["hand"] = report
         return filled
 
@@ -321,6 +333,49 @@ class Studio:
             print(f"[synthgen] không có WriteViT tại {root} — chữ viết tay lùi "
                   f"về `font`; chạy `python tools/writevit/setup.py` để bật lại")
         return "font"
+
+    def _write_plan(self, design, doc, stem: str, seed: int) -> None:
+        """Kế hoạch của một tài liệu: quyết định dáng + nội dung sắp in.
+
+        KHÔNG chép lại `records/*.json`. File này trả lời "định vẽ gì", bản
+        ghi trả lời "đã vẽ ra gì" -- và chỗ hai câu trả lời khác nhau chính là
+        chỗ phép đo trong trình duyệt bắt bộ dựng nhượng bộ."""
+        arch = design.archetype
+        plan = {
+            "stem": stem,
+            "seed": seed,
+            "archetype": arch.id,
+            "profile": arch.profile,
+            "org_kind": arch.org_kind,
+            "design": {
+                "paper": design.paper.id,
+                "palette": design.palette.id,
+                "face": design.face.id,
+                "base_pt": design.base_pt,
+                "page_columns": design.page_columns,
+                "flow": design.flow,
+                "target_pages": design.target_pages,
+                "blocks": sorted(design.blocks),
+                "order": list(design.order),
+                "columns": list(design.columns),
+            },
+            "content": {
+                "title": doc.title,
+                "subtitle": doc.subtitle,
+                "doc_no": doc.doc_no,
+                "issued_date": str(doc.issued_date),
+                "fields": [[f.key, v] for f, v in doc.fields],
+                "rows": len(doc.rows),
+                "clauses": [head for head, _body in doc.clauses],
+                "sections": [head for head, _body in (doc.sections or ())],
+                "questions": [q.get("prompt") for q in doc.questions],
+                "signatures": [c for c, _n in doc.signatures],
+            },
+        }
+        target = self.plan_dir / arch.id / f"{stem}.json"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(plan, ensure_ascii=False) + "\n",
+                          encoding="utf-8")
 
     def _recipe(self, document: str):
         """Recipe làm cũ cho một tài liệu, hoặc `None` khi tắt.
@@ -354,13 +409,38 @@ class Studio:
         probe = max(min(PROBE_ITEMS, flow_ceiling), 1) if design.flow else 0
         doc = C.build(design, rng, probe)
 
+        # KẾ HOẠCH RA ĐĨA TRƯỚC KHI VẼ.
+        #
+        # Đến dòng này mọi quyết định về tờ giấy đã chốt -- loại chứng từ, khổ
+        # giấy, bảng màu, khối nào có, chữ gì in lên -- và chưa một pixel nào
+        # được vẽ. Ghi nó ra ngay có ba cái lợi, cái thứ ba là cái đáng kể:
+        #
+        # * một lượt chết giữa chừng vẫn để lại thứ nó ĐỊNH vẽ, nên dựng lại
+        #   được mà không phải đoán;
+        # * `--dry-run` và lượt vẽ thật nói cùng một thứ, kiểm chéo được;
+        # * và đây là NGUỒN, không phải bản sao: `records/*.json` là thứ ĐO
+        #   ĐƯỢC sau khi trình duyệt dàn trang, còn file này là thứ được YÊU
+        #   CẦU. Hai cái lệch nhau ở đâu thì đó đúng là chỗ `paginate.py` đã
+        #   nhượng bộ -- hạ số tờ, thu cỡ chữ, leo khổ giấy.
+        #
+        # Hỏng thì bỏ qua, không làm chết lượt vẽ: mất một file kế hoạch còn
+        # hơn mất một tờ giấy đã dàn xong.
+        stem_now = naming.format(document=arch.id, index=index, seed=seed)
+        if self.plan_dir is not None:
+            try:
+                self._write_plan(design, doc, stem_now, seed)
+            except Exception:                                # noqa: BLE001
+                pass
+
         # `drawn` là thứ trình duyệt ĐANG hiển thị, không phải thứ vừa được
         # yêu cầu. Hai cái ấy lệch nhau bất cứ khi nào `paginate.py` chọn một
         # lần đo trước đó làm kế hoạch: nó đặt lại hệ số cỡ chữ trên đối
         # tượng `Design`, nhưng trang trong trình duyệt vẫn là lần dàn cuối.
         # Chụp lúc ấy là chụp một tờ giấy khác với nhãn sắp ghi -- đúng lỗi
         # đã đo được: bản ghi nói tờ giấy lấp 122% mà `grown` vẫn báo không.
-        state = {"markup": "", "rows": probe, "drawn": None}
+        # `arch` vào `state` để `_ink` biết đây là loại giấy gì -- chỗ đặt
+        # bút khai theo tên phôi, xem `design.hand_kinds`.
+        state = {"markup": "", "rows": probe, "drawn": None, "arch": arch}
 
         def refill(count: int) -> None:
             if count == state["rows"]:
@@ -536,7 +616,12 @@ class Studio:
 # người dùng đã chốt: MỘT file cho MỘT TÀI LIỆU, khoá `page_1`/`page_2`.
 # Hai thứ khác nhau mà cùng tên `json` là chỗ đã làm người dùng mở ra và
 # thấy ba file cho một chứng từ ba tờ.
-KINDS = ("images", "html", "records", "layout_boxes", "word_boxes")
+# Thư mục `run.py` dựng sẵn ở tiến trình CHA trước khi shard chạy -- mười bốn
+# tiến trình con cùng `mkdir` một đường dẫn là mười bốn lần chạy đua.
+# `visualize_kie` và `plan` nằm trong danh sách vì `write()` giờ ghi thẳng vào
+# chúng, không đợi `derive.py`.
+KINDS = ("images", "html", "records", "layout_boxes", "word_boxes",
+         "visualize_kie", "plan")
 
 
 def write(drawn: Drawn, out: Path, *, indent: int | None = None) -> list[dict]:
@@ -615,8 +700,23 @@ def write(drawn: Drawn, out: Path, *, indent: int | None = None) -> list[dict]:
         layout_boxes, word_boxes = O.slice_for(record, number, kie)
 
         page = cv2.imdecode(np.frombuffer(blob, np.uint8), cv2.IMREAD_COLOR)
-        for folder, drawing in (("layout_boxes", O.layout(page, layout_boxes)),
-                                ("word_boxes", O.words(page, word_boxes))):
+        # `visualize_kie/` DỰNG NGAY Ở ĐÂY, không đợi `derive.py`.
+        #
+        # Nó là ảnh trả lời câu khó nhất của một tờ giấy -- hộp nào ĐI VỚI hộp
+        # nào, khi "Địa chỉ:" in hai lần cho bên bán và bên mua -- nên nó là
+        # thứ người ta mở ra để kiểm nhãn. Đợi `derive.py` nghĩa là một lượt
+        # `--raw`, một batch đứt, hay một tờ vẽ tay đều không có nó, và khi ấy
+        # cách duy nhất để nhìn cặp KIE là đọc JSON.
+        #
+        # Cùng bộ vẽ `overlay.kie` mà `derive.py` gọi, không phải một bản thứ
+        # hai: hai chỗ vẽ cùng một thứ theo hai cách là cách chắc chắn nhất để
+        # chúng lệch nhau, và `derive.py` chạy sau sẽ ghi đè bằng đúng ảnh ấy.
+        kie_pairs = [pair for pair in (record.get("kie") or {}).get("pairs") or []
+                     if int(pair.get("page_number", 1) or 1) == number]
+        drawings = (("layout_boxes", O.layout(page, layout_boxes)),
+                    ("word_boxes", O.words(page, word_boxes)),
+                    ("visualize_kie", O.kie(page, kie_pairs, number)))
+        for folder, drawing in drawings:
             ok, buffer = cv2.imencode(".jpg", drawing,
                                       [cv2.IMWRITE_JPEG_QUALITY, 88])
             if not ok:

@@ -370,9 +370,12 @@ table.items tbody td.tightest,table.items tfoot td.tightest{{
 .markcorner{{position:absolute;top:{max(d.margins[0] * 0.45, 4):.1f}mm;
   right:{max(d.margins[1] * 0.5, 5):.1f}mm;text-align:center;z-index:2;}}
 .markcorner .barcode{{width:32mm;height:7mm;}}
-.qr{{display:block;width:16mm;height:16mm;
-  background:repeating-conic-gradient({pal.ink} 0 25%,transparent 0 50%)
-    0 0/3.2mm 3.2mm;}}
+/* Mã QR THẬT, vẽ bằng SVG nội tuyến -- xem `synthgen/qr.py`. Bản trước là
+   `repeating-conic-gradient`: một ô bàn cờ đều tăm tắp, không máy nào quét
+   được, và chỉ có đúng một dáng cho cả bộ dữ liệu.
+   `color` cho `currentColor` trong SVG bám mực của trang. */
+.qr{{display:block;width:22mm;height:22mm;color:{pal.ink};}}
+.qr svg{{display:block;width:100%;height:100%;}}
 .mark{{text-align:center;font-size:{_px(base_pt * 0.8)};
   color:{pal.soft};}}
 .markbox{{position:absolute;right:{right}mm;}}
@@ -1771,6 +1774,20 @@ def _seal(d: Design, stem: str, right: float, top: float) -> str:
             f'</div>')
 
 
+def _qr_art(doc: Doc, d: Design) -> str:
+    """SVG mã QR của tờ giấy này, hoặc rỗng nếu mã hoá không được.
+
+    Rỗng chứ không ném: một tờ giấy thiếu mã QR vẫn là một tờ giấy dùng được,
+    còn một lượt vẽ chết vì một chuỗi lạ thì mất cả shard. Ô `.qr` vẫn giữ
+    kích thước nên bố cục không xô lệch."""
+    try:
+        from synthgen import qr  # noqa: PLC0415 -- chỉ cần khi tờ giấy có mã
+
+        return qr.svg(qr.payload_for(doc, d))
+    except Exception:                                        # noqa: BLE001
+        return ""
+
+
 def _ornament(doc: Doc, d: Design, corner: bool = False) -> str:
     """Mực không phải chữ chạy: dấu, mã vạch, mã QR. Mỗi thứ vẫn mang một
     `data-kind` riêng, vì mực không có hộp là mực không có nhãn.
@@ -1784,7 +1801,7 @@ def _ornament(doc: Doc, d: Design, corner: bool = False) -> str:
     if name in ("ma_vach", "ma_qr"):
         inner = ('<span class="barcode" data-graphic="barcode"></span>'
                  if name == "ma_vach"
-                 else '<span class="qr" data-graphic="qr"></span>')
+                 else f'<span class="qr" data-graphic="qr">{_qr_art(doc, d)}</span>')
         code = f"{doc.doc_serial}{doc.doc_no}".replace("/", "")
         cls = "markcorner mark" if corner else "blk mark"
         return (f'<div class="{cls}">{inner}'
