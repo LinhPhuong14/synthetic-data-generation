@@ -622,6 +622,30 @@ class Drawer:
             except Exception:                               # noqa: BLE001
                 pass
 
+    def measure(self, html: str, stem: str, archetype: str = "llm") -> dict | None:
+        """Dàn trang CHỈ ĐỂ ĐO. Không ghi một tệp nào, không dựng KIE.
+
+        `agent/compose_page.py` cần `layout_annotations` -- chỗ mực THẬT rơi
+        xuống -- để biết tờ vừa sinh có trùng bố cục với một tờ gần đây
+        không, và nó cần biết điều ấy TRƯỚC khi nhận tờ giấy. `draw()` dưới
+        đây trả lời đúng câu hỏi ấy nhưng kèm theo mười hai tệp trên đĩa:
+        gọi nó để đo rồi xoá là ghi ảnh của một tờ sắp bị loại vào chính thư
+        mục người ta sẽ đưa vào tập huấn luyện.
+
+        Nên tách phần ĐO ra khỏi phần GHI. `draw_one()` đã là phần đo -- nó
+        dựng bản ghi rồi trả về, không chạm đĩa; hàm này chỉ là tên gọi cho
+        việc dùng nó một mình. Không có luật nào mới ở đây, và đặc biệt
+        không có phép đo hộp thứ hai: hộp vẫn do đúng Chromium ấy sinh ra,
+        một lần, qua đúng `draw_one()` ấy (AGENTS.md luật 1).
+
+        `None` khi trang không dàn ra được -- caller phải đọc nó là "chưa
+        biết", không phải "không trùng"."""
+        try:
+            got = draw_one(self._page, html, stem, {"archetype": archetype})
+        except Exception:                                   # noqa: BLE001
+            return None
+        return got["record"] if got else None
+
     def draw(self, path: Path, passed: bool) -> tuple[str, bool]:
         """Vẽ một tài liệu. `(dòng tóm tắt để in, vẽ được hay không)`.
 

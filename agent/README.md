@@ -278,6 +278,34 @@ python tools/proof_boxes.py --dataset data/5k_llm --workers 3
 | `distance.py` | vẽ hai lần rồi đếm run đã dịch — "thiết kế này có đổi gì không" |
 | `critic.py` | đọc bộ đã xong bằng mắt của người dùng bộ: 13 mã lỗi |
 | `guideline.py` | sinh `guideline/` từ chính sách + luật + bài chấm |
+| `grammar.py` | 30 family: nhánh nào có giá trị nào, ràng buộc nào cắt cái nào |
+| `document_plan.py` | RÚT một điểm từ grammar — có trọng số, luôn thoả ràng buộc |
+| `fingerprint.py` | dấu vân của một plan (coarse/mid/fine) **và** của trang đã vẽ (lưới 8×12) |
+| `coverage.py` | góc nào của grammar đã bão hoà; rút N ứng viên, giữ cái ít gặp nhất |
+| `document_distance.py` | hai plan khác nhau bao nhiêu — **không đọc hình học** |
+| `geometry_distance.py` | hai TRANG ĐÃ VẼ rơi gần nhau bao nhiêu — Jaccard quyết, Hamming ghi |
+| `diversity.py` | trí nhớ đa dạng dùng chung cả lô, an toàn nhiều luồng; người gọi của bốn file trên |
+
+### Chống trùng bố cục — hai tầng, và tầng thứ hai đọc pixel
+
+`agent/compose_page.py` hỏi `diversity.py` hai lần cho mỗi tờ:
+
+1. **trước khi gọi model** — rút plan qua `sample_with_coverage`, rút lại nếu
+   tổ hợp vừa rút đã có trong 24 tờ gần nhất. Miễn phí.
+2. **sau khi model trả lời** — dàn trang ra để ĐO (`Artist.measure`), lấy
+   `layout_annotations` thật, so Jaccard với 24 tờ gần nhất. Trùng thì **sinh
+   lại** kèm câu nhắc nói rõ khối nào đang ngồi đúng chỗ khối cũ. Tốn một lời
+   gọi model, nên nó là cổng cuối.
+
+Tầng hai có mặt vì tầng một mù với đúng thứ nó phải bắt: ba cặp tờ giống nhau
+nhất trong `data/pilot16`+`data/pilot17` đều được `document_distance.py` chấm
+**1.000 — khác nhau tối đa**, vì chúng thuộc ba family khác nhau. Bảng số ở
+đầu `geometry_distance.py`.
+
+Đo lại một lô đã sinh: `python tasks.py diversity-report --dataset data/<lô>`,
+hoặc `python -m tools.llm.diversity_report data/<trước> data/<sau>` để so hai
+lô. Tắt để đối chứng: `--no-diversity` (rút như trước khi nối dây, không loại
+tờ nào) hoặc `--no-coverage-steer` (chỉ tắt tầng một).
 
 **Nửa sinh**
 

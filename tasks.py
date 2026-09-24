@@ -458,6 +458,23 @@ def check_boxes(args) -> None:
     run([first_available_python(), REPO_ROOT / "tools" / "check_boxes.py", args.dataset])
 
 
+@task("diversity-report", "lô LLM có tự lặp bố cục không — đo trên ảnh đã vẽ")
+def diversity_report(args) -> None:
+    """Đo trùng bố cục trên `records/` của một lô `agent/compose_page.py`.
+
+    Chạy SAU mỗi lô, và chạy lại khi đổi ngưỡng trong `agent/
+    geometry_distance.py`. Con số cần theo là `vượt ngưỡng` -- tỉ lệ tờ có
+    một tờ gần như y hệt trong 24 tờ liền trước.
+
+    So HAI lô với nhau (trước/sau một thay đổi) thì gọi thẳng module, vì
+    `tasks.py` chỉ cầm được một thư mục:
+
+        python -m tools.llm.diversity_report data/lo-truoc data/lo-sau
+    """
+    run([first_available_python(), "-m", "tools.llm.diversity_report",
+         args.dataset], cwd=REPO_ROOT)
+
+
 @task("showcase", "one before/after image per degradation model")
 def showcase(args) -> None:
     run([first_available_python(), REPO_ROOT / "tools" / "degradation_showcase.py"])
