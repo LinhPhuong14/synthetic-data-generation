@@ -153,8 +153,15 @@ def test_a_region_covering_the_page_washes_fainter_than_a_small_one():
     mươi pixel thì nó nhuộm màu mọi vùng nằm dưới, và bản thân nó không nói
     thêm được gì -- vùng ấy vốn đã là cả trang."""
     page = np.full((400, 300, 3), 255, np.uint8)
-    whole = [{"bbox": [0, 0, 300, 400], "layout_class": "Text"}]
-    small = [{"bbox": [0, 0, 60, 40], "layout_class": "Text"}]
+    # Hộp ở `bbox_px`, không ở `bbox`: số ở đây là PIXEL, còn `bbox` của bản
+    # ghi là PHẦN NGHÌN cạnh giấy (`pipeline/record.py::to_per_mille`) và
+    # `layout()` đọc nó đúng như thế. Để ở `bbox` thì vùng "phủ kín trang" co
+    # về (0, 0, 90, 160) pixel, vùng nhỏ về (0, 0, 18, 16), cả hai điểm đo nằm
+    # NGOÀI vùng và cùng ra trắng tinh: 0 < 0, đỏ vì toạ độ chứ không vì lớp
+    # tô. Đặt đúng chỗ thì mức tô là 0,035 so với 0,19, lệch khỏi trắng 16
+    # so với 87.
+    whole = [{"bbox_px": [0, 0, 300, 400], "layout_class": "Text"}]
+    small = [{"bbox_px": [0, 0, 60, 40], "layout_class": "Text"}]
     # Đo ở giữa vùng, chỗ chỉ có lớp tô -- không dính khung, không dính nhãn.
     covered = O.layout(page, whole)[200, 150]
     tight = O.layout(page, small)[20, 30]
