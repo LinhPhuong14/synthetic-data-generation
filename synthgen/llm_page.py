@@ -498,6 +498,17 @@ def problems(html: str, fields: dict | None = None) -> list[str]:
     seen_kind: dict[str, int] = {}
     for span in parser.spans:
         if span["nested"]:
+            # CỔNG NÀY KHÔNG ĐƯỢC NỚI. Bất kể model viết gì, một thẻ lồng
+            # LUÔN làm hộp đo sai -- đó là kết luận của chính `CELL_RECTS_JS`,
+            # không phải một tỉ lệ cần đo trước rồi mới gác.
+            #
+            # Đo trên `data/pilot16`: 9 tờ trượt đúng đây, và cả 9 đều một
+            # trong hai hình -- nhãn ngắn bọc `<strong>`/`<b>` đứng TRƯỚC phần
+            # chữ còn lại, hoặc sub-label song ngữ bọc `<span>` sau `<br>`.
+            # `synthgen/repair.py::unnest()` (đã tổng quát hoá để bắt cả hai
+            # hình, không chỉ span trần) chữa được cả 9 TRƯỚC khi tới đây --
+            # xem `tests/test_repair.py`. Cổng vẫn đứng nguyên; thứ đổi là
+            # bao nhiêu trang còn tới được đây ở dạng chưa chữa.
             found.append(
                 f'run `{span["kind"]}` có thẻ lồng bên trong; phép đo lấy '
                 "`span.firstElementChild || span` nên thẻ ấy THÀNH cái hộp "
@@ -527,6 +538,16 @@ def problems(html: str, fields: dict | None = None) -> list[str]:
     # đoạn văn cùng khai một đường dẫn mà in ra hai giá trị khác nhau, LUÔN
     # sai bất kể phiên bản prompt nào -- đây là mâu thuẫn nội tại của chính
     # trang đó, không phải một tỉ lệ cần đo trước.
+    #
+    # "Khác nhau" là so CHUỖI, không so Ý -- viết hoa khác, rút gọn khác,
+    # hay một nhãn bị bọc vào chữ của một trong hai lần in đều tính. Đo trên
+    # `data/pilot16`: 15 tờ trượt đúng đây, và không tờ nào là hai sự thật
+    # thật sự mâu thuẫn -- toàn bộ là MỘT sự thật, in hai chữ khác nhau.
+    # `synthgen/repair.py::unclash()` bỏ `data-path` khỏi mọi run đụng nhau
+    # (giữ `data-kind`, giữ chữ, chỉ mất một lời khai định danh) TRƯỚC khi
+    # tới đây, và chữa được cả 15 -- xem `tests/test_repair.py`. Cổng không
+    # tự phân xử bên nào "đúng hơn": nó không đủ thông tin để đoán, và đoán
+    # sai thì gắn nhầm danh tính cho một run, tệ hơn không gắn.
     by_path: dict[str, set[str]] = {}
     for span in parser.spans:
         path = span.get("path") or ""

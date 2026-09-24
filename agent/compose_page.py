@@ -1414,8 +1414,16 @@ def one(client, index: int, made: list[str], seed: int,
     # CÂY DỮ LIỆU. Bản trước khai nó trong schema rồi vứt đi -- đo được 0/12 tờ
     # có `data` trong `declared/`, không phải vì model không viết mà vì không
     # ai đọc ra khỏi câu trả lời.
+    #
+    # `isinstance(tree, dict)` đúng cho SCHEMA CŨ (`"data": {"type": "object"}`,
+    # trước 23-09) nhưng sai cho schema hiện tại: `DATA_ITEMS` xin một MẢNG
+    # `[{path, value}]` (xem docstring `schema()`), nên `answer["data"]` giờ
+    # LUÔN là `list`, không bao giờ là `dict` -- và dòng kiểm cũ âm thầm biến
+    # nó thành `{}` trên MỌI tờ kể từ khi schema đổi hình, tái lập đúng cái
+    # lỗi 0/12 mà comment trên vừa kể, chỉ khác lý do. `data_path_mismatches`
+    # (dưới) đã đọc được cả hai hình từ lâu; chỗ này thì chưa theo kịp.
     tree = answer.get("data")
-    tree = tree if isinstance(tree, dict) else {}
+    tree = tree if isinstance(tree, list) else []
     rows = list(answer.get("rows") or [])
     wrong, total = arithmetic(rows)
     # CHỮA TRƯỚC KHI GÁC. Đo trên pilot6: sáu tờ bị loại, năm tờ trượt vì hai

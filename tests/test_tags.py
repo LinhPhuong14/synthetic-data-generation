@@ -286,11 +286,23 @@ def test_a_plural_region_name_is_straightened_too():
 # có nhãn LẶNG LẼ trở thành cái hộp được ghi. `dress()` lo ca thẻ trang trí là
 # con DUY NHẤT; model viết hình khác -- một span đánh số đứng TRƯỚC chữ. Đo
 # trên `data/23-09-llm-f`: 5 trên 12 tờ trượt vì đúng hình ấy.
+#
+# Hai ca `<strong>`/`<b>` dưới đây đo trên `data/pilot16`: cả 9 tờ trượt vì
+# "thẻ lồng" của lượt ấy đều là một nhãn ngắn bọc `<strong>`/`<b>` đứng
+# TRƯỚC phần chữ còn lại -- hình `_SPAN_TAG` (chỉ khớp `<span>`) không thấy.
 
 UNNEST_CASES = (
     ("span trần trước chữ",
      '<span data-kind="note"><span class="n">1.</span> Nội dung</span>', 1,
      '<span data-kind="note">1. Nội dung</span>'),
+    ("nhãn bọc <strong> đứng trước chữ (data/pilot16, idx 8)",
+     '<span data-kind="note"><strong>Bên giao thầu:</strong> Công ty CP '
+     'Thiết bị Y khoa Minh Đức</span>', 1,
+     '<span data-kind="note">Bên giao thầu: Công ty CP Thiết bị Y khoa '
+     'Minh Đức</span>'),
+    ("nhãn bọc <b> đứng trước chữ (data/pilot16, idx 17)",
+     '<span data-kind="note"><b>Điều 1.</b> Bảo hiểm không chi trả</span>',
+     1, '<span data-kind="note">Điều 1. Bảo hiểm không chi trả</span>'),
     ("chữ thuần không đụng",
      '<span data-kind="a.b">chữ thuần</span>', 0, None),
     ("span CÓ nhãn lồng thì để yên -- hai trường, không đoán",

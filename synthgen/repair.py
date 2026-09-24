@@ -296,37 +296,68 @@ def zones(html: str) -> tuple[str, int]:
 
 _SPAN_TAG = re.compile(r"<(/?)span\b((?:[^>\"']|\"[^\"]*\"|'[^']*')*)>",
                        re.IGNORECASE)
+# CÙNG bảng thẻ trang trí `_DRESS` (dưới) chấp nhận, cộng `span`. `dress()`
+# chỉ bóc được khi thẻ lồng là con DUY NHẤT; `unnest()` là nước hai, nên nó
+# phải nhận đúng những thẻ mà `dress()` coi là "trang trí, bóc không mất gì"
+# -- khác bảng thì một thẻ `dress()` từ chối (vì không phải con duy nhất) lại
+# lọt qua `unnest()` chưa từng nghe tên nó, và ngược lại.
+#
+# Bản trước chỉ khớp `<span>`. Đo trên `data/pilot16`: chín tờ trượt vì
+# `<strong>`/`<b>` bọc một nhãn ngắn đứng TRƯỚC phần chữ còn lại của run --
+# `<span data-kind="note"><strong>Bên giao thầu:</strong> Công ty…</span>` --
+# và bản trước không thấy thẻ đó, vì nó không phải `<span>`. Vòng lặp bên
+# dưới đếm ĐỘ SÂU thẻ, không đọc tên thẻ khi đóng (xem `unnest()`), nên gộp
+# thêm những thẻ này vào cùng một biểu thức là đủ -- không có gì khác trong
+# thân hàm phải đổi.
+_INLINE_TAG = re.compile(
+    r"<(/?)(?:span|b|strong|em|i|u|small)\b((?:[^>\"']|\"[^\"]*\"|'[^']*')*)>",
+    re.IGNORECASE)
 _HAS_KIND = re.compile(r"\bdata-kind\s*=", re.IGNORECASE)
 
 
 def unnest(html: str) -> tuple[str, int]:
-    """Bóc `<span>` KHÔNG nhãn nằm trong `<span data-kind>`. `(html, số chỗ)`.
+    """Bóc thẻ trang trí KHÔNG nhãn nằm trong `<span data-kind>`. `(html, số chỗ)`.
 
     `CELL_RECTS_JS` đo `span.firstElementChild || span`: một thẻ bất kỳ lồng
     trong run có nhãn LẶNG LẼ trở thành cái hộp được ghi. Trang vẫn vẽ ra,
     nhãn vẫn có, và nhãn sai.
 
     `dress()` ngay trên đã lo ca ấy, nhưng chỉ khi thẻ lồng là con DUY NHẤT
-    (`_INNER` đòi `<span k><b>X</b></span>`) và chỉ với thẻ trang trí đã kê
-    tên. Model viết kiểu khác: `<span data-kind="note"><span
-    class="clause-number">1.</span> Nội dung…</span>` -- một span đánh số
-    đứng TRƯỚC chữ. Đo trên `data/23-09-llm-f`: 5 trên 12 tờ trượt vì đúng
-    hình này.
+    (`_INNER` đòi `<span k><b>X</b></span>`). Model viết hai kiểu khác:
 
-    Một `<span>` không mang `data-kind` thì THEO ĐỊNH NGHĨA là trang trí --
-    nó không khai mình là trường nào. Bóc thẻ, giữ chữ: hộp trở lại đúng chữ,
-    và cái mất là kiểu dáng của riêng mẩu ấy. Đổi một chút hình thức lấy một
-    cái hộp đúng là đổi đúng chiều; trang bị loại thì mất cả hai.
+    * một span TRẦN đứng TRƯỚC chữ -- `<span data-kind="note"><span
+      class="clause-number">1.</span> Nội dung…</span>`. Đo trên
+      `data/23-09-llm-f`: 5 trên 12 tờ trượt vì đúng hình này.
+    * một nhãn ngắn bọc `<strong>`/`<b>` đứng TRƯỚC phần chữ còn lại --
+      `<span data-kind="note"><strong>Bên giao thầu:</strong> Công ty…
+      </span>`. Đo trên `data/pilot16`: 9 trên 9 tờ trượt vì "thẻ lồng" đều
+      đúng hình này (label bọc `<strong>`/`<b>`, hoặc bilingual bọc `<span>`
+      không nhãn) -- không tờ nào là ca `dress()` với tới (con duy nhất).
+
+    Cả hai đều là MỘT ĐOẠN chữ đứng trước phần còn lại, không phải toàn bộ
+    run -- `dress()` không khớp vì `_INNER` đòi `</span>` ngay sau thẻ đóng.
+
+    Một thẻ trang trí (`_INLINE_TAG`: `b`, `strong`, `em`, `i`, `u`, `small`,
+    hoặc `span` không mang `data-kind`) thì THEO ĐỊNH NGHĨA không phải một
+    trường -- nó không khai mình là gì. Bóc thẻ, giữ chữ: hộp trở lại đúng
+    chữ, và cái mất là kiểu dáng của riêng mẩu ấy (không chuyển được lên
+    `style` như `dress()`, vì nó không phải con duy nhất). Đổi một chút hình
+    thức lấy một cái hộp đúng là đổi đúng chiều; trang bị loại thì mất cả
+    hai.
 
     KHÔNG đụng span có nhãn lồng trong span có nhãn: đó là hai trường, và gộp
     chúng là đoán xem trường nào thắng."""
     out: list[str] = []
     at = 0
-    depth = 0          # độ sâu span đang mở
+    depth = 0          # độ sâu thẻ inline đang mở (span HOẶC thẻ trang trí)
     labelled: list[int] = []   # độ sâu của những span CÓ nhãn đang mở
-    drop: list[int] = []       # độ sâu của những span đang bị bóc
+    drop: list[int] = []       # độ sâu của những thẻ đang bị bóc
     removed = 0
-    for match in _SPAN_TAG.finditer(html):
+    # KHÔNG đọc tên thẻ lúc đóng, chỉ đọc ĐỘ SÂU -- `<strong>` mở tại độ sâu
+    # 2 thì `</strong>` cũng đóng đúng độ sâu 2, bất kể đó là thẻ gì. Đây là
+    # lý do gộp thêm `b`/`strong`/`em`/`i`/`u`/`small` vào `_INLINE_TAG`
+    # không cần sửa gì dưới đây: thân vòng lặp vốn đã không phân biệt tên thẻ.
+    for match in _INLINE_TAG.finditer(html):
         closing, attrs = match.group(1), match.group(2)
         if closing:
             if drop and drop[-1] == depth:
@@ -578,15 +609,31 @@ def repair(html: str) -> tuple[str, dict[str, int]]:
     # được vá -- nắn sau thì nó đã lỡ chặn `zoned` rồi.
     html, n_zones = zones(html)
     html, n_cells = cells(html)
-    html, n_breaks = breaks(html)
     html, n_kinds = vocabulary(html, kinds())
     html, n_dress = dress(html)
     # SAU `dress`: nó chuyển được kiểu dáng lên span khi thẻ lồng là con
     # duy nhất, và đó là cách chữa TỐT HƠN. `unnest` là nước hai, cho
     # những hình `dress` không với tới.
     html, n_unnest = unnest(html)
-    # SAU `unnest`: nó bóc span trần, nên chữ của mỗi run mới ở dạng
-    # cuối. So chữ trước khi bóc là so hai chuỗi khác nhau.
+    # `breaks` SAU `dress`/`unnest`, không phải TRƯỚC như bản cũ.
+    #
+    # `breaks` chỉ tách khi MỌI mảnh giữa các `<br>` là chữ thuần -- gặp thẻ
+    # nào khác thì bỏ qua, để cổng loại. Chạy trước `unnest` thì một run kiểu
+    # `<span data-kind="colhdr">Tên hàng<br><span class="en">Name</span>
+    # </span>` vẫn còn thẻ `<span class="en">` lúc `breaks` nhìn vào, nên nó
+    # bỏ qua -- rồi `unnest` bóc cái span con ấy NGAY SAU, nhưng `breaks` đã
+    # chạy xong, không còn lượt hai. Đo trên `data/pilot16`: cả 5 chỗ `colhdr`
+    # trượt cổng đều đúng hình này -- `unnest` (bản cũ) đã bóc được `<span
+    # class="en">`, để lại đúng một `<br>` trần mà không ai tách nữa.
+    #
+    # Đổi chỗ thì `unnest` bóc thẻ trang trí TRƯỚC, nên tới lượt `breaks` mọi
+    # mảnh đã là chữ thuần và tách được.
+    html, n_breaks = breaks(html)
+    # SAU `breaks`: một run tách theo `<br>` giữ NGUYÊN `data-path` của run
+    # gốc trên MỌI mảnh (xem `breaks()`), nên hai mảnh chữ khác nhau có thể
+    # vừa mới được gán chung một đường dẫn -- đúng thứ `unclash` sinh ra để
+    # bắt. Không chạy sau thì `breaks` tự tạo ra một tờ mắc đúng lỗi
+    # `unclash` đáng lẽ đã dọn.
     html, n_unclash = unclash(html)
     html, n_grid = grid(html)
     html, n_air = breathe(html)

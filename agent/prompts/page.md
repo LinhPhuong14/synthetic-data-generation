@@ -660,6 +660,58 @@ If bold styling is required, style the span itself:
 </span>
 ```
 
+**The same rule applies when only PART of the run is wrapped**, not just when
+a tag wraps the whole value. A short lead-in label at the start of a
+paragraph, a date or number emphasized mid-sentence, a bilingual sub-line
+after a `<br>` -- all of these put a tag inside the span just as much as
+wrapping the entire text does, and the box is still measured from the wrong
+element.
+
+Bad -- a bolded lead-in label, rest of the sentence as a plain-text sibling
+inside the SAME span:
+
+```html
+<span data-kind="note">
+  <strong>Bên giao thầu:</strong> Công ty CP Thiết bị Y khoa Minh Đức, đại
+  diện bởi ông Lê Hoàng Phúc...
+</span>
+```
+
+Bad -- a value emphasized in the middle of the sentence:
+
+```html
+<span data-kind="note">
+  Kính mời Quý khách hàng thanh toán tiền điện trước ngày
+  <strong>30/05/2024</strong> tại bất kỳ điểm thu nào...
+</span>
+```
+
+Bad -- a bilingual sub-label after a line break:
+
+```html
+<span data-kind="colhdr">
+  Tên hàng hóa, dịch vụ<br><span class="en">Description of Goods/Services</span>
+</span>
+```
+
+Good -- drop the inner tag, keep every word as plain text in the same run:
+
+```html
+<span data-kind="note">
+  Bên giao thầu: Công ty CP Thiết bị Y khoa Minh Đức, đại diện bởi ông Lê
+  Hoàng Phúc...
+</span>
+```
+
+If two lines are genuinely separate runs (a Vietnamese line and an English
+line, a label line and a list of items), put the `<br>` BETWEEN two closed
+spans, never inside one:
+
+```html
+<span data-kind="colhdr">Tên hàng hóa, dịch vụ</span><br>
+<span data-kind="colhdr">Description of Goods/Services</span>
+```
+
 ---
 
 # 18. LABELS AND VALUES
@@ -1543,6 +1595,46 @@ and later:
 These are two rendered occurrences of one semantic field.
 
 Do not create two unrelated semantic fields merely because the value is printed twice.
+
+**The two occurrences must be byte-for-byte identical, not just the same
+fact stated differently.** The gate compares strings, not meaning: it refuses
+a `data-path` that prints two different values, and "different" includes a
+case change, an abbreviation, an added or removed label prefix, or a longer
+paraphrase, not only a genuinely conflicting fact.
+
+Bad -- the second occurrence rewords the first instead of repeating it:
+
+```html
+<span data-kind="store.name" data-path="issuer.name">CÔNG TY CỔ PHẦN XÂY DỰNG MIỀN TRUNG</span>
+...
+<span data-kind="store.name" data-path="issuer.name">Công ty CP Xây dựng Miền Trung</span>
+```
+
+Bad -- the second occurrence folds a label into the value's own text:
+
+```html
+<span data-kind="store.tax_code" data-path="issuer.tax_code">0312345678</span>
+...
+<span data-kind="invoice.field" data-path="issuer.tax_code">MST: 0312345678</span>
+```
+
+`MST:` is a label (rule 18): it belongs in its own run with no `data-path`,
+never folded into the value's text on just one of the value's occurrences.
+
+Good -- copy the exact string, punctuation and all, every time the field
+repeats:
+
+```html
+<span data-kind="store.name" data-path="issuer.name">CÔNG TY CỔ PHẦN XÂY DỰNG MIỀN TRUNG</span>
+...
+<span data-kind="store.name" data-path="issuer.name">CÔNG TY CỔ PHẦN XÂY DỰNG MIỀN TRUNG</span>
+```
+
+If the second occurrence is genuinely a different piece of text -- a
+shorter reference elsewhere on the page, a summary, a related but distinct
+fact -- it is not a repeat of the first field. Give it no `data-path` at all,
+or a path of its own; do not force two different strings to share one
+identity just because they talk about the same thing.
 
 ---
 
