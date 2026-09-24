@@ -1,0 +1,27 @@
+# QUESTIONS_NONG_NGHIEP — một chủ đề câu hỏi của khối biểu mẫu (`Form`).
+#
+# Cột 1 là DẠNG, cột 2 là câu hỏi, các cột sau là tham số của dạng ấy — xem
+# `questions_hanh_chinh.txt` cho bảng dạng đầy đủ.
+#
+# Chủ đề này thêm vào để khối `Form` không chỉ có bảy giọng: đo trên bản
+# trước, một tờ có biểu mẫu bốc câu từ 7 chủ đề nên hai tờ cùng hồ sơ trùng
+# câu rất sớm. Mười bốn chủ đề thì số cặp trùng giảm còn một nửa.
+
+blank	Tên hộ hoặc tổ chức sản xuất
+boxchar	Số căn cước công dân của chủ hộ	12
+options	Loại hình sản xuất	Trồng trọt|Chăn nuôi|Thuỷ sản|Lâm nghiệp|Sản xuất hỗn hợp
+inline_blank	Diện tích canh tác … hecta, tại thửa số …, tờ bản đồ …
+table_form	Cây trồng, vật nuôi trong kỳ	Tên giống|Diện tích hoặc số con|Thời điểm xuống giống|Sản lượng dự kiến
+yesno	Hộ có sử dụng thuốc bảo vệ thực vật trong vụ này không?
+grid	Nguồn nước phục vụ sản xuất	Kênh mương|Giếng khoan|Nước mưa|Hồ chứa	Không dùng|Dùng một phần|Dùng chính
+date_boxes	Ngày bắt đầu vụ sản xuất
+options	Hình thức tiêu thụ sản phẩm	Thương lái thu mua|Hợp đồng bao tiêu|Chợ đầu mối|Bán trực tiếp cho người tiêu dùng
+attachment	Giấy tờ hộ sản xuất nộp kèm	Giấy chứng nhận quyền sử dụng đất|Hợp đồng thuê đất|Chứng nhận sản xuất an toàn|Hoá đơn mua giống
+scale	Mức độ thiệt hại do thiên tai trong vụ	Không thiệt hại	Mất trắng	5
+subquestion	Nhu cầu hỗ trợ	a) Giống|b) Vật tư|c) Kỹ thuật|d) Vốn vay
+blank	Khó khăn chính trong vụ sản xuất vừa qua
+yesno	Hộ đã tham gia hợp tác xã hoặc tổ hợp tác chưa?
+options	Phương thức xử lý phụ phẩm	Ủ làm phân|Làm thức ăn chăn nuôi|Đốt tại ruộng|Thu gom bán lại
+rank	Xin xếp thứ tự nội dung cần tập huấn	Kỹ thuật canh tác|Phòng trừ dịch bệnh|Bảo quản sau thu hoạch|Tiếp cận thị trường|Sử dụng vốn vay
+boxchar	Mã số vùng trồng đã được cấp	9
+blank	Kiến nghị với cơ quan quản lý nông nghiệp

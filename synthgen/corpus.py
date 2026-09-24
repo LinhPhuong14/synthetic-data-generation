@@ -90,14 +90,14 @@ def paired(stem: str) -> tuple[tuple[str, str], ...]:
 # Hồ sơ nào đọc file nào. Một hồ sơ có thể gộp nhiều file -- thực đơn và
 # viện phí đều là nhiều nhóm hàng in chung một bảng.
 ITEM_FILES: dict[str, tuple[str, ...]] = {
-    'invoice': ('items_invoice', 'items_invoice_b'),
-    'market': ('items_market',),
+    'invoice': ('items_invoice', 'items_invoice_b', 'items_invoice_c'),
+    'market': ('items_market', 'items_market_b'),
     'eatery': ('items_eatery',),
     'menu': ('catalogue_menu_appetizer', 'catalogue_menu_main',
              'catalogue_menu_dessert', 'catalogue_menu_b'),
-    'bakery': ('items_bakery',),
-    'hotel': ('items_hotel', 'items_hotel_b'),
-    'export': ('items_export',),
+    'bakery': ('items_bakery', 'items_bakery_b'),
+    'hotel': ('items_hotel', 'items_hotel_b', 'items_hotel_c'),
+    'export': ('items_export', 'items_export_b'),
     'admin': ('items_admin', 'items_admin_b'),
     'power': ('items_utility_power', 'items_utility_power_b'),
     'water': ('items_utility_water', 'items_utility_water_b'),
@@ -132,26 +132,28 @@ ITEM_FILES: dict[str, tuple[str, ...]] = {
 # dài ra được thêm vài tờ, vì trần số tờ của một tài liệu chảy bằng điều khoản
 # đúng bằng số điều đọc được ở đây -- xem `design.FLOW_BLOCKS`.
 CLAUSE_COMMON: tuple[str, ...] = ('clauses_chung', 'clauses_chung_b',
-                                  'clauses_chung_c')
+                                  'clauses_chung_c', 'clauses_chung_d')
 CLAUSE_FILES: dict[str, tuple[str, ...]] = {
-    'admin': ('clauses_admin', 'clauses_admin_b'),
-    'invoice': ('clauses_invoice', 'clauses_invoice_b'),
-    'insurance': ('clauses_insurance', 'clauses_insurance_b'),
-    'medical': ('clauses_medical', 'clauses_medical_b'),
+    'admin': ('clauses_admin', 'clauses_admin_b', 'clauses_admin_c'),
+    'invoice': ('clauses_invoice', 'clauses_invoice_b', 'clauses_invoice_c'),
+    'insurance': ('clauses_insurance', 'clauses_insurance_b',
+                  'clauses_insurance_c'),
+    'medical': ('clauses_medical', 'clauses_medical_b', 'clauses_medical_c'),
 }
-CLAUSE_FALLBACK: tuple[str, ...] = ('clauses_invoice', 'clauses_invoice_b')
+CLAUSE_FALLBACK: tuple[str, ...] = ('clauses_invoice', 'clauses_invoice_b',
+                                    'clauses_invoice_c')
 
 # MỤC văn xuôi -- `sections_*.txt`. Cùng hình dạng `CLAUSE_*` và cùng lý do
 # tách phần chung: mục "CĂN CỨ VÀ PHẠM VI", "KẾT LUẬN" có trên mọi loại văn
 # bản, còn "CẢI CÁCH THỦ TỤC HÀNH CHÍNH" thì chỉ giấy hành chính mới có.
-SECTION_COMMON: tuple[str, ...] = ('sections_chung',)
+SECTION_COMMON: tuple[str, ...] = ('sections_chung', 'sections_chung_b')
 SECTION_FILES: dict[str, tuple[str, ...]] = {
-    'admin': ('sections_admin',),
-    'invoice': ('sections_invoice',),
-    'medical': ('sections_medical',),
-    'insurance': ('sections_insurance',),
+    'admin': ('sections_admin', 'sections_admin_b'),
+    'invoice': ('sections_invoice', 'sections_invoice_b'),
+    'medical': ('sections_medical', 'sections_medical_b'),
+    'insurance': ('sections_insurance', 'sections_insurance_b'),
 }
-SECTION_FALLBACK: tuple[str, ...] = ('sections_invoice',)
+SECTION_FALLBACK: tuple[str, ...] = ('sections_invoice', 'sections_invoice_b')
 
 SHOP_FILES: dict[str, str] = {
     'invoice': 'shops_invoice',

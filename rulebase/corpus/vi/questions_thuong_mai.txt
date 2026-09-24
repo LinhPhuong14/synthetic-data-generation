@@ -1,0 +1,27 @@
+# QUESTIONS_THUONG_MAI — một chủ đề câu hỏi của khối biểu mẫu (`Form`).
+#
+# Cột 1 là DẠNG, cột 2 là câu hỏi, các cột sau là tham số của dạng ấy — xem
+# `questions_hanh_chinh.txt` cho bảng dạng đầy đủ.
+#
+# Chủ đề này thêm vào để khối `Form` không chỉ có bảy giọng: đo trên bản
+# trước, một tờ có biểu mẫu bốc câu từ 7 chủ đề nên hai tờ cùng hồ sơ trùng
+# câu rất sớm. Mười bốn chủ đề thì số cặp trùng giảm còn một nửa.
+
+boxchar	Mã số thuế của doanh nghiệp	10
+blank	Tên doanh nghiệp theo giấy chứng nhận đăng ký
+date_boxes	Ngày cấp giấy chứng nhận đăng ký doanh nghiệp
+options	Loại hình doanh nghiệp	Doanh nghiệp tư nhân|Công ty trách nhiệm hữu hạn|Công ty cổ phần|Hợp tác xã|Hộ kinh doanh
+yesno	Doanh nghiệp có kinh doanh ngành nghề có điều kiện không?
+table_form	Ngành nghề kinh doanh đăng ký	Mã ngành|Tên ngành|Ngành chính
+inline_blank	Vốn điều lệ là … đồng, bằng chữ …, do … góp
+options	Hình thức thanh toán chủ yếu	Tiền mặt|Chuyển khoản|Thẻ ngân hàng|Ví điện tử
+grid	Kênh phân phối đang sử dụng	Bán lẻ tại cửa hàng|Bán buôn|Thương mại điện tử|Xuất khẩu	Chưa có|Đang thử|Ổn định
+blank	Địa chỉ kho hàng và nơi bảo quản
+attachment	Hồ sơ nộp kèm	Giấy chứng nhận đăng ký kinh doanh|Giấy phép con|Hợp đồng thuê địa điểm|Báo cáo tài chính năm gần nhất
+subquestion	Thông tin người đại diện	a) Họ và tên|b) Chức danh|c) Số căn cước công dân|d) Điện thoại liên hệ
+scale	Mức độ thuận lợi khi làm thủ tục đăng ký	Rất khó khăn	Rất thuận lợi	5
+options	Doanh thu năm gần nhất	Dưới ba tỉ đồng|Từ ba đến năm mươi tỉ|Từ năm mươi đến hai trăm tỉ|Trên hai trăm tỉ
+yesno	Doanh nghiệp đã đăng ký sử dụng hoá đơn điện tử chưa?
+boxchar	Số tài khoản ngân hàng nhận thanh toán	14
+rank	Xin xếp thứ tự khó khăn lớn nhất trong kinh doanh	Vốn|Mặt bằng|Nhân lực|Thủ tục hành chính|Tiêu thụ sản phẩm
+blank	Đề xuất của doanh nghiệp với cơ quan quản lý

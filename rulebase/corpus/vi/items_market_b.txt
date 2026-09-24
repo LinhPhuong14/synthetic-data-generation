@@ -1,0 +1,38 @@
+# ITEMS_MARKET_B — Hàng hoá siêu thị, chợ dân sinh — nhóm khô, gia dụng và đồ uống.
+# Định dạng: tên<TAB>giá tối thiểu<TAB>giá tối đa  (VND)
+#
+# Mẻ này nới bảng để hai tờ cùng hồ sơ không lặp lại cùng danh sách hàng: đo
+# trên bản trước, một bảng 15 dòng bốc từ kho 32 dòng thì hai tờ trùng quá nửa.
+
+Gạo Séng Cù túi 5kg	145000	195000
+Gạo tám xoan Hải Hậu túi 10kg	210000	285000
+Miến dong Bắc Kạn gói 500g	38000	62000
+Bún khô Phú Thọ gói 500g	22000	38000
+Phở khô gói 400g	25000	42000
+Mì gạo Chũ gói 500g	28000	45000
+Dầu ăn hướng dương chai 2 lít	95000	142000
+Dầu hào chai 350g	28000	48000
+Nước mắm cá cơm 40 độ đạm chai 500ml	68000	125000
+Tương ớt chai 250g	15000	28000
+Hạt nêm gói 900g	62000	88000
+Muối i-ốt gói 1kg	8000	15000
+Đường tinh luyện túi 1kg	22000	32000
+Cà phê rang xay gói 500g	95000	185000
+Trà xanh Thái Nguyên gói 200g	75000	165000
+Sữa đặc có đường lon 380g	24000	36000
+Sữa tươi tiệt trùng lốc 4 hộp 180ml	32000	48000
+Nước khoáng thùng 24 chai 500ml	85000	125000
+Nước ngọt có ga lốc 6 lon	62000	92000
+Bia lon thùng 24	320000	480000
+Bột giặt túi 3kg	115000	168000
+Nước rửa chén chai 1.5 lít	48000	72000
+Nước lau sàn chai 1 lít	42000	68000
+Giấy vệ sinh lốc 10 cuộn	58000	95000
+Khăn giấy rút hộp 180 tờ	18000	32000
+Bàn chải đánh răng vỉ 3 chiếc	32000	58000
+Kem đánh răng tuýp 180g	38000	62000
+Dầu gội chai 650ml	125000	198000
+Nồi inox ba đáy 24cm	285000	520000
+Chảo chống dính 26cm	165000	340000
+Bộ hộp nhựa đựng thực phẩm 5 món	95000	185000
+Rổ nhựa tròn cỡ lớn	25000	48000

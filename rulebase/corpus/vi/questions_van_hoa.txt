@@ -1,0 +1,27 @@
+# QUESTIONS_VAN_HOA — một chủ đề câu hỏi của khối biểu mẫu (`Form`).
+#
+# Cột 1 là DẠNG, cột 2 là câu hỏi, các cột sau là tham số của dạng ấy — xem
+# `questions_hanh_chinh.txt` cho bảng dạng đầy đủ.
+#
+# Chủ đề này thêm vào để khối `Form` không chỉ có bảy giọng: đo trên bản
+# trước, một tờ có biểu mẫu bốc câu từ 7 chủ đề nên hai tờ cùng hồ sơ trùng
+# câu rất sớm. Mười bốn chủ đề thì số cặp trùng giảm còn một nửa.
+
+blank	Tên hoạt động hoặc sự kiện đề nghị tổ chức
+date_boxes	Ngày dự kiến tổ chức
+options	Quy mô tổ chức	Cấp cơ sở|Cấp huyện|Cấp tỉnh|Cấp quốc gia
+inline_blank	Sự kiện tổ chức tại …, dự kiến … người tham dự, trong … ngày
+table_form	Chương trình dự kiến	Thời gian|Nội dung|Đơn vị thực hiện|Ghi chú
+yesno	Hoạt động có sử dụng ngân sách nhà nước không?
+grid	Điều kiện bảo đảm cho sự kiện	Địa điểm|Âm thanh ánh sáng|An ninh trật tự|Y tế	Chưa chuẩn bị|Đang chuẩn bị|Đã sẵn sàng
+options	Hình thức tuyên truyền	Băng rôn khẩu hiệu|Trang thông tin điện tử|Mạng xã hội|Phát thanh cơ sở
+attachment	Hồ sơ kèm theo đề nghị	Kế hoạch tổ chức|Dự toán kinh phí|Danh sách đại biểu|Văn bản chấp thuận địa điểm
+subquestion	Thông tin đơn vị tổ chức	a) Tên đơn vị|b) Người chịu trách nhiệm|c) Điện thoại|d) Địa chỉ
+scale	Mức độ hài lòng của người tham dự	Rất không hài lòng	Rất hài lòng	5
+blank	Nội dung chính cần truyền tải qua hoạt động
+options	Đối tượng hướng tới	Thiếu niên nhi đồng|Thanh niên|Người lao động|Người cao tuổi|Toàn dân
+yesno	Sự kiện có biểu diễn nghệ thuật của đơn vị ngoài công lập không?
+rank	Xin xếp thứ tự hoạt động cần duy trì hằng năm	Hội thi văn nghệ|Giải thể thao|Hội sách|Triển lãm ảnh|Ngày hội gia đình
+boxchar	Mã số đăng ký hoạt động	8
+table_form	Kinh phí đề nghị	Khoản mục|Đơn giá|Số lượng|Thành tiền
+blank	Kiến nghị hỗ trợ từ cơ quan quản lý văn hoá

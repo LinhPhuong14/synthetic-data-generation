@@ -72,7 +72,14 @@ chance:
   # ta tưởng thế. Cái còn lại là `paginate.py` chỉ cắt trang được theo dòng
   # bảng, nên MỌI tài liệu nhiều trang đều có bảng dù con số này bằng bao
   # nhiêu. Khối chảy đã tách khỏi bảng; đây giờ mới thật sự là cái van.
-  table: 0.22
+  # ĐO LẠI 23-09-2026, sau khi lô 300 phôi nhận khối chảy theo thể loại giấy:
+  # 84 phôi mới khai `table` (24 phôi `always` -- bảng kê, hoá đơn; 60 phôi
+  # `optional` -- các loại phiếu). Cùng `chance: 0.22` mà nguồn cung gấp ba
+  # thì tỉ lệ tài liệu có bảng nhảy 7% -> 25%, quá mức 10% đã chốt.
+  #
+  # Van phải hẹp lại đúng bằng phần nguồn cung nở ra, chứ không phải bỏ bớt
+  # phôi: một `PHIẾU XUẤT KHO` không có bảng là tờ giấy sai.
+  table: 0.12
 
 # Khối chảy nào được chọn khi một tờ giấy có nhiều khối chảy cùng lúc, và khối
 # nào bị ÉP vào khi `--pages` đòi nhiều tờ mà tờ giấy không có khối nào chảy

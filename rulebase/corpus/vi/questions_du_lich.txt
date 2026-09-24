@@ -1,0 +1,27 @@
+# QUESTIONS_DU_LICH — một chủ đề câu hỏi của khối biểu mẫu (`Form`).
+#
+# Cột 1 là DẠNG, cột 2 là câu hỏi, các cột sau là tham số của dạng ấy — xem
+# `questions_hanh_chinh.txt` cho bảng dạng đầy đủ.
+#
+# Chủ đề này thêm vào để khối `Form` không chỉ có bảy giọng: đo trên bản
+# trước, một tờ có biểu mẫu bốc câu từ 7 chủ đề nên hai tờ cùng hồ sơ trùng
+# câu rất sớm. Mười bốn chủ đề thì số cặp trùng giảm còn một nửa.
+
+blank	Họ và tên khách lưu trú
+boxchar	Số hộ chiếu hoặc căn cước công dân	12
+date_boxes	Ngày đến lưu trú
+options	Mục đích chuyến đi	Du lịch|Công tác|Thăm thân|Chữa bệnh|Học tập
+table_form	Danh sách khách trong đoàn	Họ và tên|Năm sinh|Quốc tịch|Số giấy tờ
+options	Loại phòng đăng ký	Phòng đơn|Phòng đôi|Phòng ba|Phòng gia đình
+yesno	Khách có sử dụng dịch vụ đưa đón sân bay không?
+inline_blank	Đoàn gồm … khách, lưu trú … đêm, khởi hành ngày …
+grid	Dịch vụ khách đã sử dụng	Ăn sáng|Giặt là|Bể bơi|Phòng họp	Không dùng|Có dùng|Dùng thường xuyên
+scale	Mức độ hài lòng với chất lượng phòng nghỉ	Rất không hài lòng	Rất hài lòng	5
+attachment	Giấy tờ đăng ký lưu trú	Hộ chiếu|Thị thực|Căn cước công dân|Giấy giới thiệu của cơ quan
+subquestion	Thông tin liên hệ khi cần	a) Điện thoại|b) Thư điện tử|c) Người liên hệ tại Việt Nam
+options	Hình thức đặt phòng	Trực tiếp tại quầy|Qua điện thoại|Qua trang đặt phòng|Qua công ty lữ hành
+blank	Yêu cầu riêng của khách về phòng nghỉ
+yesno	Khách có mang theo phương tiện gửi tại bãi xe không?
+rank	Xin xếp thứ tự yếu tố khách quan tâm nhất	Giá phòng|Vị trí|Sạch sẽ|Thái độ phục vụ|Bữa sáng
+date_boxes	Ngày dự kiến trả phòng
+blank	Góp ý của khách để cơ sở phục vụ tốt hơn

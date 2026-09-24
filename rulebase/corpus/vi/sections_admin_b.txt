@@ -1,0 +1,33 @@
+# SECTIONS_ADMIN_B — mục văn xuôi cho khối `sections` (nhãn `Section-Header` + `Text`).
+#
+# Cột 1 là tiêu đề mục, các cột sau là các ĐOẠN của mục ấy. Số đoạn mỗi mục
+# một khác, và đó là chủ ý: `paginate._pack` xếp trang theo chiều cao THẬT của
+# từng mục, nên mục dài ngắn khác nhau không còn làm hỏng phép cắt trang.
+#
+# Mẻ này nới trần số tờ: trần = số mục chia cho ~3 mục một tờ A4.
+
+CÔNG TÁC CHỈ ĐẠO ĐIỀU HÀNH	Lãnh đạo đơn vị duy trì giao ban định kỳ và giao nhiệm vụ bằng văn bản.	Nhiệm vụ giao được theo dõi đến kết quả cuối cùng, không dừng ở khâu giao việc.
+CÔNG TÁC TỔ CHỨC BỘ MÁY	Cơ cấu tổ chức được rà soát theo chức năng, nhiệm vụ được giao.	Việc thành lập, sáp nhập bộ phận thực hiện theo quy trình và có quyết định.
+QUẢN LÝ BIÊN CHẾ	Biên chế sử dụng trong chỉ tiêu được giao, không vượt quá số đã duyệt.	Trường hợp cần bổ sung phải có đề án vị trí việc làm kèm theo.
+CÔNG TÁC TUYỂN DỤNG	Tuyển dụng thực hiện công khai, căn cứ vị trí việc làm và chỉ tiêu được duyệt.	Kết quả tuyển dụng được niêm yết tại trụ sở và đăng trên trang thông tin.
+ĐÀO TẠO VÀ BỒI DƯỠNG	Kế hoạch đào tạo được xây dựng hằng năm, ưu tiên vị trí thiếu hụt kỹ năng.	Người được cử đi đào tạo dài hạn cam kết làm việc tiếp theo thời hạn quy định.
+CHẾ ĐỘ TIỀN LƯƠNG	Việc nâng lương, phụ cấp thực hiện đúng kỳ hạn và đúng đối tượng.	Hồ sơ nâng lương được lập trước kỳ xét ít nhất mười lăm ngày.
+CÔNG TÁC THI ĐUA KHEN THƯỞNG	Phong trào thi đua phát động theo năm công tác, có tiêu chí đánh giá cụ thể.	Kết quả bình xét công khai tại hội nghị cán bộ, công chức.
+XỬ LÝ KỶ LUẬT	Việc xử lý kỷ luật có hội đồng, có giải trình của người vi phạm và lập biên bản.	Trường hợp gây thiệt hại tài sản thì ngoài kỷ luật còn phải bồi thường.
+QUẢN LÝ TÀI CHÍNH	Thu chi thực hiện theo dự toán và quy chế chi tiêu nội bộ đã ban hành.	Chứng từ chi phải hợp lệ, có phê duyệt của người có thẩm quyền trước khi chi.
+QUẢN LÝ TÀI SẢN CÔNG	Tài sản giao cho cá nhân sử dụng có biên bản bàn giao và ghi sổ theo dõi.	Kiểm kê tài sản thực hiện mỗi năm một lần vào cuối năm tài chính.
+MUA SẮM VÀ ĐẤU THẦU	Việc mua sắm thực hiện theo quy định về đấu thầu, bảo đảm cạnh tranh, công bằng.	Người tham gia lựa chọn nhà thầu phải kê khai xung đột lợi ích.
+CÔNG TÁC VĂN THƯ	Văn bản đến và đi đều vào sổ, phân luồng xử lý và theo dõi đến khi kết thúc.	Văn bản ban hành phải đúng thể thức, đúng thẩm quyền và đúng quy trình.
+CÔNG TÁC LƯU TRỮ	Hồ sơ công việc lập theo danh mục và nộp lưu đúng thời hạn quy định.	Việc tiêu huỷ tài liệu hết giá trị phải có hội đồng và lập biên bản.
+RÀ SOÁT THỦ TỤC HÀNH CHÍNH	Thủ tục được rà soát, cắt giảm thành phần hồ sơ và thời gian giải quyết.	Kết quả rà soát công bố công khai để tổ chức, công dân giám sát.
+TIẾP NHẬN VÀ TRẢ KẾT QUẢ	Hồ sơ tiếp nhận tại bộ phận một cửa trong giờ hành chính, có giấy biên nhận.	Hồ sơ quá hạn phải có văn bản xin lỗi và nêu rõ thời hạn trả kết quả.
+TIẾP CÔNG DÂN	Người đứng đầu tiếp công dân định kỳ ít nhất một ngày trong tháng.	Nội dung tiếp công dân ghi vào sổ và chuyển bộ phận có trách nhiệm xử lý.
+GIẢI QUYẾT KHIẾU NẠI TỐ CÁO	Khiếu nại lần đầu giải quyết trong thời hạn theo quy định của pháp luật.	Người giải quyết không phải là người có liên quan đến nội dung bị khiếu nại.
+PHÒNG CHỐNG THAM NHŨNG	Đơn vị công khai tài chính, mua sắm và công tác cán bộ theo quy định.	Cán bộ thuộc diện kê khai tài sản thực hiện kê khai đúng kỳ và trung thực.
+CHUYỂN ĐỔI SỐ	Dữ liệu công việc lưu trên hệ thống dùng chung, không lưu riêng trên máy cá nhân.	Mỗi người được cấp một tài khoản riêng và chịu trách nhiệm về thao tác dưới tài khoản đó.
+AN TOÀN THÔNG TIN	Hệ thống được sao lưu hằng ngày và kiểm chứng khả năng khôi phục định kỳ.	Sự cố an toàn thông tin phải được báo cáo trong hai mươi bốn giờ.
+AN TOÀN VỆ SINH LAO ĐỘNG	Người lao động được huấn luyện an toàn trước khi bố trí vào vị trí làm việc.	Lối thoát nạn và phương tiện chữa cháy luôn trong tình trạng sẵn sàng.
+PHÒNG CHÁY CHỮA CHÁY	Đơn vị tổ chức diễn tập phương án chữa cháy ít nhất một lần trong năm.	Thiết bị chữa cháy được kiểm tra định kỳ và ghi nhật ký kiểm tra.
+BẢO VỆ MÔI TRƯỜNG	Chất thải được phân loại tại nguồn và xử lý theo quy định.	Chi phí khắc phục ô nhiễm do lỗi của bên nào thì bên đó chịu.
+VĂN HOÁ CÔNG SỞ	Cán bộ đeo thẻ khi làm việc, trang phục lịch sự, giao tiếp đúng mực.	Không sử dụng rượu bia trong giờ làm việc và tại nơi làm việc.
+CÔNG TÁC DÂN VẬN	Đơn vị phối hợp với tổ chức đoàn thể trong tuyên truyền và vận động.	Ý kiến của người lao động được tiếp thu và phản hồi công khai.

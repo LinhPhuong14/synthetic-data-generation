@@ -1,0 +1,33 @@
+# SECTIONS_INVOICE_B — mục văn xuôi cho khối `sections` (nhãn `Section-Header` + `Text`).
+#
+# Cột 1 là tiêu đề mục, các cột sau là các ĐOẠN của mục ấy. Số đoạn mỗi mục
+# một khác, và đó là chủ ý: `paginate._pack` xếp trang theo chiều cao THẬT của
+# từng mục, nên mục dài ngắn khác nhau không còn làm hỏng phép cắt trang.
+#
+# Mẻ này nới trần số tờ: trần = số mục chia cho ~3 mục một tờ A4.
+
+THÔNG TIN CÁC BÊN	Các bên cung cấp đầy đủ tên, địa chỉ, mã số thuế và người đại diện hợp pháp.	Thay đổi thông tin phải thông báo bằng văn bản trong bảy ngày làm việc.
+ĐỐI TƯỢNG HỢP ĐỒNG	Đối tượng là hàng hoá, dịch vụ mô tả tại phụ lục đính kèm.	Việc thay đổi chủng loại chỉ thực hiện khi có chấp thuận bằng văn bản.
+GIÁ TRỊ VÀ ĐƠN GIÁ	Giá trị được xác định theo đơn giá và khối lượng nghiệm thu thực tế.	Đơn giá giữ cố định trong thời hạn hiệu lực, trừ khi chính sách thuế thay đổi.
+PHƯƠNG THỨC THANH TOÁN	Thanh toán bằng chuyển khoản vào tài khoản ghi tại phần thông tin các bên.	Ngày thanh toán là ngày tiền vào tài khoản của bên nhận.
+TIẾN ĐỘ THANH TOÁN	Thanh toán theo từng đợt tương ứng khối lượng đã nghiệm thu.	Đợt cuối được thanh toán sau khi hai bên ký biên bản thanh lý.
+HỒ SƠ THANH TOÁN	Hồ sơ gồm biên bản nghiệm thu, bảng xác nhận khối lượng và hoá đơn hợp lệ.	Hồ sơ thiếu được thông báo bổ sung một lần trong năm ngày làm việc.
+GIAO NHẬN HÀNG HOÁ	Địa điểm giao hàng là kho của bên mua ghi trên đơn đặt hàng.	Rủi ro chuyển sang bên mua kể từ thời điểm ký biên bản giao nhận.
+KIỂM TRA VÀ NGHIỆM THU	Bên mua kiểm tra số lượng khi nhận và chất lượng trong bảy ngày kể từ ngày nhận.	Hàng không đúng quy cách được trả lại và đổi trong ba ngày làm việc.
+CHẤT LƯỢNG VÀ QUY CÁCH	Hàng hoá đạt tiêu chuẩn kỹ thuật ghi tại phụ lục và quy chuẩn hiện hành.	Bên đặt hàng được yêu cầu kiểm định độc lập; chi phí do bên có kết quả sai chịu.
+BAO BÌ VÀ NHÃN HÀNG	Hàng hoá đóng gói phù hợp phương thức vận chuyển và điều kiện bảo quản.	Nhãn ghi đủ tên hàng, xuất xứ, ngày sản xuất và hạn sử dụng.
+CHÍNH SÁCH BẢO HÀNH	Thời hạn bảo hành mười hai tháng kể từ ngày nghiệm thu.	Bảo hành không áp dụng với hư hỏng do sử dụng sai hướng dẫn.
+ĐỔI TRẢ HÀNG HOÁ	Hàng đã bán được đổi trong bảy ngày, còn nguyên tem nhãn kèm chứng từ.	Không nhận đổi trả với hàng khuyến mại và hàng đã qua sử dụng.
+ĐỐI CHIẾU SỐ DƯ THANH TOÁN	Hai bên đối chiếu công nợ vào ngày cuối cùng mỗi quý và lập biên bản.	Quá năm ngày không phản hồi thì coi như xác nhận số liệu.
+HOÁ ĐƠN VÀ CHỨNG TỪ	Hoá đơn lập theo quy định về hoá đơn điện tử ngay khi hoàn thành giao hàng.	Sai sót được xử lý bằng hoá đơn điều chỉnh, không tẩy xoá chứng từ gốc.
+THUẾ VÀ LỆ PHÍ	Mỗi bên tự kê khai và nộp các khoản thuế phát sinh theo quy định.	Chính sách thuế thay đổi thì hai bên thương lượng điều chỉnh giá.
+BẢO ĐẢM THỰC HIỆN	Bên thực hiện nộp bảo đảm trước khi giao hàng đợt đầu tiên.	Khoản bảo đảm hoàn trả trong mười ngày kể từ ngày thanh lý.
+PHẠT VI PHẠM	Bên vi phạm chịu phạt theo tỉ lệ đã thoả thuận trên giá trị phần nghĩa vụ vi phạm.	Tiền phạt không thay thế nghĩa vụ bồi thường thiệt hại thực tế.
+BẤT KHẢ KHÁNG	Bên gặp bất khả kháng thông báo trong bảy ngày và cung cấp tài liệu chứng minh.	Thời gian xảy ra bất khả kháng không tính vào thời hạn thực hiện.
+GIẢI QUYẾT TRANH CHẤP	Các bên ưu tiên thương lượng, hoà giải trên tinh thần thiện chí.	Sau ba mươi ngày không thành, tranh chấp đưa ra Toà án có thẩm quyền.
+THANH LÝ HỢP ĐỒNG	Hai bên thanh lý trong ba mươi ngày kể từ ngày hoàn thành nghĩa vụ cuối cùng.	Biên bản thanh lý xác nhận khối lượng, số đã thanh toán và số còn phải trả.
+BẢO MẬT THƯƠNG MẠI	Các bên không tiết lộ giá, điều kiện giao dịch cho bên thứ ba.	Nghĩa vụ bảo mật còn hiệu lực ba năm sau khi hợp đồng chấm dứt.
+QUYỀN SỞ HỮU TRÍ TUỆ	Bên cung cấp bảo đảm hàng hoá không xâm phạm quyền của bên thứ ba.	Mọi chi phí phát sinh từ khiếu nại sở hữu trí tuệ do bên cung cấp chịu.
+CHÍNH SÁCH GIÁ VÀ CHIẾT KHẤU	Chiết khấu tính trên doanh số luỹ kế của kỳ và quyết toán cuối kỳ.	Chương trình khuyến mại được thông báo trước bằng văn bản.
+ĐIỀU KIỆN DỪNG CUNG CẤP	Bên bán được dừng cung cấp khi bên mua vượt hạn mức công nợ.	Việc dừng cung cấp được thông báo trước năm ngày làm việc.
+KIỂM TOÁN VÀ ĐỐI SOÁT	Bên đặt hàng được thuê đơn vị độc lập rà soát khối lượng và chi phí đã thanh toán.	Việc rà soát thông báo trước mười ngày và không quá một lần trong năm.

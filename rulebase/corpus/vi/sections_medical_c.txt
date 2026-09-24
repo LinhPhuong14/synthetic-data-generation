@@ -1,0 +1,39 @@
+# SECTIONS_MEDICAL_C — mục văn xuôi riêng của hồ sơ, cho khối `sections`.
+#
+# Cột 1 là tiêu đề mục, các cột sau là các ĐOẠN của mục ấy.
+#
+# Mẻ ba, nới trần số tờ. Đo trên `data/smoke_multipage_v4`: trần mục của hồ sơ
+# là 60 và `paginate` dùng ~12 mục một tờ, nên tài liệu nhắm sáu tờ bị hạ
+# xuống năm — "70 dòng cần cho 6 tờ vượt trần 69 của chứng từ", năm lần trên
+# ba mươi tài liệu. Xem `design._section_ceiling`.
+
+TỔ CHỨC KHU VỰC TIẾP ĐÓN	Khu tiếp đón được bố trí thuận tiện, có bảng hướng dẫn và chỗ ngồi chờ.	Người bệnh nặng, người cao tuổi, phụ nữ có thai được ưu tiên tiếp đón.
+PHÂN LOẠI MỨC ĐỘ CẤP CỨU	Người bệnh đến cấp cứu được phân loại mức độ ngay khi tiếp nhận.	Mức độ phân loại được ghi vào hồ sơ và quyết định thứ tự xử trí.
+QUY TRÌNH KHÁM BỆNH	Người bệnh được khám theo trình tự hỏi bệnh, khám thực thể và chỉ định cận lâm sàng.	Chỉ định cận lâm sàng phải có căn cứ lâm sàng, không chỉ định theo thường lệ.
+QUẢN LÝ KẾT QUẢ XÉT NGHIỆM	Kết quả được trả đúng thời gian đã hẹn và lưu trên hệ thống.	Kết quả bất thường nguy hiểm được báo ngay cho bác sĩ điều trị.
+CHẨN ĐOÁN HÌNH ẢNH	Chỉ định chẩn đoán hình ảnh cân nhắc lợi ích và mức phơi nhiễm của người bệnh.	Phim và kết quả đọc được lưu trữ theo thời hạn quy định.
+HỘI CHẨN LIÊN CHUYÊN KHOA	Hội chẩn được tổ chức khi ca bệnh liên quan nhiều chuyên khoa.	Kết luận hội chẩn có giá trị chỉ đạo điều trị và được ghi vào hồ sơ.
+XÂY DỰNG PHÁC ĐỒ ĐIỀU TRỊ	Phác đồ được xây dựng theo hướng dẫn chuyên môn và điều kiện của cơ sở.	Phác đồ được rà soát khi hướng dẫn chuyên môn thay đổi.
+SỬ DỤNG KHÁNG SINH	Kháng sinh được sử dụng theo phác đồ và kết quả kháng sinh đồ khi có.	Việc dùng kháng sinh dự phòng tuân thủ đúng thời điểm và thời gian quy định.
+QUẢN LÝ THUỐC HƯỚNG THẦN	Thuốc hướng thần được bảo quản trong tủ có khoá và có sổ theo dõi riêng.	Việc cấp phát thực hiện theo đơn, có chữ ký của người nhận và người cấp.
+PHA CHẾ VÀ CẤP PHÁT THUỐC	Việc pha chế thực hiện trong khu vực riêng, theo quy trình đã ban hành.	Thuốc cấp phát được đối chiếu ba lần trước khi đưa tới người bệnh.
+THEO DÕI DẤU HIỆU SINH TỒN	Dấu hiệu sinh tồn được đo theo tần suất phù hợp mức độ nặng của người bệnh.	Thay đổi bất thường được báo cáo ngay, không chờ vòng đo tiếp theo.
+PHÒNG NGỪA TÉ NGÃ	Người bệnh có nguy cơ té ngã được đánh giá và có biện pháp phòng ngừa.	Giường bệnh có thanh chắn và hệ thống gọi hộ lý trong tầm tay người bệnh.
+PHÒNG NGỪA LOÉT DO TỲ ĐÈ	Người bệnh nằm lâu được đánh giá nguy cơ và xoay trở theo lịch.	Vùng da có dấu hiệu tổn thương được chăm sóc và ghi nhận vào hồ sơ.
+QUẢN LÝ ĐAU	Mức độ đau được đánh giá định kỳ theo thang điểm thống nhất.	Việc dùng thuốc giảm đau theo bậc và ghi nhận đáp ứng sau mỗi lần dùng.
+CHUẨN BỊ NGƯỜI BỆNH TRƯỚC MỔ	Người bệnh được khám tiền phẫu, làm đủ xét nghiệm và giải thích về ca mổ.	Thời gian ngừng ăn uống trước mổ tuân thủ đúng hướng dẫn chuyên môn.
+AN TOÀN PHẪU THUẬT	Bảng kiểm an toàn phẫu thuật được thực hiện đủ ba thời điểm cho mỗi ca.	Vị trí mổ được đánh dấu khi ca mổ có nguy cơ lẫn bên.
+HỒI SỨC SAU PHẪU THUẬT	Người bệnh được theo dõi tại phòng hồi tỉnh cho tới khi đạt tiêu chuẩn chuyển khoa.	Biến chứng phát hiện trong hồi sức được xử trí ngay và ghi vào hồ sơ.
+TRUYỀN MÁU VÀ CHẾ PHẨM	Chỉ định truyền máu dựa trên tiêu chuẩn lâm sàng và xét nghiệm.	Người bệnh được theo dõi sát trong mười lăm phút đầu của mỗi đơn vị máu.
+KIỂM SOÁT NHIỄM KHUẨN VẾT MỔ	Vết mổ được theo dõi và ghi nhận tình trạng hằng ngày.	Nhiễm khuẩn vết mổ được báo cáo về bộ phận kiểm soát nhiễm khuẩn.
+XỬ LÝ DỤNG CỤ Y TẾ	Dụng cụ được làm sạch, khử khuẩn và tiệt khuẩn theo đúng quy trình từng loại.	Mỗi mẻ tiệt khuẩn có chỉ thị kiểm chứng và được ghi nhật ký.
+QUẢN LÝ TRANG THIẾT BỊ Y TẾ	Thiết bị được bảo dưỡng theo lịch của nhà sản xuất và hiệu chuẩn định kỳ.	Người sử dụng thiết bị phải được huấn luyện trước khi vận hành.
+PHÒNG NGỪA SỰ CỐ Y KHOA	Sự cố và tình huống gần sai được báo cáo theo hình thức không quy lỗi cá nhân.	Nguyên nhân gốc được phân tích và biện pháp cải tiến được theo dõi tới kết quả.
+GIAO TIẾP VỚI NGƯỜI BỆNH	Nhân viên y tế giải thích bằng ngôn ngữ dễ hiểu, xác nhận người bệnh đã hiểu.	Thông tin xấu được thông báo ở nơi riêng tư, có người thân nếu người bệnh đồng ý.
+HỖ TRỢ NGƯỜI BỆNH KHÓ KHĂN	Người bệnh không có người chăm sóc được bộ phận công tác xã hội hỗ trợ.	Trường hợp khó khăn về chi phí được hướng dẫn thủ tục xin hỗ trợ.
+QUẢN LÝ HỒ SƠ BỆNH ÁN ĐIỆN TỬ	Hồ sơ điện tử được ghi đồng thời với quá trình khám, điều trị.	Việc sửa nội dung đã ghi phải để lại dấu vết và lý do sửa.
+BẢO MẬT DỮ LIỆU SỨC KHOẺ	Truy cập hồ sơ người bệnh được phân quyền theo nhiệm vụ và có ghi nhật ký.	Việc truy cập không phục vụ điều trị là vi phạm và bị xử lý.
+QUẢN LÝ CHẤT THẢI LÂY NHIỄM	Chất thải lây nhiễm được đựng trong bao bì đúng mã màu và thu gom theo lộ trình.	Việc bàn giao cho đơn vị xử lý có chứng từ ghi rõ khối lượng.
+KIỂM TRA CHẤT LƯỢNG NỘI BỘ	Cơ sở tự kiểm tra chất lượng theo bộ tiêu chí ít nhất một lần trong năm.	Kết quả tự kiểm tra và kế hoạch cải tiến được công khai trong nội bộ.
+ĐÀO TẠO NHÂN VIÊN MỚI	Nhân viên mới được đào tạo về quy trình, an toàn và kiểm soát nhiễm khuẩn.	Nhân viên mới làm việc dưới sự giám sát cho tới khi đạt đánh giá.
+THỐNG KÊ VÀ BÁO CÁO Y TẾ	Số liệu hoạt động được tổng hợp theo tháng và báo cáo theo quy định.	Số liệu báo cáo phải khớp với hồ sơ gốc, không điều chỉnh để đạt chỉ tiêu.

@@ -1,0 +1,35 @@
+# CLAUSES_CHUNG_D — điều khoản đánh số cho khối `clauses`.
+#
+# Cột 1 là tiêu đề điều, mỗi cột sau là một KHOẢN. Số khoản mỗi điều một khác
+# là chủ ý: `paginate._pack` cắt trang theo chiều cao thật của từng điều.
+#
+# Trần số tờ của một tài liệu chảy bằng điều khoản đúng bằng số điều bốc
+# được — xem `design.flow_reach`. File này nới trần ấy thêm 27 điều.
+
+Nguyên tắc thiện chí	Các bên thực hiện văn bản này trên nguyên tắc thiện chí, hợp tác và tôn trọng lợi ích chính đáng của nhau.	Bên nào biết có trở ngại ảnh hưởng tới việc thực hiện thì phải thông báo ngay cho bên kia.
+Thứ tự ưu tiên áp dụng	Khi nội dung chính và phụ lục mâu thuẫn thì áp dụng nội dung chính.	Khi các phụ lục mâu thuẫn nhau thì áp dụng phụ lục ký sau cùng.	Khi văn bản này trái với pháp luật thì áp dụng quy định của pháp luật.
+Hiệu lực từng phần	Một điều khoản bị tuyên vô hiệu không làm vô hiệu các điều khoản còn lại.	Các bên thương lượng thay thế điều khoản vô hiệu bằng điều khoản có hiệu lực gần nhất về mục đích.
+Không từ bỏ quyền do im lặng	Việc một bên không thực hiện quyền của mình không được coi là từ bỏ quyền ấy.	Việc từ bỏ quyền chỉ có giá trị khi lập thành văn bản và có chữ ký người có thẩm quyền.
+Sửa đổi và bổ sung	Mọi sửa đổi phải lập thành phụ lục, có chữ ký và đóng dấu của cả hai bên.	Trao đổi qua thư điện tử không thay thế phụ lục, trừ khi các bên có thoả thuận riêng.
+Điều kiện chuyển giao cho bên kế thừa	Không bên nào được chuyển giao quyền và nghĩa vụ cho bên thứ ba nếu chưa được bên kia đồng ý bằng văn bản.	Trường hợp tổ chức lại doanh nghiệp, bên kế thừa tiếp tục thực hiện các nghĩa vụ đang còn.
+Thông báo giữa các bên	Thông báo gửi tới địa chỉ ghi tại phần đầu văn bản được coi là đã nhận hợp lệ.	Thay đổi địa chỉ nhận thông báo phải báo trước năm ngày làm việc.	Thông báo gửi qua đường bưu chính được coi là đã nhận sau ba ngày kể từ ngày gửi.
+Số bản và giá trị pháp lý	Văn bản lập thành bốn bản có giá trị pháp lý như nhau, mỗi bên giữ hai bản.	Bản sao có xác nhận của bên phát hành có giá trị sử dụng như bản gốc.
+Ngôn ngữ và giải thích	Ngôn ngữ của văn bản là tiếng Việt.	Trường hợp có bản dịch, bản tiếng Việt được ưu tiên khi có khác biệt về cách hiểu.
+Chi phí thương lượng và công chứng	Mỗi bên tự chịu chi phí của mình trong quá trình thương lượng và ký kết.	Chi phí công chứng, chứng thực do bên yêu cầu chịu, trừ khi có thoả thuận khác.
+Đình chỉ tạm thời	Một bên được tạm đình chỉ nghĩa vụ khi bên kia vi phạm nghiêm trọng và chưa khắc phục.	Việc tạm đình chỉ phải thông báo trước bảy ngày và nêu rõ nội dung vi phạm.
+Chấm dứt trước hạn	Mỗi bên được đơn phương chấm dứt khi bên kia vi phạm mà không khắc phục trong ba mươi ngày.	Bên đơn phương chấm dứt không có căn cứ phải bồi thường thiệt hại thực tế cho bên kia.
+Nghĩa vụ còn lại sau khi chấm dứt	Việc chấm dứt không làm mất hiệu lực các nghĩa vụ đã phát sinh trước đó.	Các bên hoàn trả cho nhau những gì đã nhận mà chưa có căn cứ hưởng.
+Lưu giữ tài liệu	Mỗi bên lưu giữ đầy đủ tài liệu liên quan trong thời hạn năm năm kể từ ngày chấm dứt.	Bên kia được yêu cầu cung cấp bản sao tài liệu khi có tranh chấp.
+Người liên hệ và đầu mối	Mỗi bên cử một đầu mối liên hệ và thông báo bằng văn bản cho bên kia.	Thay đổi đầu mối có hiệu lực kể từ khi bên kia nhận được thông báo.
+Cam kết tuân thủ pháp luật	Các bên cam kết tuân thủ pháp luật về phòng chống tham nhũng và phòng chống rửa tiền.	Không bên nào được đưa, nhận hoặc môi giới hối lộ liên quan tới việc thực hiện văn bản này.
+Xử lý dữ liệu cá nhân của bên kia	Bên nhận dữ liệu cá nhân chỉ sử dụng đúng mục đích đã thoả thuận.	Dữ liệu được xoá hoặc trả lại trong ba mươi ngày kể từ khi hết mục đích sử dụng.
+Điều khoản toàn bộ thoả thuận	Văn bản này cùng các phụ lục là toàn bộ thoả thuận giữa các bên về nội dung nêu trong đó.	Mọi trao đổi, cam kết trước ngày ký không còn giá trị nếu trái với văn bản này.
+Trách nhiệm của người ký	Người ký cam kết có đủ thẩm quyền theo điều lệ hoặc văn bản uỷ quyền.	Trường hợp ký vượt thẩm quyền, bên có người ký chịu trách nhiệm về hậu quả phát sinh.
+Áp dụng tập quán	Những nội dung chưa có quy định thì áp dụng tập quán thương mại phổ biến tại nơi thực hiện.	Tập quán được áp dụng không được trái với nguyên tắc cơ bản của pháp luật.
+Điều chỉnh do thay đổi chính sách	Khi chính sách pháp luật thay đổi làm ảnh hưởng đáng kể tới nghĩa vụ, các bên thương lượng điều chỉnh.	Trong thời gian thương lượng, các bên vẫn thực hiện nghĩa vụ theo nội dung hiện hành.
+Trách nhiệm hạn chế thiệt hại	Bên bị thiệt hại phải áp dụng biện pháp hợp lý để hạn chế thiệt hại.	Phần thiệt hại lẽ ra hạn chế được thì bên bị thiệt hại tự chịu.
+Cách xác định lãi suất chậm trả	Số tiền chậm trả chịu lãi theo lãi suất nợ quá hạn trung bình của ba ngân hàng thương mại.	Lãi được tính từ ngày đến hạn đến ngày thanh toán thực tế.
+Kiểm tra việc thực hiện	Mỗi bên được kiểm tra việc thực hiện của bên kia sau khi thông báo trước bảy ngày.	Việc kiểm tra không được cản trở hoạt động bình thường của bên được kiểm tra.
+Trách nhiệm với bên thứ ba	Bên nào gây thiệt hại cho bên thứ ba trong quá trình thực hiện thì bên đó tự chịu trách nhiệm.	Bên kia phối hợp cung cấp tài liệu khi được yêu cầu hợp pháp.
+Ký kết bằng phương tiện điện tử	Các bên chấp nhận ký bằng chữ ký số hợp lệ theo quy định của pháp luật.	Bản ký số có giá trị pháp lý như bản ký tay và đóng dấu.
+Điều khoản thi hành	Các bên có trách nhiệm tổ chức thực hiện đầy đủ nội dung đã cam kết.	Vướng mắc trong quá trình thực hiện được giải quyết trên tinh thần hợp tác và lập thành biên bản.

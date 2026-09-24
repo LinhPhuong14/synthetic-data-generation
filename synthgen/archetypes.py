@@ -121,6 +121,14 @@ def schema() -> dict[str, Any]:
         "sign_sets": {"type": "list[list[str]]"},
         "notes": {"type": "list[str]", "min": 1},
         "rows": {"type": "pair[int]"},
+        # TRẦN SỐ TỜ phôi tự khai. Không khai thì sức chứa khối chảy quyết --
+        # đó là hành vi cũ và vẫn đúng cho hầu hết phôi.
+        #
+        # Có khoá này vì trước đó một phôi KHÔNG CÓ CÁCH NÀO nói "tôi là giấy
+        # một trang": `allow:` gắn `clauses`/`sections` theo TÊN, nên một
+        # `QUYẾT ĐỊNH` dù ngắn tới đâu cũng với tới mười tờ. Đo trên kho 471
+        # phôi: 69% với tới 10+ tờ, còn bậc 2-4 tờ chỉ có 7 phôi.
+        "max_pages": {"type": "int"},
         "always": {"type": "list[str]", "values": blocks, "min": 1},
         "optional": {"type": "list[str]", "values": blocks},
         "en_ok": {"type": "bool"},
@@ -139,7 +147,7 @@ def problems(spec: dict, *, taken: set[str] | None = None) -> list[str]:
     name = str(spec.get("id", "?"))
 
     for key in rules:
-        if key not in spec and key not in ("optional", "subtitles"):
+        if key not in spec and key not in ("optional", "subtitles", "max_pages"):
             found.append(f"{name}: thiếu `{key}`")
     for key in spec:
         if key not in rules:
@@ -158,6 +166,8 @@ def problems(spec: dict, *, taken: set[str] | None = None) -> list[str]:
             found.append(f"{name}.{key}: phải là true/false")
         elif kind == "float" and not isinstance(value, (int, float)):
             found.append(f"{name}.{key}: phải là một số")
+        elif kind == "int" and not isinstance(value, int):
+            found.append(f"{name}.{key}: phải là một số nguyên")
         elif kind == "pair[int]" and not _pairs(value):
             found.append(f"{name}.{key}: phải là hai số nguyên [thấp, cao]")
         elif kind.startswith("list") and not isinstance(value, list):
@@ -230,6 +240,7 @@ def build(spec: dict):
         sign_sets=tuple(tuple(s) for s in spec["sign_sets"]),
         notes=tuple(spec["notes"]),
         rows=tuple(spec["rows"]),
+        max_pages=int(spec.get("max_pages") or 0),
         optional=tuple(spec.get("optional") or ()),
         always=tuple(spec["always"]),
         en_ok=bool(spec["en_ok"]),
@@ -295,6 +306,7 @@ def as_spec(arch) -> dict:
         "sign_sets": [list(s) for s in arch.sign_sets],
         "notes": list(arch.notes),
         "rows": list(arch.rows),
+        **({"max_pages": arch.max_pages} if arch.max_pages else {}),
         "always": list(arch.always),
         "optional": list(arch.optional),
         "en_ok": arch.en_ok,

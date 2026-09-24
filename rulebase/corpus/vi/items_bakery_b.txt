@@ -1,0 +1,32 @@
+# ITEMS_BAKERY_B — Bánh và đồ uống bán tại cửa hàng — nhóm bánh đặt và bánh theo mùa.
+# Định dạng: tên<TAB>giá tối thiểu<TAB>giá tối đa  (VND)
+#
+# Mẻ này nới bảng để hai tờ cùng hồ sơ không lặp lại cùng danh sách hàng: đo
+# trên bản trước, một bảng 15 dòng bốc từ kho 26 dòng thì hai tờ trùng quá nửa.
+
+Bánh kem sinh nhật cỡ 20cm	280000	520000
+Bánh kem sinh nhật cỡ 24cm	380000	720000
+Bánh kem hai tầng đặt riêng	950000	2400000
+Bánh cưới ba tầng	2800000	8500000
+Bánh trung thu nướng thập cẩm	65000	145000
+Bánh trung thu dẻo hạt sen	58000	128000
+Hộp bánh trung thu bốn bánh	380000	950000
+Bánh bông lan trứng muối cuộn	95000	185000
+Bánh tiramisu phần	55000	110000
+Bánh mousse chanh dây phần	58000	120000
+Bánh su kem hộp sáu chiếc	90000	160000
+Bánh croissant bơ	25000	48000
+Bánh mì nguyên cám ổ	28000	55000
+Bánh mì sandwich gối	32000	62000
+Bánh quy hạnh nhân hộp giấy	145000	320000
+Bánh cookie hạt macca hộp	120000	260000
+Bánh dứa Đài Loan hộp 10 chiếc	135000	280000
+Bánh pía đậu xanh sầu riêng hộp	95000	185000
+Cà phê latte ly lớn	42000	68000
+Trà đào cam sả ly lớn	45000	72000
+Sinh tố bơ ly	48000	78000
+Nước ép cam tươi ly	40000	65000
+Sô cô la nóng ly	45000	75000
+Trà sữa trân châu đường đen ly	42000	70000
+Combo bánh ngọt và nước uống	75000	145000
+Phí hộp quà và ruy băng	15000	45000

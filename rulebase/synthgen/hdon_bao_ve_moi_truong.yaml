@@ -1,8 +1,16 @@
 # phôi khai bằng file — xem synthgen/archetypes.py
 #
-# Sinh theo lô "300 phôi chia đều": tên là `<thể loại> + <lĩnh vực>`, đúng cách
-# chứng từ hành chính Việt Nam đặt tên. Bậc `ngan` quyết trần số tờ qua
-# `rows` -- xem `synthgen/design.py::flow_reach`.
+# Sinh theo lô "300 phôi chia đều": tên là `<thể loại> + <lĩnh vực>`,
+# đúng cách chứng từ hành chính Việt Nam đặt tên.
+#
+# Trần số tờ và khối chảy đọc từ THỂ LOẠI in trên tiêu đề
+# ("HOÁ ĐƠN"), không theo vị trí trong vòng sinh — xem lịch sử:
+# bậc cũ gán bằng `index % 3` nên mọi thể loại đều chia 1/3-1/3-1/3,
+# và một HỢP ĐỒNG bị khoá một tờ. Khối chảy: table; trần: 4.
+# Trần dòng bảng [4, 45] -> [4, 110]: `paginate` ĐO được ~26 dòng một
+# tờ, chứ không 15 như `FLOW_PER_PAGE` ước lượng, nên trần cũ chỉ nuôi
+# nổi hai tờ. Đo trên `data/smoke_multipage_v4`: "78 dòng cần cho 3 tờ
+# vượt trần 50 của chứng từ", hai lần trên 30 tài liệu.
 id: hdon_bao_ve_moi_truong
 titles:
 - HOÁ ĐƠN VỀ BẢO VỆ MÔI TRƯỜNG
@@ -21,8 +29,19 @@ fields:
 field_span:
 - 2
 - 3
-columns: []
-totals: none
+columns:
+- - stt
+  - name
+  - unit
+  - qty
+  - unit_price
+  - amount
+- - stt
+  - name
+  - qty
+  - unit_price
+  - amount
+totals: money
 words: false
 sign_sets:
 - - NGƯỜI MUA HÀNG
@@ -32,11 +51,12 @@ sign_sets:
 notes:
 - Quý khách vui lòng giữ chứng từ để đối chiếu khi cần.
 rows:
-- 0
-- 0
+- 4
+- 110
 always:
 - letterhead
 - doctitle
+- table
 - signatures
 optional:
 - meta
@@ -46,3 +66,4 @@ optional:
 - footnote
 - checks
 en_ok: true
+max_pages: 4

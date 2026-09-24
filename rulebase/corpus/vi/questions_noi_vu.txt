@@ -1,0 +1,27 @@
+# QUESTIONS_NOI_VU — một chủ đề câu hỏi của khối biểu mẫu (`Form`).
+#
+# Cột 1 là DẠNG, cột 2 là câu hỏi, các cột sau là tham số của dạng ấy — xem
+# `questions_hanh_chinh.txt` cho bảng dạng đầy đủ.
+#
+# Chủ đề này thêm vào để khối `Form` không chỉ có bảy giọng: đo trên bản
+# trước, một tờ có biểu mẫu bốc câu từ 7 chủ đề nên hai tờ cùng hồ sơ trùng
+# câu rất sớm. Mười bốn chủ đề thì số cặp trùng giảm còn một nửa.
+
+blank	Họ và tên người được đánh giá
+boxchar	Số hiệu công chức, viên chức	10
+date_boxes	Ngày được tuyển dụng vào cơ quan
+options	Ngạch hoặc hạng chức danh nghề nghiệp	Chuyên viên cao cấp|Chuyên viên chính|Chuyên viên|Cán sự|Nhân viên
+inline_blank	Được bổ nhiệm giữ chức … từ ngày …, thời hạn … năm
+grid	Tự đánh giá kết quả công tác trong kỳ	Khối lượng công việc|Tiến độ|Chất lượng|Tinh thần phối hợp	Chưa đạt|Đạt|Tốt|Xuất sắc
+table_form	Diễn biến quá trình công tác	Từ tháng năm|Đến tháng năm|Đơn vị công tác|Chức vụ
+yesno	Trong kỳ đánh giá có bị xử lý kỷ luật không?
+options	Trình độ chuyên môn cao nhất	Trung cấp|Cao đẳng|Đại học|Thạc sĩ|Tiến sĩ
+attachment	Hồ sơ đánh giá kèm theo	Bản tự nhận xét|Bằng cấp chứng chỉ|Bản kê khai tài sản|Nhận xét của cấp uỷ
+subquestion	Nguyện vọng cá nhân	a) Vị trí công tác mong muốn|b) Nội dung cần đào tạo|c) Đề xuất khác
+scale	Mức độ hài lòng với điều kiện làm việc tại cơ quan	Rất không hài lòng	Rất hài lòng	5
+blank	Ưu điểm nổi bật trong kỳ công tác
+blank	Hạn chế cần khắc phục và hướng khắc phục
+options	Kết quả xếp loại đề nghị	Hoàn thành xuất sắc nhiệm vụ|Hoàn thành tốt nhiệm vụ|Hoàn thành nhiệm vụ|Không hoàn thành nhiệm vụ
+yesno	Có đủ điều kiện xét nâng bậc lương trước thời hạn không?
+rank	Xin xếp thứ tự nội dung cần bồi dưỡng	Lý luận chính trị|Quản lý nhà nước|Chuyên môn nghiệp vụ|Ngoại ngữ|Tin học
+date_boxes	Ngày hết thời hạn giữ chức vụ hiện tại

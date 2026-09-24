@@ -1,0 +1,31 @@
+# CLAUSES_MEDICAL_C — điều khoản đánh số cho khối `clauses`.
+#
+# Cột 1 là tiêu đề điều, mỗi cột sau là một KHOẢN. Số khoản mỗi điều một khác
+# là chủ ý: `paginate._pack` cắt trang theo chiều cao thật của từng điều.
+#
+# Trần số tờ của một tài liệu chảy bằng điều khoản đúng bằng số điều bốc
+# được — xem `design.flow_reach`. File này nới trần ấy thêm 23 điều.
+
+Phạm vi hoạt động chuyên môn	Cơ sở chỉ thực hiện kỹ thuật trong phạm vi đã được phê duyệt.	Kỹ thuật mới phải được thẩm định và cấp phép trước khi triển khai.
+Người hành nghề	Người hành nghề phải có chứng chỉ còn hiệu lực và đúng phạm vi chuyên môn.	Danh sách người hành nghề được niêm yết công khai tại nơi tiếp đón.
+Tiếp nhận người bệnh	Người bệnh được tiếp nhận không phân biệt khả năng chi trả trong trường hợp cấp cứu.	Thứ tự khám theo số thứ tự, ưu tiên người cấp cứu, trẻ em, người cao tuổi và phụ nữ có thai.
+Giải thích và đồng ý	Người bệnh được giải thích về tình trạng bệnh, phương án điều trị và rủi ro có thể xảy ra.	Thủ thuật, phẫu thuật phải có văn bản đồng ý của người bệnh hoặc người đại diện.
+Quyền từ chối điều trị	Người bệnh được từ chối điều trị sau khi đã được giải thích đầy đủ.	Việc từ chối phải lập thành văn bản và lưu trong hồ sơ bệnh án.
+Nội dung bắt buộc của đơn thuốc	Đơn thuốc ghi rõ tên thuốc, hàm lượng, liều dùng và thời gian sử dụng.	Không kê đơn thuốc chưa được phép lưu hành hoặc ngoài chỉ định đã duyệt.
+Cấp phát và bảo quản thuốc	Thuốc được bảo quản theo điều kiện nhà sản xuất công bố và kiểm tra hạn dùng định kỳ.	Thuốc hết hạn được tách riêng và tiêu huỷ theo quy trình có biên bản.
+Phản ứng có hại của thuốc	Phản ứng có hại phải được ghi nhận và báo cáo về trung tâm theo dõi trong thời hạn quy định.	Người bệnh gặp phản ứng nặng được ngừng thuốc và xử trí ngay.
+An toàn người bệnh	Cơ sở xác định đúng người bệnh bằng ít nhất hai dấu hiệu nhận dạng trước mọi can thiệp.	Sự cố y khoa được báo cáo và phân tích nguyên nhân gốc, không nhằm quy trách nhiệm cá nhân.
+Kiểm soát nhiễm khuẩn bệnh viện	Quy trình vệ sinh tay được giám sát và công bố tỉ lệ tuân thủ hằng quý.	Dụng cụ tái sử dụng được tiệt khuẩn và có nhật ký theo dõi từng mẻ.
+Ghi chép và lưu trữ hồ sơ bệnh án	Hồ sơ được ghi chép đầy đủ, kịp thời, không tẩy xoá và có chữ ký người ghi.	Hồ sơ được lưu trữ theo thời hạn quy định cho từng loại bệnh án.
+Bảo mật thông tin người bệnh	Thông tin sức khoẻ chỉ cung cấp cho người bệnh, người đại diện hoặc cơ quan có thẩm quyền.	Việc sử dụng dữ liệu cho nghiên cứu phải mã hoá định danh và được hội đồng chấp thuận.
+Trực chuyên môn	Cơ sở bố trí trực hai mươi bốn trên hai mươi bốn giờ với đủ các vị trí theo quy định.	Người trực không được rời vị trí khi chưa có người nhận bàn giao.
+Cấp cứu và chuyển viện	Người bệnh cấp cứu được xử trí ngay, không chờ hoàn tất thủ tục hành chính.	Việc chuyển viện có phiếu chuyển, có nhân viên y tế đi kèm khi tình trạng đòi hỏi.
+Hội chẩn và xin ý kiến tuyến trên	Hội chẩn được tổ chức khi ca bệnh vượt khả năng hoặc diễn biến bất thường.	Ý kiến tuyến trên được ghi vào hồ sơ và là căn cứ điều chỉnh phác đồ.
+Trang thiết bị y tế	Thiết bị được kiểm định, hiệu chuẩn định kỳ và dán tem còn hiệu lực.	Thiết bị hỏng được dán nhãn ngừng sử dụng và tách khỏi khu vực chuyên môn.
+Quản lý chất thải y tế	Chất thải được phân loại tại nguồn theo mã màu và thu gom theo lộ trình quy định.	Chất thải lây nhiễm được xử lý bởi đơn vị có giấy phép, có chứng từ bàn giao.
+Viện phí và thanh toán	Bảng giá dịch vụ được niêm yết công khai và cập nhật khi có thay đổi.	Người bệnh được cung cấp bảng kê chi phí chi tiết khi ra viện.
+Khám sức khoẻ định kỳ	Kết quả khám được trả cho người được khám và đơn vị sử dụng lao động theo thoả thuận.	Phát hiện bệnh cần theo dõi thì tư vấn và hướng dẫn khám chuyên khoa.
+Đào tạo liên tục	Người hành nghề tham gia đào tạo liên tục đủ số giờ theo quy định mỗi năm.	Cơ sở bố trí thời gian và kinh phí cho hoạt động đào tạo liên tục.
+Giải quyết khiếu nại của người bệnh	Khiếu nại được tiếp nhận tại bộ phận chăm sóc khách hàng và trả lời trong mười ngày.	Trường hợp phức tạp được đưa ra hội đồng chuyên môn xem xét.
+Nghiên cứu y sinh học	Nghiên cứu trên người phải được hội đồng đạo đức phê duyệt trước khi triển khai.	Người tham gia nghiên cứu được giải thích và ký văn bản đồng ý tự nguyện.
+Điều khoản thi hành của quy chế chuyên môn	Các khoa, phòng có trách nhiệm phổ biến và tổ chức thực hiện quy chế này.	Vướng mắc trong thực hiện được báo cáo về phòng kế hoạch tổng hợp để tổng hợp trình sửa đổi.

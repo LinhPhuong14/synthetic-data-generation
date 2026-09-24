@@ -1,0 +1,32 @@
+# SECTIONS_CHUNG_B — mục văn xuôi cho khối `sections` (nhãn `Section-Header` + `Text`).
+#
+# Cột 1 là tiêu đề mục, các cột sau là các ĐOẠN của mục ấy. Số đoạn mỗi mục
+# một khác, và đó là chủ ý: `paginate._pack` xếp trang theo chiều cao THẬT của
+# từng mục, nên mục dài ngắn khác nhau không còn làm hỏng phép cắt trang.
+#
+# Mẻ này nới trần số tờ: trần = số mục chia cho ~3 mục một tờ A4.
+
+MỤC ĐÍCH VÀ YÊU CẦU	Văn bản này được ban hành nhằm thống nhất cách thực hiện trong toàn đơn vị.	Yêu cầu các bộ phận triển khai đúng nội dung, đúng thời hạn và báo cáo kết quả.
+PHẠM VI VÀ ĐỐI TƯỢNG	Áp dụng cho toàn bộ đơn vị trực thuộc và người lao động thuộc quyền quản lý.	Đơn vị mới tiếp nhận thuộc phạm vi áp dụng kể từ ngày có quyết định.
+NGUYÊN TẮC CHUNG	Thực hiện công khai, minh bạch, đúng thẩm quyền và đúng trình tự quy định.	Mỗi công việc chỉ giao cho một đầu mối chủ trì và chịu trách nhiệm chính.
+NỘI DUNG THỰC HIỆN	Các nội dung được triển khai theo kế hoạch đính kèm, có mốc thời gian cụ thể.	Bộ phận chủ trì chịu trách nhiệm điều phối và tổng hợp tiến độ hằng tháng.	Nội dung phát sinh ngoài kế hoạch phải được người có thẩm quyền chấp thuận.
+PHÂN CÔNG TRÁCH NHIỆM	Thủ trưởng các bộ phận chịu trách nhiệm trong phạm vi được giao.	Cá nhân được phân công báo cáo tiến độ theo định kỳ đã thống nhất.
+TRÌNH TỰ VÀ THỦ TỤC	Hồ sơ được tiếp nhận, kiểm tra thành phần và vào sổ theo dõi ngay khi nhận.	Hồ sơ chưa đủ thành phần được hướng dẫn bổ sung một lần bằng văn bản.
+THỜI GIAN VÀ TIẾN ĐỘ	Thời gian thực hiện tính từ ngày văn bản có hiệu lực.	Chậm tiến độ phải báo cáo bằng văn bản, nêu rõ lý do và thời hạn khắc phục.
+KINH PHÍ THỰC HIỆN	Kinh phí bố trí trong dự toán đã được phê duyệt của đơn vị.	Phát sinh ngoài dự toán phải có văn bản chấp thuận trước khi chi.
+ĐIỀU KIỆN BẢO ĐẢM	Đơn vị bảo đảm nhân lực, phương tiện và điều kiện làm việc cần thiết.	Thiếu điều kiện bảo đảm thì báo cáo ngay chứ không tự điều chỉnh nội dung.
+CHẾ ĐỘ BÁO CÁO	Báo cáo định kỳ gửi trước ngày hai mươi lăm hằng tháng.	Báo cáo phải có số liệu, đánh giá và kiến nghị cụ thể, không báo cáo chung chung.
+KIỂM TRA VÀ GIÁM SÁT	Việc kiểm tra được thực hiện định kỳ và đột xuất trong giờ làm việc.	Kết quả kiểm tra lập thành biên bản, gửi các bên trong ba ngày làm việc.
+ĐÁNH GIÁ KẾT QUẢ	Kết quả được đánh giá theo tiêu chí đã công bố từ đầu kỳ.	Đánh giá là căn cứ xét thi đua và bố trí công việc kỳ sau.
+KHÓ KHĂN VÀ VƯỚNG MẮC	Các vướng mắc phát sinh được tổng hợp và báo cáo cấp có thẩm quyền.	Vướng mắc thuộc thẩm quyền đơn vị thì xử lý ngay, không chờ hướng dẫn.
+KIẾN NGHỊ VÀ ĐỀ XUẤT	Đơn vị kiến nghị cấp trên xem xét bổ sung nguồn lực cho các nhiệm vụ trọng tâm.	Kiến nghị nêu rõ cơ sở, mức đề nghị và tác động dự kiến.
+PHƯƠNG HƯỚNG KỲ TỚI	Tập trung hoàn thành các nhiệm vụ còn tồn đọng của kỳ này.	Rà soát và điều chỉnh kế hoạch cho phù hợp với nguồn lực thực tế.
+ĐẦU MỐI THEO DÕI THỰC HIỆN	Bộ phận hành chính làm đầu mối theo dõi, đôn đốc và kiểm tra việc thực hiện.	Trong quá trình thực hiện, nếu có vướng mắc, phản ánh để tổng hợp, trình sửa đổi.
+HIỆU LỰC THI HÀNH	Văn bản có hiệu lực kể từ ngày ký và thay thế các quy định trước đây trái với nó.	Văn bản được phổ biến đến toàn thể người lao động trong đơn vị.
+CĂN CỨ PHÁP LÝ	Thực hiện theo quy định của pháp luật hiện hành và văn bản hướng dẫn của cấp trên.	Trường hợp pháp luật thay đổi, đơn vị rà soát và điều chỉnh cho phù hợp.
+TÀI LIỆU ĐÍNH KÈM	Hồ sơ gồm các tài liệu liệt kê tại phụ lục, là bộ phận không tách rời.	Tài liệu bổ sung sau khi ban hành được đánh số tiếp và lưu cùng hồ sơ gốc.
+BẢO MẬT THÔNG TIN	Thông tin trong văn bản chỉ cung cấp cho tổ chức, cá nhân đúng thẩm quyền.	Người làm lộ thông tin chịu trách nhiệm theo quy định.
+LƯU TRỮ VÀ TRA CỨU	Hồ sơ được nộp lưu trong thời hạn một năm kể từ khi công việc kết thúc.	Việc tra cứu hồ sơ lưu phải có phiếu yêu cầu và được người phụ trách duyệt.
+ĐIỀU KHOẢN CHUYỂN TIẾP	Công việc đã triển khai trước ngày văn bản có hiệu lực tiếp tục theo quy định cũ.	Hồ sơ đang xử lý dở dang chuyển sang áp dụng quy định mới từ kỳ kế tiếp.
+RÀ SOÁT VÀ SỬA ĐỔI	Văn bản được rà soát ít nhất hai năm một lần hoặc khi có thay đổi về tổ chức.	Đề nghị sửa đổi phải nêu rõ điều khoản cần sửa và lý do.
+TRÁCH NHIỆM PHỐI HỢP	Bộ phận chủ trì gửi đề nghị phối hợp bằng văn bản, nêu rõ nội dung và thời hạn.	Quá hạn không trả lời thì coi như bộ phận được đề nghị đã thống nhất.

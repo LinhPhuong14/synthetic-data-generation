@@ -1,0 +1,39 @@
+# SECTIONS_INSURANCE_C — mục văn xuôi riêng của hồ sơ, cho khối `sections`.
+#
+# Cột 1 là tiêu đề mục, các cột sau là các ĐOẠN của mục ấy.
+#
+# Mẻ ba, nới trần số tờ. Đo trên `data/smoke_multipage_v4`: trần mục của hồ sơ
+# là 55 và `paginate` dùng ~12 mục một tờ, nên tài liệu nhắm sáu tờ bị hạ
+# xuống năm — "70 dòng cần cho 6 tờ vượt trần 69 của chứng từ", năm lần trên
+# ba mươi tài liệu. Xem `design._section_ceiling`.
+
+NGUYÊN TẮC THẨM ĐỊNH	Việc thẩm định dựa trên thông tin kê khai, hồ sơ y tế và kết quả kiểm tra khi cần.	Kết quả thẩm định được thông báo cho bên mua trong thời hạn quy định.
+PHÂN LOẠI MỨC ĐỘ RỦI RO	Đối tượng bảo hiểm được phân nhóm rủi ro theo tiêu chí đã công bố.	Nhóm rủi ro quyết định mức phí và các điều kiện kèm theo.
+YÊU CẦU KIỂM TRA SỨC KHOẺ	Doanh nghiệp được yêu cầu kiểm tra sức khoẻ khi số tiền bảo hiểm vượt mức quy định.	Chi phí kiểm tra do doanh nghiệp chi trả nếu hợp đồng được phát hành.
+XÁC ĐỊNH SỐ TIỀN BẢO HIỂM	Số tiền bảo hiểm không vượt giá trị của đối tượng tại thời điểm giao kết.	Trường hợp vượt, phần vượt không có hiệu lực và phí tương ứng được hoàn lại.
+ĐỊNH GIÁ LẠI ĐỐI TƯỢNG	Đối tượng bảo hiểm được định giá lại khi giá trị thay đổi đáng kể.	Việc định giá lại là căn cứ điều chỉnh số tiền bảo hiểm và phí.
+ĐIỀU KHOẢN BỔ SUNG	Quyền lợi bổ sung chỉ có hiệu lực khi được ghi trên giấy chứng nhận.	Điều khoản bổ sung chấm dứt cùng lúc với hợp đồng chính.
+QUYỀN LỢI TỬ VONG VÀ THƯƠNG TẬT	Quyền lợi chi trả theo tỷ lệ thương tật xác định bởi hội đồng chuyên môn.	Trường hợp tử vong, quyền lợi trả cho người thụ hưởng đã chỉ định.
+QUYỀN LỢI NỘI TRÚ	Chi phí nội trú chi trả theo mức và hạn mức ghi tại bảng quyền lợi.	Ngày điều trị được tính theo số ngày thực tế có mặt tại cơ sở y tế.
+QUYỀN LỢI NGOẠI TRÚ	Chi phí ngoại trú chi trả trong hạn mức năm đã thoả thuận.	Chi phí phải có chỉ định của người hành nghề và chứng từ hợp lệ.
+QUYỀN LỢI THAI SẢN	Quyền lợi thai sản áp dụng sau thời gian chờ ghi tại hợp đồng.	Biến chứng thai sản được chi trả theo quyền lợi nội trú tương ứng.
+QUYỀN LỢI NHA KHOA	Quyền lợi nha khoa chi trả cho điều trị cơ bản trong hạn mức năm.	Dịch vụ thẩm mỹ không thuộc phạm vi chi trả.
+BẢO HIỂM TÀI SẢN	Tổn thất tài sản chi trả theo giá trị thiệt hại thực tế, tối đa bằng số tiền bảo hiểm.	Tài sản được sửa chữa thay vì thay mới nếu chi phí sửa thấp hơn.
+BẢO HIỂM TRÁCH NHIỆM	Doanh nghiệp chi trả cho trách nhiệm của người được bảo hiểm với bên thứ ba.	Việc thừa nhận trách nhiệm với bên thứ ba phải có ý kiến của doanh nghiệp.
+BẢO HIỂM DU LỊCH	Quyền lợi áp dụng cho chuyến đi trong thời hạn và phạm vi lãnh thổ ghi trên hợp đồng.	Hoạt động có tính rủi ro cao chỉ được chi trả khi đã mua quyền lợi mở rộng.
+XỬ LÝ HỒ SƠ THIẾU	Hồ sơ thiếu được thông báo bổ sung một lần, nêu rõ tài liệu còn cần.	Quá thời hạn bổ sung mà không có phản hồi thì hồ sơ được tạm đóng.
+XÁC MINH THÔNG TIN	Doanh nghiệp được xác minh tại cơ sở y tế, cơ quan công an hoặc nơi làm việc.	Người được bảo hiểm phối hợp cung cấp giấy tờ phục vụ việc xác minh.
+TÍNH TOÁN SỐ CHI TRẢ	Số chi trả được tính theo bảng quyền lợi, sau khi trừ mức miễn thường.	Bản tính toán được gửi kèm thông báo chi trả cho bên mua.
+HÌNH THỨC CHI TRẢ	Quyền lợi chi trả bằng chuyển khoản vào tài khoản người thụ hưởng.	Trường hợp không có tài khoản, chi trả bằng hình thức khác theo thoả thuận.
+BẢO LÃNH VIỆN PHÍ	Doanh nghiệp bảo lãnh viện phí tại cơ sở y tế trong danh sách liên kết.	Chi phí ngoài phạm vi bảo hiểm do người được bảo hiểm tự thanh toán.
+QUYỀN LỢI TẠI CƠ SỞ NGOÀI DANH SÁCH	Điều trị tại cơ sở ngoài danh sách được chi trả sau khi người bệnh nộp hồ sơ.	Mức chi trả không cao hơn mức áp dụng cho cơ sở trong danh sách tương đương.
+THAY ĐỔI THÔNG TIN HỢP ĐỒNG	Thay đổi địa chỉ, số điện thoại, tài khoản phải thông báo bằng văn bản.	Doanh nghiệp không chịu trách nhiệm nếu thông báo không tới do thông tin cũ.
+TẠM DỪNG VÀ KHÔI PHỤC QUYỀN LỢI	Quyền lợi tạm dừng khi hợp đồng mất hiệu lực do chưa nộp phí.	Quyền lợi khôi phục từ ngày doanh nghiệp chấp thuận khôi phục hợp đồng.
+GIẢI QUYẾT KHIẾU NẠI	Khiếu nại được tiếp nhận và trả lời trong thời hạn quy định.	Bên mua không đồng ý với trả lời được đưa vụ việc ra cơ quan có thẩm quyền.
+BẢO VỆ QUYỀN LỢI KHÁCH HÀNG	Doanh nghiệp giải thích đầy đủ điều khoản loại trừ trước khi giao kết.	Tài liệu giới thiệu sản phẩm không được gây hiểu sai về quyền lợi.
+TRÁCH NHIỆM CỦA ĐẠI LÝ	Đại lý chỉ tư vấn trong phạm vi được uỷ quyền và sản phẩm được phép bán.	Đại lý không được thu phí vượt mức hoặc hứa quyền lợi ngoài hợp đồng.
+HOA HỒNG VÀ CHI PHÍ KHAI THÁC	Hoa hồng chi trả theo quy định và không tính thêm vào phí của bên mua.	Chi phí khai thác được hạch toán riêng theo quy định kế toán.
+DỰ PHÒNG NGHIỆP VỤ	Doanh nghiệp trích lập dự phòng nghiệp vụ theo phương pháp đã đăng ký.	Mức dự phòng được kiểm tra bởi chuyên gia tính toán mỗi năm.
+TÁI BẢO HIỂM	Phần trách nhiệm vượt mức giữ lại được chuyển cho nhà tái bảo hiểm.	Việc tái bảo hiểm không làm thay đổi quyền lợi của bên mua bảo hiểm.
+QUẢN LÝ DỮ LIỆU HỢP ĐỒNG	Dữ liệu hợp đồng được lưu trên hệ thống và sao lưu định kỳ.	Bên mua được cấp quyền tra cứu hợp đồng của mình trên cổng thông tin.
+LƯU TRỮ HỒ SƠ BẢO HIỂM	Hồ sơ được lưu ít nhất mười năm kể từ ngày hợp đồng chấm dứt.	Hồ sơ đang có tranh chấp được lưu cho tới khi tranh chấp giải quyết xong.

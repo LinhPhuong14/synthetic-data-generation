@@ -1,0 +1,36 @@
+# ITEMS_INVOICE_C — Hàng hoá, dịch vụ bán ra trên hoá đơn giá trị gia tăng.
+# Định dạng: tên<TAB>giá tối thiểu<TAB>giá tối đa  (VND)
+#
+# Mẻ này nới bảng để hai tờ cùng hồ sơ không lặp lại cùng danh sách hàng: đo
+# trên bản trước, một bảng 15 dòng bốc từ kho 30 dòng thì hai tờ trùng quá nửa.
+
+Máy in laser đơn sắc A4	2850000	4900000
+Máy in màu đa chức năng	6500000	12800000
+Máy chiếu độ phân giải Full HD	8900000	16500000
+Màn chiếu treo tường 100 inch	1250000	2400000
+Bộ định tuyến không dây băng tần kép	890000	2650000
+Bộ chuyển mạch 24 cổng	2400000	5800000
+Ổ cứng gắn ngoài 2TB	1350000	2200000
+Thẻ nhớ tốc độ cao 128GB	320000	680000
+Bộ lưu điện 1000VA	1450000	3200000
+Máy đóng sách gáy xoắn	2100000	5400000
+Máy quét mã vạch để bàn	1850000	4200000
+Két sắt chống cháy cỡ trung	3200000	7800000
+Điều hoà âm trần 18000 BTU	7900000	13500000
+Quạt cây điều khiển từ xa	680000	1450000
+Cây nước nóng lạnh	2350000	4900000
+Máy lọc không khí phòng 30m2	3400000	8900000
+Bàn làm việc gỗ công nghiệp 1m4	1850000	3600000
+Ghế xoay lưng lưới	1250000	3400000
+Tủ tài liệu sắt bốn ngăn	2400000	4500000
+Bảng từ trắng treo tường 1m2x2m	950000	1850000
+Giấy in A4 định lượng 70gsm thùng 5 ram	320000	460000
+Trống từ máy in laser	850000	2400000
+Bút bi hộp 20 chiếc	45000	120000
+Sổ lò xo bìa cứng A5	28000	85000
+Băng keo trong khổ lớn cuộn	12000	35000
+Kẹp bướm hộp 12 chiếc	18000	52000
+Bìa còng gáy 7cm	32000	78000
+Phong bì thư in sẵn hộp 100	65000	180000
+Dịch vụ bảo trì máy tính theo tháng	450000	1800000
+Dịch vụ vệ sinh văn phòng theo tháng	2800000	8500000

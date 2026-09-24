@@ -578,6 +578,8 @@ class Archetype:
     optional: tuple[str, ...] = ()
     always: tuple[str, ...] = ()
     en_ok: bool = False
+    # Trần số tờ phôi TỰ KHAI. 0 = không khai, sức chứa khối chảy quyết.
+    max_pages: int = 0
 
 
 _SIGN_SALES = (('NGƯỜI MUA HÀNG', 'NGƯỜI BÁN HÀNG'), ('NGƯỜI MUA HÀNG', 'NGƯỜI BÁN HÀNG', 'THỦ TRƯỞNG ĐƠN VỊ'), ('Khách hàng', 'Nhân viên bán hàng'), ('NGƯỜI LẬP PHIẾU', 'KẾ TOÁN TRƯỞNG', 'GIÁM ĐỐC'))
@@ -657,7 +659,7 @@ ARCHETYPES: tuple[Archetype, ...] = (
     A('to_trinh', ('TỜ TRÌNH', 'TỜ TRÌNH ĐỀ NGHỊ PHÊ DUYỆT', 'GIẤY ĐỀ NGHỊ'), ('V/v đề nghị cấp kinh phí', 'V/v đề nghị mua sắm trang thiết bị', ''), 'admin', 'state', 0.9, SUBJECT_FIELDS[8:10] + CONTRACT_FIELDS[4:5], (1, 3), (('stt', 'name', 'unit', 'qty', 'unit_price', 'amount'), ('stt', 'name', 'qty', 'amount'), ('stt', 'name', 'note')), 'money', True, (('NGƯỜI ĐỀ NGHỊ', 'THỦ TRƯỞNG ĐƠN VỊ'), ('NGƯỜI LẬP', 'PHỤ TRÁCH BỘ PHẬN', 'THỦ TRƯỞNG ĐƠN VỊ')), _NOTE_STATE, (2, 64), optional=('table', 'footer', 'words', 'summary'), always=('letterhead', 'doctitle', 'meta', 'fields', 'notes', 'signatures')),
     A('don_xin_nghi_phep', ('ĐƠN XIN NGHỈ PHÉP', 'ĐƠN XIN NGHỈ VIỆC RIÊNG', 'GIẤY XIN PHÉP'), ('Kính gửi: Ban Giám đốc', 'Kính gửi: Trưởng phòng Hành chính - Nhân sự', ''), 'admin', 'state', 0.85, SUBJECT_FIELDS[:1] + SUBJECT_FIELDS[1:2] + SUBJECT_FIELDS[6:10], (4, 7), (('stt', 'date', 'name', 'note'),), 'none', False, _SIGN_STATE, _NOTE_STATE, (0, 6), optional=('table', 'footer', 'meta'), always=('letterhead', 'doctitle', 'fields', 'notes', 'signatures')),
     A('giay_uy_quyen', ('GIẤY UỶ QUYỀN', 'GIẤY UỶ QUYỀN GIAO DỊCH', 'VĂN BẢN UỶ QUYỀN'), ('', 'Số: ..../GUQ', '(Có giá trị đến hết ngày ....)'), 'admin', 'state', 0.8, SUBJECT_FIELDS[:8], (5, 8), (('stt', 'name', 'note'),), 'none', False, (('BÊN UỶ QUYỀN', 'BÊN ĐƯỢC UỶ QUYỀN'), ('NGƯỜI UỶ QUYỀN', 'NGƯỜI ĐƯỢC UỶ QUYỀN', 'XÁC NHẬN CỦA ĐƠN VỊ')), _NOTE_STATE, (0, 16), optional=('table', 'footer', 'meta'), always=('letterhead', 'doctitle', 'fields', 'notes', 'signatures')),
-    A('giay_gioi_thieu', ('GIẤY GIỚI THIỆU', 'GIẤY GIỚI THIỆU CÔNG TÁC'), ('Kính gửi: ....', '', 'Số: ..../GGT'), 'admin', 'state', 0.9, SUBJECT_FIELDS[:1] + SUBJECT_FIELDS[3:5] + SUBJECT_FIELDS[8:10], (3, 5), (('stt', 'name', 'note'),), 'none', False, (('TM. THỦ TRƯỞNG ĐƠN VỊ',), ('NGƯỜI GIỚI THIỆU', 'THỦ TRƯỞNG ĐƠN VỊ')), _NOTE_STATE, (4, 40), optional=('table', 'footer', 'photo'), always=('letterhead', 'doctitle', 'meta', 'fields', 'notes', 'signatures')),
+    A('giay_gioi_thieu', ('GIẤY GIỚI THIỆU', 'GIẤY GIỚI THIỆU CÔNG TÁC'), ('Kính gửi: ....', '', 'Số: ..../GGT'), 'admin', 'state', 0.9, SUBJECT_FIELDS[:1] + SUBJECT_FIELDS[3:5] + SUBJECT_FIELDS[8:10], (3, 5), (('stt', 'name', 'note'),), 'none', False, (('TM. THỦ TRƯỞNG ĐƠN VỊ',), ('NGƯỜI GIỚI THIỆU', 'THỦ TRƯỞNG ĐƠN VỊ')), _NOTE_STATE, (4, 40), optional=('table', 'footer', 'photo'), always=('letterhead', 'doctitle', 'meta', 'fields', 'notes', 'signatures'), max_pages=1),
     A('don_dang_ky', (
     'ĐƠN ĐĂNG KÝ',
     'PHIẾU ĐĂNG KÝ THÔNG TIN',
@@ -797,8 +799,26 @@ MARK_PLACES: tuple[str, ...] = ("cuoi", "dau", "goc_phai", "moi_to")
 # `sections` chỉ 3 mỗi tờ: một mục là tiêu đề cộng hai ba đoạn canh đều,
 # cao gấp ba bốn lần một điều khoản. Đo trên ảnh pilot16: một tờ A4 chứa
 # hai đến ba mục.
+# ĐO LẠI 23-09-2026 trên `data/smoke_multipage_v2` (43 trang đã vẽ), bằng
+# cách đếm nhãn vùng `Section-Header` / `Form` theo từng `page_number` của
+# bản ghi — KHÔNG đếm trong `plan/`, vì con số ở đó là `PROBE_ITEMS = 40`,
+# tức nội dung dò đường trước khi `refill` chốt lại.
+#
+#   sections   đo 7,1 mục/tờ trên 21 trang   (đang để 3)
+#   questions  đo 11,3 câu/tờ trên 6 trang   (đang để 8)
+#
+# Để 3 không phải là an toàn, nó là lãng phí: `flow_reach` = trần kho chia
+# cho con số này, nên kho 69 mục ra "với tới 23 tờ", `draw()` nhắm tới 10
+# tờ, rồi `paginate.plan` đo xong phải hạ dần 5->4->3->2 và tài liệu nào
+# hạ hết đường thì `--multipage-only` loại. Đo trên lượt ấy: 9 lần hạ tờ
+# trên 17 tài liệu, và 13/30 tài liệu bị loại.
+#
+# `questions` lấy 10 chứ không 11: mẫu chỉ có 6 trang, nhắm thấp hơn số đo
+# một chút thì sai về phía thừa tờ, mà thừa tờ thì `plan` cắt được.
+# `clauses` và `table` GIỮ NGUYÊN: mẫu lần lượt 3 và 4 trang, quá mỏng để
+# đổi một con số đã đo trên 28 tờ trước đây.
 FLOW_PER_PAGE: dict[str, int] = {"table": 15, "clauses": 11,
-                                 "questions": 8, "sections": 3}
+                                 "questions": 10, "sections": 7}
 
 
 def block_boost(name: str) -> float:
@@ -891,8 +911,14 @@ def flow_reach(flow: str, arch: "Archetype") -> int:
     cùng một câu hỏi là đúng hình dạng lỗi kho này hay gặp nhất."""
     lo, hi = flow_span(flow, arch)
     per = FLOW_PER_PAGE.get(flow, 0)
+    cap = int(getattr(arch, "max_pages", 0) or 0)
     if not per:
         return 1
+    if cap:
+        # Phôi tự khai trần thì trần ấy THẮNG sức chứa. Một vé gửi xe có thể
+        # chảy bằng điều khoản về mặt kỹ thuật -- kho điều khoản đủ cho mười
+        # tờ -- nhưng một cái vé mười trang là tờ giấy không tồn tại.
+        return max(min(cap, max(hi // per, 1)), 1)
     if hi - lo < per:
         # Khoảng mục hẹp hơn một tờ: sáu đến tám điều thì sáu đến tám điều,
         # không có gì để dồn sang tờ sau.

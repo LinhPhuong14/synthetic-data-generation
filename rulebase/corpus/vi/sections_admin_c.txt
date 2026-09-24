@@ -1,0 +1,39 @@
+# SECTIONS_ADMIN_C — mục văn xuôi riêng của hồ sơ, cho khối `sections`.
+#
+# Cột 1 là tiêu đề mục, các cột sau là các ĐOẠN của mục ấy.
+#
+# Mẻ ba, nới trần số tờ. Đo trên `data/smoke_multipage_v4`: trần mục của hồ sơ
+# là 69 và `paginate` dùng ~12 mục một tờ, nên tài liệu nhắm sáu tờ bị hạ
+# xuống năm — "70 dòng cần cho 6 tờ vượt trần 69 của chứng từ", năm lần trên
+# ba mươi tài liệu. Xem `design._section_ceiling`.
+
+CÔNG TÁC XÂY DỰNG THỂ CHẾ	Đơn vị rà soát và ban hành các quy định nội bộ theo thẩm quyền được giao.	Quy định nội bộ không được trái với văn bản của cấp trên và pháp luật hiện hành.
+KIỂM SOÁT NỘI BỘ	Các quy trình có điểm kiểm soát rõ, tách người thực hiện khỏi người kiểm tra.	Kết quả kiểm soát được ghi nhận và lưu cùng hồ sơ công việc.
+PHÂN CẤP QUẢN LÝ	Việc phân cấp gắn với điều kiện bảo đảm về nhân lực và kinh phí.	Cấp được phân quyền chịu trách nhiệm toàn diện về nội dung đã nhận.
+QUẢN LÝ VỊ TRÍ VIỆC LÀM	Bản mô tả công việc được rà soát khi cơ cấu tổ chức thay đổi.	Người giữ vị trí phải đáp ứng khung năng lực đã công bố cho vị trí ấy.
+ĐÁNH GIÁ NĂNG LỰC CÁN BỘ	Việc đánh giá dựa trên kết quả công việc và mức độ đáp ứng khung năng lực.	Kết quả đánh giá được thông báo và người được đánh giá có quyền giải trình.
+BỒI DƯỠNG THEO VỊ TRÍ	Kế hoạch bồi dưỡng xây dựng theo khoảng trống năng lực đã xác định.	Người được cử đi bồi dưỡng báo cáo kết quả áp dụng sau ba tháng.
+CHẾ ĐỘ PHỤ CẤP	Phụ cấp chi trả đúng đối tượng và đúng mức theo quy định hiện hành.	Thay đổi về điều kiện hưởng phụ cấp phải điều chỉnh ngay trong kỳ lương kế tiếp.
+QUẢN LÝ THỜI GIỜ LÀM VIỆC	Thời giờ làm việc được theo dõi qua hệ thống chấm công của đơn vị.	Làm việc ngoài giờ phải được phê duyệt trước, không hợp thức hoá sau.
+AN TOÀN TRỤ SỞ LÀM VIỆC	Việc ra vào trụ sở được kiểm soát và ghi nhận trong giờ và ngoài giờ.	Khách đến làm việc được hướng dẫn và có người của đơn vị đi cùng.
+QUẢN LÝ HỒ SƠ ĐIỆN TỬ	Hồ sơ điện tử được lập song song với hồ sơ giấy và có giá trị tra cứu.	Việc số hoá hồ sơ cũ thực hiện theo lộ trình, ưu tiên hồ sơ còn hiệu lực.
+KẾT NỐI DỮ LIỆU DÙNG CHUNG	Dữ liệu của đơn vị được kết nối với hệ thống dùng chung theo chuẩn đã công bố.	Việc chia sẻ dữ liệu ra ngoài phải có văn bản đồng ý của người có thẩm quyền.
+XỬ LÝ HỒ SƠ TRỰC TUYẾN	Hồ sơ nộp trực tuyến được tiếp nhận và xử lý như hồ sơ nộp trực tiếp.	Kết quả được trả theo hình thức người nộp đã chọn khi đăng ký.
+ĐO LƯỜNG SỰ HÀI LÒNG	Đơn vị khảo sát mức độ hài lòng của tổ chức, công dân ít nhất một lần trong năm.	Kết quả khảo sát được công khai và là căn cứ cải tiến quy trình.
+RÚT NGẮN THỜI GIAN GIẢI QUYẾT	Thời gian giải quyết được rà soát theo từng bước để loại bước không cần thiết.	Thời gian rút ngắn phải được công bố lại để tổ chức, công dân biết.
+QUẢN LÝ CON DẤU VÀ CHỮ KÝ	Con dấu và chứng thư số được giao cho người cụ thể quản lý, có sổ theo dõi.	Người quản lý không được giao lại cho người khác dùng dưới bất kỳ hình thức nào.
+BAN HÀNH VÀ KIỂM TRA VĂN BẢN	Dự thảo văn bản được kiểm tra về thể thức và nội dung trước khi trình ký.	Văn bản đã ban hành phát hiện sai sót thì đính chính hoặc thay thế, không sửa trên bản gốc.
+SOÁT XÉT TÍNH HỢP PHÁP	Mọi văn bản có nội dung quy định được soát xét về căn cứ pháp lý trước khi ban hành.	Nội dung không có căn cứ pháp lý thì không đưa vào văn bản.
+QUẢN LÝ ĐẦU TƯ MUA SẮM	Kế hoạch mua sắm được lập theo năm, có thứ tự ưu tiên và dự toán tương ứng.	Mua sắm ngoài kế hoạch chỉ thực hiện khi có nhu cầu cấp thiết và được duyệt.
+QUẢN LÝ HỢP ĐỒNG VỚI NHÀ THẦU	Hợp đồng được theo dõi theo tiến độ và khối lượng thực hiện thực tế.	Nhà thầu chậm tiến độ được nhắc bằng văn bản trước khi áp dụng chế tài.
+KIỂM KÊ VÀ ĐÁNH GIÁ LẠI TÀI SẢN	Việc kiểm kê thực hiện vào cuối năm và khi có thay đổi người quản lý.	Tài sản thừa, thiếu so với sổ sách phải được giải trình và xử lý theo quy định.
+THANH LÝ TÀI SẢN	Tài sản hết thời hạn sử dụng được đề nghị thanh lý kèm biên bản đánh giá.	Việc thanh lý thực hiện công khai, số thu nộp về nguồn theo quy định.
+TIẾT KIỆM CHỐNG LÃNG PHÍ	Đơn vị xây dựng định mức sử dụng điện, nước, văn phòng phẩm và theo dõi hằng tháng.	Khoản vượt định mức phải được giải trình trong báo cáo kỳ.
+QUẢN LÝ QUỸ VÀ TÀI KHOẢN	Số dư quỹ tiền mặt không vượt mức đã quy định trong quy chế chi tiêu nội bộ.	Việc mở và đóng tài khoản phải có quyết định của người có thẩm quyền.
+CÔNG KHAI TÀI CHÍNH	Dự toán và quyết toán được công khai theo hình thức và thời hạn quy định.	Người lao động có quyền hỏi và được trả lời về nội dung đã công khai.
+THANH TRA VÀ KIỂM TRA	Đơn vị chấp hành các cuộc thanh tra, kiểm tra và cung cấp hồ sơ theo yêu cầu.	Kết luận thanh tra được thực hiện đầy đủ và báo cáo kết quả khắc phục.
+THỰC HIỆN KẾT LUẬN KIỂM TRA	Mỗi nội dung tại kết luận được phân công cho một đầu mối và có thời hạn khắc phục.	Nội dung chưa khắc phục được phải báo cáo lý do trước khi hết thời hạn.
+DÂN CHỦ Ở CƠ SỞ	Người lao động được biết, được tham gia ý kiến vào các nội dung theo quy định.	Hội nghị người lao động tổ chức mỗi năm một lần, có biên bản và nghị quyết.
+QUAN HỆ VỚI TỔ CHỨC ĐOÀN THỂ	Đơn vị tạo điều kiện cho tổ chức đoàn thể hoạt động theo điều lệ của tổ chức ấy.	Các nội dung liên quan tới quyền lợi người lao động được trao đổi trước khi quyết định.
+CHĂM LO ĐỜI SỐNG NGƯỜI LAO ĐỘNG	Đơn vị thực hiện đầy đủ chế độ bảo hiểm và khám sức khoẻ định kỳ.	Trường hợp khó khăn đột xuất được xem xét hỗ trợ theo quy chế đã ban hành.
+XÂY DỰNG VĂN HOÁ TỔ CHỨC	Đơn vị xây dựng và duy trì các chuẩn mực ứng xử trong nội bộ và với bên ngoài.	Vi phạm chuẩn mực ứng xử được nhắc nhở, tái phạm thì xem xét trách nhiệm.

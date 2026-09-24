@@ -1,0 +1,39 @@
+# SECTIONS_INVOICE_C — mục văn xuôi riêng của hồ sơ, cho khối `sections`.
+#
+# Cột 1 là tiêu đề mục, các cột sau là các ĐOẠN của mục ấy.
+#
+# Mẻ ba, nới trần số tờ. Đo trên `data/smoke_multipage_v4`: trần mục của hồ sơ
+# là 67 và `paginate` dùng ~12 mục một tờ, nên tài liệu nhắm sáu tờ bị hạ
+# xuống năm — "70 dòng cần cho 6 tờ vượt trần 69 của chứng từ", năm lần trên
+# ba mươi tài liệu. Xem `design._section_ceiling`.
+
+CƠ SỞ XÁC ĐỊNH GIÁ	Giá được xác định trên cơ sở báo giá, khối lượng và điều kiện giao hàng đã thống nhất.	Thay đổi điều kiện giao hàng thì hai bên xác định lại giá tương ứng.
+ĐƠN VỊ TIỀN TỆ VÀ TỶ GIÁ	Đồng tiền thanh toán là đồng Việt Nam, trừ khi có thoả thuận khác bằng văn bản.	Trường hợp quy đổi, tỷ giá áp dụng là tỷ giá bán của ngân hàng phục vụ bên mua.
+KIỂM TRA TRƯỚC KHI XUẤT HÀNG	Hàng hoá được kiểm tra về số lượng, quy cách và bao bì trước khi xuất kho.	Kết quả kiểm tra lập thành phiếu, lưu cùng hồ sơ lô hàng.
+PHƯƠNG TIỆN VÀ TUYẾN VẬN CHUYỂN	Phương tiện vận chuyển phù hợp với đặc tính hàng hoá và điều kiện bảo quản.	Thay đổi tuyến vận chuyển phải thông báo cho bên mua trước khi khởi hành.
+XỬ LÝ HÀNG HƯ HỎNG TRÊN ĐƯỜNG	Hàng hư hỏng trên đường được lập biên bản tại nơi phát hiện, có chữ ký người vận chuyển.	Trách nhiệm xác định theo thời điểm chuyển rủi ro đã thoả thuận.
+QUẢN LÝ TỒN KHO	Mức tồn kho tối thiểu được duy trì để bảo đảm cung cấp liên tục.	Hàng tồn quá thời hạn quy định được rà soát và xử lý theo quy chế.
+XUẤT NHẬP KHO	Mọi lần xuất, nhập kho đều có phiếu và cập nhật vào sổ ngay trong ngày.	Chênh lệch giữa sổ và thực tế phải được kiểm kê và giải trình.
+ĐỊNH MỨC TIÊU HAO	Định mức tiêu hao được xây dựng theo từng loại hàng và rà soát hằng năm.	Tiêu hao vượt định mức phải có giải trình và ý kiến của bộ phận kỹ thuật.
+QUẢN LÝ CÔNG NỢ PHẢI THU	Công nợ được theo dõi theo từng khách hàng và từng hoá đơn.	Nợ quá hạn ba mươi ngày được nhắc bằng văn bản, quá sáu mươi ngày thì dừng cung cấp.
+DỰ PHÒNG NỢ KHÓ THU	Khoản nợ quá hạn theo quy định được trích lập dự phòng tương ứng.	Việc xoá nợ chỉ thực hiện khi có đủ căn cứ và được người có thẩm quyền quyết định.
+CHÍNH SÁCH BÁN HÀNG	Chính sách giá, chiết khấu và điều kiện thanh toán được công bố cho khách hàng.	Áp dụng ngoại lệ phải có văn bản phê duyệt, không thoả thuận miệng.
+QUẢN LÝ KHÁCH HÀNG	Thông tin khách hàng được lưu trên hệ thống và cập nhật khi có thay đổi.	Việc sử dụng thông tin khách hàng tuân thủ quy định về bảo vệ dữ liệu cá nhân.
+XỬ LÝ KHIẾU NẠI KHÁCH HÀNG	Khiếu nại được tiếp nhận và phản hồi trong hai ngày làm việc.	Khiếu nại về chất lượng được xác minh tại hiện trường trước khi kết luận.
+BẢO HÀNH VÀ SỬA CHỮA	Phạm vi bảo hành, thời hạn và điều kiện được ghi rõ trên phiếu bảo hành.	Thời gian sửa chữa không tính vào thời hạn bảo hành còn lại.
+THU HỒI VÀ TÁI CHẾ BAO BÌ	Bao bì thu hồi được tập kết và xử lý theo quy định về bảo vệ môi trường.	Chi phí thu hồi bao bì do bên nào thoả thuận chịu thì bên đó chi trả.
+QUẢN LÝ CHẤT LƯỢNG NHÀ CUNG CẤP	Nhà cung cấp được đánh giá định kỳ về chất lượng, tiến độ và giá.	Nhà cung cấp không đạt hai kỳ liên tiếp bị đưa ra khỏi danh sách được chọn.
+HỒ SƠ PHÁP LÝ CỦA HÀNG HOÁ	Mỗi lô hàng có đủ hồ sơ về xuất xứ, công bố chất lượng và kiểm định nếu thuộc diện bắt buộc.	Hàng thiếu hồ sơ pháp lý không được nhập kho và không được bán ra.
+GHI NHÃN VÀ THÔNG TIN SẢN PHẨM	Nhãn hàng hoá có đủ thông tin bắt buộc bằng tiếng Việt.	Thông tin quảng bá phải khớp với thông tin đã công bố, không nói quá công dụng.
+KHUYẾN MẠI VÀ HẬU MÃI	Chương trình khuyến mại được thông báo theo quy định trước khi thực hiện.	Quyền lợi hậu mãi được thực hiện đúng nội dung đã công bố với khách hàng.
+QUẢN LÝ HOÁ ĐƠN ĐIỆN TỬ	Hoá đơn được lập ngay khi hoàn thành việc bán hàng, cung cấp dịch vụ.	Hoá đơn sai sót được xử lý bằng hoá đơn điều chỉnh hoặc thay thế theo quy định.
+ĐỐI SOÁT VỚI NGÂN HÀNG	Số dư tài khoản được đối soát với sổ kế toán vào cuối mỗi tháng.	Chênh lệch chưa rõ nguyên nhân phải được tra soát trước khi khoá sổ.
+QUẢN LÝ CHI PHÍ BÁN HÀNG	Chi phí bán hàng được theo dõi theo từng khoản mục và so với kế hoạch.	Khoản chi vượt kế hoạch trên mười phần trăm phải có giải trình.
+PHÂN TÍCH HIỆU QUẢ KINH DOANH	Hiệu quả được phân tích theo nhóm hàng, khu vực và kênh phân phối.	Kết quả phân tích là căn cứ điều chỉnh chính sách của kỳ sau.
+DỰ BÁO NHU CẦU	Nhu cầu được dự báo theo quý trên cơ sở số liệu bán hàng kỳ trước và hợp đồng đã ký.	Dự báo được cập nhật khi có biến động lớn về thị trường.
+QUẢN LÝ RỦI RO THANH TOÁN	Khách hàng mới được đánh giá khả năng thanh toán trước khi cấp hạn mức công nợ.	Hạn mức được rà soát lại mỗi sáu tháng hoặc khi có dấu hiệu rủi ro.
+BẢO HIỂM CHO HÀNG HOÁ	Hàng hoá giá trị lớn được mua bảo hiểm cho quá trình lưu kho và vận chuyển.	Bên hưởng lợi bảo hiểm là bên chịu rủi ro tại thời điểm xảy ra tổn thất.
+TUÂN THỦ QUY ĐỊNH VỀ THUẾ	Việc kê khai và nộp thuế thực hiện đúng kỳ hạn theo quy định.	Hồ sơ phục vụ kê khai được lưu đủ thời hạn pháp luật yêu cầu.
+KIỂM TOÁN ĐỘC LẬP	Báo cáo tài chính được kiểm toán nếu thuộc diện bắt buộc hoặc theo yêu cầu của chủ sở hữu.	Kiến nghị của kiểm toán được thực hiện và báo cáo kết quả khắc phục.
+LƯU TRỮ CHỨNG TỪ KẾ TOÁN	Chứng từ kế toán được lưu theo thời hạn quy định cho từng loại.	Việc tiêu huỷ chứng từ hết thời hạn phải có hội đồng và lập biên bản.
+CHẤM DỨT QUAN HỆ MUA BÁN	Việc chấm dứt được thông báo trước ba mươi ngày, trừ trường hợp vi phạm nghiêm trọng.	Hai bên đối chiếu và tất toán công nợ trước khi chấm dứt.

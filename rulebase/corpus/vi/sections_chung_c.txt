@@ -1,0 +1,50 @@
+# SECTIONS_CHUNG_C — mục văn xuôi dùng cho MỌI hồ sơ (`SECTION_COMMON`).
+#
+# Cột 1 là tiêu đề mục, các cột sau là các ĐOẠN của mục ấy.
+#
+# Vì sao có mẻ này, đo trên `data/smoke_multipage_v4` (30 tài liệu):
+# `paginate.plan` ghi "hạ xuống 5 tờ: 70 dòng cần cho 6 tờ vượt trần 69 của
+# chứng từ" — năm lần. Trần 69 là toàn bộ kho mục của hồ sơ hành chính, và
+# `paginate` đo được ~12 mục một tờ, nên 69 mục chỉ nuôi nổi khoảng sáu tờ.
+# Thêm mục vào đây là cách DUY NHẤT nới trần ấy — xem `design._section_ceiling`.
+
+PHẠM VI ÁP DỤNG VÀ GIỚI HẠN	Văn bản này áp dụng trong phạm vi nhiệm vụ được giao và địa bàn quản lý của đơn vị.	Nội dung vượt phạm vi nêu trên phải báo cáo cấp có thẩm quyền trước khi thực hiện.
+GIẢI THÍCH CÁC TỪ VIẾT TẮT	Các từ viết tắt dùng trong văn bản được giải thích tại phần đầu và dùng thống nhất.	Từ viết tắt mới phát sinh phải được giải thích ngay lần dùng đầu tiên.
+CƠ SỞ XÂY DỰNG VĂN BẢN	Văn bản được xây dựng trên cơ sở quy định pháp luật và tình hình thực tế của đơn vị.	Số liệu dùng làm cơ sở được lấy từ báo cáo chính thức của kỳ liền trước.
+ĐÁNH GIÁ TÌNH HÌNH CHUNG	Tình hình trong kỳ cơ bản ổn định, các nhiệm vụ trọng tâm được triển khai theo kế hoạch.	Một số chỉ tiêu chưa đạt do nguyên nhân khách quan đã được phân tích tại phần sau.
+NHỮNG KẾT QUẢ ĐẠT ĐƯỢC	Các nhiệm vụ được giao hoàn thành đúng tiến độ và bảo đảm yêu cầu chất lượng.	Công tác phối hợp giữa các bộ phận có chuyển biến rõ so với kỳ trước.
+NHỮNG TỒN TẠI CẦN KHẮC PHỤC	Một số nhiệm vụ còn chậm so với mốc thời gian đã thống nhất.	Việc cập nhật số liệu chưa kịp thời, ảnh hưởng tới chất lượng báo cáo tổng hợp.
+PHÂN TÍCH NGUYÊN NHÂN	Nguyên nhân khách quan gồm biến động về nhân sự và thay đổi quy định trong kỳ.	Nguyên nhân chủ quan là thiếu kiểm tra, đôn đốc ở một số đầu mối được giao.
+BÀI HỌC RÚT RA	Nhiệm vụ có đầu mối rõ và mốc thời gian cụ thể thì tiến độ được bảo đảm.	Việc kiểm tra định kỳ phát hiện vướng mắc sớm hơn là chờ báo cáo cuối kỳ.
+CHỈ TIÊU VÀ ĐỊNH MỨC	Chỉ tiêu được giao theo năm và phân bổ cho từng quý để theo dõi.	Định mức áp dụng theo quy định hiện hành, có điều chỉnh khi giá thị trường biến động lớn.
+PHƯƠNG PHÁP TỔ CHỨC THỰC HIỆN	Công việc được chia thành các nhóm nhiệm vụ, mỗi nhóm có một đầu mối chủ trì.	Tiến độ từng nhóm được cập nhật vào hệ thống theo dõi dùng chung của đơn vị.
+PHÂN CÔNG CỤ THỂ TỪNG BƯỚC	Bước chuẩn bị gồm rà soát hồ sơ, xác định nhu cầu và lập dự toán.	Bước thực hiện triển khai theo thứ tự đã duyệt, không đảo bước khi chưa có ý kiến.
+ĐIỀU KIỆN VỀ NHÂN LỰC	Nhân sự bố trí đủ số lượng và đúng chuyên môn cho từng vị trí công việc.	Trường hợp thiếu nhân lực thì đề nghị điều động, không tự giảm khối lượng công việc.
+ĐIỀU KIỆN VỀ CƠ SỞ VẬT CHẤT	Trang thiết bị và mặt bằng làm việc được bố trí trước khi bắt đầu thực hiện.	Thiết bị hỏng trong quá trình thực hiện được sửa chữa hoặc thay thế trong ba ngày làm việc.
+DỰ TOÁN VÀ NGUỒN KINH PHÍ	Dự toán được lập chi tiết theo từng khoản mục và có thuyết minh kèm theo.	Nguồn kinh phí gồm ngân sách được giao và nguồn thu hợp pháp khác của đơn vị.
+QUẢN LÝ VÀ SỬ DỤNG KINH PHÍ	Kinh phí sử dụng đúng mục đích, đúng khoản mục đã được phê duyệt.	Việc điều chỉnh giữa các khoản mục phải có văn bản chấp thuận của người có thẩm quyền.
+THANH QUYẾT TOÁN	Hồ sơ quyết toán được lập trong ba mươi ngày kể từ khi kết thúc công việc.	Khoản chi không có chứng từ hợp lệ thì không được quyết toán.
+QUẢN LÝ RỦI RO	Các rủi ro có thể xảy ra được nhận diện từ đầu và có phương án ứng phó tương ứng.	Rủi ro phát sinh ngoài dự kiến phải báo cáo ngay, không chờ kỳ báo cáo định kỳ.
+PHƯƠNG ÁN DỰ PHÒNG	Mỗi nhiệm vụ trọng tâm có một phương án dự phòng được chuẩn bị trước.	Phương án dự phòng chỉ được kích hoạt khi có ý kiến của người đứng đầu.
+PHỐI HỢP VỚI ĐƠN VỊ NGOÀI	Việc phối hợp thực hiện trên cơ sở văn bản đề nghị, nêu rõ nội dung và thời hạn.	Kết quả phối hợp được ghi nhận bằng biên bản có chữ ký của các bên.
+THÔNG TIN VÀ TUYÊN TRUYỀN	Nội dung văn bản được phổ biến tới toàn thể người lao động trong bảy ngày làm việc.	Việc phổ biến được ghi vào sổ theo dõi, có danh sách người đã được phổ biến.
+CÔNG KHAI VÀ MINH BẠCH	Các nội dung thuộc diện công khai được niêm yết tại trụ sở và đăng trên trang thông tin.	Thời hạn niêm yết không dưới ba mươi ngày kể từ ngày ban hành.
+TIẾP NHẬN VÀ XỬ LÝ PHẢN ÁNH	Phản ánh của tổ chức, cá nhân được tiếp nhận qua hộp thư, đường dây nóng và trực tiếp.	Nội dung phản ánh được trả lời trong mười lăm ngày làm việc kể từ ngày tiếp nhận.
+GIÁM SÁT CỦA TẬP THỂ	Tổ chức đoàn thể trong đơn vị tham gia giám sát việc thực hiện văn bản này.	Ý kiến giám sát được tiếp thu và phản hồi tại hội nghị người lao động.
+SƠ KẾT GIỮA KỲ	Việc sơ kết thực hiện vào giữa kỳ, đánh giá phần đã làm và phần còn lại.	Kết quả sơ kết là căn cứ điều chỉnh kế hoạch cho nửa kỳ sau.
+TỔNG KẾT CUỐI KỲ	Tổng kết được tổ chức trong mười lăm ngày kể từ khi kết thúc kỳ thực hiện.	Báo cáo tổng kết nêu rõ kết quả, tồn tại, nguyên nhân và kiến nghị.
+KHEN THƯỞNG VÀ XỬ LÝ	Tập thể, cá nhân hoàn thành tốt nhiệm vụ được xem xét khen thưởng theo quy định.	Trường hợp không hoàn thành do lỗi chủ quan thì xem xét trách nhiệm tương ứng.
+SỬ DỤNG KẾT QUẢ	Kết quả thực hiện được dùng làm căn cứ xây dựng kế hoạch kỳ tiếp theo.	Số liệu kết quả được lưu trên hệ thống để phục vụ tra cứu và so sánh giữa các kỳ.
+CHUYỂN GIAO CÔNG VIỆC	Người thay đổi vị trí phải bàn giao đầy đủ hồ sơ, tài sản và công việc đang dở.	Biên bản bàn giao lập thành hai bản, mỗi bên giữ một bản.
+TRÁCH NHIỆM CỦA TỪNG CẤP	Cấp trên chịu trách nhiệm về chỉ đạo và bố trí điều kiện thực hiện.	Cấp trực tiếp thực hiện chịu trách nhiệm về tiến độ và chất lượng công việc được giao.
+XỬ LÝ CÔNG VIỆC TỒN ĐỌNG	Công việc tồn đọng từ kỳ trước được rà soát và lên danh mục xử lý trong tháng đầu kỳ.	Công việc không còn khả thi thì báo cáo để xem xét dừng, không để tồn vô thời hạn.
+ÁP DỤNG CÔNG NGHỆ THÔNG TIN	Các bước xử lý được thực hiện trên hệ thống dùng chung để lưu dấu thao tác.	Việc xử lý ngoài hệ thống chỉ áp dụng khi hệ thống gặp sự cố và phải cập nhật lại sau.
+SỐ LIỆU VÀ BÁO CÁO THỐNG KÊ	Số liệu thống kê lấy từ một nguồn duy nhất đã được xác nhận, không dùng số liệu tự tổng hợp.	Sai lệch số liệu giữa các báo cáo phải được đối chiếu và giải trình bằng văn bản.
+LƯU HỒ SƠ CÔNG VIỆC	Mỗi công việc lập một hồ sơ riêng theo danh mục hồ sơ đã ban hành.	Hồ sơ nộp lưu trong thời hạn một năm kể từ khi công việc kết thúc.
+BẢO VỆ BÍ MẬT CÔNG TÁC	Tài liệu thuộc diện bảo vệ bí mật được quản lý theo chế độ riêng.	Việc sao chụp tài liệu mật phải có ý kiến của người có thẩm quyền và ghi vào sổ.
+QUAN HỆ VỚI CƠ QUAN CẤP TRÊN	Đơn vị báo cáo cấp trên theo định kỳ và khi có việc đột xuất.	Nội dung vượt thẩm quyền được xin ý kiến bằng văn bản trước khi thực hiện.
+QUAN HỆ VỚI ĐƠN VỊ NGANG CẤP	Việc phối hợp với đơn vị ngang cấp thực hiện trên nguyên tắc bình đẳng, cùng trách nhiệm.	Bất đồng không tự giải quyết được thì báo cáo cấp trên chung của hai bên.
+ĐIỀU KHOẢN DẪN CHIẾU	Các dẫn chiếu trong văn bản này hiểu theo phiên bản còn hiệu lực tại thời điểm áp dụng.	Văn bản được dẫn chiếu bị thay thế thì áp dụng theo văn bản thay thế.
+HIỆU LỰC VÀ THAY THẾ	Văn bản có hiệu lực kể từ ngày ký và thay thế các quy định trước đây trái với nó.	Văn bản bị thay thế được lưu để tra cứu, không tiêu huỷ ngay sau khi hết hiệu lực.
+TRÁCH NHIỆM PHỔ BIẾN	Bộ phận hành chính chịu trách nhiệm phổ biến và hướng dẫn thực hiện văn bản này.	Bộ phận chuyên môn giải đáp các nội dung thuộc lĩnh vực mình phụ trách.
+ĐẦU MỐI GIẢI ĐÁP VƯỚNG MẮC	Mọi vướng mắc gửi về bộ phận được chỉ định làm đầu mối, kèm nội dung cụ thể.	Đầu mối tổng hợp và trả lời trong mười ngày làm việc, quá hạn phải nêu lý do.

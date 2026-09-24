@@ -1,0 +1,23 @@
+# SECTIONS_INSURANCE_B — mục văn xuôi cho khối `sections` (nhãn `Section-Header` + `Text`).
+#
+# Cột 1 là tiêu đề mục, các cột sau là các ĐOẠN của mục ấy. Số đoạn mỗi mục
+# một khác, và đó là chủ ý: `paginate._pack` xếp trang theo chiều cao THẬT của
+# từng mục, nên mục dài ngắn khác nhau không còn làm hỏng phép cắt trang.
+#
+# Mẻ này nới trần số tờ: trần = số mục chia cho ~3 mục một tờ A4.
+
+ĐỐI TƯỢNG BẢO HIỂM	Đối tượng là người, tài sản hoặc trách nhiệm ghi tại giấy chứng nhận.	Thay đổi đối tượng phải được doanh nghiệp bảo hiểm chấp thuận bằng văn bản.
+PHẠM VI BẢO HIỂM	Doanh nghiệp chi trả cho tổn thất xảy ra trong thời hạn và thuộc phạm vi hợp đồng.	Tổn thất ngoài lãnh thổ ghi trên hợp đồng không thuộc phạm vi bảo hiểm.
+QUYỀN LỢI BẢO HIỂM	Quyền lợi chi trả theo bảng quyền lợi đính kèm hợp đồng.	Tổng chi trả không vượt quá mức trách nhiệm tối đa đã thoả thuận.
+ĐIỂM LOẠI TRỪ	Không chi trả cho tổn thất do hành vi cố ý của người được bảo hiểm.	Không chi trả với bệnh có sẵn trước ngày hiệu lực, trừ khi đã kê khai và được chấp nhận.
+THỜI GIAN CHỜ	Thời gian chờ với quyền lợi nội trú là ba mươi ngày kể từ ngày hiệu lực.	Thời gian chờ không áp dụng với tai nạn.
+PHÍ VÀ KỲ ĐÓNG PHÍ	Phí tính trên số tiền bảo hiểm và tỉ lệ phí tương ứng mức độ rủi ro.	Quá thời hạn nộp phí sáu mươi ngày, hợp đồng tạm mất hiệu lực.
+NGHĨA VỤ KÊ KHAI	Bên mua bảo hiểm kê khai đầy đủ và trung thực mọi thông tin được yêu cầu.	Kê khai không trung thực là căn cứ từ chối chi trả hoặc huỷ hợp đồng.
+THÔNG BÁO SỰ KIỆN	Khi xảy ra sự kiện bảo hiểm, người được bảo hiểm thông báo trong vòng năm ngày.	Chậm thông báo không có lý do chính đáng có thể bị giảm số tiền chi trả.
+HỒ SƠ YÊU CẦU CHI TRẢ	Hồ sơ gồm giấy yêu cầu, giấy tờ tuỳ thân và chứng từ y tế hoặc biên bản tổn thất.	Chứng từ là bản gốc hoặc bản sao có xác nhận của cơ quan phát hành.
+GIÁM ĐỊNH TỔN THẤT	Tổn thất được giám định bởi giám định viên do doanh nghiệp chỉ định.	Bên mua được yêu cầu giám định lại; chi phí do bên yêu cầu chịu.
+THỜI HẠN GIẢI QUYẾT	Giải quyết bồi thường trong mười lăm ngày kể từ ngày nhận đủ hồ sơ hợp lệ.	Trường hợp phải xác minh, thời hạn kéo dài nhưng không quá bốn mươi lăm ngày.
+MỨC MIỄN THƯỜNG	Mức miễn thường có khấu trừ áp dụng cho từng vụ tổn thất.	Phần tổn thất dưới mức miễn thường do người được bảo hiểm tự chịu.
+CHUYỂN QUYỀN ĐÒI BỒI HOÀN	Sau khi bồi thường, doanh nghiệp thay quyền yêu cầu bên gây thiệt hại bồi hoàn.	Người được bảo hiểm phối hợp cung cấp tài liệu trong quá trình đòi bồi hoàn.
+TÁI TỤC HỢP ĐỒNG	Hợp đồng tái tục khi bên mua nộp phí kỳ mới trước ngày hết hạn.	Điều kiện tái tục có thể thay đổi và được thông báo trước ba mươi ngày.
+CHẤM DỨT HỢP ĐỒNG	Bên mua được huỷ và nhận lại phí theo tỉ lệ thời gian còn lại nếu chưa bồi thường.	Doanh nghiệp được huỷ khi phát hiện gian dối trong kê khai hoặc yêu cầu chi trả.

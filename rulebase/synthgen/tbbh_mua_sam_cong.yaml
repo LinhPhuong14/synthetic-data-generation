@@ -1,8 +1,13 @@
 # phôi khai bằng file — xem synthgen/archetypes.py
 #
-# Sinh theo lô "300 phôi chia đều": tên là `<thể loại> + <lĩnh vực>`, đúng cách
-# chứng từ hành chính Việt Nam đặt tên. Bậc `ngan` quyết trần số tờ qua
-# `rows` -- xem `synthgen/design.py::flow_reach`.
+# Sinh theo lô "300 phôi chia đều": tên là `<thể loại> + <lĩnh vực>`,
+# đúng cách chứng từ hành chính Việt Nam đặt tên.
+#
+# CÓ bảng: rải đều để cả kho giữ ~10% phôi luôn có bảng.
+# Trần số tờ và khối chảy đọc từ THỂ LOẠI in trên tiêu đề
+# ("THÔNG BÁO"), không theo vị trí trong vòng sinh — xem lịch sử:
+# bậc cũ gán bằng `index % 3` nên mọi thể loại đều chia 1/3-1/3-1/3,
+# và một HỢP ĐỒNG bị khoá một tờ. Khối chảy: sections; trần: 2.
 id: tbbh_mua_sam_cong
 titles:
 - THÔNG BÁO BẢO HIỂM VỀ MUA SẮM CÔNG
@@ -21,8 +26,17 @@ fields:
 field_span:
 - 2
 - 3
-columns: []
-totals: none
+columns:
+- - stt
+  - name
+  - unit
+  - qty
+  - amount
+- - stt
+  - name
+  - date
+  - note
+totals: money
 words: false
 sign_sets:
 - - BÊN MUA BẢO HIỂM
@@ -32,8 +46,8 @@ sign_sets:
 notes:
 - Giấy này là bộ phận không tách rời của hợp đồng bảo hiểm.
 rows:
-- 0
-- 0
+- 6
+- 90
 always:
 - letterhead
 - doctitle
@@ -45,4 +59,6 @@ optional:
 - footer
 - footnote
 - checks
+- sections
 en_ok: true
+max_pages: 2
