@@ -14,7 +14,9 @@ from __future__ import annotations
 import datetime as dt
 import hashlib
 import random
+import re
 import sys
+import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -720,6 +722,37 @@ def phone(rng: random.Random) -> str:
     return head + tail
 
 
+EMAIL_DOMAINS = ('gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com')
+
+
+def email(rng: random.Random) -> str:
+    """Một hộp thư cá nhân, ghép từ một cái tên có thật trong `corpus.people()`.
+
+    Trước hàm này, ô "Thư điện tử" trong một khối `subquestion` (xem
+    `_column_value`) rơi về `free` -- rổ câu than phiền chung của cả tài
+    liệu -- nên "b) Thư điện tử" in ra "đề nghị cấp lại do mất". Một hộp thư
+    không đọc được không ai viết lên đơn thật.
+
+    NFD tách được mọi dấu THANH và dấu NGUYÊN ÂM, nhưng không tách `đ` -- nó
+    không phải một tổ hợp, là một chữ cái riêng (cùng lưu ý đã ghi ở
+    `generators/html/signature.py::_stroke_name`) -- nên phải đổi tay."""
+    name = rng.choice(corpus.people() or ('Nguyễn Văn An',))
+    plain = unicodedata.normalize('NFD', name.lower())
+    plain = ''.join(c for c in plain if unicodedata.category(c) != 'Mn')
+    plain = plain.replace('đ', 'd')
+    parts = re.sub(r'[^a-z\s]', '', plain).split()
+    if not parts:
+        parts = ['nguoivan']
+    local = rng.choice((
+        ''.join(parts),
+        '.'.join(parts),
+        parts[-1] + parts[0][0] if len(parts) > 1 else parts[0],
+    ))
+    if rng.random() < 0.5:
+        local += str(rng.randrange(1, 999))
+    return f'{local}@{rng.choice(EMAIL_DOMAINS)}'
+
+
 def bank_account(rng: random.Random) -> str:
     return (f'{_digits(rng, rng.choice((10, 12, 13, 14)))} tại '
             f'{rng.choice(BANKS)} - Chi nhánh {rng.choice(CITIES)}')
@@ -1092,10 +1125,13 @@ def _spread(rng: random.Random, free: list[str], count: int) -> list[str]:
 # các mẫu không lồng nhau. Cột không khớp mẫu nào rơi về câu trả lời tự do --
 # đúng thứ một cột "Ghi chú" hay "Nội dung" chứa.
 COLUMN_KINDS: tuple[tuple[tuple[str, ...], str], ...] = (
-    (('họ tên', 'họ và tên', 'người', 'chủ hộ'), 'person'),
+    (('họ tên', 'họ và tên', 'người', 'chủ hộ', 'tôi tên'), 'person'),
     (('năm sinh',), 'year'),
+    (('lúc',), 'time'),
     (('ngày', 'thời gian', 'thời hạn'), 'date'),
     (('số điện thoại', 'điện thoại'), 'phone'),
+    (('thư điện tử', 'e-mail', 'email'), 'email'),
+    (('địa chỉ', 'nơi cư trú', 'thường trú', 'hộ khẩu'), 'address'),
     (('số giấy tờ', 'số hiệu', 'mã số', 'số sổ', 'số'), 'digits'),
     (('quan hệ',), 'relation'),
     (('chức danh', 'chức vụ', 'vị trí'), 'position'),
@@ -1109,19 +1145,34 @@ RELATIONS = ('Con', 'Vợ', 'Chồng', 'Cha', 'Mẹ', 'Anh', 'Chị', 'Em')
 GRADES = ('Giỏi', 'Khá', 'Trung bình', 'Đạt', 'Xuất sắc')
 
 
+def _column_kind(name: str) -> str:
+    """Tra `COLUMN_KINDS` theo tên cột/nhãn, không sinh giá trị.
+
+    Tách khỏi `_column_value` để `_filled`'s `subquestion` (xem dưới) tra
+    được TRƯỚC khi bốc, và chỉ rải rổ `free` cho đúng những ô THẬT SỰ chung
+    chung -- không phải tra hai bảng khác nhau có thể lệch."""
+    low = str(name or '').strip().lower()
+    return next((k for words, k in COLUMN_KINDS
+                 if any(w in low for w in words)), 'free')
+
+
 def _column_value(name: str, rng: random.Random, free: list[str]) -> str:
     """Giá trị hợp với CỘT `name` trong một bảng người ta điền tay."""
-    low = str(name or '').strip().lower()
-    kind = next((k for words, k in COLUMN_KINDS
-                 if any(w in low for w in words)), 'free')
+    kind = _column_kind(name)
     if kind == 'person':
         return rng.choice(corpus.people() or ('Nguyễn Văn An',))
     if kind == 'year':
         return str(rng.randint(1955, 2020))
+    if kind == 'time':
+        return f'{rng.randint(0, 23)}h{rng.randint(0, 59):02d}'
     if kind == 'date':
         return f'{rng.randint(1, 28):02d}/{rng.randint(1, 12):02d}/{rng.randint(2018, 2026)}'
     if kind == 'phone':
-        return '0' + _digits_of(rng, 9)
+        return phone(rng)
+    if kind == 'email':
+        return email(rng)
+    if kind == 'address':
+        return address(rng)
     if kind == 'digits':
         return _digits_of(rng, rng.choice((8, 10, 12)))
     if kind == 'relation':
@@ -1199,13 +1250,40 @@ def _filled(spec: dict, rng: random.Random, free: list[str]) -> dict:
         rng.shuffle(order)
         item['order'] = order
     elif shape == 'inline_blank':
-        blanks = str(item.get('prompt') or '').count('…')
-        # KHÔNG lặp lại: ba chỗ trống trong một câu mà điền cùng một chuỗi là
-        # một câu không ai viết ra. Hết kho thì mới cho lặp.
-        item['answers'] = _spread(rng, free, blanks)
+        # ĐOẠN CHỮ NGAY TRƯỚC MỖI DẤU … LÀ NHÃN của chỗ trống ấy, cùng lệ
+        # `_column_value` đã đặt cho cột bảng và cho `subquestion` ở trên.
+        # Trước dòng này, "Tôi tên là …, sinh ngày …, hiện thường trú tại …"
+        # bốc cả ba chỗ trống từ CÙNG một rổ `free` -- rổ câu than phiền của
+        # cả tài liệu -- nên câu tự giới thiệu in ra "Tôi tên là hồ sơ đã nộp
+        # ngày 12/3, sinh ngày đề nghị cấp lại do mất". `split('…')` cắt
+        # đúng N đoạn cho N chỗ trống; đoạn CUỐI (sau dấu … cuối) không phải
+        # nhãn của chỗ nào nên bỏ.
+        #
+        # KHÔNG lặp lại ở phần còn rơi về `free`: ba chỗ trống trong một câu
+        # mà điền cùng một chuỗi là một câu không ai viết ra. Hết kho thì mới
+        # cho lặp.
+        labels = str(item.get('prompt') or '').split('…')[:-1]
+        kinds = [_column_kind(label) for label in labels]
+        generic = iter(_spread(rng, free, sum(k in ('free', 'noun') for k in kinds)))
+        item['answers'] = [next(generic) if k in ('free', 'noun')
+                            else _column_value(label, rng, free)
+                            for label, k in zip(labels, kinds)]
     elif shape == 'subquestion':
         labels = list(item.get('subs') or ())
-        item['subs'] = list(zip(labels, _spread(rng, free, len(labels))))
+        # NHÃN NÓI CÂU TRẢ LỜI PHẢI LÀ GÌ, cùng lệ `_column_value` đã đặt cho
+        # cột bảng. Trước dòng này, cả `len(labels)` câu trả lời đều bốc
+        # chung từ `free` -- rổ câu than phiền của cả tài liệu -- nên
+        # "a) Điện thoại" in ra "hồ sơ đã nộp ngày 12/3" và "b) Thư điện tử"
+        # in ra "đề nghị cấp lại do mất", đo được trên `don_xin_viec_00003`.
+        # Chỉ những nhãn KHÔNG tra ra loại nào (`free`/`noun`, đúng nghĩa
+        # "trả lời tự do") mới còn bốc từ `free`, và `_spread` vẫn giữ
+        # nguyên tắc không lặp cho riêng đám ấy.
+        kinds = [_column_kind(label) for label in labels]
+        generic = iter(_spread(rng, free, sum(k in ('free', 'noun') for k in kinds)))
+        values = [next(generic) if k in ('free', 'noun')
+                  else _column_value(label, rng, free)
+                  for label, k in zip(labels, kinds)]
+        item['subs'] = list(zip(labels, values))
     elif shape == 'table_form':
         cols = list(item.get('cols') or ())
         lines = max(int(item.get('lines') or 2), 1)

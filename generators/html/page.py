@@ -465,22 +465,92 @@ _ZONE_REGIONS_TEMPLATE = """() => {
   };
   const inkBox = (el) => {
     const box = el.getBoundingClientRect();
-    if (paints(el)) return box;
-    let range;
+    // CÓ CHỮ THÌ HỘP ÔM CHỮ, kể cả khi thẻ tự vẽ viền hay nền.
+    //
+    // Bản trước trả nguyên hộp thẻ khi `paints(el)`, với lý lẽ "khung mới là
+    // thứ người đọc thấy". Đo trên `data/smoke_multipage_v4` (57 trang) thì lý
+    // lẽ ấy tốn rất nhiều: 1636 trên 2247 vùng có chữ (72%) rộng hơn hộp chữ
+    // của chính nó quá 5%, và phần lớn đúng là những thẻ có viền dưới --
+    //
+    //   Title            57/57  = 100%      Form         340/344 = 98%
+    //   Footnote         25/25  = 100%      Page-Header   74/79  = 93%
+    //   Section-Header  502/602 =  83%      Text         486/791 = 61%
+    //
+    // Cực trị: `Section-Header` "VI. KIẾN NGHỊ" có hộp rộng GẤP BẢY chữ trong
+    // nó, một dòng "NGƯỜI KHAI (Ký, ghi rõ họ tên)" gấp mười ba. Một model học
+    // trên đó học rằng tiêu đề mục kéo hết chiều ngang trang, và biên nó vẽ ra
+    // sẽ sai đúng như thế.
+    //
+    // Nên luật đảo lại: thẻ CÓ CHỮ thì hộp ôm chữ; chỉ thẻ KHÔNG chữ -- khung
+    // rỗng, ô ảnh, nền hoa văn -- mới lấy nguyên hộp thẻ, vì ở đấy cái khung
+    // chính là toàn bộ mực.
+    const hasText = (el.textContent || '').trim().length > 0;
+    if (paints(el) && !hasText) return box;
+    // ĐO TỪNG NÚT CHỮ, không đo nội dung cả thẻ.
+    //
+    // `range.selectNodeContents(el)` trên một thẻ KHỐI trả về bao lồi của các
+    // HỘP DÒNG, và hộp dòng của thẻ khối rộng hết chiều ngang thẻ -- nên với
+    // một `<h1 style="text-align:center">` thì nó trả lại đúng hộp thẻ, không
+    // hẹp hơn một pixel nào. Đo trên `data/smoke_inkbox` (25 trang) sau khi đã
+    // bỏ cổng `paints`: `Section-Header` xuống 24% rộng quá, nhưng `Title` vẫn
+    // 100%, `Footnote` 100%, `Text` 73% -- toàn thẻ khối căn giữa.
+    //
+    // Range trên một NÚT CHỮ thì khác: nó bám sát glyph. Nên gom mọi nút chữ
+    // rồi hợp các hộp của chúng. Việc này cũng bỏ luôn khoảng trống để ký:
+    // ô "NGƯỜI KHAI (Ký, ghi rõ họ tên)" có hộp rộng gấp 6,8 lần chữ vì thẻ
+    // chừa chỗ trống bên dưới, và chỗ trống ấy không có nút chữ nào.
+    let ink = null;
+    const grow = (b) => {
+      if (!(b.width > 0 && b.height > 0)) return;
+      ink = ink === null ? {left: b.left, top: b.top, right: b.right, bottom: b.bottom}
+          : {left: Math.min(ink.left, b.left), top: Math.min(ink.top, b.top),
+             right: Math.max(ink.right, b.right), bottom: Math.max(ink.bottom, b.bottom)};
+    };
     try {
-      range = document.createRange();
-      range.selectNodeContents(el);
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        if (!node.nodeValue || !node.nodeValue.trim()) continue;
+        const r = document.createRange();
+        r.selectNodeContents(node);
+        grow(r.getBoundingClientRect());
+        r.detach && r.detach();
+      }
     } catch (e) { return box; }
-    const ink = range.getBoundingClientRect();
-    range.detach && range.detach();
+    // CHỮ VIẾT TAY DỰNG BẰNG ẢNH không phải nút chữ -- `TreeWalker` ở trên
+    // không bao giờ thấy nó, vì một `<img>` không có con là text node.
+    //
+    // `handwriting.py::ink_span` đặt `vertical-align` ÂM lên ảnh, cố ý "treo"
+    // nó xuống dưới dòng chữ đáng lẽ đã in -- xem comment ở đó. Một `.qitem`
+    // hỏi-đáp cao đúng bằng phần CHỮ IN của nó thì ảnh treo bên dưới rơi hẳn
+    // ra ngoài hộp. Đo trên `don_xin_viec_00003`: hộp `Form` mục 1 dừng ở
+    // y=581 trong khi ảnh chữ viết tay mục c) nằm ở y=678-714 -- cách 97px,
+    // không chạm hộp một chút nào. `pipeline/record.py` phải dựng riêng một
+    // vùng mồ côi cho đúng chữ đã có chủ, và câu hỏi tách khỏi câu trả lời.
+    //
+    // `box` cũng phải nới theo ảnh, không chỉ `ink`: cái kẹp "không bao giờ
+    // nới ra" bên dưới kẹp vào hộp thẻ GỐC thì phần ảnh tràn ra ngoài lại bị
+    // cắt mất lần nữa, y hệt lỗi vừa sửa.
+    let box2 = box;
+    for (const img of el.querySelectorAll('img')) {
+      const r = img.getBoundingClientRect();
+      grow(r);
+      box2 = {left: Math.min(box2.left, r.left), top: Math.min(box2.top, r.top),
+              right: Math.max(box2.right, r.right), bottom: Math.max(box2.bottom, r.bottom)};
+    }
+    if (ink === null) return box;
+    ink = {left: ink.left, top: ink.top,
+           right: ink.right, bottom: ink.bottom,
+           width: ink.right - ink.left, height: ink.bottom - ink.top};
     if (!(ink.width > 0 && ink.height > 0)) return box;
-    // Không bao giờ NỚI RA: bao lồi của hộp dòng có thể tràn khỏi thẻ khi
-    // con của nó nổi hoặc định vị tuyệt đối, và một hộp rộng hơn cả thẻ thì
-    // sai theo chiều ngược lại.
-    const left = Math.max(box.left, ink.left);
-    const right = Math.min(box.right, ink.right);
-    const top = Math.max(box.top, ink.top);
-    const bottom = Math.min(box.bottom, ink.bottom);
+    // Không bao giờ NỚI RA quá `box2` (hộp thẻ hợp với mọi ảnh mực bên trong
+    // nó): bao lồi của hộp dòng có thể tràn khỏi thẻ khi con của nó nổi hoặc
+    // định vị tuyệt đối, và một hộp rộng hơn cả thẻ-đã-nới thì sai theo
+    // chiều ngược lại. Ảnh viết tay là con trực tiếp của chính thẻ này nên
+    // đã nằm trong biên `box2`, không bị kẹp này chặn oan.
+    const left = Math.max(box2.left, ink.left);
+    const right = Math.min(box2.right, ink.right);
+    const top = Math.max(box2.top, ink.top);
+    const bottom = Math.min(box2.bottom, ink.bottom);
     if (!(right > left && bottom > top)) return box;
     return {left: left, top: top, width: right - left, height: bottom - top};
   };

@@ -361,10 +361,13 @@ table.items tbody td.tightest,table.items tfoot td.tightest{{
    37,3mm và Code-128 trên phiếu kho hiếm khi quá 60mm. Một mô hình học trên
    bộ cũ học rằng mã vạch là một dải chạy suốt trang.
    Bề rộng theo seed (`--bw`), nên hai tờ khác nhau không cùng một dải. */
+/* Mã vạch THẬT (EAN-13), vẽ bằng SVG nội tuyến -- xem `synthgen/barcode.py`.
+   Bản trước là `repeating-linear-gradient`: bốn vạch lặp đúng một chu kỳ, một
+   dáng duy nhất cho cả bộ, và dãy vạch không mã hoá con số in dưới nó.
+   `color` cho `currentColor` trong SVG bám mực của trang. */
 .barcode{{display:block;height:9mm;width:{d.seed % 22 + 38}mm;max-width:100%;
-  background:repeating-linear-gradient(90deg,{pal.ink} 0 0.35mm,
-    transparent 0.35mm 0.7mm,{pal.ink} 0.7mm 1.2mm,transparent 1.2mm 1.9mm);
-  margin:0 auto 0.8mm;}}
+  margin:0 auto 0.8mm;color:{pal.ink};}}
+.barcode svg{{display:block;width:100%;height:100%;}}
 /* Góc trên bên phải: phiếu gửi xe, vé, thẻ in mã QR ở đây. `position:absolute`
    trong `.sheet` (đã `position:relative`), nên nó không đẩy khối nào xuống. */
 .markcorner{{position:absolute;top:{max(d.margins[0] * 0.45, 4):.1f}mm;
@@ -1649,7 +1652,19 @@ def _signatures(doc: Doc, d: Design) -> str:
         hint = _span("sign.note", "(Ký, ghi rõ họ tên)", "hint")
         name = _span("sign.name", who, "who") if who else _span(
             "sign.note", "", "who")
-        cells.append(f'<div class="scell">{_span("sign.title", caption, "cap")}'
+        # VÙNG KHAI Ở TỪNG Ô KÝ, không ở khung bọc.
+        #
+        # Trước đây `data-region` nằm trên `div.signs` -- khung bọc mọi ô -- nên
+        # cả cụm chữ ký ra MỘT vùng. Thấy được trên
+        # `data/smoke_inkbox2/sample/layout_boxes/cv_dao_tao_boi_duong_00010_p2.jpg`:
+        # một hộp `Text` trải từ "NƠI NHẬN" sang tận "TM. THỦ TRƯỞNG ĐƠN VỊ",
+        # gộp tiêu đề của hai người ký khác nhau vào cùng một khung.
+        #
+        # Một tờ giấy có hai người ký là hai chỗ ký RIÊNG: hai chức danh, hai
+        # chữ ký, hai con người. Gộp lại thì không tách được ai ký chỗ nào, và
+        # hộp ấy cũng rỗng ở khoảng giữa hai ô.
+        cells.append(f'<div class="scell"{D.region_attr("signatures")}>'
+                     f'{_span("sign.title", caption, "cap")}'
                      f'{hint}{name}</div>')
     cls = "signs"
     if d.sign_style == "co_khung":
@@ -1659,7 +1674,7 @@ def _signatures(doc: Doc, d: Design) -> str:
     if d.sign_style == "chi_ben_phai":
         cls += " right"
         cells = cells[-1:]
-    return (f'<div class="blk">{date_line}<div class="{cls}"{D.region_attr("signatures")}>'
+    return (f'<div class="blk">{date_line}<div class="{cls}">'
             f'{"".join(cells)}</div></div>')
 
 
@@ -1774,6 +1789,21 @@ def _seal(d: Design, stem: str, right: float, top: float) -> str:
             f'</div>')
 
 
+def _barcode_art(doc: Doc) -> str:
+    """SVG mã vạch của tờ giấy, hoặc chuỗi rỗng khi không dựng được.
+
+    Cùng lẽ `_qr_art`: nuốt lỗi ở đây chứ không để nó lan, vì một tờ mất mã
+    vạch vẫn là một tờ dùng được, còn một lượt vẽ chết vì một số hiệu lạ thì
+    mất cả shard. Ô `.barcode` vẫn giữ chỗ và vẫn khai `data-graphic`, nên
+    thiếu SVG là thiếu MỰC -- thứ `make check-boxes` thấy được.
+    """
+    try:
+        from synthgen import barcode  # noqa: PLC0415 -- chỉ cần khi có mã
+        return barcode.svg(barcode.payload_for(doc))
+    except Exception:  # noqa: BLE001 -- xem docstring
+        return ""
+
+
 def _qr_art(doc: Doc, d: Design) -> str:
     """SVG mã QR của tờ giấy này, hoặc rỗng nếu mã hoá không được.
 
@@ -1799,9 +1829,21 @@ def _ornament(doc: Doc, d: Design, corner: bool = False) -> str:
     if name == "khong":
         return ""
     if name in ("ma_vach", "ma_qr"):
-        inner = ('<span class="barcode" data-graphic="barcode"></span>'
+        # KHÔNG DỰNG ĐƯỢC MÃ THÌ KHÔNG KHAI VÙNG.
+        #
+        # `_barcode_art`/`_qr_art` nuốt lỗi và trả chuỗi rỗng, để một số hiệu lạ
+        # không giết cả shard. Nhưng nếu vẫn in cái span mang `data-graphic` thì
+        # ra một vùng `Image` KHÔNG CÓ MỰC -- luật 3 của `AGENTS.md` theo chiều
+        # ngược lại, và là thứ không ai phát hiện vì "vùng rỗng" trông y hệt
+        # "vùng có hình nhạt". Đã dính đúng một lần: bỏ gradient CSS của
+        # `.barcode` mà quên nối SVG cho nhánh `dau_tron_va_ma_vach`, ra 12 ô
+        # trắng trên 20 ô của `data/smoke_inkbox2`.
+        art = _barcode_art(doc) if name == "ma_vach" else _qr_art(doc, d)
+        if not art:
+            return ""
+        inner = (f'<span class="barcode" data-graphic="barcode">{art}</span>'
                  if name == "ma_vach"
-                 else f'<span class="qr" data-graphic="qr">{_qr_art(doc, d)}</span>')
+                 else f'<span class="qr" data-graphic="qr">{art}</span>')
         code = f"{doc.doc_serial}{doc.doc_no}".replace("/", "")
         cls = "markcorner mark" if corner else "blk mark"
         return (f'<div class="{cls}">{inner}'
@@ -1814,11 +1856,24 @@ def _ornament(doc: Doc, d: Design, corner: bool = False) -> str:
     pick = lambda group: group[d.seed % len(group)]  # noqa: E731
     if name == "dau_tron_va_ma_vach":
         code = f"{doc.doc_serial}{doc.doc_no}".replace("/", "")
+        # EMITTER THỨ HAI của ô mã vạch, và nó từng bị bỏ quên.
+        #
+        # Khi `.barcode` còn vẽ bằng `repeating-linear-gradient` thì nhánh này
+        # in ra một span RỖNG mà vẫn có vạch, vì vạch do CSS vẽ. Bỏ gradient đi
+        # rồi mà chỉ nối SVG ở nhánh `ma_vach` thì nhánh này ra một ô hoàn toàn
+        # TRẮNG -- mà vẫn khai `data-graphic="barcode"`, tức một vùng `Image`
+        # không có lấy một hạt mực. Thấy được trên
+        # `data/smoke_inkbox2/sample/layout_boxes/bk_to_chuc_can_bo_00009.jpg`:
+        # khung `Image` rỗng ngay dưới tiêu đề. Đếm cả bộ: 12 ô rỗng / 20 ô.
+        art = _barcode_art(doc)
+        seal = _seal(d, pick(seals_for("dau_tron", profile)), 6, -32)
+        if not art:
+            # Mất mã vạch thì còn con dấu; khai một ô mã trắng thì không.
+            return seal
         return (f'<div class="blk mark">'
-                f'<span class="barcode" data-graphic="barcode"></span>'
+                f'<span class="barcode" data-graphic="barcode">{art}</span>'
                 f'{_span("menu.barcode", code, region=D.block_region("barcode"))}'
-                f'</div>'
-                + _seal(d, pick(seals_for("dau_tron", profile)), 6, -32))
+                f'</div>' + seal)
     fallback = "dau_tron" if name == "chim_mo" else "dau_vuong"
     group = seals_for(name, profile) or seals_for(fallback, profile)
     return _seal(d, pick(group), 8, -34)
