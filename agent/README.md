@@ -61,9 +61,13 @@ và độc lập với trang trước. Chính chỗ "độc lập với trang tr
 Bốc độc lập thì phần đuôi của không gian không bao giờ tới: những bộ ba
 `document × layout × variant` hiếm nhất không xuất hiện lần nào, những bộ phổ
 biến nhất xuất hiện hàng trăm lần, và **bộ dữ liệu hẹp hơn chính bộ luật đã
-sinh ra nó**. Đo được: 400 lượt bốc độc lập (`pressure=0`) bỏ sót giá trị ở
-nhiều thuộc tính; 400 lượt của agent (`pressure=0.72`) phủ hết — đó là
-`test_coverage_beats_independent_draws_on_the_tail`.
+sinh ra nó**. Đo được trên seed 0–199: 1400 lượt bốc độc lập (`pressure=0`)
+vẫn bỏ sót giá trị ở 90,5% số seed; 1400 lượt của agent (`pressure=0.72`) phủ
+hết ở 86% — đó là `test_coverage_beats_independent_draws_on_the_tail`. Con số
+ấy từng là 400 và phải lớn theo góc sâu nhất của bộ luật, không theo cỡ của nó:
+`invoice_detailed` một mình mở mười bố cục `rich_fields` mà agent chỉ cho nó
+~1,9% số trang — áp lực tính theo từng thuộc tính, nên nó không biết một chứng
+từ gác mười bố cục — và 400 lượt không phủ hết ở seed nào trong 200.
 
 Việc của agent là **nhớ nó đã vẽ những gì**.
 

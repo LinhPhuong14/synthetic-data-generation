@@ -165,10 +165,25 @@ def test_the_plan_never_redresses_a_locked_document(built):
 
 
 def test_coverage_beats_independent_draws_on_the_tail(built):
-    """The reason the agent exists: 400 independent draws leave values unseen."""
+    """The reason the agent exists: as many independent draws leave values unseen."""
     rules, pol = built
-    balanced = planner.plan(400, seed=4, rules=rules, policy=pol, pressure=0.72)
-    independent = planner.plan(400, seed=4, rules=rules, policy=pol, pressure=0.0)
+    # The budget is set by the deepest corner of the rules, not by their size,
+    # and that corner outgrew the 400 pages this test used to draw.
+    # `invoice_detailed` is the only document that admits the ten `rich_fields`
+    # layouts, and a balanced plan gives it 1.9% of its pages -- weight 2 among
+    # 46 live documents, and the pressure is per attribute, so nothing tells it
+    # that this one document gates ten layouts. Over seeds 0-199, 400 pages drew
+    # it 3-13 times and the balanced plan left something unused for all 200.
+    # Ten equal layouts take ~20 draws of their document to cover at pressure
+    # 0.72 (p90 27), ~29 at pressure 0. At 1400 pages the balanced plan covers
+    # everything for 86% of those seeds and the independent one misses
+    # something for 90.5%; both hold for 78.5%, the best of every budget
+    # measured from 400 to 2000. Seed 4 holds from 1188 to 3666 pages. Giving
+    # one document more layouts of its own is what moves this number:
+    # re-measure it then, do not nudge it until it passes.
+    pages = 1400
+    balanced = planner.plan(pages, seed=4, rules=rules, policy=pol, pressure=0.72)
+    independent = planner.plan(pages, seed=4, rules=rules, policy=pol, pressure=0.0)
     # `unused` counts only drawable values, so a switched-off one is not a miss.
     assert planner.unused(balanced, rules) == {}
     assert planner.unused(independent, rules) != {}

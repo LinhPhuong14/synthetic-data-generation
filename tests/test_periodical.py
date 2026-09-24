@@ -9,15 +9,29 @@ not have) and points here instead. This file is that "here": the same
 dataclasses (`ArticlePage`, `ClassifiedsPage`, `TocPage`, `QaPage`) rather
 than at `Receipt`.
 
-Each composition is reached by forcing `layout=<id>` rather than relying on
-an unforced sweep to draw a periodical page by weighted luck -- the same
-`force={"layout": ...}` pattern `test_content.py::_forced` uses, since
+Each composition is reached by forcing its layout rather than relying on an
+unforced sweep to draw a periodical page by weighted luck, since
 `periodical_page` layouts and their matching documents are a small,
 1-to-1-tagged slice of the whole space (see `rulebase/rules/layout.yaml`'s
 `periodical_page` group).
+
+The pin is `conftest.force_for(<id>)`, not the bare `{"layout": <id>}` that
+`test_content.py::_forced` uses for its switched-on invoice layouts.
+`newspaper_classifieds` is switched off (`enabled: false` in
+`rulebase/rules/layout.yaml`), and so is the one document that sets the
+`periodical_classifieds` tag it requires (`rulebase/rules/document.yaml`), so
+pinning the layout alone leaves the sampler no document to draw. Measured:
+all eight `SEEDS` raised `RuleError: layout='newspaper_classifieds' cannot be
+drawn at all`. `force_for` pins that document too, and hands back the bare
+`{"layout": <id>}` for the three layouts that are still on, so their draws
+are unchanged. A switched-off layout stays checked for the reason
+`tests/test_layout.py` gives: no run draws it, but switching it back on
+should not be archaeology.
 """
 
 from __future__ import annotations
+
+from conftest import force_for
 
 import rulebase
 from rulebase import periodical
@@ -26,7 +40,7 @@ SEEDS = range(8)
 
 
 def _forced(layout: str, seed: int):
-    _recipe, receipt, grid = rulebase.make(seed=seed, force={"layout": layout})
+    _recipe, receipt, grid = rulebase.make(seed=seed, force=force_for(layout))
     return receipt, grid
 
 

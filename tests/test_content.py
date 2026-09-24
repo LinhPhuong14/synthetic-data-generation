@@ -174,13 +174,27 @@ def test_label_quotes_exactly_what_was_printed():
                 )
         # Item names take the same treatment wherever the layout truncates
         # instead of wrapping (`wrap_name: false`, the 2011 till). One cell per
-        # item is the signal that no wrapping happened.
+        # item is the signal that no wrapping happened -- and so also says
+        # which item printed which cell.
+        #
+        # That pairing matters because not every item is a line of `menu`. A
+        # block heading (`Item.is_group`) prints a `menu.name` cell of its own,
+        # as the sheets' `_group_row` does, while `ground_truth()` leaves it
+        # out of `menu` on purpose (see `Receipt.ground_truth`; pinned by
+        # `test_insurance.py`). Comparing every cell against `menu` failed seed
+        # 20 (insurance_health_certificate_note): 8 name cells, 3 of them
+        # headings, against 5 entries. Forced over 12 seeds, every grouped
+        # draw whose names did not wrap failed the same way (12/12 on each
+        # insurance_health_certificate layout, 3/3 on eatery_menu_full), yet
+        # no line was printed differently from its label.
         names = [cell.text for cell in grid.cells if cell.role == "menu.name"]
         if len(names) == len(receipt.items):
+            printed = [text for text, item in zip(names, receipt.items)
+                       if not item.is_group]
             recorded = [entry["nm"] for entry in label["menu"]]
-            if names != recorded:
+            if printed != recorded:
                 failures.append(
-                    f"seed={seed}: item names printed {names} but label has {recorded}"
+                    f"seed={seed}: item names printed {printed} but label has {recorded}"
                 )
     assert not failures, "\n".join(failures[:15])
 
