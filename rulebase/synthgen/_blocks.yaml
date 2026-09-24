@@ -498,3 +498,44 @@ kie:
 gate:
   orphan_share: 0.99
   plan_drop_share: 0.9
+
+# Ô NÀO ĐƯỢC ĐIỀN TAY, theo từng loại giấy.
+#
+# `handwriting.fill()` viết lại chính chữ đã in của mỗi run, nên NỘI DUNG chữ
+# viết tay vốn đã khớp tài liệu. Chỗ chưa khớp là CHỖ ĐẶT BÚT: bản trước dùng
+# đúng một danh sách `invoice.field + invoice.words + sign.name +
+# survey.answer` cho MỌI loại chứng từ, nên một `BẢNG LƯƠNG` in máy cũng có ô
+# viết tay, còn một `SỔ KHO` -- thứ ngoài đời viết tay từ đầu tới cuối -- chỉ
+# được viết mấy ô trường.
+#
+# Luật đọc TÊN phôi, cùng cơ chế `allow:` ở trên. `default` là danh sách cũ,
+# nên phôi không khớp luật nào giữ nguyên hành vi trước đây.
+#
+# `none` = tờ giấy này KHÔNG có chữ viết tay. Một bảng lương, một tờ báo, một
+# thực đơn in sẵn thì không ai cầm bút viết lên.
+hand_kinds:
+  default: [invoice.field, invoice.words, sign.name, survey.answer]
+
+  rules:
+    # Sổ sách ghi tay: người ta viết cả dòng hàng, không chỉ mấy ô trường.
+    - title_any: [sổ kho, thẻ kho, nhật ký, sổ liên lạc, sổ khám, học bạ,
+                  chấm công, giao nhận, kiểm kê]
+      kinds: [invoice.field, invoice.words, sign.name, survey.answer,
+              menu.name, menu.qty, menu.note, menu.unit]
+
+    # Biên nhận, phiếu thu chi viết tay tại quầy: thêm số tiền và dòng bằng chữ.
+    - title_any: [biên nhận, phiếu thu, phiếu chi, biên lai, giấy nộp tiền,
+                  vé, phiếu gửi]
+      kinds: [invoice.field, invoice.words, sign.name, survey.answer,
+              menu.amount, menu.qty]
+
+    # In máy hoàn toàn: bảng lương, bảng kê, sao kê, thực đơn, trang báo. Chỉ
+    # chữ ký là viết tay -- và đó đúng là thứ duy nhất người ta đặt bút vào.
+    - title_any: [bảng lương, bảng kê, sao kê, thực đơn, trang, rao vặt,
+                  thời khoá biểu, bảng điểm, danh sách]
+      kinds: [sign.name]
+
+    # Giấy chứng nhận, bằng cấp, thẻ: phôi in sẵn, điền tay phần cá nhân.
+    - title_any: [chứng nhận, chứng chỉ, bằng, thẻ, giấy phép, khai sinh,
+                  kết hôn]
+      kinds: [invoice.field, sign.name]

@@ -1403,8 +1403,12 @@ def document(body: str | Sequence[str], css: str, *, paper: str = "A4", padding:
     bodies = [body] if isinstance(body, str) else list(body)
     if not bodies:
         bodies = [""]
+    # Kept out of the f-string: a backslash inside `{...}` is a SyntaxError
+    # before Python 3.12 (the floor here is 3.9). Written inline, it stopped
+    # CI's 3.11 job from importing this module, and 4 test files with it.
+    first_id = ' id="sheet"'
     sheets_html = "".join(
-        f'<div class="sheet"{"" if index else " id=\"sheet\""} '
+        f'<div class="sheet"{"" if index else first_id} '
         f'data-page="{index + 1}">{overlay if index == 0 else ""}{piece}</div>'
         for index, piece in enumerate(bodies))
     return f"""<!doctype html><html lang="vi"><head><meta charset="utf-8"><style>

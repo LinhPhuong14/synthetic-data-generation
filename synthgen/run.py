@@ -223,7 +223,8 @@ def _shard(job: dict, ticks=None) -> dict:
                 augment=job.get('augment', 'off'),
                 handwriting=job.get('handwriting', 'off'),
                 hand_share=float(job.get('hand_share', 1.0)),
-                pages=pages or None) as studio:
+                pages=pages or None,
+                plan_dir=out / 'plan') as studio:
         for index, seed in zip(job['indices'], job['seeds']):
             try:
                 drawn = studio.document(seed, index, job['naming'])

@@ -1,0 +1,48 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+#
+# Sinh theo lô "300 phôi chia đều": tên là `<thể loại> + <lĩnh vực>`, đúng cách
+# chứng từ hành chính Việt Nam đặt tên. Bậc `ngan` quyết trần số tờ qua
+# `rows` -- xem `synthgen/design.py::flow_reach`.
+id: gcn_tai_chinh_ke_toan
+titles:
+- GIẤY CHỨNG NHẬN VỀ TÀI CHÍNH KẾ TOÁN
+- GIẤY CHỨNG NHẬN CÔNG TÁC TÀI CHÍNH KẾ TOÁN
+subtitles:
+- ''
+- Năm ....
+- 'Số: ..../....'
+profile: medical
+org_kind: hospital
+national: 0.85
+fields:
+- patient
+- dob
+- record_no
+field_span:
+- 2
+- 3
+columns: []
+totals: none
+words: false
+sign_sets:
+- - BÁC SĨ ĐIỀU TRỊ
+  - TRƯỞNG KHOA
+- - NGƯỜI LẬP
+  - GIÁM ĐỐC BỆNH VIỆN
+notes:
+- Giấy này chỉ có giá trị khi có dấu của cơ sở y tế.
+rows:
+- 0
+- 0
+always:
+- letterhead
+- doctitle
+- signatures
+optional:
+- meta
+- fields
+- notes
+- footer
+- footnote
+- checks
+en_ok: false

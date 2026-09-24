@@ -453,14 +453,29 @@ THEME_WORDS: dict[str, tuple[str, ...]] = {
     'dao_tao': ('đào tạo', 'khoá học', 'bồi dưỡng', 'tập huấn', 'học viên'),
     'dich_te': ('y tế', 'dịch tễ', 'khai báo y tế'),
     'bao_hiem': ('thẩm định', 'giám định', 'bảo hiểm nhân thọ',
-                 'yêu cầu bảo hiểm', 'bồi thường'),
+                 'yêu cầu bảo hiểm', 'bồi thường', 'bảo hiểm', 'quyền lợi',
+                 'tái tục', 'quy tắc', 'chi trả', 'bhxh', 'bhyt'),
     'benh_khop': ('bệnh khớp', 'cơ xương khớp'),
-    'tien_su_benh': ('tiền sử', 'bệnh án', 'khám sức khoẻ', 'sức khoẻ'),
+    'tien_su_benh': ('tiền sử', 'bệnh án', 'khám sức khoẻ', 'sức khoẻ',
+                     'viện phí', 'đơn thuốc', 'chỉ định', 'hội chẩn',
+                     'chuyển tuyến', 'chuyển viện', 'ra viện', 'nghỉ ốm',
+                     'chứng sinh', 'phẫu thuật', 'điều trị', 'tử vong',
+                     'sự cố y khoa', 'tiêm chủng', 'xét nghiệm', 'dinh dưỡng'),
     'dich_vu': ('khảo sát', 'đánh giá chất lượng', 'lấy ý kiến', 'góp ý'),
     # Bảy chủ đề khai bằng file. Từ khoá đọc TÊN tài liệu, cùng lối bảy chủ
     # đề trên: tên một tờ giấy nói nó hỏi về chuyện gì.
+    # Hành chính là chủ đề RỘNG NHẤT, và phải thế: nó đỡ mọi tờ đơn, tờ khai,
+    # giấy xác nhận của cơ quan nhà nước. Bốn mươi ba phôi từng rơi khỏi mọi
+    # danh sách từ khoá và bốc chủ đề ngẫu nhiên theo `profile` -- đó là lý do
+    # một `ĐƠN KHIẾU NẠI` in ra bộ câu hỏi tuyển dụng ("Mức lương đề nghị",
+    # "Ca làm việc đăng ký"), thấy được trên ảnh vẽ thật.
     'hanh_chinh': ('hành chính', 'một cửa', 'thủ tục', 'công dân', 'cư trú',
-                   'hộ khẩu', 'uỷ quyền', 'biên nhận hồ sơ'),
+                   'hộ khẩu', 'uỷ quyền', 'ủy quyền', 'biên nhận hồ sơ',
+                   'đơn', 'khiếu nại', 'tố cáo', 'đề nghị', 'kiến nghị',
+                   'giấy xác nhận', 'xác nhận', 'chứng nhận', 'khai sinh',
+                   'kết hôn', 'niêm yết', 'công văn', 'tờ trình', 'thông báo',
+                   'cấp phép', 'giấy phép', 'nghỉ phép', 'chuyển đơn',
+                   'giải trình', 'kiểm điểm', 'cam kết', 'sơ yếu'),
     'tai_chinh': ('tín dụng', 'vay', 'ngân hàng', 'sao kê', 'uỷ nhiệm chi',
                   'thanh toán', 'tài khoản'),
     'giao_duc': ('nhập học', 'dự thi', 'học bạ', 'tuyển sinh', 'học phí',
@@ -480,7 +495,9 @@ THEME_WORDS: dict[str, tuple[str, ...]] = {
 THEMES_BY_PROFILE: dict[str, tuple[str, ...]] = {
     'medical': ('benh_khop', 'tien_su_benh', 'dich_te'),
     'insurance': ('bao_hiem', 'benh_khop', 'tien_su_benh', 'tai_chinh'),
-    'admin': ('dich_vu', 'nhan_su', 'dao_tao', 'hanh_chinh', 'lao_dong',
+    # `hanh_chinh` ĐỨNG ĐẦU: nó là chủ đề rộng nhất của hồ sơ hành chính, và
+    # `_theme_for` lấy phần tử đầu khi tên tài liệu không khớp từ khoá nào.
+    'admin': ('hanh_chinh', 'dich_vu', 'nhan_su', 'dao_tao', 'lao_dong',
               'giao_duc', 'xay_dung', 'moi_truong'),
     'invoice': ('dich_vu', 'tai_chinh', 'giao_thong'),
     'market': ('dich_vu', 'giao_thong'),
@@ -610,8 +627,15 @@ def _theme_for(arch, rng: random.Random) -> str:
     for theme, words in THEME_WORDS.items():
         if any(word in titles for word in words):
             return theme
-    names = THEMES_BY_PROFILE.get(arch.profile, ('dich_vu',))
-    return rng.choice(names)
+    # KHÔNG khớp tên thì lùi về chủ đề CHUNG NHẤT của hồ sơ ấy -- phần tử
+    # ĐẦU của danh sách -- chứ không bốc ngẫu nhiên trong danh sách.
+    #
+    # Bốc ngẫu nhiên là cách một `ĐƠN KHIẾU NẠI` nhận trúng bộ câu hỏi tuyển
+    # dụng: `THEMES_BY_PROFILE['admin']` có tám chủ đề, và bảy trong tám là
+    # sai cho tờ giấy ấy. Chủ đề đầu danh sách là chủ đề rộng nhất của hồ sơ,
+    # nên lạc đề thì cũng lạc ít nhất.
+    names = THEMES_BY_PROFILE.get(arch.profile) or ('dich_vu',)
+    return names[0]
 
 
 def _digits(rng: random.Random, n: int) -> str:

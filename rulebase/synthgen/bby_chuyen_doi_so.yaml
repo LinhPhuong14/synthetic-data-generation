@@ -1,0 +1,48 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+#
+# Sinh theo lô "300 phôi chia đều": tên là `<thể loại> + <lĩnh vực>`, đúng cách
+# chứng từ hành chính Việt Nam đặt tên. Bậc `ngan` quyết trần số tờ qua
+# `rows` -- xem `synthgen/design.py::flow_reach`.
+id: bby_chuyen_doi_so
+titles:
+- BIÊN BẢN Y TẾ VỀ CHUYỂN ĐỔI SỐ
+- BIÊN BẢN Y TẾ CÔNG TÁC CHUYỂN ĐỔI SỐ
+subtitles:
+- ''
+- Năm ....
+- 'Số: ..../....'
+profile: medical
+org_kind: hospital
+national: 0.8
+fields:
+- patient
+- record_no
+- diagnosis
+field_span:
+- 2
+- 3
+columns: []
+totals: none
+words: false
+sign_sets:
+- - BÁC SĨ ĐIỀU TRỊ
+  - TRƯỞNG KHOA
+- - NGƯỜI LẬP
+  - GIÁM ĐỐC BỆNH VIỆN
+notes:
+- Giấy này chỉ có giá trị khi có dấu của cơ sở y tế.
+rows:
+- 0
+- 0
+always:
+- letterhead
+- doctitle
+- signatures
+optional:
+- meta
+- fields
+- notes
+- footer
+- footnote
+- checks
+en_ok: false

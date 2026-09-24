@@ -89,8 +89,10 @@ ornament/handwriting/...** cho từng trang — nó không tự viết bố cụ
 
 * Vì sao cần nhớ: bốc độc lập bỏ sót đuôi không gian — tổ hợp hiếm không bao
   giờ xuất hiện, tổ hợp phổ biến xuất hiện hàng trăm lần. Đo được:
-  `test_coverage_beats_independent_draws_on_the_tail` — 400 lượt độc lập bỏ
-  sót nhiều giá trị, 400 lượt của agent phủ hết.
+  `test_coverage_beats_independent_draws_on_the_tail` — trên seed 0–199,
+  1400 lượt độc lập bỏ sót giá trị ở 90,5% số seed, 1400 lượt của agent phủ
+  hết ở 86%. Con số từng là 400; nó lớn theo chứng từ gác nhiều bố cục riêng
+  nhất (`invoice_detailed`, mười bố cục `rich_fields`) — xem `agent/README.md` §1.
 * Công thức điểm mỗi giá trị hợp lệ: `weight / (1 + số lần đã dùng) ** pressure`.
   `pressure=0` là bộ bốc gốc; `pressure=1` gần như phủ đều; `0.72` (mặc định)
   giữ được thực tế do người viết luật cân mà vẫn đẩy lượt chạy ra các góc.

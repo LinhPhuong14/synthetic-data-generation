@@ -1,0 +1,48 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+#
+# Sinh theo lô "300 phôi chia đều": tên là `<thể loại> + <lĩnh vực>`, đúng cách
+# chứng từ hành chính Việt Nam đặt tên. Bậc `ngan` quyết trần số tờ qua
+# `rows` -- xem `synthgen/design.py::flow_reach`.
+id: tbbh_chuyen_doi_so
+titles:
+- THÔNG BÁO BẢO HIỂM VỀ CHUYỂN ĐỔI SỐ
+- THÔNG BÁO BẢO HIỂM CÔNG TÁC CHUYỂN ĐỔI SỐ
+subtitles:
+- ''
+- Năm ....
+- 'Số: ..../....'
+profile: insurance
+org_kind: company
+national: 0.1
+fields:
+- holder
+- policy_no
+- premium
+field_span:
+- 2
+- 3
+columns: []
+totals: none
+words: false
+sign_sets:
+- - BÊN MUA BẢO HIỂM
+  - DOANH NGHIỆP BẢO HIỂM
+- - CÁN BỘ KHAI THÁC
+  - GIÁM ĐỐC
+notes:
+- Giấy này là bộ phận không tách rời của hợp đồng bảo hiểm.
+rows:
+- 0
+- 0
+always:
+- letterhead
+- doctitle
+- signatures
+optional:
+- meta
+- fields
+- notes
+- footer
+- footnote
+- checks
+en_ok: true

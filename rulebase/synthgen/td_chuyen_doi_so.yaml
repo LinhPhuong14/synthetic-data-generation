@@ -1,0 +1,47 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+#
+# Sinh theo lô "300 phôi chia đều": tên là `<thể loại> + <lĩnh vực>`, đúng cách
+# chứng từ hành chính Việt Nam đặt tên. Bậc `ngan` quyết trần số tờ qua
+# `rows` -- xem `synthgen/design.py::flow_reach`.
+id: td_chuyen_doi_so
+titles:
+- THỰC ĐƠN VỀ CHUYỂN ĐỔI SỐ
+- THỰC ĐƠN CÔNG TÁC CHUYỂN ĐỔI SỐ
+subtitles:
+- ''
+- Năm ....
+- 'Số: ..../....'
+profile: menu
+org_kind: shop
+national: 0.02
+fields:
+- seller_name
+- period
+field_span:
+- 1
+- 2
+columns: []
+totals: none
+words: false
+sign_sets:
+- - NGƯỜI MUA HÀNG
+  - NGƯỜI BÁN HÀNG
+- - KHÁCH HÀNG
+  - THU NGÂN
+notes:
+- Quý khách vui lòng giữ chứng từ để đối chiếu khi cần.
+rows:
+- 0
+- 0
+always:
+- letterhead
+- doctitle
+- signatures
+optional:
+- meta
+- fields
+- notes
+- footer
+- footnote
+- checks
+en_ok: false

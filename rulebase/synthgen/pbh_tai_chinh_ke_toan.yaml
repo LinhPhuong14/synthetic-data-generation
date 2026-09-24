@@ -1,0 +1,48 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+#
+# Sinh theo lô "300 phôi chia đều": tên là `<thể loại> + <lĩnh vực>`, đúng cách
+# chứng từ hành chính Việt Nam đặt tên. Bậc `ngan` quyết trần số tờ qua
+# `rows` -- xem `synthgen/design.py::flow_reach`.
+id: pbh_tai_chinh_ke_toan
+titles:
+- PHIẾU BÁN HÀNG VỀ TÀI CHÍNH KẾ TOÁN
+- PHIẾU BÁN HÀNG CÔNG TÁC TÀI CHÍNH KẾ TOÁN
+subtitles:
+- ''
+- Năm ....
+- 'Số: ..../....'
+profile: market
+org_kind: shop
+national: 0.05
+fields:
+- seller_name
+- buyer_name
+- payment
+field_span:
+- 2
+- 3
+columns: []
+totals: none
+words: false
+sign_sets:
+- - NGƯỜI MUA HÀNG
+  - NGƯỜI BÁN HÀNG
+- - KHÁCH HÀNG
+  - THU NGÂN
+notes:
+- Quý khách vui lòng giữ chứng từ để đối chiếu khi cần.
+rows:
+- 0
+- 0
+always:
+- letterhead
+- doctitle
+- signatures
+optional:
+- meta
+- fields
+- notes
+- footer
+- footnote
+- checks
+en_ok: false

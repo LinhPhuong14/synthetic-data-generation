@@ -10,8 +10,7 @@ for every other receipt), and the handful of facts specific to this root's
 two small additive flags (`no_totals`, `Invoice.checks`).
 
 Each composition is reached by forcing `layout=<id>`, the same
-`force={"layout": ...}` pattern `test_periodical.py`/`test_content.py`'s
-`_forced` use.
+`force={"layout": ...}` pattern `test_content.py`'s `_forced` uses.
 """
 
 from __future__ import annotations
