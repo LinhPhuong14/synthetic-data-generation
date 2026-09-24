@@ -1,0 +1,32 @@
+# ITEMS_EXPORT_B — Hàng xuất khẩu và chi phí logistics trên bộ chứng từ xuất khẩu.
+# Định dạng: tên<TAB>giá tối thiểu<TAB>giá tối đa  (VND)
+#
+# Mẻ này nới bảng để hai tờ cùng hồ sơ không lặp lại cùng danh sách hàng: đo
+# trên bản trước, một bảng 15 dòng bốc từ kho 26 dòng thì hai tờ trùng quá nửa.
+
+Cà phê nhân Robusta sàng 18 tấn	48000000	72000000
+Cà phê nhân Arabica tấn	82000000	135000000
+Hạt điều nhân W320 tấn	185000000	265000000
+Hồ tiêu đen 500g/l tấn	95000000	152000000
+Gạo trắng 5% tấm tấn	12500000	17800000
+Gạo thơm Jasmine tấn	15200000	22500000
+Tôm thẻ đông lạnh size 31-40 tấn	165000000	245000000
+Cá tra phi lê đông lạnh tấn	58000000	89000000
+Chè đen OTD tấn	42000000	68000000
+Quế thanh loại một tấn	72000000	118000000
+Gỗ ván ép mét khối	4800000	8200000
+Đồ gỗ nội thất đóng kiện	12000000	38000000
+Hàng dệt may gia công theo lô	45000000	185000000
+Giày thể thao xuất khẩu đôi	185000	420000
+Cước vận tải biển container 20 feet	18000000	42000000
+Cước vận tải biển container 40 feet	32000000	78000000
+Phí xếp dỡ tại cảng	1800000	4500000
+Phí lưu container tại bãi theo ngày	350000	850000
+Phí hun trùng lô hàng	1200000	3200000
+Phí kiểm dịch thực vật	850000	2400000
+Phí chứng nhận xuất xứ	400000	1200000
+Phí khai báo hải quan tờ khai	800000	2200000
+Bảo hiểm hàng hoá đường biển	2500000	9800000
+Phí niêm phong kẹp chì	150000	450000
+Phí vận chuyển nội địa về cảng	3500000	12000000
+Phí đóng gói và pallet hoá	1800000	5600000

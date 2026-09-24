@@ -1,8 +1,12 @@
 # phôi khai bằng file — xem synthgen/archetypes.py
 #
-# Sinh theo lô "300 phôi chia đều": tên là `<thể loại> + <lĩnh vực>`, đúng cách
-# chứng từ hành chính Việt Nam đặt tên. Bậc `ngan` quyết trần số tờ qua
-# `rows` -- xem `synthgen/design.py::flow_reach`.
+# Sinh theo lô "300 phôi chia đều": tên là `<thể loại> + <lĩnh vực>`,
+# đúng cách chứng từ hành chính Việt Nam đặt tên.
+#
+# Trần số tờ và khối chảy đọc từ THỂ LOẠI in trên tiêu đề
+# ("TỜ TRÌNH"), không theo vị trí trong vòng sinh — xem lịch sử:
+# bậc cũ gán bằng `index % 3` nên mọi thể loại đều chia 1/3-1/3-1/3,
+# và một HỢP ĐỒNG bị khoá một tờ. Khối chảy: sections; trần: 5.
 id: tt_thi_dua_khen_thuong
 titles:
 - TỜ TRÌNH VỀ THI ĐUA KHEN THƯỞNG
@@ -39,6 +43,7 @@ rows:
 always:
 - letterhead
 - doctitle
+- sections
 - signatures
 optional:
 - meta
@@ -48,3 +53,4 @@ optional:
 - footnote
 - checks
 en_ok: false
+max_pages: 5

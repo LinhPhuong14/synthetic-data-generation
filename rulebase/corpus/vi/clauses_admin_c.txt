@@ -1,0 +1,35 @@
+# CLAUSES_ADMIN_C — điều khoản đánh số cho khối `clauses`.
+#
+# Cột 1 là tiêu đề điều, mỗi cột sau là một KHOẢN. Số khoản mỗi điều một khác
+# là chủ ý: `paginate._pack` cắt trang theo chiều cao thật của từng điều.
+#
+# Trần số tờ của một tài liệu chảy bằng điều khoản đúng bằng số điều bốc
+# được — xem `design.flow_reach`. File này nới trần ấy thêm 27 điều.
+
+Vị trí việc làm	Mỗi vị trí việc làm có bản mô tả công việc và khung năng lực kèm theo.	Việc bố trí người phải phù hợp với bản mô tả đã được phê duyệt.
+Quy hoạch cán bộ	Quy hoạch được rà soát, bổ sung hằng năm và công khai trong nội bộ.	Người trong quy hoạch được ưu tiên cử đi đào tạo theo yêu cầu của vị trí.
+Luân chuyển và điều động	Việc luân chuyển thực hiện theo kế hoạch và có quyết định bằng văn bản.	Người được luân chuyển bàn giao hồ sơ, tài sản trước ngày nhận nhiệm vụ mới.
+Chế độ làm việc	Thời giờ làm việc theo quy định chung của cơ quan và lịch công tác tuần.	Làm thêm giờ phải được người có thẩm quyền đồng ý trước và được thanh toán theo chế độ.
+Nghỉ phép và nghỉ chế độ	Đơn xin nghỉ phép gửi trước ba ngày làm việc, trừ trường hợp đột xuất.	Người nghỉ từ năm ngày trở lên phải bàn giao công việc bằng văn bản.
+Đánh giá và xếp loại	Việc đánh giá thực hiện hằng tháng, hằng quý và cuối năm theo tiêu chí công bố.	Kết quả đánh giá được thông báo tới từng người và được quyền giải trình.
+Uỷ quyền và phân cấp	Người đứng đầu được uỷ quyền bằng văn bản, nêu rõ phạm vi và thời hạn uỷ quyền.	Người được uỷ quyền không được uỷ quyền lại cho người khác.
+Quản lý con dấu	Con dấu do một người được giao quản lý và không mang ra khỏi trụ sở.	Việc đóng dấu chỉ thực hiện trên văn bản đã có chữ ký của người có thẩm quyền.
+Ban hành văn bản nội bộ	Dự thảo văn bản phải lấy ý kiến các bộ phận liên quan trước khi trình ký.	Văn bản ban hành được đăng tải trên hệ thống nội bộ trong một ngày làm việc.
+Sử dụng tài sản công	Tài sản công chỉ sử dụng cho nhiệm vụ được giao, không dùng vào việc riêng.	Người làm hư hỏng tài sản do lỗi chủ quan phải bồi thường theo giá trị còn lại.
+Điều xe và nhật trình xe công	Xe công phục vụ công tác theo lệnh điều xe đã được duyệt.	Nhật trình xe được ghi đầy đủ và đối chiếu khi thanh toán nhiên liệu.
+Công tác phí	Công tác phí thanh toán theo mức quy định và chứng từ thực tế.	Người đi công tác nộp hồ sơ thanh toán trong mười ngày kể từ ngày về.
+Tiếp khách và đối ngoại	Việc tiếp khách thực hiện theo kế hoạch và trong định mức chi đã duyệt.	Đoàn khách nước ngoài phải báo cáo và được chấp thuận trước khi đón tiếp.
+Quản lý hồ sơ công chức	Hồ sơ được lập, bổ sung và bảo quản theo quy định về hồ sơ cán bộ.	Việc khai thác hồ sơ phải có phiếu yêu cầu và được người có thẩm quyền duyệt.
+Kê khai tài sản thu nhập	Người thuộc diện kê khai thực hiện đúng kỳ và chịu trách nhiệm về tính trung thực.	Bản kê khai được công khai theo hình thức quy định.
+Trách nhiệm giải trình	Cơ quan giải trình khi được tổ chức, công dân yêu cầu về nội dung thuộc thẩm quyền.	Nội dung giải trình được trả lời bằng văn bản trong mười lăm ngày làm việc.
+Xử lý văn bản đến	Văn bản đến được đăng ký, phân loại và chuyển xử lý trong ngày làm việc.	Văn bản khẩn được chuyển ngay tới người có trách nhiệm, không chờ lịch phân luồng.
+Theo dõi nhiệm vụ được giao	Nhiệm vụ được giao đưa vào phần mềm theo dõi và cập nhật tiến độ hằng tuần.	Nhiệm vụ quá hạn phải có báo cáo giải trình lý do.
+Họp và hội nghị	Cuộc họp phải có nội dung, thành phần và tài liệu gửi trước ít nhất một ngày.	Kết luận cuộc họp được ban hành trong ba ngày làm việc.
+Ứng dụng chữ ký số	Văn bản điện tử ký số có giá trị như văn bản giấy có chữ ký và con dấu.	Chứng thư số hết hạn phải được gia hạn trước khi hết hiệu lực.
+Kiểm tra nội bộ	Kế hoạch kiểm tra nội bộ được ban hành từ đầu năm và có thể kiểm tra đột xuất.	Kết luận kiểm tra nêu rõ tồn tại, nguyên nhân và thời hạn khắc phục.
+Xử lý thông tin phản ánh	Thông tin phản ánh được tiếp nhận qua hộp thư, đường dây nóng và trực tiếp.	Nội dung phản ánh được xác minh và trả lời trong thời hạn quy định.
+Bảo vệ người tố cáo	Danh tính người tố cáo được giữ bí mật theo quy định.	Nghiêm cấm trả thù, trù dập người tố cáo dưới mọi hình thức.
+Trực cơ quan	Lịch trực được phân công hằng tuần và niêm yết tại bảng tin.	Người trực ghi sổ nhật ký và bàn giao đầy đủ cho ca sau.
+Điều kiện làm việc	Cơ quan bảo đảm nơi làm việc, trang thiết bị và bảo hộ phù hợp nhiệm vụ.	Thiếu thiết bị ảnh hưởng tới nhiệm vụ thì báo cáo bằng văn bản để bổ sung.
+Trách nhiệm người đứng đầu	Người đứng đầu chịu trách nhiệm về toàn bộ hoạt động của đơn vị mình.	Để xảy ra vi phạm nghiêm trọng trong đơn vị thì người đứng đầu chịu trách nhiệm liên đới.
+Điều khoản áp dụng cho đơn vị trực thuộc	Đơn vị trực thuộc cụ thể hoá quy định này cho phù hợp đặc thù của mình.	Quy định cụ thể hoá không được trái với nội dung tại văn bản này.

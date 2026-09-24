@@ -1,0 +1,27 @@
+# QUESTIONS_CONG_NGHE — một chủ đề câu hỏi của khối biểu mẫu (`Form`).
+#
+# Cột 1 là DẠNG, cột 2 là câu hỏi, các cột sau là tham số của dạng ấy — xem
+# `questions_hanh_chinh.txt` cho bảng dạng đầy đủ.
+#
+# Chủ đề này thêm vào để khối `Form` không chỉ có bảy giọng: đo trên bản
+# trước, một tờ có biểu mẫu bốc câu từ 7 chủ đề nên hai tờ cùng hồ sơ trùng
+# câu rất sớm. Mười bốn chủ đề thì số cặp trùng giảm còn một nửa.
+
+blank	Tên hệ thống hoặc phần mềm đề nghị triển khai
+options	Hình thức triển khai	Cài tại chỗ|Thuê dịch vụ đám mây|Kết hợp|Chưa xác định
+yesno	Hệ thống có kết nối với cơ sở dữ liệu dùng chung không?
+table_form	Danh sách tài khoản đề nghị cấp	Họ và tên|Bộ phận|Quyền truy cập|Thời hạn
+grid	Mức độ sẵn sàng của hạ tầng	Đường truyền|Máy chủ|Thiết bị đầu cuối|Nhân lực vận hành	Chưa có|Một phần|Đầy đủ
+date_boxes	Ngày dự kiến đưa vào vận hành
+options	Mức độ ưu tiên của đề nghị	Khẩn cấp|Cao|Trung bình|Thấp
+inline_blank	Sự cố xảy ra lúc … ngày …, ảnh hưởng tới … người dùng
+subquestion	Yêu cầu về an toàn thông tin	a) Sao lưu dữ liệu|b) Phân quyền truy cập|c) Ghi nhật ký thao tác|d) Mã hoá đường truyền
+blank	Mô tả sự cố và các bước đã xử lý
+scale	Mức độ ảnh hưởng của sự cố tới công việc	Không ảnh hưởng	Ngừng hoàn toàn	5
+attachment	Tài liệu kèm theo đề nghị	Bản mô tả yêu cầu|Dự toán kinh phí|Phương án kỹ thuật|Báo giá của nhà cung cấp
+yesno	Dữ liệu của hệ thống có chứa thông tin cá nhân không?
+boxchar	Mã thiết bị trong sổ quản lý tài sản	8
+options	Tần suất sao lưu dữ liệu	Hằng ngày|Hằng tuần|Hằng tháng|Chưa sao lưu
+rank	Xin xếp thứ tự các chức năng cần có trước	Tra cứu|Báo cáo thống kê|Ký số|Kết nối liên thông|Ứng dụng trên điện thoại
+table_form	Nhật ký sự cố trong kỳ	Thời điểm|Hệ thống|Mức độ|Thời gian khắc phục
+blank	Người chịu trách nhiệm quản trị hệ thống

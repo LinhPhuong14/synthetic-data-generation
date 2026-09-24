@@ -1,0 +1,30 @@
+# CLAUSES_INSURANCE_C — điều khoản đánh số cho khối `clauses`.
+#
+# Cột 1 là tiêu đề điều, mỗi cột sau là một KHOẢN. Số khoản mỗi điều một khác
+# là chủ ý: `paginate._pack` cắt trang theo chiều cao thật của từng điều.
+#
+# Trần số tờ của một tài liệu chảy bằng điều khoản đúng bằng số điều bốc
+# được — xem `design.flow_reach`. File này nới trần ấy thêm 22 điều.
+
+Giao kết hợp đồng bảo hiểm	Hợp đồng giao kết khi doanh nghiệp chấp nhận yêu cầu bảo hiểm và bên mua nộp phí đầu tiên.	Giấy chứng nhận bảo hiểm là bằng chứng của việc giao kết.
+Thời điểm phát sinh trách nhiệm	Trách nhiệm bảo hiểm phát sinh từ thời điểm ghi trên giấy chứng nhận.	Trường hợp chưa nộp phí, trách nhiệm phát sinh khi doanh nghiệp nhận đủ phí kỳ đầu.
+Quyền lợi có thể được bảo hiểm	Bên mua phải có quyền lợi có thể được bảo hiểm đối với đối tượng bảo hiểm.	Mất quyền lợi này trong thời hạn hợp đồng thì hợp đồng chấm dứt tương ứng.
+Kê khai tuổi và giới tính	Kê khai sai tuổi làm thay đổi mức phí thì quyền lợi được điều chỉnh theo tỉ lệ phí thực tế.	Kê khai sai tuổi ngoài độ tuổi được nhận bảo hiểm là căn cứ huỷ hợp đồng.
+Thời gian cân nhắc	Bên mua được cân nhắc và huỷ hợp đồng trong hai mươi mốt ngày kể từ ngày nhận hợp đồng.	Phí đã nộp được hoàn lại sau khi trừ chi phí khám sức khoẻ nếu có.
+Khôi phục hiệu lực hợp đồng	Hợp đồng mất hiệu lực được khôi phục trong hai năm nếu bên mua nộp đủ phí còn thiếu.	Doanh nghiệp được yêu cầu thẩm định lại sức khoẻ trước khi khôi phục.
+Thay đổi mức trách nhiệm	Việc tăng số tiền bảo hiểm phải được doanh nghiệp thẩm định và chấp thuận.	Mức trách nhiệm mới áp dụng từ kỳ đóng phí kế tiếp.
+Chỉ định và thay đổi người thụ hưởng	Bên mua chỉ định người thụ hưởng và được thay đổi bằng văn bản gửi doanh nghiệp.	Không chỉ định người thụ hưởng thì quyền lợi trả cho người thừa kế theo pháp luật.
+Xử lý khi đối tượng được bảo hiểm trùng	Bên mua phải thông báo khi đối tượng đã được bảo hiểm tại doanh nghiệp khác.	Trường hợp bảo hiểm trùng, mỗi doanh nghiệp chi trả theo tỉ lệ số tiền bảo hiểm của mình.
+Đề phòng hạn chế tổn thất	Người được bảo hiểm phải áp dụng biện pháp đề phòng theo khuyến cáo của doanh nghiệp.	Không thực hiện biện pháp đề phòng làm tổn thất nặng thêm thì phần nặng thêm không được chi trả.
+Bảo toàn hiện trường	Khi xảy ra sự kiện, người được bảo hiểm giữ nguyên hiện trường tới khi có giám định.	Trường hợp phải di dời để bảo đảm an toàn thì phải chụp ảnh và lập biên bản.
+Điều kiện tạm ứng và cách khấu trừ	Doanh nghiệp tạm ứng một phần khi hồ sơ đã đủ căn cứ xác định trách nhiệm.	Số tạm ứng được khấu trừ vào số bồi thường chính thức.
+Từ chối bồi thường	Việc từ chối phải trả lời bằng văn bản, nêu rõ căn cứ và điều khoản áp dụng.	Bên mua được khiếu nại trong chín mươi ngày kể từ ngày nhận văn bản từ chối.
+Giám định lại và trọng tài	Khi hai bên không thống nhất kết quả giám định, được chỉ định giám định viên độc lập.	Kết luận của giám định viên độc lập có giá trị ràng buộc với cả hai bên.
+Chuyển nhượng hợp đồng	Bên mua được chuyển nhượng hợp đồng cho người có quyền lợi có thể được bảo hiểm.	Việc chuyển nhượng có hiệu lực khi doanh nghiệp xác nhận bằng văn bản.
+Giá trị hoàn lại	Hợp đồng có giá trị hoàn lại sau hai năm kể từ ngày phát sinh hiệu lực.	Bên mua được rút một phần giá trị hoàn lại nhưng quyền lợi giảm tương ứng.
+Khoản vay theo hợp đồng	Bên mua được vay trong phạm vi giá trị hoàn lại của hợp đồng.	Khoản vay và lãi chưa trả được khấu trừ khi chi trả quyền lợi.
+Trục lợi bảo hiểm	Hành vi làm giả hồ sơ, khai khống tổn thất là căn cứ từ chối toàn bộ quyền lợi.	Doanh nghiệp được huỷ hợp đồng và không hoàn phí đã nộp.
+Thông tin sức khoẻ	Bên mua đồng ý cho doanh nghiệp thu thập thông tin sức khoẻ tại cơ sở y tế đã điều trị.	Thông tin thu thập chỉ dùng cho việc thẩm định và giải quyết quyền lợi.
+Điều chỉnh phí theo rủi ro	Doanh nghiệp được điều chỉnh phí khi mức độ rủi ro của đối tượng thay đổi đáng kể.	Việc điều chỉnh được thông báo trước sáu mươi ngày và bên mua có quyền chấm dứt hợp đồng.
+Bảo hiểm cho nhóm	Hợp đồng nhóm áp dụng cho danh sách người được bảo hiểm đính kèm.	Người rời khỏi nhóm chấm dứt quyền lợi từ ngày rời, trừ khi chuyển sang hợp đồng cá nhân.
+Điều khoản thi hành hợp đồng bảo hiểm	Hợp đồng gồm giấy yêu cầu, giấy chứng nhận, quy tắc bảo hiểm và các phụ lục.	Nội dung không quy định trong hợp đồng thực hiện theo pháp luật về kinh doanh bảo hiểm.

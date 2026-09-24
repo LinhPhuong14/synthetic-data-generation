@@ -1,0 +1,28 @@
+# SECTIONS_MEDICAL_B — mục văn xuôi cho khối `sections` (nhãn `Section-Header` + `Text`).
+#
+# Cột 1 là tiêu đề mục, các cột sau là các ĐOẠN của mục ấy. Số đoạn mỗi mục
+# một khác, và đó là chủ ý: `paginate._pack` xếp trang theo chiều cao THẬT của
+# từng mục, nên mục dài ngắn khác nhau không còn làm hỏng phép cắt trang.
+#
+# Mẻ này nới trần số tờ: trần = số mục chia cho ~3 mục một tờ A4.
+
+HÀNH CHÍNH NGƯỜI BỆNH	Thông tin người bệnh được ghi đầy đủ ngay khi tiếp nhận vào viện.	Giấy tờ tuỳ thân và thẻ bảo hiểm y tế được đối chiếu và sao lưu vào hồ sơ.
+LÝ DO VÀO VIỆN	Người bệnh vào viện với các triệu chứng được mô tả tại phần khám ban đầu.	Thời điểm khởi phát và diễn biến trước khi vào viện được ghi rõ.
+TIỀN SỬ BỆNH	Tiền sử bản thân và gia đình được khai thác đầy đủ, kể cả tiền sử dị ứng.	Thuốc đang sử dụng trước khi vào viện được ghi nhận vào hồ sơ.
+KHÁM LÂM SÀNG	Khám toàn thân và khám chuyên khoa được thực hiện ngay sau khi tiếp nhận.	Các chỉ số sinh tồn được đo và ghi chép theo giờ trong ngày đầu.
+KẾT QUẢ CẬN LÂM SÀNG	Các xét nghiệm và chẩn đoán hình ảnh được chỉ định theo yêu cầu chuyên môn.	Kết quả được trả đúng thời gian đã hẹn và lưu trong hồ sơ bệnh án.
+CHẨN ĐOÁN	Chẩn đoán xác định được đưa ra trên cơ sở lâm sàng và cận lâm sàng.	Chẩn đoán phân biệt được ghi rõ khi triệu chứng chưa điển hình.
+HỘI CHẨN CHUYÊN MÔN	Hội chẩn được tổ chức khi chẩn đoán chưa rõ hoặc điều trị không tiến triển.	Kết luận hội chẩn ghi vào hồ sơ và có chữ ký của các thành viên.
+CHỈ ĐỊNH ĐIỀU TRỊ	Phác đồ điều trị được lựa chọn theo hướng dẫn chuyên môn hiện hành.	Thay đổi phác đồ phải ghi rõ lý do trong hồ sơ bệnh án.
+SỬ DỤNG THUỐC	Thuốc sử dụng nằm trong danh mục đã được phê duyệt và còn hạn dùng.	Thuốc ngoài danh mục phải có ý kiến hội đồng và sự đồng ý của người bệnh.
+THỦ THUẬT VÀ PHẪU THUẬT	Mỗi ca có kiểm tra an toàn trước rạch da, xác nhận đúng người, đúng vị trí.	Dụng cụ và gạc được đếm trước và sau ca, ghi vào biên bản phẫu thuật.
+THEO DÕI SAU CAN THIỆP	Người bệnh được theo dõi tại phòng hồi tỉnh cho đến khi đạt tiêu chuẩn chuyển khoa.	Biến chứng phát hiện trong thời gian theo dõi được xử trí ngay và ghi hồ sơ.
+DIỄN BIẾN LÂM SÀNG	Diễn biến được ghi hằng ngày, nêu rõ đáp ứng điều trị và thay đổi triệu chứng.	Diễn biến bất thường được báo cáo bác sĩ trực trong ca.
+CHĂM SÓC ĐIỀU DƯỠNG	Kế hoạch chăm sóc được lập cho từng người bệnh và điều chỉnh theo diễn biến.	Việc thực hiện y lệnh được ghi nhận đủ thời điểm và người thực hiện.
+DINH DƯỠNG NGƯỜI BỆNH	Người bệnh nội trú được đánh giá tình trạng dinh dưỡng khi vào viện.	Chế độ ăn bệnh lý do khoa dinh dưỡng cung cấp theo chỉ định.
+KIỂM SOÁT NHIỄM KHUẨN	Nhân viên y tế thực hiện đúng quy trình vệ sinh tay và phòng hộ cá nhân.	Chất thải y tế được phân loại tại nguồn và xử lý theo quy định.
+ĐÁNH GIÁ KẾT QUẢ ĐIỀU TRỊ	Kết quả được đánh giá theo tiêu chí lâm sàng và cận lâm sàng khi ra viện.	Trường hợp không đạt kết quả mong muốn được phân tích nguyên nhân.
+HƯỚNG DẪN RA VIỆN	Người bệnh được hướng dẫn dùng thuốc, chế độ sinh hoạt và dấu hiệu cần tái khám.	Lịch tái khám hẹn rõ ngày và ghi trên giấy ra viện.
+CHUYỂN TUYẾN ĐIỀU TRỊ	Chuyển tuyến thực hiện khi tình trạng vượt quá khả năng chuyên môn của cơ sở.	Cơ sở chuyển tuyến liên hệ trước và bảo đảm an toàn trên đường vận chuyển.
+QUYỀN CỦA NGƯỜI BỆNH	Người bệnh được thông tin đầy đủ về tình trạng bệnh và chi phí dự kiến.	Người bệnh có quyền từ chối điều trị sau khi đã được giải thích.
+CHI PHÍ KHÁM CHỮA BỆNH	Chi phí tính theo bảng giá dịch vụ đã niêm yết công khai tại cơ sở.	Phần thuộc phạm vi chi trả của quỹ bảo hiểm y tế thanh toán theo quy định.

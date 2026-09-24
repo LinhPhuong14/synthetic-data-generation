@@ -1,0 +1,33 @@
+# CLAUSES_INVOICE_C — điều khoản đánh số cho khối `clauses`.
+#
+# Cột 1 là tiêu đề điều, mỗi cột sau là một KHOẢN. Số khoản mỗi điều một khác
+# là chủ ý: `paginate._pack` cắt trang theo chiều cao thật của từng điều.
+#
+# Trần số tờ của một tài liệu chảy bằng điều khoản đúng bằng số điều bốc
+# được — xem `design.flow_reach`. File này nới trần ấy thêm 25 điều.
+
+Đặt hàng và xác nhận đơn	Đơn đặt hàng gửi bằng văn bản hoặc thư điện tử tới đầu mối đã đăng ký.	Đơn được coi là xác nhận khi bên bán phản hồi trong hai ngày làm việc.
+Thay đổi và huỷ đơn hàng	Bên mua được thay đổi đơn hàng trước khi hàng xuất kho.	Huỷ đơn sau khi hàng đã xuất kho thì bên mua chịu chi phí vận chuyển hai chiều.
+Thời hạn giao hàng	Bên bán giao hàng đúng thời hạn ghi trên đơn đã xác nhận.	Chậm giao quá bảy ngày, bên mua được huỷ phần chưa giao mà không chịu phạt.
+Điều kiện chấp thuận giao từng phần	Việc giao hàng từng phần chỉ thực hiện khi bên mua chấp thuận bằng văn bản.	Mỗi lần giao lập một biên bản giao nhận riêng.
+Chi phí vận chuyển và bốc xếp	Chi phí vận chuyển tới địa điểm giao hàng do bên bán chịu.	Chi phí bốc xếp tại kho bên mua do bên mua chịu.
+Kiểm đếm khi nhận hàng	Hai bên kiểm đếm số lượng và tình trạng bao bì ngay khi giao nhận.	Thiếu hụt phát hiện sau khi ký biên bản mà không có bằng chứng thì bên mua tự chịu.
+Hàng hoá không đạt yêu cầu	Hàng không đạt được lập biên bản, chụp ảnh và thông báo trong hai ngày làm việc.	Bên bán đổi hàng thay thế trong năm ngày kể từ khi nhận thông báo.
+Lưu kho và bảo quản	Hàng chưa giao được bên bán bảo quản theo điều kiện kỹ thuật của sản phẩm.	Hư hỏng do bảo quản sai trong thời gian chờ giao do bên bán chịu.
+Mua chịu trong hạn mức công nợ	Bên mua được mua chịu trong hạn mức công nợ đã thoả thuận.	Vượt hạn mức thì đơn hàng mới chỉ giao sau khi thanh toán phần vượt.
+Thứ tự cấn trừ thanh toán	Tiền thanh toán được cấn trừ theo thứ tự: lãi chậm trả, phạt, rồi tới nợ gốc.	Bên mua được chỉ định cấn trừ cho hoá đơn cụ thể khi ghi rõ trong nội dung chuyển khoản.
+Điều chỉnh giá theo nguyên liệu	Khi giá nguyên liệu biến động quá mười lăm phần trăm, hai bên thương lượng điều chỉnh đơn giá.	Giá điều chỉnh áp dụng cho các đơn đặt sau ngày ký phụ lục.
+Khuyến mại và hàng tặng	Hàng khuyến mại được ghi rõ trên hoá đơn với đơn giá bằng không.	Hàng khuyến mại không thuộc phạm vi đổi trả và bảo hành thương mại.
+Hàng mẫu và thử nghiệm	Hàng mẫu cung cấp miễn phí và không tính vào sản lượng hợp đồng.	Kết quả thử nghiệm trên hàng mẫu là căn cứ đánh giá chất lượng lô hàng chính thức.
+Giấy tờ đi kèm hàng hoá	Mỗi lô hàng kèm phiếu xuất kho, phiếu đóng gói và chứng nhận chất lượng.	Thiếu giấy tờ đi kèm thì bên mua được từ chối nhận hàng.
+Thông tin truy xuất và thời hạn lưu	Bên bán cung cấp thông tin truy xuất nguồn gốc khi bên mua yêu cầu.	Thông tin truy xuất được lưu ít nhất hai năm kể từ ngày giao hàng.
+Thu hồi khi phát hiện lỗi hàng loạt	Khi phát hiện lỗi hàng loạt, bên bán thông báo và tổ chức thu hồi trong bảy ngày.	Chi phí thu hồi và thiệt hại phát sinh do bên bán chịu.
+Bảo hiểm chặng vận chuyển và bên hưởng lợi	Hàng hoá được mua bảo hiểm cho chặng vận chuyển theo thoả thuận.	Bên hưởng lợi bảo hiểm là bên chịu rủi ro tại thời điểm xảy ra tổn thất.
+Đại diện bán hàng	Nhân viên bán hàng chỉ đại diện trong phạm vi giấy giới thiệu được cấp.	Cam kết vượt phạm vi giấy giới thiệu không ràng buộc bên bán.
+Đào tạo sử dụng sản phẩm	Bên bán hướng dẫn sử dụng cho nhân sự bên mua trước khi bàn giao.	Nội dung và thời lượng đào tạo ghi tại phụ lục kỹ thuật.
+Phụ tùng và vật tư thay thế	Bên bán bảo đảm cung cấp phụ tùng thay thế trong năm năm kể từ ngày bàn giao.	Giá phụ tùng không cao hơn mức công bố tại thời điểm đặt hàng.
+Dịch vụ sau bán hàng	Bên bán tiếp nhận yêu cầu hỗ trợ trong giờ hành chính và phản hồi trong hai mươi bốn giờ.	Thời gian có mặt tại hiện trường không quá bốn mươi tám giờ kể từ khi tiếp nhận.
+Quyền kiểm tra cơ sở sản xuất	Bên mua được kiểm tra cơ sở sản xuất sau khi thông báo trước bảy ngày.	Việc kiểm tra không quá hai lần trong một năm, trừ khi có sự cố chất lượng.
+Nhượng quyền và phân phối lại	Bên mua không được phân phối lại ngoài địa bàn đã thoả thuận.	Vi phạm địa bàn phân phối là căn cứ chấm dứt hợp đồng trước hạn.
+Số liệu bán hàng và báo cáo	Bên mua báo cáo số liệu bán ra hằng tháng nếu hưởng chiết khấu theo doanh số.	Số liệu báo cáo sai sự thật làm căn cứ thu hồi phần chiết khấu đã hưởng.
+Điều khoản cuối cùng của hợp đồng mua bán	Hợp đồng có hiệu lực từ ngày ký và hết hiệu lực khi hai bên hoàn thành nghĩa vụ.	Các phụ lục ký sau là bộ phận không tách rời của hợp đồng này.

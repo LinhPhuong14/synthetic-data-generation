@@ -1,0 +1,27 @@
+# QUESTIONS_Y_TE — một chủ đề câu hỏi của khối biểu mẫu (`Form`).
+#
+# Cột 1 là DẠNG, cột 2 là câu hỏi, các cột sau là tham số của dạng ấy — xem
+# `questions_hanh_chinh.txt` cho bảng dạng đầy đủ.
+#
+# Chủ đề này thêm vào để khối `Form` không chỉ có bảy giọng: đo trên bản
+# trước, một tờ có biểu mẫu bốc câu từ 7 chủ đề nên hai tờ cùng hồ sơ trùng
+# câu rất sớm. Mười bốn chủ đề thì số cặp trùng giảm còn một nửa.
+
+boxchar	Số thẻ bảo hiểm y tế	15
+date_boxes	Ngày, tháng, năm sinh của người bệnh
+options	Đối tượng khám chữa bệnh	Đúng tuyến|Trái tuyến|Cấp cứu|Dịch vụ theo yêu cầu
+yesno	Người bệnh có tiền sử dị ứng thuốc không?
+blank	Lý do vào viện
+inline_blank	Chẩn đoán vào viện là …, mã bệnh …, khoa điều trị …
+grid	Mức độ triệu chứng khi vào viện	Sốt|Đau|Khó thở|Mệt mỏi	Không|Nhẹ|Vừa|Nặng
+scale	Mức độ đau theo thang điểm	Không đau	Đau dữ dội	10
+options	Hình thức điều trị	Ngoại trú|Nội trú|Điều trị ban ngày|Chuyển tuyến
+table_form	Thuốc đang sử dụng trước khi vào viện	Tên thuốc|Hàm lượng|Liều dùng|Thời gian dùng
+attachment	Giấy tờ người bệnh nộp	Thẻ bảo hiểm y tế|Giấy chuyển tuyến|Giấy tờ tuỳ thân|Kết quả xét nghiệm cũ
+subquestion	Tiền sử bản thân	a) Bệnh mạn tính|b) Phẫu thuật đã trải qua|c) Thuốc đang dùng|d) Thói quen sinh hoạt
+yesno	Người bệnh có đang mang thai hoặc cho con bú không?
+blank	Họ tên và số điện thoại người nhà báo tin
+options	Nhóm máu	O|A|B|AB|Chưa xác định
+rank	Xin xếp thứ tự các yếu tố cần cải thiện tại cơ sở	Thời gian chờ|Thái độ nhân viên|Cơ sở vật chất|Giải thích của bác sĩ|Thủ tục thanh toán
+boxchar	Mã số hồ sơ bệnh án	10
+scale	Mức độ hài lòng với dịch vụ khám chữa bệnh	Rất không hài lòng	Rất hài lòng	5

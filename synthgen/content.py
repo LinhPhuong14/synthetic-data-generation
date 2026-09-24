@@ -469,6 +469,33 @@ THEME_WORDS: dict[str, tuple[str, ...]] = {
     # danh sách từ khoá và bốc chủ đề ngẫu nhiên theo `profile` -- đó là lý do
     # một `ĐƠN KHIẾU NẠI` in ra bộ câu hỏi tuyển dụng ("Mức lương đề nghị",
     # "Ca làm việc đăng ký"), thấy được trên ảnh vẽ thật.
+    # BẢY CHỦ ĐỀ MỚI, đặt TRƯỚC `hanh_chinh` vì `_theme_for` lấy khớp ĐẦU
+    # TIÊN và `hanh_chinh` là cái lưới rộng nhất -- để sau nó thì bảy chủ đề
+    # này không bao giờ được bốc.
+    #
+    # Từ khoá KHÔNG bịa: lấy từ chính tên phôi đang rơi khỏi mọi danh sách.
+    # Đo trên kho 471 phôi: 131 phôi (28%) không khớp từ khoá nào và lùi về
+    # phần tử đầu của `THEMES_BY_PROFILE` -- 59 phôi hành chính đều nhận cùng
+    # một bộ câu hỏi `hanh_chinh`, 48 phôi hoá đơn đều nhận `dich_vu`. Bảy
+    # chủ đề dưới đây chia lại đúng đám ấy.
+    'cong_nghe': ('chuyển đổi số', 'phần mềm', 'hệ thống thông tin',
+                  'công nghệ thông tin', 'dữ liệu', 'tài khoản người dùng',
+                  'an toàn thông tin', 'chữ ký số'),
+    'noi_vu': ('tổ chức cán bộ', 'văn thư lưu trữ', 'điều lệ', 'đề án',
+               'quy hoạch cán bộ', 'luân chuyển', 'biên chế', 'vị trí việc làm'),
+    'van_hoa': ('thi đua khen thưởng', 'khen thưởng', 'hội nghị', 'hội thi',
+                'văn nghệ', 'thể thao', 'triển lãm', 'lễ hội', 'giấy mời',
+                'đại hội'),
+    'thuong_mai': ('hợp đồng kinh tế', 'báo giá', 'nhập kho', 'xuất kho',
+                   'bảng kê', 'thanh lý hợp đồng', 'đơn đặt hàng', 'mua sắm',
+                   'bảo hành', 'đăng ký kinh doanh', 'công nợ'),
+    'du_lich': ('lưu trú', 'khách sạn', 'đặt phòng', 'trả phòng', 'tham quan',
+                'lữ hành', 'du lịch', 'hướng dẫn viên'),
+    'nong_nghiep': ('nông nghiệp', 'trồng trọt', 'chăn nuôi', 'thuỷ sản',
+                    'thủy sản', 'vùng trồng', 'giống cây', 'thú y',
+                    'bảo vệ thực vật', 'hợp tác xã'),
+    'y_te': ('bệnh viện', 'phòng khám', 'người bệnh', 'nội trú', 'ngoại trú',
+             'cấp cứu', 'nhiễm khuẩn', 'dược', 'thuốc', 'điều dưỡng'),
     'hanh_chinh': ('hành chính', 'một cửa', 'thủ tục', 'công dân', 'cư trú',
                    'hộ khẩu', 'uỷ quyền', 'ủy quyền', 'biên nhận hồ sơ',
                    'đơn', 'khiếu nại', 'tố cáo', 'đề nghị', 'kiến nghị',
@@ -493,16 +520,17 @@ THEME_WORDS: dict[str, tuple[str, ...]] = {
 }
 
 THEMES_BY_PROFILE: dict[str, tuple[str, ...]] = {
-    'medical': ('benh_khop', 'tien_su_benh', 'dich_te'),
-    'insurance': ('bao_hiem', 'benh_khop', 'tien_su_benh', 'tai_chinh'),
+    'medical': ('benh_khop', 'tien_su_benh', 'dich_te', 'y_te'),
+    'insurance': ('bao_hiem', 'benh_khop', 'tien_su_benh', 'tai_chinh', 'y_te'),
     # `hanh_chinh` ĐỨNG ĐẦU: nó là chủ đề rộng nhất của hồ sơ hành chính, và
     # `_theme_for` lấy phần tử đầu khi tên tài liệu không khớp từ khoá nào.
     'admin': ('hanh_chinh', 'dich_vu', 'nhan_su', 'dao_tao', 'lao_dong',
-              'giao_duc', 'xay_dung', 'moi_truong'),
-    'invoice': ('dich_vu', 'tai_chinh', 'giao_thong'),
-    'market': ('dich_vu', 'giao_thong'),
-    'menu': ('dich_vu',),
-    'hotel': ('dich_vu', 'hanh_chinh'),
+              'giao_duc', 'xay_dung', 'moi_truong', 'noi_vu', 'cong_nghe',
+              'van_hoa'),
+    'invoice': ('dich_vu', 'thuong_mai', 'tai_chinh', 'giao_thong'),
+    'market': ('dich_vu', 'thuong_mai', 'giao_thong', 'nong_nghiep'),
+    'menu': ('dich_vu', 'nong_nghiep'),
+    'hotel': ('dich_vu', 'du_lich', 'hanh_chinh'),
     'power': ('dich_vu', 'moi_truong'),
     'water': ('dich_vu', 'moi_truong'),
 }

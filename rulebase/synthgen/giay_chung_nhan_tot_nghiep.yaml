@@ -1,4 +1,13 @@
 # phôi khai bằng file — xem synthgen/archetypes.py
+# Sức chứa nới ra để phôi này với tới hai tờ: giấy chứng nhận ở tờ đầu, BẢNG ĐIỂM các môn ở tờ sau.
+# Trần cũ quá thấp nên `--multipage-only` loại sạch mọi seed của nó
+# (đo được 0% seed nhắm >=2 tờ), và loại chứng từ này biến mất khỏi
+# bộ nhiều trang. Xem `design.FLOW_PER_PAGE`: hai tờ cần trần >= 30
+# dòng bảng.
+# `max_pages: 1` — giấy MỘT TỜ. Bảng khai ở đây là danh mục kèm theo,
+# không phải khối chảy: thiếu trần này thì `--pages 2-10` thấy bảng là
+# khối chảy DUY NHẤT với tới và ép nó chảy, ra một tờ giấy xác nhận hai
+# trang toàn bảng — thứ không tồn tại ngoài đời.
 id: giay_chung_nhan_tot_nghiep
 profile: admin
 org_kind: state
@@ -31,11 +40,6 @@ sign_sets:
   - HIỆU TRƯỞNG
 notes:
 - Giấy chứng nhận có giá trị trong thời hạn 01 năm kể từ ngày ký.
-# Sức chứa nới ra để phôi này với tới hai tờ: giấy chứng nhận ở tờ đầu, BẢNG ĐIỂM các môn ở tờ sau.
-# Trần cũ quá thấp nên `--multipage-only` loại sạch mọi seed của nó
-# (đo được 0% seed nhắm >=2 tờ), và loại chứng từ này biến mất khỏi
-# bộ nhiều trang. Xem `design.FLOW_PER_PAGE`: hai tờ cần trần >= 30
-# dòng bảng.
 rows:
 - 8
 - 50
@@ -52,3 +56,4 @@ optional:
 - photo
 - table
 en_ok: false
+max_pages: 1

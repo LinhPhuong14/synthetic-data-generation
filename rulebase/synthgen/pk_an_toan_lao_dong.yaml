@@ -1,8 +1,16 @@
 # phôi khai bằng file — xem synthgen/archetypes.py
 #
-# Sinh theo lô "300 phôi chia đều": tên là `<thể loại> + <lĩnh vực>`, đúng cách
-# chứng từ hành chính Việt Nam đặt tên. Bậc `ngan` quyết trần số tờ qua
-# `rows` -- xem `synthgen/design.py::flow_reach`.
+# Sinh theo lô "300 phôi chia đều": tên là `<thể loại> + <lĩnh vực>`,
+# đúng cách chứng từ hành chính Việt Nam đặt tên.
+#
+# Trần số tờ và khối chảy đọc từ THỂ LOẠI in trên tiêu đề
+# ("PHIẾU KHO"), không theo vị trí trong vòng sinh — xem lịch sử:
+# bậc cũ gán bằng `index % 3` nên mọi thể loại đều chia 1/3-1/3-1/3,
+# và một HỢP ĐỒNG bị khoá một tờ. Khối chảy: table; trần: 4.
+# Trần dòng bảng [5, 50] -> [5, 110]: `paginate` ĐO được ~26 dòng một
+# tờ, chứ không 15 như `FLOW_PER_PAGE` ước lượng, nên trần cũ chỉ nuôi
+# nổi hai tờ. Đo trên `data/smoke_multipage_v4`: "78 dòng cần cho 3 tờ
+# vượt trần 50 của chứng từ", hai lần trên 30 tài liệu.
 id: pk_an_toan_lao_dong
 titles:
 - PHIẾU KHO VỀ AN TOÀN LAO ĐỘNG
@@ -21,7 +29,19 @@ fields:
 field_span:
 - 2
 - 3
-columns: []
+columns:
+- - stt
+  - ref
+  - name
+  - unit
+  - qty
+  - note
+- - stt
+  - name
+  - unit
+  - qty
+  - amount
+  - note
 totals: none
 words: false
 sign_sets:
@@ -32,8 +52,8 @@ notes:
 - Hai bên cam kết thực hiện đúng nội dung đã thoả thuận.
 - Mọi sửa đổi phải lập thành văn bản có chữ ký hai bên.
 rows:
-- 0
-- 0
+- 5
+- 110
 always:
 - letterhead
 - doctitle
@@ -45,4 +65,6 @@ optional:
 - footer
 - footnote
 - checks
+- table
 en_ok: true
+max_pages: 4
