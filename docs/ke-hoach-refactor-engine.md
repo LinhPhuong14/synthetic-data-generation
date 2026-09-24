@@ -674,6 +674,48 @@ Hamming ≤ 0,240, còn 30,7% số cặp KHÔNG trùng cũng có Hamming ≤ 0,2
 điều kiện chưa bao giờ đổi được quyết định thì không được viết như thể nó
 đổi (AGENTS.md mục 5).
 
+**Đo thật, A/B 24-09.** Hai lô 40 tờ, cùng seed 24, cùng 8 request song song,
+cùng model `Qwen/Qwen3.8-27B-FP8`. Khác đúng một thứ: `--no-diversity` (rút
+độc lập như trước khi nối dây, không loại tờ nào) so với mặc định. Cả hai
+nhánh ĐO bằng cùng một mã, nên số so được với nhau.
+
+| | `data/24-09-div-before` | `data/24-09-div-after` | giảm |
+| --- | --- | --- | --- |
+| tờ tới được cổng hình học | 29 | 29 | — |
+| **vượt ngưỡng J≥0,60** | **6 (20,7%)** | **1 (3,45%)** | **−83,3%** |
+| láng giềng gần nhất, trung vị | 0,4333 | 0,3836 | −11,5% |
+| láng giềng gần nhất, p90 | 0,7227 | 0,5548 | −23,2% |
+| láng giềng gần nhất, lớn nhất | 0,8328 | 0,6548 | −21,4% |
+| `mid` khác nhau / 29 tờ | 18 | 25 | +39% |
+| `coarse` khác nhau / 29 tờ | 27 | 29 | +7% |
+
+Giá phải trả: **2 lời gọi bị vứt**, 1 454 giây và 25 679 token ra — 3,8%
+tổng thời gian model làm việc, 4,1% token ra. Một tờ vẫn được NHẬN dù trùng
+vì hết lượt (`kept_despite_collision`), đúng như luật đã đặt.
+
+**Hai điều con số này KHÔNG nói, và phải nói ra:**
+
+1. **Đồng hồ treo tường tăng 2 185s → 6 193s, và gần hết phần tăng ấy KHÔNG
+   phải do sinh lại.** Rút có trí nhớ đổi chính bộ giấy: `density` từ
+   9 dense / 10 medium / 14 sparse sang 13 / 14 / 12 (+1 `very_dense`), và
+   số tờ xin bảng từ 15 lên 22. Trang dày hơn thì chữ nhiều hơn — trung vị
+   ký tự HTML 11 181 → 18 054 (+61%), token ra 386k → 634k (+64%) — và tốc
+   độ server trong lượt sau cũng tụt (176,8 → 102,3 tk/s). Phép chống trùng
+   làm bộ giấy ĐẮT HƠN vì nó làm bộ giấy ĐỀU HƠN, không vì nó sinh lại.
+2. **Đo trên MỌI tờ đã vẽ (kể cả tờ trượt cổng chữ) thì mức giảm nhỏ hơn
+   nhiều: 5/32 (15,6%) → 4/40 (10,0%), −36%.** Đúng như phải thế: tờ trượt
+   cổng chữ chưa bao giờ đi qua cổng hình học, nên gộp chúng vào là pha
+   loãng bằng đúng những tờ mà luật này không được phép chạm tới. Ở phép đo
+   ấy trung vị còn NHÍCH LÊN (0,400 → 0,441) trong khi p90 và lớn nhất đều
+   giảm — hợp với lời giải thích ở điểm 1: giấy dày hơn thì lấp nhiều ô lưới
+   hơn nên nền giống nhau nhỉnh lên, còn cái đuôi trùng thật thì bị cắt.
+
+Tỉ lệ qua cổng 8/40 → 11/40 KHÔNG tính là công của thay đổi này: lượt trước
+có 7 lần model trả về không phải JSON, lượt sau không lần nào. Đó là server,
+không phải luật.
+
+Đo lại bất cứ lúc nào: `python -m tools.llm.diversity_report data/24-09-div-before data/24-09-div-after`.
+
 ---
 
 ## Phase 8 — Tổng kết & kiểm tra ở quy mô
