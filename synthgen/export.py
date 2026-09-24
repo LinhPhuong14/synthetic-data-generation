@@ -779,6 +779,20 @@ def document(record: dict, kind: str, *, doc_id: str = "",
     """Một tài liệu, một dict -- đúng hình dạng ở đầu file."""
     sizes = _sizes(record)
     pairs = (record.get("kie") or {}).get("pairs") or []
+    # CẶP CHỜ SOÁT KHÔNG VÀO BỘ CHÍNH.
+    #
+    # `synthgen/field_tier.py` đã gắn `in_batch` lên từng cặp lúc dựng bản ghi
+    # (`draw_llm.py`); ở đây chỉ ĐỌC dấu ấy. Cặp không có khoá `in_batch` là
+    # cặp của bản ghi sinh trước ngày có tầng -- giữ nguyên, vì đổi nghĩa của
+    # dữ liệu cũ bằng một mặc định mới là cách chắc chắn để hai lượt chạy
+    # không so được với nhau.
+    #
+    # Lọc ở ĐÂY, một chỗ: `document()` là cái phễu duy nhất mọi cặp đi qua
+    # trước khi thành tài liệu huấn luyện, nên một dòng ở đây đủ thay cho
+    # mười dòng rải khắp `_split`/`_tables`/`_marks`.
+    held = [p for p in pairs if p.get("in_batch") is False]
+    if held:
+        pairs = [p for p in pairs if p.get("in_batch") is not False]
     kinds = {e.get("entity_index"): str(e.get("kind") or "")
              for e in record.get("entity_annotations") or []}
     by_page: dict[int, list[dict]] = {}
@@ -864,10 +878,16 @@ def document(record: dict, kind: str, *, doc_id: str = "",
     # người đọc thạo việc hiểu nhầm ngay lần đầu: tưởng `bbox` cũng là pixel,
     # rồi vẽ hộp dồn hết vào góc trên trái. Một khoá tám ký tự chặn được cả
     # lớp hiểu nhầm ấy.
-    return {"doc_type": kind or None,
-            "doc_id": doc_id or None,
-            "page_count": len(pages),
-            "bbox_unit": "per_mille_of_size", "pages": pages}
+    out = {"doc_type": kind or None,
+           "doc_id": doc_id or None,
+           "page_count": len(pages),
+           "bbox_unit": "per_mille_of_size", "pages": pages}
+    # NÓI RA SỐ CẶP ĐÃ GIỮ LẠI. Một tài liệu ít trường hơn bản ghi của nó đọc
+    # lên giống hệt một tài liệu nghèo trường, và hai thứ ấy phải phân biệt
+    # được: cái đầu là cổng đang làm việc, cái sau là trang viết kém.
+    if held:
+        out["held_for_review"] = len(held)
+    return out
 
 
 def _slots(page: dict) -> int:

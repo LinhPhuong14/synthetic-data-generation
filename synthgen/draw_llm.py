@@ -53,6 +53,7 @@ from render import (  # noqa: E402
 )
 
 from pipeline import record as R  # noqa: E402
+from synthgen import field_tier as FT  # noqa: E402
 from synthgen import overlay as O  # noqa: E402
 from synthgen.kie_full import complete as kie_complete  # noqa: E402
 from synthgen.phrasing import voice_record  # noqa: E402
@@ -685,6 +686,22 @@ class Drawer:
             voice_record(record, full_pairs, stem=stem)
         except Exception:                                    # noqa: BLE001
             pass
+        # BA TẦNG, gắn lên từng cặp TRƯỚC khi bản ghi ra đĩa.
+        #
+        # Gắn ở đây chứ không ở `export.py` vì bản ghi là thứ tồn tại lâu:
+        # một cặp `staging` phải mang dấu ấy trong chính `records/*.json`, để
+        # ai đọc bản ghi sáu tháng sau cũng thấy cái tên ấy chưa được duyệt.
+        # `export.py` chỉ việc ĐỌC dấu và bỏ qua, không xếp tầng lại -- xếp
+        # hai lần là hai người dựng một luật.
+        try:
+            record["kie_tiers"] = FT.mark_pairs(
+                full_pairs, doc_type=str(declared.get("archetype") or ""),
+                doc_title=str(declared.get("doc_title") or ""))
+        except Exception as error:                           # noqa: BLE001
+            # KÊU, không nuốt. Bản ghi thiếu dấu tầng vẫn vẽ ra được, nhưng
+            # nó sẽ đi vào bộ chính với mọi cặp không ai duyệt -- đúng thứ
+            # tầng này sinh ra để chặn, nên dòng này phải đọc được trong log.
+            print(f"[tầng] {stem}: không xếp tầng được -- {error}")
         record.setdefault("kie", {})["pairs"] = full_pairs
         if kie_counts:
             record["kie"]["coverage"] = kie_counts

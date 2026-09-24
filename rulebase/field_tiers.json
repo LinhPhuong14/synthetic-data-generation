@@ -1,0 +1,148 @@
+{
+ "_about": [
+  "Chính sách BA TẦNG cho tên trường. `synthgen/field_tier.py` đọc file này.",
+  "",
+  "Sổ đăng ký (từ vựng ĐÓNG) KHÔNG nằm ở đây -- nó phái sinh, xem",
+  "`field_tier.registry()`: `synthgen/llm_page.py::kinds()` (đo từ chính HTML",
+  "engine dựng) hợp với `rulebase/kie_field_glossary.json` (`_by_kind` cho",
+  "không gian `kind`, `_by_path` cho không gian `path`) và `describe` sẵn có",
+  "trong `synthgen/design.py::COLUMNS`. Chép chúng vào đây là dựng người thứ",
+  "hai cho cùng một luật, và kho này đã đo được ba lần hỏng vì đúng chuyện ấy.",
+  "",
+  "File này chỉ giữ thứ KHÔNG phái sinh được: chính sách.",
+  "",
+  "## Vì sao không có ngưỡng tương tự (similarity)",
+  "",
+  "Một ngưỡng tương tự là đúng cái cách một tên trượt biến thành một khoá",
+  "SAI: `patient.dob` gần `patient.dod` hơn mọi khoá khác, và khi đã ánh xạ",
+  "thì câu tả tra theo khoá ấy cũng sai theo. Một lỗi kép, và nửa sau không",
+  "nhìn thấy được. Nên phép khớp ở đây chỉ có hai kết quả: TRÚNG ĐÚNG khoá,",
+  "hoặc rơi xuống tầng dưới. Ngưỡng duy nhất là ngưỡng CHẤT LƯỢNG CÂU TẢ, và",
+  "nó đọc từ `rulebase/synthgen/_kie_gates.yaml` -- cùng bảng `synthgen/",
+  "kie_gate.py` đã dùng để chấm mô tả."
+ ],
+
+ "generic": {
+  "_about": [
+   "Khoá ĐÓNG nhưng KHÔNG phân biệt được trường nào với trường nào -- chỗ mọi",
+   "thứ không biết gọi tên gì thì đổ vào. Chúng VẪN thuộc tầng Closed (engine",
+   "in ra chúng thật, và luật cấm xoá khoá đã có), nhưng đếm riêng: tỉ lệ rơi",
+   "vào đây là thước đo trôi nghĩa, và là con số phải so trước/sau.",
+   "",
+   "Đo trên 394 tệp `data/*/declared/*.json`, 8.555 lượt `field_plan.kind`:",
+   "`meta.value` 547, `invoice.field` 454, `invoice.field.label` 351 --",
+   "1.352 lượt, 15,8% toàn bộ."
+  ],
+  "kind": ["meta.value", "invoice.field", "invoice.field.label"],
+  "path": []
+ },
+
+ "doc_groups": {
+  "_about": [
+   "Hai nhóm loại chứng từ, vì hai nhóm chịu được hai mức tự do khác nhau.",
+   "",
+   "  closed_by_law  Biểu mẫu do một văn bản pháp quy ấn định tập trường.",
+   "                 Đặt thêm một trường vào đó là dựng một tờ giấy tự nhận",
+   "                 là biểu mẫu luật định mà mang trường luật không có.",
+   "                 CHỈ tầng Closed. Không Semi-open, không Staging.",
+   "  open_domain    Giấy tờ soạn tự do -- hợp đồng, biên bản, báo cáo. Tập",
+   "                 trường là do người soạn. Cả ba tầng.",
+   "  unreviewed     Chưa ai xếp nhóm. Chính sách ở `unreviewed_policy`.",
+   "",
+   "## Vì sao là LUẬT chứ không phải bảng 471 dòng",
+   "",
+   "Một bảng phẳng liệt kê từng `id` là thứ mà loại giấy thứ 472 sẽ thiếu",
+   "khỏi, im lặng -- đúng điều `AGENTS.md` mục 5 cấm. Nên xếp nhóm ĐỌC TỪ",
+   "chính dữ liệu phôi đã có: `id` và tiêu đề in trên giấy. `overrides` là",
+   "chỗ đỡ cho những ca luật không đọc ra, không phải cổng gác.",
+   "",
+   "`evidence` ghi văn bản pháp quy ấn định biểu mẫu ấy. Nó không phải chú",
+   "thích: khi ai đó hỏi 'vì sao tờ này không được đặt tên trường mới', câu",
+   "trả lời phải là một số hiệu văn bản, không phải một ý kiến."
+  ],
+
+  "default": "unreviewed",
+
+  "unreviewed_policy": "closed_by_law",
+  "_unreviewed_policy_about": [
+   "Chưa xếp nhóm thì áp luật CHẶT. Hai chiều sai không cân nhau: xếp nhầm",
+   "một tờ tự do vào chặt thì mất đa dạng -- đếm được, sửa được bằng một",
+   "dòng ở `overrides`. Xếp nhầm một biểu mẫu luật định vào tự do thì sinh",
+   "ra nhãn SAI, và nhãn sai không tự kêu.",
+   "",
+   "Đổi sang `open_domain` là một quyết định của chủ kho, không phải mặc",
+   "định của mã. Báo cáo (`tools/llm/field_tiers_report.py`) in ra đúng bao",
+   "nhiêu loại giấy đang bị siết vì chưa ai xếp nhóm."
+  ],
+
+  "closed_by_law": {
+   "hoa_don_dien_tu": {
+    "evidence": "QĐ 1450/QĐ-TCT (định dạng XML hoá đơn điện tử), NĐ 123/2020/NĐ-CP",
+    "title_patterns": ["^HO[ÁA] ĐƠN\\b"],
+    "ids": ["hoa_don_gtgt", "hoa_don_tien_dien", "hoa_don_tien_nuoc",
+            "invoice_detailed", "retail_vat_invoice", "export_invoice",
+            "tax_invoice_en", "utility_power", "utility_water"]
+   },
+   "to_khai_thue": {
+    "evidence": "TT 80/2021/TT-BTC (mẫu tờ khai thuế)",
+    "title_patterns": ["^TỜ KHAI (QUYẾT TOÁN )?THUẾ\\b"],
+    "ids": ["to_khai_thue_gtgt", "to_khai_thue_tncn"]
+   },
+   "giay_to_ho_tich": {
+    "evidence": "TT 04/2020/TT-BTP (biểu mẫu hộ tịch)",
+    "title_patterns": ["^GIẤY KHAI SINH$", "^GIẤY CHỨNG SINH$",
+                       "^GIẤY CHỨNG NHẬN KẾT HÔN$"],
+    "ids": ["giay_khai_sinh", "giay_chung_sinh", "giay_chung_nhan_ket_hon"]
+   },
+   "giay_to_tuy_than": {
+    "evidence": "TT 06/2021/TT-BCA và TT 16/2024/TT-BCA (thẻ căn cước); QĐ 1666/QĐ-BHXH (thẻ BHYT)",
+    "title_patterns": ["^(THẺ )?CĂN CƯỚC", "^CHỨNG MINH NHÂN DÂN",
+                       "^THẺ BẢO HIỂM Y TẾ$"],
+    "ids": ["the_bhyt", "insurance_health_id_card"]
+   },
+   "bieu_mau_kham_chua_benh": {
+    "evidence": "TT 56/2017/TT-BYT (giấy ra viện, chuyển tuyến, nghỉ việc hưởng BHXH)",
+    "title_patterns": ["^GIẤY RA VIỆN$", "^GIẤY CHUYỂN TUYẾN\\b",
+                       "^GIẤY CHỨNG NHẬN NGHỈ VIỆC HƯỞNG BHXH$"],
+    "ids": ["giay_ra_vien", "giay_chuyen_tuyen", "giay_nghi_om"]
+   },
+   "giay_chung_nhan_dat_dai": {
+    "evidence": "TT 10/2024/TT-BTNMT (mẫu giấy chứng nhận quyền sử dụng đất)",
+    "title_patterns": ["^GIẤY CHỨNG NHẬN QUYỀN SỬ DỤNG ĐẤT"],
+    "ids": ["giay_chung_nhan_qsdd"]
+   }
+  },
+
+  "open_domain": {
+   "van_ban_soan_tu_do": {
+    "evidence": "NĐ 30/2020/NĐ-CP chỉ ấn định THỂ THỨC, không ấn định tập trường",
+    "title_patterns": [
+     "^HỢP ĐỒNG\\b", "^PHỤ LỤC HỢP ĐỒNG\\b", "^THO[ẢA] THUẬN\\b",
+     "^BIÊN BẢN\\b", "^BIÊN BẢN VỀ\\b", "^BÁO CÁO\\b", "^KẾ HOẠCH\\b",
+     "^CÔNG VĂN\\b", "^TỜ TRÌNH\\b", "^THÔNG BÁO\\b", "^QUYẾT ĐỊNH\\b",
+     "^NGHỊ QUYẾT\\b", "^ĐỀ ÁN\\b", "^QUY CHẾ\\b", "^ĐIỀU LỆ\\b",
+     "^BẢN (CAM KẾT|GIẢI TRÌNH|TỰ KIỂM ĐIỂM|VẼ)\\b", "^THUYẾT MINH\\b",
+     "^NHẬT KÝ\\b", "^BÁO GIÁ$", "^THỰC ĐƠN\\b", "^ĐƠN\\b", "^TRANG RAO VẶT$"
+    ],
+    "ids": ["meeting_minutes", "dispatch_letter", "handover_record",
+            "leave_application", "authorisation_letter", "form_activity",
+            "form_brief", "form_checklist", "form_checklist_table",
+            "form_dense", "form_roster", "form_sectioned", "form_symmetric"]
+   }
+  },
+
+  "overrides": {
+   "_about": [
+    "Chỗ đỡ cho ca luật trên đọc sai, và CHỈ cho ca ấy. Mỗi dòng phải kèm",
+    "lý do -- một `overrides` không có lý do là một bảng tay đang lớn dần.",
+    "",
+    "`hop_dong_chuyen_nhuong` trúng `^GIẤY CHỨNG NHẬN QUYỀN SỬ DỤNG ĐẤT`",
+    "trong tiêu đề nhưng nó là HỢP ĐỒNG chuyển nhượng, soạn tự do.",
+    "`phieu_dat_phong` in tiêu đề `HOÁ ĐƠN LƯU TRÚ` nhưng phôi là phiếu",
+    "khách sạn tự in, không đi qua hệ hoá đơn điện tử."
+   ],
+   "hop_dong_chuyen_nhuong": "open_domain",
+   "phieu_dat_phong": "unreviewed"
+  }
+ }
+}

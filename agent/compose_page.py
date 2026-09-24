@@ -66,6 +66,7 @@ from agent import grammar as G
 from agent import rate_match
 from pipeline import failures
 from synthgen import design as D
+from synthgen import field_tier as FT
 from synthgen.llm_page import (REGIONS, _rooted, acceptable_kind,
                                declared_paths, kinds,
                                printed_kinds, problems)
@@ -185,11 +186,21 @@ def kind_pattern() -> str:
     sau đó loại -- đốt trọn một lượt gọi để bị từ chối. `tests/test_llm_page.
     py::test_the_gate_and_the_decoder_agree_on_what_a_name_may_look_like` so
     từng tên qua cả hai đường và đòi chúng trả lời giống nhau."""
+    literal = "|".join(re.escape(k) for k in sorted(kinds()))
+    return f"^(?:{literal}|{_coined_pattern()})$"
+
+
+def _coined_pattern() -> str:
+    """Nửa ĐẶT TÊN MỚI của `kind_pattern()`, tách ra để `schema()` dùng lại.
+
+    `schema()` viết hai nhánh ra rõ (`enum` khoá đã duyệt, cạnh ngữ pháp này)
+    thay vì dán nguyên chuỗi gộp. Cùng một ngôn ngữ, nhưng hai nơi phải lấy
+    vế `_COINED` từ đúng một chỗ -- chép nó lần thứ hai là mời hai nhánh lệch
+    nhau, đúng lỗi "một luật, nhiều người dựng" mà `acceptable_kind()` sinh ra
+    để dọn."""
     from synthgen.llm_page import _COINED                       # noqa: PLC0415
 
-    literal = "|".join(re.escape(k) for k in sorted(kinds()))
-    coined = _COINED.pattern.lstrip("^").rstrip("$")
-    return f"^(?:{literal}|{coined})$"
+    return _COINED.pattern.lstrip("^").rstrip("$")
 
 
 def _close(node):
@@ -236,8 +247,24 @@ DATA_ITEMS = {
     "items": {
         "type": "object",
         "properties": {
-            "path": {"type": "string",
-                     "description": "Same string as the data-path attribute."},
+            # HỌ ĐÃ DUYỆT, nói thẳng trong schema.
+            #
+            # `path` không ép được bằng `enum` như `kind`: một đường dẫn mang
+            # chỉ số (`line_items[7].name`) nên tập của nó vô hạn. Nhưng HỌ
+            # thì hữu hạn, và nói ra chúng ở đây là chỗ rẻ nhất -- đo trên
+            # 12 318 lượt `data-path` của 394 tệp `declared/`: 377 họ khác
+            # nhau cho chừng ấy khái niệm mà 25 họ `data-kind` đã gọi tên
+            # xong. Riêng `items[]` 3 033 lượt là cách viết khác của
+            # `line_items[]` (2 038 lượt) -- cùng một cái bảng hàng, hai tên.
+            "path": {
+                "type": "string",
+                "description": (
+                    "Same string as the data-path attribute. Prefer a listed "
+                    "family: " + ", ".join(sorted(
+                        FT.registry().families[FT.PATH])) + ". A path outside "
+                    "them is kept for review and left out of the training "
+                    "set; never spell a listed family a second way."),
+            },
             "value": {"type": "string",
                       "description": "Exactly the text the HTML prints."},
         },
@@ -338,10 +365,47 @@ def schema() -> dict:
                                 # chỗ: nó cho ĐẶT TÊN MỚI theo ngữ pháp
                                 # `họ.trường[.nhãn]`, y như cổng cho phép.
                                 # Xem `kind_pattern()` về hai vế của nó.
-                                "kind": {"type": "string",
-                                         "pattern": kind_pattern()},
+                                #
+                                # HAI NHÁNH VIẾT RÕ RA, thay cho một `pattern`
+                                # gộp. Ngôn ngữ nhận được y hệt -- nhánh đầu
+                                # là chính những chữ `kind_pattern()` vẫn nối
+                                # bằng `|` -- nhưng bộ giải mã (và người đọc
+                                # schema) giờ THẤY tầng `closed`: một `enum`
+                                # tên khoá đã duyệt, cạnh cửa thoát đặt tên
+                                # mới. `synthgen/field_tier.py` xếp tầng theo
+                                # đúng danh sách ấy, nên nơi ép và nơi xếp
+                                # đọc chung một sổ.
+                                "kind": {
+                                    "anyOf": [
+                                        {"type": "string",
+                                         "enum": list(FT.closed_enum(FT.KIND))},
+                                        {"type": "string",
+                                         "pattern": _coined_pattern()},
+                                    ],
+                                },
+                                # CÂU TẢ, và nó là ĐIỀU KIỆN của tầng
+                                # `semi_open`. Tên ngoài sổ mà không kèm câu
+                                # tả thì `field_tier` đẩy xuống `staging` --
+                                # nó KHÔNG mượn câu tả của khoá gần nhất, vì
+                                # khoá sai cộng câu tả tra theo khoá sai là
+                                # một lỗi kép mà bản ghi không tự kêu lên
+                                # được. Để rỗng khi `kind` đã có trong sổ:
+                                # câu tả của khoá đóng lấy từ sổ, lời model
+                                # khai không ghi đè.
+                                "describe": {
+                                    "type": "string",
+                                    "description": "Leave empty when `kind` is "
+                                                   "one of the listed field "
+                                                   "keys. When you coin a new "
+                                                   "name, say in one English "
+                                                   "sentence what the value IS "
+                                                   "-- not what the caption "
+                                                   "says. A coined name with no "
+                                                   "sentence is kept out of the "
+                                                   "training set.",
+                                },
                             },
-                            "required": ["label", "kind"],
+                            "required": ["label", "kind", "describe"],
                         },
                     },
                     "table_columns": {"type": "array",
@@ -699,11 +763,37 @@ SAY = {
         "other": "Invent a plausible DIFFERENT reason/content for the same "
                  "fixed structure -- not a different document type.",
         "step2": "## Step two: map each field to a `data-kind`",
-        "map": "Every field you just invented must correspond to ONE "
-               "`data-kind` from the list below. Write the `label` -> `kind` "
-               "pairs into `field_plan`. If none fits, take the nearest in "
-               "meaning -- **do not invent a new name**; an unlisted name gets "
-               "the whole page rejected.",
+        # "TAKE THE NEAREST" ĐÃ BỊ BỎ, và đó là sửa chính của mục này.
+        #
+        # Câu cũ dặn: "If none fits, take the nearest in meaning". Model làm
+        # đúng lời dặn ấy, và đo được trên 394 tệp `declared/`: 1 352 trên
+        # 8 555 lượt (15,8%) rơi vào ba khoá hứng chung `meta.value`,
+        # `invoice.field`, `invoice.field.label` -- `meta.value` một mình 547
+        # lượt, nhiều nhất bộ. "Gần nhất" không phải một phép ánh xạ, nó là
+        # một cái thùng: `patient.bed_number` và `contract.penalty_rate` cùng
+        # thành `invoice.field`, rồi câu tả tra theo khoá ấy nói cả hai là
+        # "một trường có nhãn ở khối đầu trang".
+        #
+        # Thay bằng ba tầng của `synthgen/field_tier.py`. Cái giá của việc
+        # đặt tên mới giờ là một câu tả, không phải cả tờ giấy: không có tên
+        # nào ở đây làm trang bị loại.
+        "map": "Every field you just invented must be named in `field_plan` "
+               "as a `label` -> `kind` pair. Three ways a name is accepted, "
+               "in this order:\n"
+               "1. **Use a listed key.** If one of the keys below means what "
+               "your field means, use it and leave `describe` empty -- its "
+               "meaning is already on file.\n"
+               "2. **Coin a name inside a listed family.** If no key fits but "
+               "the family does (`store.`, `sign.`, `total.`, `menu.`, "
+               "`clause.`, `survey.`, `meta.`, `section.`, `toc.`), write "
+               "`family.your_leaf` AND one English sentence in `describe` "
+               "saying what the value IS -- not what the caption says.\n"
+               "3. **Coin a name outside every family** only when the concept "
+               "belongs to no family above. It is kept for review and left "
+               "out of the training set, so prefer (2) when a family fits.\n"
+               "Never stretch a listed key to cover something it does not "
+               "mean. A coined name with a sentence is worth more than a "
+               "listed key used wrongly, and no choice here rejects the page.",
         "regions": "Permitted `data-region`",
         "step3": "## Step three: write the sheet",
         "one_sheet": "This document is **one sheet**.",
@@ -828,7 +918,13 @@ def ask_for(index: int, made: list[str], plan: DP.DocumentPlan, sheets: int,
     phủ đuôi phân phối thay vì bốc độc lập và bỏ trống những góc hiếm."""
     say = SAY["en"]
     hint = FAMILY_HINT.get(plan.family, plan.family)
-    every = ", ".join(sorted(kinds()))
+    # DANH SÁCH DÁN VÀO BRIEF PHẢI LÀ DANH SÁCH `enum` ÉP, không phải một
+    # danh sách hẹp hơn. `kinds()` nhặt từ 300 trang mẫu nên nó thiếu 14 khoá
+    # mà sổ đăng ký có thật -- `sidebar.label`, `entry.title`, `menu.quota`,
+    # `menu.meter_prev`... Dán bản hẹp là nói với model rằng chúng KHÔNG TỒN
+    # TẠI, rồi model đặt tên mới cho khái niệm đã có tên: đúng cái bẫy
+    # `llm_page.py::EXTRA` đã viết ra cho `section`, chỉ khác chỗ xảy ra.
+    every = ", ".join(FT.closed_enum(FT.KIND))
     seen = (", ".join(made[-14:]) if made else say["nothing"])
     table = "table" in plan.assignment
     # Số dòng bảng theo SỐ TỜ, không theo chỉ số lượt. Bản trước cho tới 30
@@ -1382,9 +1478,25 @@ def one(client, index: int, made: list[str], seed: int,
     # nữa (điểm 3 review). `declared.get("doc_slug")` không còn dùng để
     # đặt tên thư mục, chỉ còn trong `declared` để đọc lại lúc gỡ lỗi.
     kind = plan.family
+    # XẾP TẦNG, KHÔNG GÁC. Ba tầng của `synthgen/field_tier.py` quyết một
+    # TRƯỜNG có vào bộ chính hay không; chúng không quyết một TỜ có được nhận
+    # hay không, và `found` ở trên không nhận thêm dòng nào từ đây.
+    #
+    # Tách hai việc ấy có chủ ý. `field_plan` vốn không vào bộ huấn luyện
+    # (xem `plan_problems`), nên loại cả tờ vì một cái tên lạ là trả giá cao
+    # nhất cho lỗi rẻ nhất -- đúng cái bẫy `settle()` đã viết ra. Trường lạ
+    # rơi xuống `staging`: còn nguyên trên giấy, ghi riêng ra để soát, không
+    # đi vào bộ chính, và KHÔNG bao giờ mượn câu tả của một khoá khác.
+    doc_title = str(declared.get("doc_title") or "")
+    tiers = (FT.classify_plan(declared.get("field_plan"),
+                              doc_type=kind, doc_title=doc_title)
+             + FT.classify_data(tree, doc_type=kind, doc_title=doc_title))
     return {
         "index": index, "archetype": kind, "ok": not found,
         "seconds": spent, "why": found,
+        "field_tiers": FT.tally(tiers),
+        "field_staging": FT.staging_rows(tiers),
+        "doc_group": FT.doc_group(kind, doc_title),
         "html": html, "rows": rows, "plan": declared,
         "engine_plan": dict(plan.assignment),
         "hard_negative_profile": dict(plan.hard_negative_profile),
@@ -1402,6 +1514,35 @@ def one(client, index: int, made: list[str], seed: int,
         "stamped": stamped, "signed": signed,
     }
 
+
+
+def _tier_tally(made: list[dict]) -> dict:
+    """Ba tầng cộng lại cả bộ, cộng phân bố nhóm loại chứng từ.
+
+    Cộng từ `field_tiers` của từng tờ thay vì xếp tầng lại lần nữa: xếp lại là
+    người thứ hai dựng cùng một luật, và nếu hai bên lệch thì báo cáo nói một
+    đằng bản ghi một nẻo -- không có cách nào nhìn ra điều đó từ con số."""
+    counts: dict[str, int] = {}
+    total = generic = in_batch = 0
+    groups: dict[str, int] = {}
+    for m in made:
+        got = m.get("field_tiers") or {}
+        for tier, n in (got.get("counts") or {}).items():
+            counts[tier] = counts.get(tier, 0) + int(n)
+        total += int(got.get("total") or 0)
+        generic += int(got.get("generic") or 0)
+        in_batch += int(got.get("in_batch") or 0)
+        group = str(m.get("doc_group") or "")
+        if group:
+            groups[group] = groups.get(group, 0) + 1
+    return {"total": total, "counts": counts,
+            "share": {tier: (round(n / total, 4) if total else 0.0)
+                      for tier, n in counts.items()},
+            "generic": generic,
+            "generic_share": round(generic / total, 4) if total else 0.0,
+            "in_batch": in_batch,
+            "in_batch_share": round(in_batch / total, 4) if total else 0.0,
+            "doc_groups": groups}
 
 
 def _mend_tally(made: list[dict]) -> dict[str, int]:
@@ -1867,6 +2008,42 @@ def run(want: int, out: Path, *, concurrency: int, seed: int,
     # `why_tally`.
     report["failure_codes"] = failures.tally(
         [why for m in made for why in (m.get("why") or [])])
+    # BA TẦNG, cộng lại cả bộ -- và trường bị giữ lại ghi ra một file RIÊNG.
+    #
+    # Riêng, vì `staging/` là hàng đợi soát của người, không phải một mục
+    # trong báo cáo máy: mỗi dòng là một cái tên chờ được duyệt vào sổ
+    # (`rulebase/kie_field_glossary.json`) hoặc bị bác. Trộn nó vào
+    # `compose_report.json` là chôn nó dưới ba chục khoá thống kê, và một
+    # hàng đợi không ai nhìn thấy là một hàng đợi không ai xử lý.
+    #
+    # Chỉ đếm tờ ĐÃ QUA cổng: một tờ bị loại không có mực nào vào bộ, nên
+    # tên trường của nó không phải thứ cần duyệt.
+    report["field_tiers"] = _tier_tally(kept)
+    staged = [dict(row, page=m["index"], archetype=m["archetype"],
+                   doc_group=m.get("doc_group", ""))
+              for m in kept for row in (m.get("field_staging") or [])]
+    if staged:
+        (out / "staging").mkdir(parents=True, exist_ok=True)
+        (out / "staging" / "field_candidates.jsonl").write_text(
+            "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in staged),
+            encoding="utf-8")
+        print(f"[tầng] {len(staged)} trường vào staging/field_candidates.jsonl "
+              "-- chờ soát, không vào bộ chính")
+    # BAO NHIÊU TỜ ĐANG BỊ SIẾT VÌ CHƯA AI XẾP NHÓM -- in ra, không để nằm im
+    # trong JSON.
+    #
+    # `unreviewed_policy: closed_by_law` (`rulebase/field_tiers.json`) siết một
+    # loại giấy chưa xếp nhóm y như biểu mẫu luật định: `semi_open` bị hạ
+    # xuống `dropped`, `staging` cũng vậy. Đó là mặc định ĐÚNG -- xếp nhầm một
+    # biểu mẫu luật định thành tự do thì sinh nhãn sai, và nhãn sai không tự
+    # kêu. Nhưng cái giá của nó phải đếm được: 178 trên 471 phôi hiện chưa xếp
+    # nhóm, và nếu con số ấy chỉ nằm trong `compose_report.json` thì không ai
+    # thấy mình đang trả giá gì. Một dòng ở đây là dòng nhắc soát tiếp.
+    strict = (report["field_tiers"].get("doc_groups") or {}).get("unreviewed", 0)
+    if strict:
+        print(f"[tầng] {strict}/{len(kept)} tờ thuộc loại chứng từ CHƯA XẾP "
+              "NHÓM, nên bị siết như biểu mẫu luật định (chỉ tầng `closed`) "
+              "-- xếp nhóm ở `rulebase/field_tiers.json` để mở lại")
     (out / "compose_report.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     _write_performance(out, report, made)

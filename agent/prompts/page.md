@@ -1582,6 +1582,30 @@ If the caller explicitly allows additional fields, you may add document-specific
 
 Do not silently drop declared fields.
 
+## 50.1 Naming a field the list does not have
+
+Three tiers, and the whole point is that **none of them is "the nearest key"**.
+
+1. **A listed key.** Use it, leave `describe` empty. Its meaning is on file.
+2. **A new leaf in a listed family** — `store.`, `sign.`, `total.`, `menu.`,
+   `clause.`, `survey.`, `meta.`, `section.`, `toc.` for `data-kind`;
+   `issuer.`, `customer.`, `document.`, `line_items[]`, `signers[]`,
+   `clauses[]` for `data-path`. Write `family.your_leaf` and put ONE English
+   sentence in `describe` saying what the value IS, not what the caption says.
+   No sentence means the field is held back for review.
+3. **A name in no family at all.** Allowed, and kept out of the training set
+   until a person reviews it. Prefer tier 2 whenever a family fits.
+
+Never stretch a listed key over a field it does not mean. The key carries a
+sentence with it, so a wrong key silently attaches a wrong description as well,
+and no later check can see that it happened. Coining costs you one sentence;
+none of these three choices rejects the page.
+
+Same rule for `data-path`. `items[0].name`, `rows[0].name` and
+`table.rows[0].name` all mean `line_items[0].name` — use the listed spelling
+rather than a fourth one, because four names for one column teach a model that
+field names carry no meaning.
+
 ---
 
 # 51. LEGAL AND ADMINISTRATIVE CONTENT

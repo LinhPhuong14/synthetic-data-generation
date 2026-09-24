@@ -55,6 +55,7 @@ Pixel chỉ do **một** thứ vẽ: Chromium qua Playwright.
 | **làm cũ** | `degradation/` (26 mô hình; 3 đang tắt trong `SWITCHED_OFF`) |
 | **hình dạng bản ghi & nhãn** | `pipeline/record.py` — nguồn sự thật, sửa ở đây thì mọi bộ đều đổi |
 | **KIE** | `pipeline/kie.py` (cặp có nhãn in kèm) + `synthgen/kie_full.py` (bảng, mồ côi, ngầm định) |
+| **tên trường nào được nhận** | `synthgen/field_tier.py` (ba tầng) + `rulebase/field_tiers.json` (chính sách) + `rulebase/kie_field_glossary.json` (sổ đăng ký) |
 | **một lượt chạy** | `pipeline.yaml`, `pipeline/plan.py`, `pipeline/worker.py` |
 
 Điểm vào duy nhất cho mọi việc: **`tasks.py`**. `make` chỉ là vỏ bọc mỏng —
@@ -161,6 +162,7 @@ dùng chạy**, không tự kết luận "không có server" khi gọi không t�
 | [`docs/muc-tieu.md`](docs/muc-tieu.md) | vì sao dự án tồn tại, "xong" nghĩa là gì |
 | [`docs/duong-ong.md`](docs/duong-ong.md) | một tờ giấy đi qua hệ thống ra sao, ai sở hữu toạ độ |
 | [`docs/huong-dan-va-giai-thich.md`](docs/huong-dan-va-giai-thich.md) | renderer, từng hàm một |
+| [`docs/ba-tang-ten-truong.md`](docs/ba-tang-ten-truong.md) | tên trường nào được nhận, vì sao không ánh xạ về khoá gần nhất |
 | [`rulebase/README.md`](rulebase/README.md) | ngữ pháp của luật |
 | [`degradation/README.md`](degradation/README.md) | 26 mô hình làm cũ |
 

@@ -48,6 +48,19 @@ def load(path: Path | None = None) -> tuple[dict[str, str], dict[str, str]]:
     return by_slug, by_kind
 
 
+def load_paths(path: Path | None = None) -> dict[str, str]:
+    """Nửa `data-path` của cùng file -- từ vựng ĐÓNG của không gian đường dẫn.
+
+    Tách khỏi `load()` để hợp đồng hai-giá-trị của nó không đổi: mọi nơi đang
+    gọi `load()` vẫn nhận đúng `(theo slug, theo kind)`.
+
+    Khoá viết chỉ số rỗng (`line_items[].name`). `synthgen/field_tier.py` là
+    nơi duy nhất chuẩn hoá một đường dẫn thật về hình ấy -- một phép chuẩn hoá
+    dựng ở hai chỗ là cách chắc chắn để hai chỗ lệch nhau."""
+    raw = json.loads((path or GLOSSARY_PATH).read_text(encoding="utf-8"))
+    return {k: str(v) for k, v in (raw.get("_by_path") or {}).items()}
+
+
 def _rate(field: str) -> str | None:
     """Nghĩa của một trường mang suất thuế trong tên."""
     m = re.match(r"^(thue|thue_gtgt|thue_suat|gst_included|vat)_(\d{1,2})$", field)

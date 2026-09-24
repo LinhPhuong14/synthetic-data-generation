@@ -97,8 +97,12 @@ The response schema constrains `field_plan[].kind` to the real vocabulary, so a
 name outside it cannot be produced there. **The HTML is not constrained** —
 that is on you. Use only kinds you already wrote into your own `field_plan`.
 
-When no `kind` fits exactly, take the nearest. `invoice.field` and
-`invoice.field.label` absorb almost any label-value pair.
+When no `kind` fits exactly, **do not take the nearest.** Coin
+`family.your_leaf` inside a listed family and put one English sentence in
+`describe` saying what the value IS. `invoice.field` and `invoice.field.label`
+are for a label-value pair that genuinely has no narrower name — not a bin for
+anything unnamed. Stretched onto a field they do not mean, they hand that field
+the wrong sentence too, and nothing downstream can tell that happened.
 
 Common ones: `store.name` `store.address` `store.tax_code` `title` `subtitle`
 `invoice.field.label` `invoice.field` `colhdr` `menu.stt` `menu.name`
