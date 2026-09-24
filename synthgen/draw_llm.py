@@ -170,16 +170,40 @@ BOTTOM_MM = 14.0
 TOP_MM = 12.0
 
 
-def _pad_top(image, rows: int):
-    """Đệm `rows` dòng màu giấy lên đầu ảnh."""
+def _pad_top(image, rows: int, paper=None):
+    """Đệm `rows` dòng màu giấy lên đầu ảnh.
+
+    `paper` là màu giấy đo SẴN trên cả dòng chảy. Bản trước không có tham số
+    này và tự lấy `np.median(image[0])` -- trung vị của ĐÚNG MỘT HÀNG, hàng
+    đầu của lát.
+
+    Hàng ấy gần như không bao giờ là giấy. `cut_lines` nhắm nhát cắt vào **mép
+    dưới một hàng ô bảng**, nên hàng đầu của lát sau chính là **đường kẻ viền**
+    của hàng kế tiếp -- kẻ ngang suốt bề rộng trang, nên trung vị của nó là
+    màu đường kẻ, không phải màu giấy. Đếm trực tiếp trên 26 lát dính lỗi:
+    hàng ấy có 5-17 màu và 85%-99,9% số điểm ảnh đúng bằng màu đường kẻ.
+
+    Đo trên 111 tờ TIẾP (`*_p[0-9].jpg`) của `pilot16` và `pilot17`:
+
+        tờ NHẬN  (html/)      4/34 lệch >4 mức   12%   Δ tới 102
+        tờ TRƯỢT (rejected/) 19/77 lệch >4 mức   25%   Δ tới 255
+        cộng                 23/111              21%
+
+    Không phải lỗi chỉ của trang hỏng: `llm_utility_power_0028_p3` và `_p4`
+    là trang ĐÃ NHẬN, nằm trong `manifest.jsonl`, và `_p4` có dải xám
+    `#e5e5e5` phủ từ y=54% xuống đáy. Màu đường kẻ gặp được: `#ccc`, `#999`,
+    `#333`, `#000`, và một dải tiêu đề xanh `rgb(45,95,46)`. Trên
+    `llm_form_roster_0007_p2` dải ấy dày 88 điểm ảnh và ĐEN ĐẶC.
+    """
     if rows <= 0:
         return image
-    paper = np.median(image[0], axis=0).astype(image.dtype)
+    if paper is None:
+        paper = _paper_colour(image)
     pad = np.tile(paper, (rows, image.shape[1], 1)).astype(image.dtype)
     return np.vstack([pad, image])
 
 
-def to_a4(image):
+def to_a4(image, paper=None):
     """Đệm ảnh cho đủ chiều cao A4. Tờ giấy ngắn vẫn là tờ A4.
 
     Từ khi lời dặn bảo model **đừng đặt `height`** -- để nội dung chảy liên tục
@@ -189,39 +213,71 @@ def to_a4(image):
 
     Lát CUỐI của một dòng chảy cũng vậy: nó là phần dư, ngắn hơn A4.
 
-    Đệm bằng màu nền đo được ở hàng dưới cùng, không bằng trắng cứng: model
-    chọn màu giấy của nó (ngà, xám nhạt), và một vệt trắng nối vào giấy ngà là
-    một đường kẻ ngang không có trên giấy thật."""
+    Đệm bằng màu nền đo được, không bằng trắng cứng: model chọn màu giấy của
+    nó (ngà, xám nhạt), và một vệt trắng nối vào giấy ngà là một đường kẻ ngang
+    không có trên giấy thật.
+
+    `paper` truyền từ ngoài vào khi tờ này là một LÁT CẮT. Bản trước luôn tự
+    đo, và đo trên ảnh ĐÃ ĐỆM LỀ TRÊN -- nên khi `_pad_top` tô nhầm màu đường
+    kẻ, hai trong bốn góc mẫu mang màu ấy, và trung vị bốn mẫu kéo phần đệm
+    dưới đi đúng NỬA ĐƯỜNG. Kiểm được bằng số học trên `pilot17`: viền `#333`
+    cho đệm dưới `#999` (=median(51,51,255,255)), viền `#ccc` cho `#e5e5e5`
+    (=median(204,204,255,255)). Một lần đo sai thành hai dải sai."""
     height, width = image.shape[:2]
     want = int(round(width * A4_RATIO))
     if height >= want:
         return image
-    paper = _paper_colour(image)
+    if paper is None:
+        paper = _paper_colour(image)
     pad = np.tile(paper, (want - height, width, 1)).astype(image.dtype)
     return np.vstack([image, pad])
 
 
 def _paper_colour(image):
-    """Màu GIẤY của trang, đo ở chỗ chắc chắn là giấy.
+    """Màu GIẤY của trang: màu ĐÔNG NHẤT trên VÀNH LỀ.
 
-    Bản trước lấy trung vị HÀNG DƯỚI CÙNG của lát cắt. Hàng ấy không phải giấy
-    khi nhát cắt rơi ngay dưới một dải đậm -- một đầu bảng, một vạch màu, một
-    chân khối tô nền. Rồi màu đậm ấy được trải kín phần đệm.
-    
-    Đo được trên `llm_freight_invoice_0007`: bảng mười lăm dòng bị đẩy nguyên
-    khối sang tờ sau (đúng luật "bảng không chảy qua trang"), để lại khoảng
-    trống nửa tờ -- và khoảng trống ấy bị tô `#4a5a6a` từ y=50% xuống đáy. Bảng
-    còn đủ, dữ liệu còn đúng, nhưng tờ một thành một khối tối không đọc được.
-    
-    Lấy ở BỐN GÓC LỀ thay vì hàng cuối: lề trang là chỗ giấy thật sự trống,
-    dù nội dung bên trong có gì. Trung vị của bốn mẫu chịu được một góc lỡ
-    dính con dấu hay chữ chìm."""
+    Hai bản trước đều đo bằng **trung vị của vài mẫu nhỏ**, và cả hai đều gãy
+    vì cùng một lý do: trung vị của bốn mẫu chỉ chịu được MỘT mẫu hỏng.
+
+    - Bản một lấy trung vị HÀNG DƯỚI CÙNG của lát. Hàng ấy không phải giấy khi
+      nhát cắt rơi ngay dưới một dải đậm. Đo trên `llm_freight_invoice_0007`:
+      bảng mười lăm dòng bị đẩy nguyên khối sang tờ sau, để lại khoảng trống
+      nửa tờ -- và khoảng trống ấy bị tô `#4a5a6a` từ y=50% xuống đáy.
+    - Bản hai lấy trung vị của bốn GÓC LỀ, mỗi góc 1/40 cạnh. Trên tờ ĐẦU thì
+      đúng; trên một LÁT CẮT thì hai góc trên nằm trong dải mà `_pad_top` vừa
+      tô, nên khi dải ấy sai thì hai trên bốn mẫu sai, và trung vị ra đúng
+      trung điểm giữa màu sai và màu giấy.
+
+    Ba thứ sửa cùng lúc:
+
+    1. **Cả vành lề, không bốn góc.** Vành là bốn cạnh; một cạnh bẩn thua ba
+       cạnh sạch theo SỐ ĐIỂM ẢNH. Với tờ 1740x2461, hai cạnh bên góp 212k
+       điểm ảnh giấy, còn một đường kẻ dày ba điểm ở cạnh trên góp 5k.
+    2. **Màu đông nhất, không trung vị.** Trung vị TRỘN hai màu thành một màu
+       thứ ba không có trên trang; mốt thì luôn trả về một màu CÓ THẬT ở lề.
+       Mực chữ, dấu, chữ chìm đều là thiểu số nên tự rụng -- không cần ngưỡng
+       sáng-tối nào, thứ sẽ đoán sai trên giấy màu đậm.
+    3. **Đo trên cả dòng chảy, không trên từng lát** -- xem chỗ gọi. Màu giấy
+       là thuộc tính của TỜ GIẤY, không phải của nhát cắt.
+
+    Ảnh vào là ảnh chụp PNG của Chromium, tô phẳng tuyệt đối, nên đếm màu
+    nguyên vẹn là đếm đúng; không cần lượng tử hoá."""
     height, width = image.shape[:2]
-    band = max(4, min(height, width) // 40)
-    corners = [image[:band, :band], image[:band, -band:],
-               image[-band:, :band], image[-band:, -band:]]
-    picks = np.stack([np.median(c.reshape(-1, 3), axis=0) for c in corners])
-    return np.median(picks, axis=0).astype(image.dtype)
+    band = max(4, width // 40)
+    # Cạnh trên/dưới kẹp lại theo chiều cao: một lát dư mỏng không được biến
+    # thành "toàn vành", nếu không thì nội dung của nó cũng đi bỏ phiếu.
+    edge = max(1, min(band, height // 4))
+    ring = np.concatenate([image[:edge].reshape(-1, 3),
+                           image[-edge:].reshape(-1, 3),
+                           image[:, :band].reshape(-1, 3),
+                           image[:, -band:].reshape(-1, 3)])
+    packed = ((ring[:, 0].astype(np.int64) << 16)
+              | (ring[:, 1].astype(np.int64) << 8)
+              | ring[:, 2].astype(np.int64))
+    values, counts = np.unique(packed, return_counts=True)
+    best = int(values[counts.argmax()])
+    return np.array([best >> 16, (best >> 8) & 255, best & 255],
+                    dtype=image.dtype)
 
 
 # CƠ CHẾ IN CỦA TRÌNH SOẠN THẢO, áp theo LOẠI vùng.
@@ -414,8 +470,9 @@ def draw_one(page, html: str, stem: str, declared: dict) -> dict | None:
     # `phieu_bao_chuyen_hang_0019` ra sáu tờ [150, 43, 48, 13, 17, 23] từ,
     # đầy 80% rồi 18% 16% 14% 17% 15%. Tờ thứ tư mười ba từ.
     cuts: list[float] = []
-    cuts: list[float] = []
     page_h = 0.0
+    # Màu giấy của dòng chảy, chỉ đo khi thật sự cắt (xem dưới).
+    paper = None
     if len(pages) == 1:
         tall = pages[0][1]
         page_h = tall.shape[1] * A4_RATIO
@@ -464,13 +521,20 @@ def draw_one(page, html: str, stem: str, declared: dict) -> dict | None:
             # Lát mỏng dưới tám điểm ảnh là mẩu vụn của phép dàn trang, không
             # phải một tờ giấy. Bỏ trước khi `to_a4` đệm nó thành một tờ trắng.
             pages = [(n, img) for n, img in pages if img.shape[0] > 8]
+            # MÀU GIẤY đo MỘT LẦN trên cả dòng chảy, rồi dùng chung cho mọi
+            # lát. Từng lát tự đo thì lát nào cũng có thể hỏi nhầm chỗ: vành
+            # lề của một lát giữa gồm hai mép CẮT, và mép cắt là chỗ duy nhất
+            # trên trang chắc chắn KHÔNG phải lề giấy. Dòng chảy thì có mép
+            # trên thật và mép dưới thật.
+            paper = _paper_colour(tall)
             # LỀ TRÊN cho tờ thứ hai trở đi: đệm màu giấy lên đầu lát.
             top = int(round(page_h * TOP_MM / 297.0))
-            pages = [(n, img if n == 1 else _pad_top(img, top))
+            pages = [(n, img if n == 1 else _pad_top(img, top, paper))
                      for n, img in pages]
     # Mọi tờ về đúng khổ A4 -- lát cuối của dòng chảy, và cả tài liệu một tờ
-    # ngắn hơn một trang.
-    pages = [(n, to_a4(img)) for n, img in pages]
+    # ngắn hơn một trang. `paper` chỉ có khi đã cắt; model tự mở nhiều `.sheet`
+    # thì mỗi tờ là một ảnh riêng và tự đo lấy màu của mình.
+    pages = [(n, to_a4(img, paper)) for n, img in pages]
 
     number, image = pages[0]
     height, width = image.shape[:2]
