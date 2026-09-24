@@ -696,7 +696,8 @@ def _one(pair: dict, key: str, width: float, height: float) -> dict:
             "bbox": to_grid(box, width, height) if box else []}
 
 
-def _grouped(pairs: list[dict], width: float, height: float) -> dict[str, list]:
+def _grouped(pairs: list[dict], width: float, height: float,
+            field_types: dict | None = None) -> dict[str, list]:
     """Mảng có cấu trúc cho những thứ LẶP LẠI. Luật ở `kie_full.group_lists`.
 
     Ở đây chỉ còn việc vẽ từng ô thành `{value, bbox}` -- `synthgen/kie_schema.py`
@@ -708,7 +709,7 @@ def _grouped(pairs: list[dict], width: float, height: float) -> dict[str, list]:
         return {"value": str(pair.get(f"{side}_text", "")),
                 "bbox": to_grid(box, width, height) if box else []}
 
-    return group_lists(pairs, cell)
+    return group_lists(pairs, cell, field_types)
 
 
 
@@ -795,6 +796,15 @@ def document(record: dict, kind: str, *, doc_id: str = "",
         pairs = [p for p in pairs if p.get("in_batch") is not False]
     kinds = {e.get("entity_index"): str(e.get("kind") or "")
              for e in record.get("entity_annotations") or []}
+    # Same lookup idiom as `kinds` right above -- `field_type` never rides on
+    # a pair itself (see `pipeline/record.py::field_type_for`'s docstring),
+    # so every reader keeps its own `{entity_index: field_type}` dict instead.
+    # Not yet consumed in THIS function's own `fields`/`tables` assembly
+    # (v1/v2 shape, unchanged); threaded through to `_grouped` so a survey
+    # question can carry it. See `synthgen/export_v3.py` for the shape that
+    # does read it end to end.
+    field_types = {e.get("entity_index"): str(e.get("field_type") or "")
+                   for e in record.get("entity_annotations") or []}
     by_page: dict[int, list[dict]] = {}
     for pair in pairs:
         by_page.setdefault(int(pair.get("page_number", 1) or 1), []).append(pair)
@@ -803,7 +813,7 @@ def document(record: dict, kind: str, *, doc_id: str = "",
     for number in sorted(set(by_page) | set(sizes)):
         width, height = sizes.get(number, (0.0, 0.0))
         bucket = _split(by_page.get(number, []), kinds)
-        grouped = _grouped(bucket["grouped"], width, height)
+        grouped = _grouped(bucket["grouped"], width, height, field_types)
         # Thực thể nào ĐÃ có một cặp nhận: `marks` chỉ gom phần còn lại, nếu
         # không thì một con dấu vừa là trường vừa là mark.
         claimed = {i for pair in by_page.get(number, [])

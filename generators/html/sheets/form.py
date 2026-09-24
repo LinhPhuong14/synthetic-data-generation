@@ -167,12 +167,31 @@ def _checklist(receipt, spec: dict, rng: random.Random) -> str:
         #
         # Với một tờ khai, ô nào được tích LÀ điều duy nhất tờ giấy ấy muốn
         # nói. Một nhãn bỏ nó đi là một nhãn dạy mô hình đọc mọi thứ trừ câu
-        # trả lời. Cùng `data-kind` `synthgen/markup.py::_questions` dùng, nên
-        # hai bộ sinh nói cùng một từ vựng.
+        # trả lời. `survey.tick` cùng `data-kind` `synthgen/markup.py::_questions`
+        # dùng, nên hai bộ sinh nói cùng một từ vựng.
+        #
+        # DÒNG CHỮ MANG KIND RIÊNG, KHÔNG PHẢI `note` DÙNG CHUNG.
+        #
+        # Bản trước gắn `note` -- cùng kind `_notes_block` dùng cho một đoạn
+        # văn thường -- nên `is_caption()` (đuôi `.label`/`.title`) không nhận
+        # ra dòng này là nhãn của cái tích đứng trước nó, và cả hai rơi xuống
+        # nhánh khoá-ảo độc lập của `_bind_entities`. Đo được: một tờ hai dòng
+        # tích ra ĐÚNG 0 cặp KIE -- cái tích thành trường `survey_tick`/
+        # `survey_tick_2`, dòng chữ thành `note`/`note_2`, không gì nối chúng.
+        #
+        # `survey.checklist` là kind RIÊNG của khối này -- CỐ Ý không mang đuôi
+        # `.label`/`.title`: đuôi ấy làm `is_caption()` nhận nó làm khoá thật
+        # và kích hoạt phép ghép kề-liền của `_bind_entities`, mà phép ấy ghép
+        # THEO THỨ TỰ VẼ (khoá rồi tới giá trị NGAY SAU) -- ở đây tích vẽ
+        # TRƯỚC nhãn của chính nó, nên nhãn dòng 1 sẽ vớ lấy tích dòng 2. Đã đo
+        # thấy đúng lỗi ấy khi thử đặt tên `survey.tick.label`. Đường ghép thật
+        # nằm ở `PAIRED` trong `synthgen/kie_full.py`, ghép theo VỊ TRÍ trong
+        # danh sách cùng kind chứ không theo thứ tự vẽ, nên hướng vẽ nào cũng
+        # đúng.
         rows.append(
             f'<div class="crow">'
             f'{span("survey.tick", "☑" if ticked else "☐", "box")}'
-            f'{span("note", line)}</div>')
+            f'{span("survey.checklist", line)}</div>')
     return f'<div class="checklist">{"".join(rows)}</div>'
 
 

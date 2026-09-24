@@ -206,6 +206,14 @@ PAIRED = (
      "Subtotal of the group of rows printed directly above this line."),
     ("invoice.checks.question", "invoice.checks.answer", None,
      "Answer ticked for the question printed beside it."),
+    # `sheets/form.py::_checklist()` -- ghép theo VỊ TRÍ trong từng danh sách
+    # `kind`, không theo thứ tự vẽ trong `ents`, nên tích vẽ TRƯỚC nhãn của nó
+    # trên trang (đúng lệ ô tích) vẫn ghép đúng dòng: tích thứ N của trang đi
+    # với nhãn thứ N. `name=None` nên trường lấy tên từ CHÍNH DÒNG CHỮ
+    # (`slug(k["text"])`), chứ không phải một cái tên chung `survey_tick` --
+    # đây chính là ca đo được 0/N cặp trước khi kind riêng này tồn tại.
+    ("survey.checklist", "survey.tick", None,
+     "Whether this checklist item was ticked."),
 )
 
 
@@ -1466,7 +1474,8 @@ SURVEY_SLOT = {"number": "number", "answer": "answers", "prompt": "prompts",
                "char": "chars"}
 
 
-def group_lists(pairs: list[dict], render) -> dict[str, list]:
+def group_lists(pairs: list[dict], render, field_types: dict | None = None
+                ) -> dict[str, list]:
     """Những thứ LẶP LẠI trên một tờ, gom thành mảng có cấu trúc.
 
     ## Vì sao không phải trường phẳng
@@ -1488,6 +1497,14 @@ def group_lists(pairs: list[dict], render) -> dict[str, list]:
     `render(pair, side)` quyết định một ô trông như thế nào: `synthgen/export.py`
     vẽ `{value, bbox}`, còn `synthgen/kie_schema.py` chỉ lấy chữ -- schema không
     mang toạ độ. Phép GOM thì chỉ có ở đây.
+
+    `field_types` -- tuỳ chọn, `{entity_index: field_type}` từ
+    `pipeline/record.py::field_type_for` -- cho MỘT câu hỏi biết nó là
+    `boolean_choice` hay `multi_choice`. Tra theo `key_entity_index` của
+    chính câu hỏi (thực thể mọi tích/lựa chọn trong nhóm đều trỏ `key_entity_index`
+    về), không theo từng ô tích riêng: cả nhóm là MỘT trường, không phải một
+    trường cho mỗi lựa chọn. Bỏ trống thì `question` không mang khoá này --
+    lùi về `synthgen/kie_schema.py`, nơi chưa cần nó.
 
     ## Chỗ ngồi đọc từ nhãn, không tách từ tên trường
 
@@ -1548,6 +1565,11 @@ def group_lists(pairs: list[dict], render) -> dict[str, list]:
         question = {"index": len(out["questions"]) + 1,
                     "question": render(members[0], "key"),
                     "options": []}
+        if field_types is not None:
+            anchor = members[0].get("key_entity_index")
+            found = field_types.get(anchor) if isinstance(anchor, int) else None
+            if found:
+                question["field_type"] = found
         seats: dict[str, dict] = {}
         for pair in sorted(members, key=lambda p: int(p.get("rank") or 0)):
             role = str(pair.get("role") or "")

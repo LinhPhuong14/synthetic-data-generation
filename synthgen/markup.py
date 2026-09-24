@@ -43,9 +43,16 @@ def _t(text) -> str:
 
 
 def _span(kind: str, text, cls: str = "", role: str = "", key: str = "",
-          region: str = "") -> str:
+          region: str = "", shape: str = "") -> str:
     """Một dòng chữ đo được. Rỗng thì không in gì -- một span rỗng là một hộp
-    không có chữ, và nhãn của nó sẽ mô tả khoảng trắng."""
+    không có chữ, và nhãn của nó sẽ mô tả khoảng trắng.
+
+    `shape` -- `item["shape"]` của chính câu hỏi (`_shape_rows`'s 12 dạng),
+    gắn lên span câu hỏi vì đây là chỗ DUY NHẤT giá trị ấy còn nằm trong tay
+    trước khi bị bỏ đi: một câu hỏi `yesno` và một câu `options` vẽ ra đúng
+    một khuôn `kind` (`survey.tick`+`survey.option`), và chỉ khác nhau ở việc
+    được chọn MỘT hay NHIỀU -- thứ không để lại dấu vết nào trên mực. Xem
+    `pipeline/record.py::field_type_for`."""
     text = "" if text is None else str(text)
     if not text.strip():
         return ""
@@ -58,6 +65,8 @@ def _span(kind: str, text, cls: str = "", role: str = "", key: str = "",
         attrs.append(f'data-key="{_t(key)}"')
     if region:
         attrs.append(f'data-region="{_t(region)}"')
+    if shape:
+        attrs.append(f'data-shape="{_t(shape)}"')
     return f"<span {' '.join(attrs)}>{_t(text)}</span>"
 
 
@@ -1108,8 +1117,10 @@ def _questions_slice(doc: Doc, d: Design, low: int, high: int,
             rows = [f'<div class="qq">'
                     f'{_span("survey.number", f"{number}.", "qn")}</div>']
         else:
+            question = _span("survey.question", item["prompt"], "qt",
+                             role="key", shape=item["shape"])
             rows = [f'<div class="qq">{_span("survey.number", f"{number}.", "qn")}'
-                    f'{_span("survey.question", item["prompt"], "qt", role="key")}</div>']
+                    f'{question}</div>']
         rows.extend(_shape_rows(item))
         if item.get("sub"):
             rows.append(f'<div class="qsub">{_span("survey.prompt", item["sub"], "qs")}</div>')

@@ -840,6 +840,80 @@ def ink_for(kind: str, explicit: str = "", default: str = "print") -> str:
     return default if default in INK_VALUES else "print"
 
 
+# Axis 4 -- WHAT KIND OF WIDGET a run's value answers with. `presence`
+# (signature/stamp) is deliberately not in this set: it is not a fact about
+# one entity -- it aggregates a signature block with page-wide stamp
+# existence -- and is synthesized once at export time instead, the same way
+# `synthgen/export.py::_signatures()` already aggregates signature blocks
+# today. See `docs/kie-schema-v3.md`.
+ENTITY_FIELD_TYPES = frozenset({"text", "boolean_choice", "multi_choice",
+                                "digit_sequence", "categorical_matrix",
+                                "data_table"})
+
+# `kind` prefix -> field_type, for widgets whose `kind` alone already tells
+# them apart from everything else -- no separate tag needed. Longest prefix
+# wins, same convention as `INK_FOR_KIND`.
+#
+# `survey.tick` here is a LONE tick with its own label
+# (`sheets/form.py::_checklist`'s rows, `PAIRED`'s `survey.tick.label` entry
+# in `synthgen/kie_full.py`) -- a single yes/no answer. A tick that is one
+# option INSIDE a `survey.question` group (`synthgen/markup.py::_shape_rows`)
+# never reaches this table: the group's own field_type, from `shape` below,
+# wins for those, because the group surfaces as ONE field, not one per tick.
+FIELD_TYPE_FOR_KIND: dict[str, str] = {
+    "survey.tick": "boolean_choice",
+    "survey.char": "digit_sequence",
+}
+
+# `shape` (`synthgen/markup.py::_shape_rows`'s own `item["shape"]`) ->
+# field_type, for the answer GROUP a `survey.question` anchors. Tagged onto
+# the question's own span (the one entity every option/tick's
+# `key_entity_index` already points back to) since the render step already
+# knows this and none of it survives in `kind` -- a `yesno` question and an
+# `options` question draw byte-identical `kind` patterns
+# (`survey.tick`+`survey.option`) and differ only in whether more than one
+# may be picked, which is authorial intent that leaves no trace in the ink.
+FIELD_TYPE_FOR_SHAPE: dict[str, str] = {
+    "yesno": "boolean_choice",
+    "options": "multi_choice",
+    "scale": "multi_choice",
+    "attachment": "multi_choice",
+    "boxchar": "digit_sequence",
+    "date_boxes": "digit_sequence",
+    "rank": "digit_sequence",
+    "grid": "categorical_matrix",
+    "table_form": "data_table",
+}
+
+
+def field_type_for(kind: str, shape: str = "", explicit: str = "") -> str:
+    """Which of `ENTITY_FIELD_TYPES` this run's value answers with.
+
+    Three sources, most specific first, same shape as `ink_for`:
+
+    1. **what the page declares explicitly** (`explicit`, a future
+       `data-field-type` override on the span) -- wins outright.
+    2. **the question's own `shape`** (`FIELD_TYPE_FOR_SHAPE`) -- the one
+       piece of render-time data this repository otherwise throws away
+       before it reaches the DOM.
+    3. **`kind`** (`FIELD_TYPE_FOR_KIND`) -- for widgets that need no
+       separate tag because their `kind` alone is already unique to them.
+
+    Falls back to `"text"`: nothing is lost by the default, since the box and
+    the value are still there -- only the classification is generic. An
+    unrecognised `shape`/`explicit` is dropped rather than trusted, same as
+    `ink_for`'s closed vocabulary.
+    """
+    if explicit in ENTITY_FIELD_TYPES:
+        return explicit
+    if shape in FIELD_TYPE_FOR_SHAPE:
+        return FIELD_TYPE_FOR_SHAPE[shape]
+    for prefix in sorted(FIELD_TYPE_FOR_KIND, key=len, reverse=True):
+        if kind.startswith(prefix):
+            return FIELD_TYPE_FOR_KIND[prefix]
+    return "text"
+
+
 
 def blocks_from_boxes(boxes: Iterable[dict[str, Any]], *,
                       page_number: int = 1) -> list[dict[str, Any]]:
@@ -1240,6 +1314,10 @@ def entities_from_words(words: list[dict[str, Any]],
             # vai của cả run.
             "role": str(mine[0].get("role") or run_role(kind, layout_class_for(kind))),
             "ink": mine[0].get("ink", "print"),
+            # Axis 4. `shape` is the answer-group's own render-time signal
+            # (`synthgen/markup.py::_shape_rows`'s `item["shape"]`, tagged
+            # onto the question span it anchors) -- see `field_type_for`.
+            "field_type": field_type_for(kind, str(entry.get("shape") or "")),
             "word_indices": [int(word["word_index"]) for word in mine],
             "bbox": [min(box[0] for box in boxes), min(box[1] for box in boxes),
                      max(box[2] for box in boxes), max(box[3] for box in boxes)],

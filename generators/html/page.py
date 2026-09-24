@@ -241,6 +241,11 @@ CELL_RECTS_JS = """() => {
     //              question -- see `entities_from_words`' virtual keys.
     const role = span.dataset.role || '';
     const key = span.dataset.key || '';
+    // The question's own answer-shape (`synthgen/markup.py::_shape_rows`'s
+    // `item["shape"]`), tagged only on the one span every option/tick's
+    // `key_entity_index` points back to. See
+    // `pipeline/record.py::field_type_for`.
+    const shape = span.dataset.shape || '';
     const node = span.firstChild;
     const simple = node && node.nodeType === 3 && span.childNodes.length === 1
                    && !isTransformed(span);
@@ -251,7 +256,7 @@ CELL_RECTS_JS = """() => {
     if (!simple) {
       const text = span.dataset.text ?? span.textContent;
       const box = (span.firstElementChild || span).getBoundingClientRect();
-      if (text.trim()) fields.push({field, kind, ink, role, key, text,
+      if (text.trim()) fields.push({field, kind, ink, role, key, shape, text,
                                     page: at.page});
       pushCell(kind, ink, text, box);
       pushWord(kind, ink, text, box);
@@ -261,7 +266,7 @@ CELL_RECTS_JS = """() => {
     // The whole run, before it is cut into lines and words below. `text` is
     // the text node's own data, so this is verbatim -- collapsing whitespace
     // by re-joining the words would not give it back.
-    if (text.trim()) fields.push({field, kind, ink, role, key, text,
+    if (text.trim()) fields.push({field, kind, ink, role, key, shape, text,
                                   page: at.page});
     let line = null;   // accumulates the whole line, for `cells`
     let word = null;   // accumulates since the last whitespace, for `words`
