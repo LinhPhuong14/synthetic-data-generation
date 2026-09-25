@@ -82,6 +82,8 @@ import json
 import os
 import re
 import uuid
+import warnings
+from collections import Counter
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -509,6 +511,12 @@ DOCSYNTH_LABEL_FOR_KIND: dict[str, str] = {
     # thing from `section` above, which names a magazine's editorial
     # category, not a heading's own text.
     "subhead": "Section-Header",
+    # `subhead.label` là CHỮ CÁI của đầu mục ("A.", "B." trước "Thông tin dự
+    # án" -- `sheets/insurance.py`, `sheets/form.py`), không phải nhãn của một
+    # trường. Ghi RÕ ở đây vì `layout_class_for` không cho một `kind` đuôi
+    # `.label` THỪA KẾ nhãn đầu mục qua tiền tố -- xem chú thích ở đó -- còn
+    # một mục khai thẳng thì là một quyết định, và quyết định thì được giữ.
+    "subhead.label": "Section-Header",
     # The one direct improvement over the two-hop version: a real table of
     # contents, not a generic list.
     "entry.": "Table-Of-Contents",
@@ -574,17 +582,54 @@ def region_conflict(section: str, region: str) -> str | None:
 
 
 
+# Nhãn nói về CHỖ ĐỨNG của mực trên tờ giấy -- tên giấy, đầu mục, đầu trang,
+# chân trang -- chứ không nói nội dung là gì. Một dòng "Họ và tên: Bùi Thanh
+# Hải" không đứng ở chỗ nào trong bốn chỗ ấy, dù `kind` của nó nói gì.
+STRUCTURAL_LABELS = frozenset({"Title", "Section-Header", "Page-Header",
+                               "Page-Footer"})
+
+# Đuôi của `kind` NHÃN TRƯỜNG: chú thích in cạnh MỘT giá trị ("Họ và tên:",
+# "Mã số thuế:"). Khác `.title` -- tiêu đề của cả một khối ("BÊN BÁN", "I.
+# THÔNG TIN NGƯỜI ỦY QUYỀN") -- dù `is_caption` gom cả hai làm một, vì với
+# nhãn VÙNG hai thứ ấy khác hẳn: tiêu đề khối LÀ `Section-Header`, nhãn trường
+# thì không bao giờ.
+FIELD_LABEL_SUFFIX = ".label"
+
+
 def layout_class_for(kind: str) -> str:
     """The `docsynth.annotations.v1` label for one of this repository's field
     kinds, chosen directly against the 19-label vocabulary -- see
     `DOCSYNTH_LABEL_FOR_KIND`'s own comment for why not through `label_for`.
+
+    NHÃN TRƯỜNG KHÔNG THỪA KẾ CHỖ ĐỨNG CỦA GIÁ TRỊ NÓ ĐẶT TÊN THEO.
+
+    Lời dặn model (`agent/prompts/page.md`) bảo đặt tên nhãn bằng kind của
+    giá trị cộng `.label`, nên "Tên đơn vị:" thành `store.name.label` và "Họ
+    và tên:" đứng ngay dưới tiêu đề khối thành `parties.title.label`. Tra theo
+    tiền tố dài nhất thì hai cái ấy rơi vào `store.name` -> `Page-Header` và
+    `parties.title` -> `Section-Header`: cái nhãn mang nhãn vùng của thứ nó
+    chú thích. Đo trên pilot16-18 (118 tài liệu): 11 nhãn trường mang nhãn
+    đầu trang/đầu mục vì thế, và `regions_from_words` gom vùng theo nhãn của
+    từ, nên mỗi cái ra một vùng `Page-Header`/`Section-Header` riêng nằm giữa
+    khối thông tin (`llm_authorisation_letter_0000`: "Họ và tên:" là
+    `Section-Header`, hai lần). Một bộ dò học trên đó học rằng "Họ và tên:"
+    là một đầu mục.
+
+    Chỉ chặn nhãn THỪA KẾ qua tiền tố (`best != kind`): một `kind` đuôi
+    `.label` được khai thẳng trong bảng (`subhead.label`, chữ cái của đầu
+    mục) là một quyết định, không phải một sự thừa kế. Vùng khai tay bao
+    nhãn (nếu có) vẫn thắng ở `regions_from_words`, như với mọi từ khác.
     """
     kind = str(kind or "")
     best = ""
     for prefix in DOCSYNTH_LABEL_FOR_KIND:
         if (kind == prefix or kind.startswith(prefix)) and len(prefix) > len(best):
             best = prefix
-    return DOCSYNTH_LABEL_FOR_KIND[best] if best else "Text"
+    label = DOCSYNTH_LABEL_FOR_KIND[best] if best else "Text"
+    if (best != kind and kind.endswith(FIELD_LABEL_SUFFIX)
+            and label in STRUCTURAL_LABELS):
+        return "Text"
+    return label
 
 # ------------------------------------------------------------------- settings
 
@@ -1335,6 +1380,33 @@ def entities_from_words(words: list[dict[str, Any]],
 
     _bind_entities(entities, layout=layout)
 
+    # GIÁ TRỊ CÓ NHÃN IN KÈM LÀ NỘI DUNG, KHÔNG PHẢI ĐẦU TRANG.
+    #
+    # `layout_class_for(kind)` trả lời "run kiểu này THƯỜNG đứng ở đâu":
+    # `store.name` thường là dòng tên đơn vị trên đầu thư, nên `Page-Header`.
+    # Nhưng khi model dùng `store.name` cho "Bùi Thanh Hải" in sau nhãn "Họ và
+    # tên:", cái tên ấy là GIÁ TRỊ của một trường, và không tờ giấy nào in đầu
+    # trang bằng một cặp nhãn-giá trị. Chỉ ở đây mới biết được điều đó: nhãn
+    # in kèm là thứ `_bind_entities` vừa ghép xong, `kind` một mình không nói.
+    #
+    # Đo trên pilot16-18 (118 tài liệu): 19 giá trị như thế, 17 là `store.name`
+    # (tên người, tên đơn vị trong khối thông tin), và mỗi cái thành một vùng
+    # `Page-Header` riêng nằm giữa thân tờ giấy -- `llm_authorisation_letter_
+    # 0000`: "Bùi Thanh Hải" là `Page-Header`, "Sinh ngày: 15/03/1975" ngay
+    # dưới là `Text`. Bốn bộ đường luật (`thu1k`, `review100c`, ...) không có
+    # ca nào: `sheets/*.py` không in nhãn trước `store.name`.
+    #
+    # Sửa cả TỪ, vì `regions_from_words` gom vùng theo nhãn của từ; vùng khai
+    # tay bao chúng (nếu có) vẫn ghi đè ở đó, như với mọi từ khác.
+    by_word = {int(word["word_index"]): word for word in words}
+    for entity in entities:
+        if (entity["field_role"] == "value"
+                and entity.get("key_entity_index") is not None
+                and entity["layout_class"] in STRUCTURAL_LABELS):
+            entity["layout_class"] = "Text"
+            for index in entity["word_indices"]:
+                by_word[index]["layout_class"] = "Text"
+
     # The words are re-pointed HERE, after `_bind_entities` has settled every
     # role, and through `index_of_run` rather than by assuming the two
     # numbering schemes line up. A word whose run produced no entity loses the
@@ -1966,6 +2038,71 @@ def regions_from_words(words: list[dict[str, Any]], *,
     return _unwrap(regions, words)
 
 
+# Nhãn của vùng có phép đo RIÊNG, không qua `data-region`: bảng từ
+# `CELL_REGIONS_JS`, mực-không-chữ từ `GRAPHIC_RECTS_JS`. Cùng tập với
+# `pipeline/tags.py::MEASURED_ELSEWHERE` cộng `Figure` (sơ đồ cũng là một
+# `data-graphic`); không import từ đó vì `tags.py` cố ý không kéo file này vào.
+MEASURED_LABELS = frozenset({"Table", GRAPHIC_LABEL, STAMP_LABEL, DIAGRAM_LABEL})
+
+
+def _twin_to_keep(group: list[int], regions: list[dict[str, Any]],
+                  words: Iterable[dict[str, Any]] = ()) -> int:
+    """Trong các vùng CÙNG MỘT HỘP ở `group`, cái nào ở lại. Vị trí trong
+    `regions`.
+
+    Cùng nhãn thì không có gì để chọn: cái đứng trước. Khác nhãn thì theo thứ
+    tự chắc dần, và mỗi bậc là một luật đã có sẵn trong kho chứ không phải
+    một luật mới:
+
+    1. **Khai tay thắng suy từ thẻ** -- cùng luật khung của `_unwrap`: model
+       nói rõ khối này là gì thì nghe model.
+    2. **Nhãn cụ thể thắng `Text`.** `Text` là nhãn rộng nhất không nói dối
+       (`pipeline/tags.py`), và cái kia nói THÊM một điều: `<footer>` LÀ chân
+       trang (`tags.py`, `_blocks.yaml::region.footer`), `<ol>` LÀ danh sách,
+       `<h3>` LÀ đầu mục -- còn `<p data-region="Text">` lồng trong chúng chỉ
+       nói "trong này có chữ". Đo trên pilot16-18: cả 5 cặp khác nhãn đều là
+       một nhãn cụ thể đấu với `Text`, và cái cụ thể đúng ở cả 5.
+    3. **Nghe chữ.** Còn tranh nhau thì đếm từ trong hộp theo nhãn suy từ
+       `data-kind` của chính chúng (`layout_class_for`) -- sự thật về từ ấy
+       THUỘC VỀ ai, không phải nó nằm ở đâu. Không đọc `word["layout_class"]`:
+       ở bước 1b của `regions_from_words` nó đã bị ghi đè bằng nhãn của vùng
+       khai tay đầu tiên nhận từ, tức chính một trong hai bên đang tranh.
+    4. Bằng nhau nốt thì cái đứng trước -- thứ tự DOM, cái ngoài.
+    """
+    labels = {str(regions[k].get("layout_class") or "") for k in group}
+    if len(labels) == 1:
+        return group[0]
+
+    def origin(k: int) -> int:
+        # Vùng có PHÉP ĐO RIÊNG (bảng đo từ ô thật, hình/con dấu/sơ đồ đo từ
+        # phần tử -- không mang `from`, xem `pipeline/tags.py::
+        # MEASURED_ELSEWHERE`) đứng trên cả khai tay: một `<div data-region=
+        # "Complex-Block">` bọc đúng một `<table>` không được đổi cái bảng
+        # thành khối phức. Chưa gặp trên pilot16-18 (ô có lề nên hộp bảng
+        # rộng hơn hộp chữ), ghi ở đây để nó không im lặng khi gặp.
+        source = str(regions[k].get("from") or "")
+        if not source and str(regions[k].get("layout_class") or "") in MEASURED_LABELS:
+            return 3
+        return 2 if source == "declared" else 1 if source == "tag" else 0
+
+    votes: Counter = Counter()
+    span = regions[group[0]].get("bbox") or []
+    if len(span) == 4:
+        for word in words or ():
+            bbox = word.get("bbox") or []
+            if len(bbox) != 4:
+                continue
+            cx, cy = (bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2
+            if span[0] <= cx <= span[2] and span[1] <= cy <= span[3]:
+                votes[layout_class_for(str(word.get("field_path") or ""))] += 1
+
+    def score(k: int) -> tuple:
+        label = str(regions[k].get("layout_class") or "")
+        return (origin(k), label != "Text", votes.get(label, 0), -k)
+
+    return max(group, key=score)
+
+
 def _unwrap(regions: list[dict[str, Any]],
             words: Iterable[dict[str, Any]] = ()) -> list[dict[str, Any]]:
     """Bỏ vùng chỉ đóng vai cái KHUNG bọc vùng khác.
@@ -2025,7 +2162,59 @@ def _unwrap(regions: list[dict[str, Any]],
 
     boxes = [box(r) for r in regions]
     drop: set[int] = set()
+
+    # HAI VÙNG MỘT HỘP THÌ GIỮ MỘT.
+    #
+    # `ZONE_REGIONS_JS` đo từng phần tử `[data-region]`, và hộp là hộp MỰC (hợp
+    # các nút chữ bên trong), không phải hộp thẻ. Nên `<section data-region=
+    # "Section-Header"><h3 data-region="Section-Header">…</h3></section>` --
+    # cái ngoài không có chữ nào ngoài chữ của cái trong -- cho HAI vùng cùng
+    # một hộp, từng số một. Luật khung bên dưới cố ý bỏ qua hộp trùng khít
+    # (`_encloses` đòi RỘNG HƠN hẳn, "hai hộp trùng khít là chuyện khác"): đúng
+    # khi chúng là hai thứ khác nhau, sai khi là một phần tử nói hai lần.
+    #
+    # Đo trên pilot16-18 (118 tài liệu, 1 890 vùng): 10 cặp trùng khít -- 5 cặp
+    # cùng nhãn (`llm_insurance_moto_certificate_0020`: ba đầu mục, mỗi cái hai
+    # vùng, 3 trên 20 vùng của tờ là bản sao), 5 cặp KHÁC nhãn (`<footer
+    # data-region="Page-Footer"><p data-region="Text">` ra `Page-Footer` VÀ
+    # `Text` cho cùng một dòng). Hai nhãn cho một chỗ mực là hai nhãn tranh
+    # nhau một điểm ảnh, và một bộ dò học từ đó rằng chỗ ấy vừa là chân trang
+    # vừa không phải.
+    #
+    # Chọn cái ở lại -- xem `_twin_to_keep`. Nhãn của cái bị bỏ ghi lại trên
+    # cái ở lại (`twins_dropped`) để đọc lại được từ bản ghi, và KHÁC nhãn thì
+    # kêu (`warnings`): hai nhãn cho một phần tử là lỗi ở chỗ khai -- model
+    # khai chồng, hay bảng thẻ nói khác model -- và lặng lẽ chọn một là cách
+    # lỗi ấy sống mãi. `tools/check_regions.py` đếm lại từ bản ghi đã xuất.
+    twin_of: dict[int, int] = {}          # region_index bị bỏ -> region_index ở lại
+    same_box: dict[tuple[float, float, float, float], list[int]] = {}
+    for k, one in enumerate(boxes):
+        if one is not None:
+            same_box.setdefault(one, []).append(k)
+    for group in same_box.values():
+        if len(group) < 2:
+            continue
+        keep = _twin_to_keep(group, regions, words)
+        kept, gone = regions[keep], [k for k in group if k != keep]
+        for k in gone:
+            drop.add(k)
+            twin_of[int(regions[k].get("region_index", k))] = int(
+                kept.get("region_index", keep))
+            note = {"layout_class": str(regions[k].get("layout_class") or ""),
+                    "text": str(regions[k].get("text") or "")}
+            if regions[k].get("from"):
+                note["from"] = str(regions[k]["from"])
+            kept.setdefault("twins_dropped", []).append(note)
+        labels = sorted({str(regions[k].get("layout_class") or "") for k in group})
+        if len(labels) > 1:
+            warnings.warn(
+                f"hai vùng một hộp, khác nhãn: {' / '.join(labels)} cho "
+                f"{str(kept.get('text') or '')[:60]!r} -- giữ "
+                f"{kept.get('layout_class')}", stacklevel=2)
+
     for i, outer in enumerate(boxes):
+        if i in drop:
+            continue
         if outer is None or str(regions[i].get("layout_class") or "") in GROUPING_LABELS:
             continue
         for j, inner in enumerate(boxes):
@@ -2127,6 +2316,11 @@ def _unwrap(regions: list[dict[str, Any]],
         # Vùng còn sống thì chỉ đổi số. Vùng đã bỏ thì tìm nhà mới, và phép
         # xét ngay trên đã bảo đảm có nhà -- `None` chỉ xảy ra với từ không
         # có hộp, thứ `words_from_boxes` không sinh ra.
+        #
+        # Vùng bị bỏ vì TRÙNG HỘP thì nhà mới là chính cái hộp ấy, không cần
+        # tìm: `_host` chọn vùng NHỎ NHẤT chứa từ, và một vùng con lọt trong
+        # hộp trùng sẽ cướp mất từ của cái khung -- sai đúng như con trỏ cũ.
+        where = twin_of.get(where, where)
         word["layout_region_index"] = (remap[where] if where in remap
                                        else _host(word))
     return kept

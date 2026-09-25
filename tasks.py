@@ -458,6 +458,15 @@ def check_boxes(args) -> None:
     run([first_available_python(), REPO_ROOT / "tools" / "check_boxes.py", args.dataset])
 
 
+@task("check-regions", "hai vùng một hộp, đầu mục trông như nhãn trường -- đọc records/ của một bộ")
+def check_regions(args) -> None:
+    """Đo trên pilot18: ba đầu mục mỗi cái hai vùng trong một tờ, và "Họ và
+    tên:" mang nhãn `Section-Header`. Cả hai lọt qua mọi cổng vì cổng không
+    nhìn hộp đã xuất. Mã thoát 1 khi còn vùng trùng hộp; đầu mục đáng ngờ chỉ
+    liệt kê. Nhiều bộ một lần thì gọi thẳng `tools/check_regions.py a b c`."""
+    run([first_available_python(), REPO_ROOT / "tools" / "check_regions.py", args.dataset])
+
+
 @task("diversity-report", "lô LLM có tự lặp bố cục không — đo trên ảnh đã vẽ")
 def diversity_report(args) -> None:
     """Đo trùng bố cục trên `records/` của một lô `agent/compose_page.py`.
