@@ -285,6 +285,40 @@ dòng hàng đếm từ 1, nên hai dãy không bao giờ đụng nhau.
 
 ---
 
+## 5b. Trang trí: năm trục không mang chữ
+
+Đặt ảnh `data/layouts_all/html/` (pipeline chính) cạnh ảnh synthgen, khác biệt
+nhìn thấy ngay: pipeline chính có khung an ninh của hoá đơn điện tử, dải màu
+tràn mép của hoá đơn khách sạn, logo chữ lồng trên ô màu và cột nhãn tô nền
+của giấy chứng nhận bảo hiểm; synthgen gần như toàn chữ đen trên giấy trắng,
+logo là một hình tròn mờ 14%. Năm trục bù phần ấy, trọng số ở
+`rulebase/synthgen/_blocks.yaml::decor_*`:
+
+| trục | giá trị | vẽ bằng |
+| :--- | :--- | :--- |
+| `frame` | 14 kiểu: `don` `doi` `ba_vien` `an_ninh` `tem_thu` `goc` `goc_tron` `vat_goc` `bo_tron` `cham` `gach` `chuoi_hat` `rang_cua` `tren_duoi_ke` | `<div class="deco">` tuyệt đối, dưới chữ |
+| `band` | `tren` `tren_duoi` `trai` `tren_song` | như trên, nằm trọn trong lề |
+| `ground` | `hoa_van` `ke_cheo` `cham_luoi` | nền `.sheet`, pha 7–14% màu nhấn |
+| `logo_style` | `mo` `o_chu` `vong_chu` `chu_mau` | chữ lồng là ẢNH trong `.logo` → vùng `Image` |
+| `accents` | `tieu_de_mau` `ghi_chu_the` `tong_noi_bat` `nhan_mau` | màu/nền/viền trên khối có sẵn |
+
+Khung còn bốn tham số bốc riêng khỏi kiểu (`design.FRAME_*`): khoảng lùi
+(30–58% lề), độ dày nét (×0,6–1,7), màu (nhấn / màu kẻ / nhấn pha nhạt) và
+một biến thể của chính kiểu ấy -- góc nghiêng hoa văn, độ dài cánh góc, bán
+kính bo, khoảng giữa hai nét. Bản đầu năm kiểu, mỗi kiểu một bộ số cố định,
+và hai mươi tờ là thấy cùng một khung lặp lại. Khoảng lùi bị kẹp để mép
+trong của khung còn cách chữ ít nhất 2,5 mm ở cả bộ lề hẹp nhất.
+
+Ba điều giữ nhãn đúng: lớp trang trí là `position:absolute` nên
+`draw.py::MEASURE_JS` không đếm nó khi đo tờ đầy tới đâu; không phần tử nào
+của nó mang chữ; chữ lồng của logo là PNG (`markup.monogram_art`) chứ không
+phải chữ DOM, nên `test_synthgen_regions` vẫn đếm 0 chữ ngoài `data-kind`.
+Trang trí bốc trên dòng ngẫu nhiên riêng (`design.DECOR_SALT`) -- seed cũ
+vẫn ra đúng tờ cũ, chỉ thêm phần trang trí. Đo trên 3000 seed: 4,5% số tờ
+trơn trên cả năm trục.
+
+---
+
 ## 6. Ảnh vẽ hộp
 
 Một con số ("98,7% hộp nằm trên mực") trả lời được cho một cửa kiểm tự động
