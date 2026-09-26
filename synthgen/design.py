@@ -210,6 +210,52 @@ PAGE_COLUMNS = (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3)
 
 ORNAMENTS = ('khong', 'dau_tron', 'dau_vuong', 'ma_vach', 'ma_qr', 'dau_tron_va_ma_vach', 'hoa_van_goc', 'chim_mo')
 
+# ------------------------------------------------------------------ trang trí
+#
+# PHẦN TRANG TRÍ KHÔNG MANG CHỮ: khung trang, dải màu mép giấy, nền hoa văn,
+# kiểu logo, và mấy điểm nhấn màu trên khối có sẵn. Lấy từ ảnh của pipeline
+# chính (`data/layouts_all/html/`): hoá đơn GTGT điện tử có khung an ninh hai
+# lớp, hoá đơn khách sạn có dải màu tràn mép, giấy chứng nhận bảo hiểm có logo
+# chữ lồng "MH" trên ô màu và cột nhãn tô nền. Đặt cạnh ảnh synthgen
+# (`data/22-09-26-synthetics-multipage/`), khác biệt nhìn thấy ngay là synthgen
+# gần như toàn chữ đen trên giấy trắng: logo là một hình tròn mờ 14%, không
+# tờ nào có khung trang, không tờ nào có dải màu mép giấy.
+#
+# Mỗi trục là MỘT tên, trọng số đọc từ `_blocks.yaml` (mục `decor_*`), không
+# viết trong mã. Không trục nào đẻ ra chữ: thứ gì in chữ đều đã có `data-kind`
+# ở `markup.py`, và logo chữ lồng nằm trong `.logo` -- selector mà
+# `page.py::GRAPHIC_RECTS_JS` đã đo thành vùng hình, đúng như "MH" của
+# `generators/html/sheets/insurance.py`.
+#
+# `khong` đứng ĐẦU mỗi trục vì nó là giá trị của mọi tờ dựng trước khi có
+# trục ấy -- `Design` mặc định về đó, nên `agent/redesign.py` và mọi chỗ khác
+# dựng `Design` bằng tay không đổi dáng.
+PAGE_FRAMES = ('khong', 'don', 'doi', 'an_ninh', 'goc', 'bo_tron')
+
+# Dải màu ở MÉP giấy, nằm trọn trong lề: cao/rộng chỉ bằng một phần lề, nên
+# không đè lên chữ nào. Loại trừ với khung trang -- khung đứng ở giữa lề, dải
+# ở mép lề, hai thứ chồng lên nhau đọc ra một vệt bẩn chứ không ra trang trí.
+EDGE_BANDS = ('khong', 'tren', 'tren_duoi', 'trai', 'tren_song')
+
+# Nền giấy có hoa văn -- kiểu giấy chứng nhận, phôi in sẵn chống giả. Rất nhạt
+# (pha 6-9% màu nhấn vào màu giấy): đủ để thấy là giấy in hoa văn, không đủ để
+# thành nhiễu dưới nét chữ.
+GROUNDS = ('khong', 'hoa_van', 'ke_cheo', 'cham_luoi')
+
+# Logo của letterhead khi `head_layout` có logo. `mo` là hình tròn mờ cũ.
+LOGO_STYLES = ('mo', 'o_chu', 'vong_chu', 'chu_mau')
+
+# Điểm nhấn trên khối CÓ SẴN, mỗi cái bốc độc lập theo xác suất ở
+# `_blocks.yaml::decor_accent`. Không đổi thứ tự, không đổi chữ -- chỉ màu,
+# nền và viền.
+ACCENTS = ('tieu_de_mau', 'ghi_chu_the', 'tong_noi_bat', 'nhan_mau')
+
+# Trang trí bốc bằng MỘT dòng ngẫu nhiên riêng, tách khỏi `rng` của `draw()`.
+# Chèn thêm phép bốc vào giữa `draw()` là xê dịch mọi phép bốc sau nó, tức là
+# mọi seed đã vẽ ra một tờ KHÁC -- các bộ `data/` cũ thôi tái hiện được. Dòng
+# riêng thì seed cũ vẫn ra đúng tờ cũ, chỉ thêm phần trang trí lên trên.
+DECOR_SALT = 0x5D3C0A7
+
 # Nhóm cột cho tiêu đề HAI TẦNG: tầng trên in tên nhóm với `colspan`, tầng
 # dưới in tên từng cột, còn cột không thuộc nhóm nào thì `rowspan="2"` xuyên
 # cả hai tầng. Đúng dáng bảng kê nhà nước, bảng lương và tờ khai hải quan --
@@ -391,6 +437,14 @@ class Design:
     # phải rút lại toàn bộ dáng.
     boost: float = 1.0
 
+    # Trang trí -- xem `PAGE_FRAMES` và các trục cạnh nó. Mặc định là "không
+    # trang trí", đúng dáng mọi tờ dựng trước khi có các trục này.
+    frame: str = 'khong'
+    band: str = 'khong'
+    ground: str = 'khong'
+    logo_style: str = 'mo'
+    accents: frozenset = frozenset()
+
     def signature(self) -> tuple:
         """Mọi quyết định nhìn thấy được, gói lại. Trùng cái này là trùng dáng."""
         return (
@@ -407,6 +461,8 @@ class Design:
             tuple(sorted(self.blocks)), self.photo_box, self.watermark,
             self.reverse_title_band, self.lang_en, self.national,
             self.flow, self.mark_place,
+            self.frame, self.band, self.ground, self.logo_style,
+            tuple(sorted(self.accents)),
         )
 
     def has(self, block: str) -> bool:
@@ -1435,6 +1491,49 @@ def ladder(minimum_width: float) -> tuple[Paper, ...]:
                                                           paper.w * paper.h)))
 
 
+def _decor_table(section: str, names) -> dict:
+    """Mục `section` của `_blocks.yaml`, sau khi kiểm từng khoá.
+
+    KHOÁ LẠ THÌ NÉM, không bỏ qua. `pick_weighted` coi tên không khai là 1.0,
+    nên một lỗi gõ -- `an_ninhh: 3` -- im lặng biến thành "trọng số mặc định"
+    và trục ấy lệch mà không ai hay. Đây là con số người chỉnh bộ sẽ sửa tay
+    nhiều nhất, nên nó phải kêu khi sai."""
+    data = _blocks_yaml().get(section) or {}
+    if not isinstance(data, dict):
+        raise ValueError(f"_blocks.yaml::{section} phải là một bảng tên: số")
+    stray = sorted(set(data) - set(names))
+    if stray:
+        raise ValueError(f"_blocks.yaml::{section} có khoá lạ {stray}; "
+                         f"chỉ nhận {list(names)}")
+    return data
+
+
+def draw_decor(seed: int) -> dict:
+    """Phần trang trí của tờ `seed`, dưới dạng tham số cho `Design(...)`.
+
+    Hàm thuần của seed và của `_blocks.yaml`, trên dòng ngẫu nhiên riêng --
+    xem `DECOR_SALT`."""
+    rng = random.Random(seed ^ DECOR_SALT)
+    _decor_table("decor_frame", PAGE_FRAMES)
+    _decor_table("decor_band", EDGE_BANDS)
+    _decor_table("decor_ground", GROUNDS)
+    _decor_table("decor_logo", LOGO_STYLES)
+    chances = _decor_table("decor_accent", ACCENTS)
+
+    band = pick_weighted(rng, EDGE_BANDS, "decor_band")
+    frame = pick_weighted(rng, PAGE_FRAMES, "decor_frame")
+    if band != 'khong':
+        # Bốc cả hai rồi mới gạt, không bốc có điều kiện: số lần gọi `rng`
+        # cố định thì đổi trọng số một trục không xê dịch trục khác.
+        frame = 'khong'
+    ground = pick_weighted(rng, GROUNDS, "decor_ground")
+    logo = pick_weighted(rng, LOGO_STYLES, "decor_logo")
+    accents = frozenset(name for name in ACCENTS
+                        if rng.random() < float(chances.get(name, 0.0)))
+    return {"frame": frame, "band": band, "ground": ground,
+            "logo_style": logo, "accents": accents}
+
+
 def draw(rng: random.Random, seed: int,
          archetype: Archetype | None = None,
          pages: tuple[int, int] | None = None) -> Design:
@@ -1715,4 +1814,5 @@ def draw(rng: random.Random, seed: int,
         target_pages=target,
         flow=flow,
         seed=seed,
+        **draw_decor(seed),
     )

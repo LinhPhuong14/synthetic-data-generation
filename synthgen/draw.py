@@ -358,6 +358,13 @@ class Studio:
                 "blocks": sorted(design.blocks),
                 "order": list(design.order),
                 "columns": list(design.columns),
+                "decor": {
+                    "frame": design.frame,
+                    "band": design.band,
+                    "ground": design.ground,
+                    "logo": design.logo_style,
+                    "accents": sorted(design.accents),
+                },
             },
             "content": {
                 "title": doc.title,
