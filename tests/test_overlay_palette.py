@@ -23,10 +23,10 @@ import pytest
 pytest.importorskip("numpy", reason="overlay.py imports numpy")
 pytest.importorskip("cv2", reason="overlay.py imports OpenCV")
 
-import numpy as np                                              # noqa: E402
+import numpy as np  # noqa: E402
 
-from pipeline.record import DOCSYNTH_LABELS                      # noqa: E402
-from synthgen import overlay as O                                # noqa: E402
+from pipeline.record import DOCSYNTH_LABELS  # noqa: E402
+from synthgen import overlay as O  # noqa: E402
 
 # Sàn dE. Bảng màu hiện tại đo được 34,1 giữa hai lớp gần nhau nhất và 35,3
 # giữa một lớp với màu vai trò KIE gần nhất. Sàn đặt ở 25 để còn chỗ cho
@@ -138,8 +138,8 @@ def test_tag_text_is_readable_on_every_chip_it_sits_on():
                        else ((value + 0.055) / 1.055) ** 2.4)
         return 0.2126 * out[0] + 0.7152 * out[1] + 0.0722 * out[2]
 
-    chips = list(O.CLASS_COLOURS.items()) + [
-        ("key", O.KEY_COLOUR), ("value", O.VALUE_COLOUR), ("other", O.OTHER)]
+    chips = (list(O.CLASS_COLOURS.items()) + list(O.FIELD_TYPE_COLOURS.items()) + [
+        ("key", O.KEY_COLOUR), ("value", O.VALUE_COLOUR), ("other", O.OTHER)])
     for name, chip in chips:
         pair = sorted([luminance(chip), luminance(O._ink_on(chip))])
         ratio = (pair[1] + 0.05) / (pair[0] + 0.05)
@@ -168,6 +168,42 @@ def test_a_region_covering_the_page_washes_fainter_than_a_small_one():
     assert np.abs(covered.astype(int) - 255).sum() < np.abs(tight.astype(int) - 255).sum()
 
 
+def test_every_field_type_the_export_vocabulary_defines_has_a_colour():
+    """`FIELD_TYPE_COLOURS` must cover exactly `FIELD_TYPE_NAMES` -- the same
+    shape as `test_every_label_in_the_record_vocabulary_has_a_colour` above,
+    for the axis `synthgen/export_v3.py` adds instead of `layout_class`."""
+    assert set(O.FIELD_TYPE_COLOURS) == set(O.FIELD_TYPE_NAMES)
+    assert O.OTHER not in set(O.FIELD_TYPE_COLOURS.values())
+
+
+def test_no_two_field_types_wear_colours_the_eye_reads_as_one():
+    names = sorted(O.FIELD_TYPE_COLOURS)
+    colours = [O.FIELD_TYPE_COLOURS[name] for name in names]
+    grid = dE(colours, colours)
+    np.fill_diagonal(grid, np.inf)
+    i, j = np.unravel_index(int(np.argmin(grid)), grid.shape)
+    assert grid[i, j] >= FLOOR, (
+        f"{names[i]} và {names[j]} chỉ cách nhau dE {grid[i, j]:.1f}")
+
+
+def test_no_field_type_wears_a_layout_class_colour_or_a_kie_role_colour():
+    """Ba tầng màu cùng sống trên một tấm `visualize_kie/` -- vai KIE
+    (cam/lam), lớp bố cục (mười chín màu), field_type (bảy màu) -- và
+    không tầng nào được mượn màu của tầng khác, nếu không một khung màu ấy
+    không còn nói được nó đang chỉ tầng nào."""
+    roles = [O.KEY_COLOUR, O.VALUE_COLOUR, O.PLAIN_COLOUR, O.LINK_COLOUR]
+    field_types = list(O.FIELD_TYPE_COLOURS.values())
+    assert dE(field_types, roles).min() >= FLOOR
+    assert dE(field_types, list(O.CLASS_COLOURS.values())).min() >= FLOOR
+
+
+def test_the_same_field_types_always_get_the_same_colours():
+    assert O._palette_for(O.FIELD_TYPE_NAMES,
+                          [O.PAPER, O.INK, O.OTHER, O.KEY_COLOUR, O.VALUE_COLOUR,
+                           O.PLAIN_COLOUR, O.LINK_COLOUR] + list(O.CLASS_COLOURS.values())
+                          ) == O.FIELD_TYPE_COLOURS
+
+
 def test_a_pair_with_no_key_box_gets_a_value_coloured_tag():
     """Nhãn mang màu của chính hộp nó đậu lên.
 
@@ -184,3 +220,60 @@ def test_a_pair_with_no_key_box_gets_a_value_coloured_tag():
     assert len(tinted) > 0
     assert dE([O.KEY_COLOUR], [tuple(int(c) for c in row) for row in tinted]).min() > \
         dE([O.VALUE_COLOUR], [tuple(int(c) for c in row) for row in tinted]).min()
+
+
+def test_kie_without_field_types_paints_exactly_as_before():
+    """`field_types=None` (the default) must not change a single pixel --
+    a page from before this axis existed still overlays identically."""
+    page = np.full((200, 400, 3), 255, np.uint8)
+    pairs = [{"field": "dia_chi", "key_bbox": [10, 10, 90, 30],
+             "value_bbox": [100, 10, 300, 30], "page_number": 1,
+             "value_entity_index": 5}]
+    assert np.array_equal(O.kie(page, pairs, 1), O.kie(page, pairs, 1, None))
+
+
+def test_kie_with_field_types_recolours_the_tag_for_a_non_text_field():
+    """A field whose value entity is `digit_sequence` gets a tag in
+    `FIELD_TYPE_COLOURS["digit_sequence"]`, not the plain key/value colour."""
+    page = np.full((200, 400, 3), 255, np.uint8)
+    pairs = [{"field": "so_cccd", "key_bbox": [10, 10, 90, 30],
+             "value_bbox": [100, 10, 300, 30], "page_number": 1,
+             "value_entity_index": 5}]
+    plain = O.kie(page, pairs, 1)
+    typed = O.kie(page, pairs, 1, {5: "digit_sequence"})
+    assert not np.array_equal(plain, typed)
+    pixels = [tuple(int(c) for c in row) for row in typed.reshape(-1, 3)
+             if not np.array_equal(row, [255, 255, 255])]
+    assert dE([O.FIELD_TYPE_COLOURS["digit_sequence"]], pixels).min() < 1.0, (
+        "the digit_sequence tag colour never appears in the drawn image")
+
+
+def test_kie_leaves_a_text_field_uncoloured_even_with_field_types_given():
+    """`text` is most of every page -- see `kie()`'s own docstring -- so it
+    keeps the plain key/value colouring even when `field_types` is given."""
+    page = np.full((200, 400, 3), 255, np.uint8)
+    pairs = [{"field": "dia_chi", "key_bbox": [10, 10, 90, 30],
+             "value_bbox": [100, 10, 300, 30], "page_number": 1,
+             "value_entity_index": 5}]
+    assert np.array_equal(O.kie(page, pairs, 1),
+                          O.kie(page, pairs, 1, {5: "text"}))
+
+
+def test_kie_reads_field_type_off_the_question_for_a_survey_sourced_pair():
+    """A tick INSIDE a `survey.question` group is not its own field --
+    `synthgen/export_v3.py` gathers the whole group into one field/table --
+    so its tag must read the QUESTION's field_type (`pair["group"]`), not
+    the bare `survey.tick` kind's own fallback. Measured regression: a
+    `categorical_matrix` grid's individual cells used to tag
+    `[boolean_choice]`, `survey.tick`'s own kind-based default."""
+    page = np.full((200, 400, 3), 255, np.uint8)
+    pairs = [{"field": "cell_r0c0", "key_bbox": [10, 10, 30, 30],
+             "value_bbox": [40, 10, 60, 30], "page_number": 1,
+             "source": "survey", "group": 9, "value_entity_index": 5}]
+    typed = O.kie(page, pairs, 1, {5: "boolean_choice", 9: "categorical_matrix"})
+    pixels = [tuple(int(c) for c in row) for row in typed.reshape(-1, 3)
+             if not np.array_equal(row, [255, 255, 255])]
+    assert dE([O.FIELD_TYPE_COLOURS["categorical_matrix"]], pixels).min() < 1.0, (
+        "the tag should read the question's categorical_matrix, not the "
+        "tick's own bare survey.tick -> boolean_choice fallback")
+    assert dE([O.FIELD_TYPE_COLOURS["boolean_choice"]], pixels).min() > FLOOR

@@ -557,6 +557,9 @@ chuyển sang coverage — không đứng chờ hàng nghìn lần timeout.
 | `agent/compose_layout.py` | model soạn MỚI bố cục từ *k* phôi — 7 cửa |
 | `agent/compose_archetype.py` | model soạn cả LOẠI CHỨNG TỪ mới cho `synthgen/` |
 | `agent/compose_page.py` | model viết CẢ TRANG (HTML+content) cho `synthgen/` |
+| `agent/grammar.py`, `agent/document_plan.py` | không gian cấu trúc 30 family, và một lần RÚT từ nó |
+| `agent/fingerprint.py`, `agent/coverage.py` | dấu vân plan (coarse/mid/fine) + dấu vân trang ĐÃ VẼ; góc nào đã bão hoà |
+| `agent/geometry_distance.py`, `agent/diversity.py` | hai trang đã vẽ có rơi cùng chỗ không, và trí nhớ chống trùng của cả lô |
 | `synthgen/llm_page.py` | cổng 5 luật cho trang model viết, trước khi vẽ |
 | `synthgen/draw_llm.py` | vẽ trang model viết, kể cả trang trượt cổng |
 | `agent/distance.py` | "bố cục này khác gì phôi cha" — vẽ 2 lần, đếm run đã dịch |

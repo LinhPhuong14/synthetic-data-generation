@@ -32,6 +32,23 @@ qua thứ nó vừa vá.
 4. **Đa dạng so với engine.** Đo ở bước sau, bằng `agent/distance.py` và phân
    bố nhãn bố cục.
 
+## Chống trùng: hai tầng, và tầng thứ hai đọc PIXEL
+
+Từ 24-09, mỗi tờ đi qua hai phép so trước khi được nhận:
+
+1. **Plan** -- `agent/diversity.py` rút plan qua `sample_with_coverage`
+   (`agent/coverage.py`) trên một trí nhớ dùng chung cả lô, nên tổ hợp đã
+   bão hoà thì ít được rút lại. Miễn phí: chưa gọi model.
+2. **Hình học** -- tờ đã viết được dàn ra để ĐO (`Artist.measure`), lấy
+   `layout_annotations` thật, băm thành lưới 8x12 rồi so Jaccard với 24 tờ
+   gần nhất. Trùng thì SINH LẠI kèm câu nhắc nói rõ khối nào đang ngồi đúng
+   chỗ khối cũ.
+
+Tầng hai có mặt vì tầng một mù với đúng thứ nó phải bắt: ba cặp tờ giống
+nhau nhất trong `data/pilot16`+`pilot17` đều được `agent/document_distance.py`
+chấm **1.000 -- khác nhau tối đa**, vì chúng thuộc ba family khác nhau.
+Bảng số ở `agent/geometry_distance.py`.
+
 ## Cái này không tự sửa
 
 Nội dung có thật hay không. Một hoá đơn của "Công ty TNHH Mặt Trời Mọc" là hợp
@@ -46,10 +63,9 @@ import concurrent.futures as cf
 import datetime as _dt
 import json
 import os
+import queue
 import random
 import re
-import queue
-import pathlib
 import sys
 import threading
 import time
@@ -59,19 +75,27 @@ from pathlib import Path
 if __package__ in (None, ""):                   # `python compose_page.py`
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from agent.client import LLMError, from_env
-from agent.promptbook import prompt
+from agent import diversity as DIV
 from agent import document_plan as DP
+from agent import geometry_distance as GD
 from agent import grammar as G
 from agent import rate_match
+from agent.client import LLMError, from_env
+from agent.fingerprint import geometry_fingerprint
+from agent.promptbook import prompt
 from pipeline import failures
 from synthgen import design as D
 from synthgen import field_tier as FT
-from synthgen.llm_page import (REGIONS, _rooted, acceptable_kind,
-                               declared_paths, kinds,
-                               printed_kinds, problems)
 from synthgen.adorn import hands, seals
-from synthgen.llm_page import orphan_share
+from synthgen.llm_page import (
+    REGIONS,
+    acceptable_kind,
+    declared_paths,
+    kinds,
+    orphan_share,
+    printed_kinds,
+    problems,
+)
 from synthgen.repair import repair, rows_out
 
 PROMPT = "page"
@@ -198,7 +222,7 @@ def _coined_pattern() -> str:
     vế `_COINED` từ đúng một chỗ -- chép nó lần thứ hai là mời hai nhánh lệch
     nhau, đúng lỗi "một luật, nhiều người dựng" mà `acceptable_kind()` sinh ra
     để dọn."""
-    from synthgen.llm_page import _COINED                       # noqa: PLC0415
+    from synthgen.llm_page import _COINED  # noqa: PLC0415
 
     return _COINED.pattern.lstrip("^").rstrip("$")
 
@@ -240,6 +264,36 @@ def _close(node):
 # Phẳng KHÔNG mất gì: `data-path` in trên giấy vốn đã là một chuỗi phẳng
 # (`issuer.tax_code`, `line_items[0].name`), và `data_path_mismatches` so đúng
 # chuỗi ấy. Cây lồng phải đi từng đoạn mới tra được cùng một thứ.
+def _catchall_advice() -> str:
+    """Lời khuyên về khoá HỨNG CHUNG, dựng từ `rulebase/field_tiers.json`.
+
+    Viết cứng danh sách lá vào đây là dựng người thứ hai cho một luật: ai
+    thêm một lá vào chính sách sẽ sửa một chỗ và quên chỗ này, rồi tuần sau
+    không hiểu vì sao model không bao giờ viết lá mới ấy. Đọc thẳng từ
+    `field_tier.candidate_leaves` thì lá mới có mặt trong lời dặn ngay.
+
+    Vì sao cần lời dặn này: cơ chế nhận lá đã chạy từ Task 3 -- `meta.doc_date`
+    kèm một câu tả rơi thẳng vào `semi_open`, `in_batch: True`, không cần một
+    dòng mã nào thêm. Nhưng đo trên toàn bộ `data/*/declared` (24-09-2026):
+    `meta.value` 914 lượt và các lá ấy ĐÚNG 0 lượt. Model không viết chúng vì
+    chưa ai nói chúng đáng viết, và `meta.value` thì nằm ngay trong `enum`."""
+    lines = []
+    for key in sorted(set(FT.registry().generic[FT.KIND])):
+        leaves = FT.candidate_leaves(key)
+        if leaves:
+            lines.append(f"`{key}` -> " + ", ".join(f"`{x}`" for x in leaves))
+    if not lines:
+        return ""
+    return ("\n**Catch-all keys are a last resort.** These keys are listed, so "
+            "they are accepted, but they name nothing: one authorisation "
+            "letter was measured carrying `meta.value` five times for five "
+            "different things (document number, document date, signing place, "
+            "validity start, validity end). When you know which one it is, "
+            "coin the leaf instead -- it is route (2) above, it needs only "
+            "your one sentence, and it is NOT rejected:\n"
+            + "\n".join(lines))
+
+
 DATA_ITEMS = {
     "type": "array",
     "description": "Every value printed on the sheet, keyed by the exact "
@@ -267,8 +321,41 @@ DATA_ITEMS = {
             },
             "value": {"type": "string",
                       "description": "Exactly the text the HTML prints."},
+            # CÂU TẢ ĐI CẠNH `path`, KHÔNG CẠNH `kind`.
+            #
+            # `field_plan[].describe` đã có từ Task 3, nhưng nó không nối
+            # được về ô mực nào. Đo trên `data/pilot17` (42 tờ, 966 trường),
+            # bốn cách nối `field_plan` với cặp KIE:
+            #
+            #     `kind` + bội số hai bên bằng nhau   61,3%  (còn phải đoán thứ tự)
+            #     `label` == `key_text`               12,0%
+            #     `slug(label)` == `field`             5,0%
+            #     `label` == `path`                    4,8%
+            #
+            # `label` hoá ra phần lớn là CHỮ IN trên giấy ("Mã số thuế"),
+            # không phải tên trường. Nối theo bội số rồi khớp theo thứ tự là
+            # đúng một nửa cho cặp bên uỷ quyền / bên được uỷ quyền -- đúng
+            # lỗi kép mà `synthgen/field_tier.py` từ chối phép "khoá gần
+            # nhất" để tránh.
+            #
+            # `path` thì nối 1-1 theo cấu tạo: nó LÀ `data-path` trên span,
+            # và `pipeline/record.py` đọc hộp từ chính span ấy. Hai
+            # `store.tax_code` của một giấy uỷ quyền mang hai path khác nhau
+            # (`issuer.tax_code`, `auth.seller_tax`), nên câu tả đi cạnh path
+            # là câu tả đi cạnh đúng ô mực, không qua một phép đoán nào.
+            "describe": {
+                "type": "string",
+                "description": (
+                    "One short sentence saying what THIS value is, in this "
+                    "document. It sits beside the registry's own sentence "
+                    "for the field's kind, so do not restate that: say what "
+                    "distinguishes this occurrence -- whose value, which "
+                    "party, which date. Two fields on one page can share a "
+                    "kind, and this sentence is the only thing that tells "
+                    "them apart. Do not copy the printed caption."),
+            },
         },
-        "required": ["path", "value"],
+        "required": ["path", "value", "describe"],
         "additionalProperties": False,
     },
 }
@@ -389,20 +476,33 @@ def schema() -> dict:
                                 # nó KHÔNG mượn câu tả của khoá gần nhất, vì
                                 # khoá sai cộng câu tả tra theo khoá sai là
                                 # một lỗi kép mà bản ghi không tự kêu lên
-                                # được. Để rỗng khi `kind` đã có trong sổ:
-                                # câu tả của khoá đóng lấy từ sổ, lời model
-                                # khai không ghi đè.
+                                # được.
+                                #
+                                # KHOÁ ĐÓNG CŨNG PHẢI CÓ CÂU TẢ. Bản trước
+                                # dặn "để rỗng khi `kind` đã có trong sổ", và
+                                # luật ấy đúng phần nó nói -- sổ không bị ghi
+                                # đè -- nhưng nó bỏ trống đúng thứ phân biệt
+                                # hai lần xuất hiện của một khoá trên MỘT tờ.
+                                # Đo trên 785 tệp `data/*/declared`:
+                                # `authorisation_letter/store.tax_code` 20
+                                # lượt / 1 câu tả, `meta.value` 55 lượt / 1
+                                # câu. Câu của sổ vẫn là câu của sổ; câu ở
+                                # đây ghép vào sau nó (`field_tier.compose`).
                                 "describe": {
                                     "type": "string",
-                                    "description": "Leave empty when `kind` is "
-                                                   "one of the listed field "
-                                                   "keys. When you coin a new "
-                                                   "name, say in one English "
-                                                   "sentence what the value IS "
-                                                   "-- not what the caption "
-                                                   "says. A coined name with no "
-                                                   "sentence is kept out of the "
-                                                   "training set.",
+                                    "description": "Never empty. When you coin "
+                                                   "a new name, this sentence "
+                                                   "IS its meaning. When `kind` "
+                                                   "is a listed key, say which "
+                                                   "occurrence THIS one is -- "
+                                                   "whose value, which party, "
+                                                   "which date -- because two "
+                                                   "fields sharing a listed key "
+                                                   "on one page are told apart "
+                                                   "by nothing else. Do not "
+                                                   "restate the registry "
+                                                   "sentence and do not copy "
+                                                   "the printed caption.",
                                 },
                             },
                             "required": ["label", "kind", "describe"],
@@ -705,8 +805,22 @@ def describe_plan(plan: DP.DocumentPlan) -> str:
         lines.append("- table: KHÔNG -- đừng vẽ bảng nào trên trang này")
     if "signature_count" in a:
         n = a["signature_count"]
+        # NÓI LUÔN CÁCH KHAI, không chỉ SỐ LƯỢNG.
+        #
+        # Cổng (`plan_conformance`) hỏi `"sign." in html` -- một phép tìm
+        # chuỗi. Câu cũ chỉ nói "đúng N người ký" và không nói khai bằng gì,
+        # nên model dựng khối chữ ký bằng tên class của chính nó. Đo trên
+        # `data/pilot17`: 3 tờ trượt vì "yêu cầu N chữ ký nhưng HTML không có
+        # `data-kind` nào bắt đầu bằng `sign.`", và mở HTML ra thì khối chữ ký
+        # có đủ mực -- `llm_invoice_detailed_0023` viết `<div class="role">
+        # NGƯỜI MUA HÀNG</div><div class="name">Ths. Trần Thị Mai</div>`,
+        # `llm_form_symmetric_0009` dùng `parties.receive.representative`.
+        # Mực có, nhãn không: đúng luật số ba của `AGENTS.md` bị phá.
         lines.append(f"- signatures: đúng {n} người ký"
-                     + (" (không chữ ký nào)" if n == 0 else ""))
+                     + (" (không chữ ký nào)" if n == 0 else
+                        " -- mỗi người phải mang `data-kind` họ `sign.` "
+                        "(`sign.name`, `sign.title`, `sign.date`, "
+                        "`sign.place`); tên class tự đặt KHÔNG tính"))
     if "signature_layout" in a:
         lines.append(f"- signature layout: {a['signature_layout']}")
     if plan.hard_negative_profile:
@@ -781,8 +895,11 @@ SAY = {
                "as a `label` -> `kind` pair. Three ways a name is accepted, "
                "in this order:\n"
                "1. **Use a listed key.** If one of the keys below means what "
-               "your field means, use it and leave `describe` empty -- its "
-               "meaning is already on file.\n"
+               "your field means, use it. Its general meaning is on file, but "
+               "`describe` is still required: say which occurrence THIS one "
+               "is. An authorisation letter carries `store.tax_code` twice -- "
+               "authorising party and authorised agent -- and your sentence "
+               "is the only thing that tells them apart.\n"
                "2. **Coin a name inside a listed family.** If no key fits but "
                "the family does (`store.`, `sign.`, `total.`, `menu.`, "
                "`clause.`, `survey.`, `meta.`, `section.`, `toc.`), write "
@@ -793,7 +910,8 @@ SAY = {
                "out of the training set, so prefer (2) when a family fits.\n"
                "Never stretch a listed key to cover something it does not "
                "mean. A coined name with a sentence is worth more than a "
-               "listed key used wrongly, and no choice here rejects the page.",
+               "listed key used wrongly, and no choice here rejects the page."
+               + _catchall_advice(),
         "regions": "Permitted `data-region`",
         "step3": "## Step three: write the sheet",
         "one_sheet": "This document is **one sheet**.",
@@ -805,6 +923,14 @@ SAY = {
         # mỗi tờ, đứng cạnh "8 000 mỗi tờ". Model đọc hai con số cãi nhau thì
         # nghe con số nhỏ, và viết đúng một tờ. Đo trên `data/23-09-llm-e`:
         # 8 trên 12 tờ trượt vì "xin N tờ, dàn ra 1 tờ".
+        # HAI CON SỐ, HAI ĐỘ CHÍNH XÁC KHÁC NHAU -- và câu cũ gộp chúng.
+        #
+        # Số tờ CẮT RA có dung sai: `SHEET_SHORTFALL_RATIO` cho tới 0,6 lần.
+        # Số mục `sheet_plan` thì KHÔNG: `sheet_plan_problems()` loại thẳng
+        # khi `len(sheet_plan) < n`. Câu cũ mở đầu bằng "runs to about **{n}
+        # A4 sheets**" rồi mới nhắc `sheet_plan` ở cuối, nên chữ "about" phủ
+        # lên cả hai, và model khai một `sheet_plan` "xấp xỉ". Đo trên
+        # `data/pilot17`: 3 tờ trượt vì đúng chuyện ấy -- khai 2/3, 3/8, 1/3.
         "n_sheets": "This document runs to about **{n} A4 sheets**: write "
                     "ONE `<div class=\"sheet\">` holding enough content for "
                     "that many -- the machine cuts it to A4 height. Target "
@@ -812,9 +938,12 @@ SAY = {
                     "so about **{chars} characters in total** -- a "
                     "sheet that gets cut to fewer pages than asked is "
                     "treated as a FAILURE, not a shorter valid document. "
-                    "State a `sheet_plan` that commits to writing all {n} "
-                    "sheets, not a subset. Do not open a new `.sheet`, and "
-                    "do not number the pages yourself.",
+                    "Your `sheet_plan` must list **exactly {n} entries**, "
+                    "one per sheet: that count is checked exactly, and a "
+                    "plan with fewer entries is rejected before the page is "
+                    "even drawn. \"About\" applies to how much you write, "
+                    "never to how many entries you plan. Do not open a new "
+                    "`.sheet`, and do not number the pages yourself.",
         # ĐẾM, KHÔNG MÔ TẢ.
         #
         # Câu cũ -- "This one HAS an item table, {lo}-{hi} rows." -- model đọc
@@ -902,7 +1031,7 @@ def inspiration(index: int, family: str, lang: str = "en", how_many: int = 3,
 
 
 def ask_for(index: int, made: list[str], plan: DP.DocumentPlan, sheets: int,
-           lang: str = "en") -> str:
+           lang: str = "en", avoid: str = "") -> str:
     """Lời nhờ cho MỘT tờ.
 
     Phase 5 (task 5.1, `docs/ke-hoach-refactor-engine.md`): trước đây
@@ -915,7 +1044,14 @@ def ask_for(index: int, made: list[str], plan: DP.DocumentPlan, sheets: int,
 
     `made` là những loại chứng từ lượt này đã làm. Đưa vào để đẩy sang chỗ
     khác, không phải để cấm: cùng lối `agent/planner.py` dùng `pressure` để
-    phủ đuôi phân phối thay vì bốc độc lập và bỏ trống những góc hiếm."""
+    phủ đuôi phân phối thay vì bốc độc lập và bỏ trống những góc hiếm.
+
+    `avoid` là câu nhắc đa dạng của `agent/diversity.py`, chỉ có mặt ở lượt
+    SINH LẠI: tờ trước đã viết xong, đã dàn ra, và rơi đúng vào chỗ một tờ
+    gần đây đã chiếm. Nó đứng NGAY SAU khối cấu trúc chứ không ở cuối lời
+    nhờ, vì nó nói về cùng một thứ (trang này bày ra sao) và phải được đọc
+    trong lúc model còn đang nghĩ về bố cục, không phải sau khi đã nghĩ
+    xong. Rỗng ở lượt đầu -- không có gì để tránh thì không nói gì."""
     say = SAY["en"]
     hint = FAMILY_HINT.get(plan.family, plan.family)
     # DANH SÁCH DÁN VÀO BRIEF PHẢI LÀ DANH SÁCH `enum` ÉP, không phải một
@@ -965,7 +1101,8 @@ def ask_for(index: int, made: list[str], plan: DP.DocumentPlan, sheets: int,
         f"{say['field']}: **{hint}** (`{plan.family}`).\n\n"
         "### Structure -- decided by the engine, not by you\n\n"
         f"{describe_plan(plan)}\n\n"
-        f"{inspiration(index, plan.family, lang, table=table)}"
+        + (f"{avoid}\n\n" if avoid else "")
+        + f"{inspiration(index, plan.family, lang, table=table)}"
         f"{say['invent']}\n\n"
         f"{say['planfirst']}\n\n"
         f"{say['done']}: {seen}. {say['other']}\n\n"
@@ -1271,8 +1408,24 @@ def plan_conformance_problems(plan: DP.DocumentPlan, html: str) -> list[str]:
     return found
 
 
-def budget(sheets: int) -> int:
-    """Trần token đầu ra cho một tài liệu `sheets` tờ.
+# Bao nhiêu token đầu ra cho MỘT ký tự chữ hiển thị.
+#
+# Không phải một ký tự HTML -- một ký tự CHỮ, thứ `llm_density` đang đếm. Hai
+# đại lượng chênh nhau gần bảy lần, và nhầm chúng là cách chắc chắn nhất để
+# đặt sai trần. Đo trên `data/pilot17`, 42 lời gọi trả lời được:
+#
+#   ký tự HTML / ký tự chữ : trung vị 6,7   (mỗi run là một `<span
+#                                            data-kind=… data-path=…>`)
+#   token ra   / ký tự HTML: trung vị 0,49
+#   token ra   / ký tự chữ : trung vị 3,37  (min 0,99 · max 9,71)
+#
+# Markup nở ra gần bảy lần vì chính cái làm nên giá trị của kho này: mỗi run
+# chữ mang nhãn của nó ngay trong thẻ. Đó là chi phí bắt buộc, không phải mỡ.
+TOKENS_PER_VISIBLE_CHAR = 3.37
+
+
+def budget(sheets: int, level: str = "medium") -> int:
+    """Trần token đầu ra cho một tài liệu `sheets` tờ ở mức dày `level`.
 
     Trần CỐ ĐỊNH 9 000 không khớp với chính lời dặn của mình: prompt cho mỗi tờ
     8 000 ký tự, và đo được 2,05 ký tự mỗi token, nên một tờ tốn chừng 3 900
@@ -1280,21 +1433,52 @@ def budget(sheets: int) -> int:
     nhất trả về "reply was not JSON" là đúng hai tài liệu 4 tờ và 6 tờ, cụt
     giữa chừng vì chạm trần sau 168 giây.
 
-    2 600 token cho `plan` và `rows`, cộng 4 200 mỗi tờ. Trần trên 30 000 để
-    một lời gọi lạc lối vẫn hỏng nhanh thay vì ăn hết cửa sổ ngữ cảnh."""
-    # Trần trên 60 000, không 40 000, và 5 200/tờ, không 4 200. Đo trên
-    # pilot16 (Phase 8): KHÔNG một tờ nào trong lô chạm trần cũ -- tờ tốn
-    # nhiều token nhất (`form_checklist`, xin 6 tờ) dùng 14 173/27 800, chưa
-    # tới nửa trần -- nên "xin N tờ mà cắt ra M<N tờ" không phải do CHẠM
-    # TRẦN, mà do model tự viết ngắn hơn được phép. Trần vẫn nới thêm ở đây
-    # để không bao giờ là nguyên nhân, cả hiện tại lẫn khi lời dặn (xem
-    # `n_sheets` ở SAY) bắt đầu đẩy model viết dài hơn thật. Cửa sổ ngữ cảnh
-    # máy chủ 262 144 nên còn rất rộng; trần chỉ để một lời gọi lạc lối hỏng
-    # nhanh thay vì ăn hết cửa sổ.
-    return min(60_000, 2_600 + max(1, sheets) * 5_200)
+    ## Vì sao trần tính TỪ mục tiêu ký tự, không còn là một hằng số riêng
+
+    Bản trước là `2 600 + sheets * 5 200`, một con số ĐỘC LẬP với số ký tự lời
+    nhờ đang xin. Hai con số độc lập nói về cùng một thứ là cái bẫy `AGENTS.md`
+    gọi là "một luật, hai người dựng": khi `llm_density` được đo lại và mục
+    tiêu ký tự tăng 2,7 lần, trần token không biết gì cả.
+
+    Tính thử trước khi chạy, và nó chặn đúng một lượt sinh vô ích: mục tiêu
+    mới (medium 3 300 ký tự/tờ) cần 11 115 token cho MỘT tờ, trong khi trần cũ
+    cho một tờ là 7 800 -- và cả tám mức số tờ đều thiếu, 8 tờ cần 88 923 so
+    với trần 44 200. Tức toàn bộ lô sẽ cụt JSON: 23 tờ trượt vì thiếu tờ được
+    đổi thành 60 tờ trượt vì cụt. Nay trần đọc CÙNG `llm_density` mà
+    `ask_for()` đọc, nên hai con số không thể lệch nhau nữa."""
+    profile = D.llm_density(level) or {}
+    per_sheet = max(int(profile.get("chars") or 3300), 1)
+    need = max(1, sheets) * per_sheet * TOKENS_PER_VISIBLE_CHAR
+    # 2 600 token cho `plan` và `rows` -- phần không phải chữ trên giấy.
+    #
+    # Trần trên 150 000, không 60 000: mục tiêu mới cho 8 tờ `very_dense` cần
+    # 8 x 3 800 x 3,37 = 102 448. Cửa sổ ngữ cảnh máy chủ là 262 144 và prompt
+    # đo được ~26 500 token, nên 150 000 vẫn còn dư chỗ. Trần chỉ để một lời
+    # gọi LẠC LỐI hỏng nhanh thay vì ăn hết cửa sổ -- nó không được là thứ
+    # chặn một tài liệu viết đúng độ dài đã xin.
+    return int(min(150_000, 2_600 + need))
 
 
-def patience(sheets: int, floor: float) -> float:
+# Hạn chờ TỐI ĐA cho MỘT lần thử, dù trần token lớn tới đâu.
+#
+# Vì sao phải có trần cứng ở đây: `budget()` giờ tính từ mục tiêu ký tự, và
+# `budget(8, "very_dense")` = 105 048 token, chia 15 tok/s ra **7 003 giây một
+# lần thử**. `Client._post` thử lại `retries + 1` = 3 lần, nên một tờ giữ chỗ
+# hơn năm giờ TRƯỚC KHI bỏ cuộc.
+#
+# Đo được, và đo bằng một lượt chạy mất trắng: `data/pilot18` 24-09-2026, máy
+# chủ vLLM tắt giữa lô, và tờ thứ 20 treo **51 025,9 giây (14,2 giờ)** rồi mới
+# báo `URLError`. 19 tờ đầu đã xong, 41 tờ còn lại thành rác. Một hạn chờ rộng
+# không cứu được tờ nào khi máy chủ đã chết -- nó chỉ đổi "hỏng nhanh, biết
+# ngay" thành "treo qua đêm, sáng ra mới biết".
+#
+# 3 600 giây là 1,5 lần lời gọi CHẬM NHẤT từng đo được (pilot17 1 942s,
+# pilot18 2 344s), nên nó không cắt ngang một tờ đang viết thật, mà chặn được
+# một máy chủ không trả lời ở ba giờ thay vì mười bốn.
+PATIENCE_CEILING = 3600.0
+
+
+def patience(sheets: int, floor: float, level: str = "medium") -> float:
     """Hạn chờ cho một tài liệu `sheets` tờ, tính từ trần token.
 
     Trần co giãn thì hạn chờ phải co giãn theo, nếu không ta chỉ đổi kiểu hỏng:
@@ -1302,8 +1486,10 @@ def patience(sheets: int, floor: float) -> float:
     tok/s -- tốc độ đo được lúc máy chủ bận -- là 975 giây, vượt hạn 600.
 
     Lấy 15 tok/s làm đáy: chậm hơn mọi lượt đã đo (pilot7 24, pilot8 52), nên
-    hạn rộng mà vẫn hữu hạn. Không bao giờ ngắn hơn `floor` người dùng đặt."""
-    return max(floor, budget(sheets) / 15.0)
+    hạn rộng mà vẫn hữu hạn. Không bao giờ ngắn hơn `floor` người dùng đặt, và
+    không bao giờ dài hơn `PATIENCE_CEILING` -- xem ghi chú ở đó."""
+    want = min(budget(sheets, level) / 15.0, PATIENCE_CEILING)
+    return max(floor, want)
 
 
 def thinking(got: dict, brief: str) -> str:
@@ -1354,6 +1540,20 @@ def thinking(got: dict, brief: str) -> str:
                   "| nhãn trên giấy | `data-kind` |", "|---|---|"]
         lines += [f"| {f.get('label','')} | `{f.get('kind','')}` |" for f in fields]
         lines += [""]
+    if got.get("attempt", 1) > 1 or got.get("collision"):
+        # SINH LẠI VÌ TRÙNG là một sự kiện phải đọc được cạnh chính tờ giấy
+        # ấy, không chỉ trong `compose_report.json`: người mở `thinking/` ra
+        # là người đang hỏi "vì sao tờ này trông như vậy", và "vì tờ trước
+        # rơi đúng chỗ tờ 12" là một câu trả lời.
+        hit = got.get("collision") or {}
+        lines += ["## Chống trùng bố cục", "",
+                  f"* lượt gọi thứ **{got.get('attempt', 1)}** cho tờ này",
+                  f"* đã nhận câu nhắc tránh trùng: "
+                  f"{'có' if got.get('diversify_hinted') else 'không'}"]
+        if hit:
+            lines += [f"* vẫn gần tờ {hit.get('against')}: "
+                      f"Jaccard {hit.get('jaccard')}, Hamming {hit.get('hamming')}"]
+        lines += [""]
     mended = {k: v for k, v in (got.get("mended") or {}).items() if v}
     if mended:
         lines += ["## Bản vá máy đã chữa trước khi ra cổng", ""]
@@ -1367,9 +1567,29 @@ def thinking(got: dict, brief: str) -> str:
     return "\n".join(lines)
 
 
+def family_of(index: int) -> str:
+    """Family của tờ thứ `index` -- quay vòng đều qua cả 30 family.
+
+    MỘT chỗ duy nhất biết luật này. `one()` cần nó để rút plan khi không ai
+    đưa sẵn, và `run()` cần nó để rút plan qua `agent/diversity.py` TRƯỚC
+    khi gọi `one()`. Hai chỗ tự viết lại `sorted(G.FAMILIES)[index % ...]`
+    là đúng cái lỗi AGENTS.md gọi tên: một luật, hai người dựng, và khi hai
+    bên lệch thì brief nói một family còn bản ghi khai một family khác."""
+    return sorted(G.FAMILIES)[index % len(G.FAMILIES)]
+
+
 def one(client, index: int, made: list[str], seed: int,
-        lang: str = "en") -> dict:
-    """Một tờ: hỏi, đo, gác cổng. Không ném -- lỗi là một kết quả."""
+        lang: str = "en", plan: DP.DocumentPlan | None = None,
+        avoid: str = "", attempt: int = 1) -> dict:
+    """Một tờ: hỏi, đo, gác cổng. Không ném -- lỗi là một kết quả.
+
+    `plan` đưa từ ngoài vào là đường của `run()`: `agent/diversity.py` rút
+    nó qua `sample_with_coverage` trên một trí nhớ DÙNG CHUNG cả lô, thứ mà
+    một hàm chạy trong một luồng không thể tự có. `None` thì rút tại chỗ
+    như cũ -- mọi caller cũ (và mọi test) vẫn chạy y nguyên.
+
+    `avoid` là câu nhắc đa dạng cho lượt sinh lại; `attempt` là lượt thứ
+    mấy, ghi vào bản ghi để báo cáo đếm được cái giá của việc sinh lại."""
     started = time.time()
     # Số tờ vẫn quay vòng qua `agent/rate_match.py` (Phase 4 task 4.4) --
     # khái niệm "mấy trang" không nằm trong grammar (Phase 3), độc lập với
@@ -1380,15 +1600,26 @@ def one(client, index: int, made: list[str], seed: int,
     # giống hệt cách `seals()`/`hands()` bên dưới seed -- an toàn khi chạy
     # song song (`ThreadPoolExecutor` trong `run()`), mỗi `index` một RNG
     # riêng, không có state dùng chung.
-    rng = random.Random(seed + index)
-    family = sorted(G.FAMILIES)[index % len(G.FAMILIES)]
-    plan = DP.sample(G.FAMILIES[family], rng)
-    brief = ask_for(index, made, plan, sheets, lang)
+    if plan is None:
+        rng = random.Random(seed + index)
+        plan = DP.sample(G.FAMILIES[family_of(index)], rng)
+    # MỰC KHÁC CHO LƯỢT SINH LẠI. `seals()`/`hands()` dưới đây seed bằng
+    # `ink_seed`; để nguyên `seed + index` thì tờ sinh lại mang đúng con dấu
+    # và đúng nét chữ ký của tờ vừa bị loại vì trùng -- sửa bố cục rồi chép
+    # lại mực là sửa một nửa.
+    ink_seed = seed + index + 100003 * (attempt - 1)
+    brief = ask_for(index, made, plan, sheets, lang, avoid=avoid)
+    # Mức dày đọc từ CHÍNH `plan` mà `ask_for()` vừa đọc -- xem `budget()`.
+    density = str(plan.assignment.get("density") or "medium")
     try:
         answer, usage = client.decide_with_usage(
             system_prompt(),
             brief, schema(),
-            max_tokens=budget(sheets), timeout=patience(sheets, client.timeout))
+            # CÙNG mức dày mà `ask_for()` vừa dùng để xin số ký tự -- nếu hai
+            # chỗ đọc hai mức khác nhau thì trần lại lệch khỏi mục tiêu, đúng
+            # cái `budget()` vừa được sửa để không thể xảy ra nữa.
+            max_tokens=budget(sheets, density),
+            timeout=patience(sheets, client.timeout, density))
     except LLMError as error:
         spent = round(time.time() - started, 1)
         text = str(error)
@@ -1449,9 +1680,9 @@ def one(client, index: int, made: list[str], seed: int,
         mended["dòng bảng dựng từ `rows` đã khai"] = n_rows
     # MỰC THẬT vào chỗ model đặt sẵn. Phải chạy TRƯỚC cổng gác: cổng đo trên
     # HTML cuối cùng, không đo trên bản nháp.
-    html, stamped = seals(html, seed=seed + index)
+    html, stamped = seals(html, seed=ink_seed)
     # Nét chữ ký sau con dấu, cùng một lẽ: model đặt CHỖ, engine điền MỰC.
-    html, signed = hands(html, seed=seed + index)
+    html, signed = hands(html, seed=ink_seed)
     mended["dấu thật đã điền"] = stamped
     # `plan_conformance_problems` so HTML với `plan` (ENGINE, authoritative).
     # `plan_problems`/`sheet_plan_problems` vẫn so với `declared` (model tự
@@ -1520,6 +1751,7 @@ def one(client, index: int, made: list[str], seed: int,
         "orphan_share": round(share, 3),
         "brief": brief,
         "stamped": stamped, "signed": signed,
+        "attempt": attempt, "diversify_hinted": bool(avoid),
     }
 
 
@@ -1576,6 +1808,81 @@ def _why_tally(made: list[dict]) -> dict[str, int]:
     return dict(sorted(tally.items(), key=lambda kv: -kv[1]))
 
 
+def _diversity_lines(div: dict) -> list[str]:
+    """Phần "Đa dạng" của `performance.md`.
+
+    Tách khỏi `_write_performance` vì nó trả lời một câu khác hẳn phần còn
+    lại của file ấy: không phải "lượt này chạy nhanh chậm ra sao" mà "lô này
+    có đang tự lặp lại không". Con số cần đọc được khi NHÂN LÊN -- một lô 30
+    tờ hơi lặp và một lô 20 000 tờ hơi lặp là hai chuyện khác nhau -- nên
+    mọi dòng dưới đây là tỉ lệ hoặc phân vị, không phải số đếm trần.
+
+    Rỗng khi không có khoá `diversity` (báo cáo của một lượt chạy cũ đọc lại
+    bằng mã mới): thiếu số không phải lỗi, nhưng bịa số thì là."""
+    if not div:
+        return []
+    geo = div.get("geometry") or {}
+    plans = div.get("plan_fingerprints") or {}
+    near = geo.get("nearest_jaccard") or {}
+    regen = div.get("regeneration") or {}
+    pages = div.get("pages_measured", 0)
+    lines = [
+        "## Đa dạng", "",
+        f"Gác: {'BẬT' if div.get('enabled') else 'TẮT (chỉ đo, không loại)'}"
+        f"  ·  cửa sổ {div.get('window')} tờ"
+        f"  ·  ngưỡng Jaccard {div.get('jaccard_ceiling')}"
+        f"  ·  lưới {geo.get('grid')}",
+        "",
+        "| | |", "|---|---|",
+        f"| Tờ đo được hình học | {pages} |",
+        f"| Loại vì trùng bố cục | **{div.get('rejected_for_collision', 0)}** "
+        f"({100 * div.get('rejected_share', 0.0):.1f}% số lượt sinh) |",
+        f"| Nhận dù vẫn trùng (hết lượt) | {div.get('kept_despite_collision', 0)} |",
+        f"| Chưa đo được hình học | {div.get('geometry_unavailable', 0)} |",
+        f"| Plan đã rút (kể cả rút lại) | {div.get('plans_drawn', 0)} |",
+        f"| Plan rút cạn vẫn trùng `fine` | {div.get('plan_collisions', 0)} |",
+        "",
+        "### Tờ gần nhất trong cửa sổ",
+        "",
+        "Jaccard trên tập ô `(tờ, nhãn lớp, cột, hàng)`. 1,0 là trùng khít.",
+        "",
+        "| | |", "|---|---|",
+        f"| Trung vị | {near.get('median')} |",
+        f"| Phân vị 90 | {near.get('p90')} |",
+        f"| Lớn nhất | {near.get('max')} |",
+        f"| Còn vượt ngưỡng sau khi gác | {geo.get('over_ceiling')} / "
+        f"{geo.get('documents')} ({100 * geo.get('over_ceiling_share', 0.0):.1f}%) |",
+        f"| Tập ô khác nhau | {geo.get('distinct_cell_sets')} / "
+        f"{geo.get('documents')} |",
+        "",
+    ]
+    histogram = geo.get("jaccard_histogram") or {}
+    if any(histogram.values()):
+        widest = max(histogram.values())
+        lines += ["| Khoảng Jaccard | Số tờ | |", "|---|---|---|"]
+        lines += [f"| {k} | {v} | {'█' * round(18 * v / max(widest, 1))} |"
+                 for k, v in histogram.items()]
+        lines += [""]
+    lines += [
+        "### Dấu vân plan (coarse/mid/fine)",
+        "",
+        f"* {plans.get('distinct_coarse')} coarse / {plans.get('distinct_mid')} "
+        f"mid / {plans.get('distinct_fine')} fine khác nhau trên "
+        f"{plans.get('documents')} tờ",
+        f"* khoảng cách trung bình mỗi cặp: "
+        f"{plans.get('mean_pairwise_distance')} (1,0 = khác cả ba tầng)",
+        "",
+    ]
+    if regen.get("calls"):
+        lines += [
+            "### Cái giá của việc sinh lại", "",
+            f"{regen['calls']} lời gọi bị vứt, {regen['seconds']}s và "
+            f"{regen['tokens_out']} token ra -- "
+            f"{100 * regen.get('share_of_seconds', 0.0):.1f}% tổng thời gian "
+            "model làm việc.", ""]
+    return lines
+
+
 def _write_performance(out: Path, report: dict, made: list[dict]) -> None:
     """`performance.md` -- một trang đọc được bằng mắt, và `calls.jsonl`.
 
@@ -1587,11 +1894,20 @@ def _write_performance(out: Path, report: dict, made: list[dict]) -> None:
     `calls.jsonl` là một dòng một lời gọi: dùng khi cần so hai lượt với nhau
     hoặc dựng biểu đồ, thứ mà một file markdown không làm được."""
     pages = sorted(made, key=lambda m: m["index"])
+    # MỘT DÒNG MỘT LỜI GỌI -- kể cả lời gọi đã bị VỨT vì tờ trùng bố cục.
+    # Tên file hứa "một dòng một lời gọi", và một lượt sinh lại là một lời
+    # gọi thật, tốn thật; bỏ nó ra thì ai dựng biểu đồ từ file này thấy một
+    # lượt chạy rẻ hơn lượt chạy đã xảy ra. `discarded: true` để lọc ra được.
+    dropped = ((report.get("diversity") or {}).get("regeneration") or {}
+              ).get("discarded") or []
     with (out / "calls.jsonl").open("w", encoding="utf-8") as fh:
         for m in pages:
             fh.write(json.dumps(
                 {k: v for k, v in m.items() if k not in ("html", "rows", "plan")},
                 ensure_ascii=False) + "\n")
+        for row in sorted(dropped, key=lambda r: (r["index"], r["attempt"])):
+            fh.write(json.dumps(dict(row, discarded=True, ok=False),
+                               ensure_ascii=False) + "\n")
 
     secs = sorted(m.get("seconds", 0) for m in pages)
     outs = sorted(m.get("tokens_out", 0) for m in pages if m.get("tokens_out"))
@@ -1656,6 +1972,7 @@ def _write_performance(out: Path, report: dict, made: list[dict]) -> None:
         lines += ["## Vì sao trượt", "", "| Lý do | Số tờ |", "|---|---|"]
         lines += [f"| {k} | {v} |" for k, v in report["why_tally"].items()]
         lines += [""]
+    lines += _diversity_lines(report.get("diversity") or {})
     kinds_made = [m.get("loai_tai_lieu") or m["archetype"] for m in pages]
     lines += ["## Loại chứng từ model tự nghĩ ra", "",
               f"{len(set(kinds_made))} loại khác nhau trên {len(pages)} tờ.", ""]
@@ -1690,7 +2007,36 @@ class Artist(threading.Thread):
         self.why = ""
 
     def put(self, path: Path, passed: bool) -> None:
-        self.queue.put((path, passed))
+        self.queue.put(("draw", path, passed))
+
+    def measure(self, html: str, stem: str, archetype: str = "llm",
+                timeout: float = 300.0) -> dict | None:
+        """Dàn tờ này CHỈ ĐỂ ĐO, trả bản ghi. Gọi từ luồng sinh, chặn tới khi
+        thợ vẽ xong.
+
+        ## Vì sao đi qua thợ vẽ chứ không tự mở trình duyệt
+
+        `playwright` bản đồng bộ gắn trình duyệt với LUỒNG đã tạo ra nó (đúng
+        lý do lớp này chỉ có một luồng vẽ). Một `ThreadPoolExecutor` sáu
+        luồng sinh mà mỗi luồng tự mở Chromium là sáu trình duyệt, chừng
+        900 MB, cho một việc tốn một tới ba giây một tờ. Nên hỏi thợ vẽ, và
+        thợ vẽ trả lời theo thứ tự nhận được.
+
+        Chặn KHÔNG phải là nút thắt: một tờ mất 110-430 giây để model viết ra
+        và một tới ba giây để dàn, nên ở mức song song 3-8 request thì thợ vẽ
+        rảnh gần như suốt.
+
+        `None` -- không có thợ vẽ, thợ vẽ đã chết, dàn không ra, hay quá hạn
+        chờ. Caller PHẢI đọc nó là "chưa đo được", không phải "không trùng":
+        loại một tờ vì phép đo hỏng là đánh đổi một lỗi lặng lẽ lấy một lỗi
+        lặng lẽ khác, đắt hơn."""
+        if not self.is_alive() or self.why:
+            return None
+        slot: dict = {"record": None, "done": threading.Event()}
+        self.queue.put(("measure", html, stem, archetype, slot))
+        if not slot["done"].wait(timeout):
+            return None
+        return slot["record"]
 
     def close(self) -> None:
         """Báo hết việc rồi đợi vẽ nốt."""
@@ -1698,7 +2044,7 @@ class Artist(threading.Thread):
         self.join()
 
     def run(self) -> None:                                  # noqa: D102
-        from synthgen import draw_llm                       # noqa: PLC0415
+        from synthgen import draw_llm  # noqa: PLC0415
 
         try:
             drawer_cm = draw_llm.Drawer(self.out)
@@ -1713,7 +2059,20 @@ class Artist(threading.Thread):
                     job = self.queue.get()
                     if job is None:
                         break
-                    path, passed = job
+                    # ĐO XONG MỚI TRẢ LỜI, và trả lời BẰNG MỌI GIÁ: một luồng
+                    # sinh đang đứng đợi `slot["done"]`. Ngoại lệ ở đây mà
+                    # không `set()` thì luồng ấy treo tới hết `timeout` --
+                    # `try/finally` là chỗ duy nhất luật ấy đọc được.
+                    if job[0] == "measure":
+                        _kind, html, stem, archetype, slot = job
+                        try:
+                            slot["record"] = drawer.measure(html, stem, archetype)
+                        except Exception:                   # noqa: BLE001
+                            slot["record"] = None
+                        finally:
+                            slot["done"].set()
+                        continue
+                    _kind, path, passed = job
                     try:
                         line, _ok = drawer.draw(path, passed)
                     except Exception as error:              # noqa: BLE001
@@ -1727,10 +2086,18 @@ class Artist(threading.Thread):
             self._drain()
 
     def _drain(self) -> None:
-        """Nuốt nốt hàng đợi để `close()` không treo khi thợ vẽ đã chết."""
+        """Nuốt nốt hàng đợi để `close()` không treo khi thợ vẽ đã chết.
+
+        Việc đo cũng phải được ĐÁNH THỨC, không chỉ nuốt: một luồng sinh
+        đang `wait()` trên `slot["done"]` của một việc chưa ai làm sẽ đứng
+        đủ `timeout` giây rồi mới đi tiếp, và với mười tờ còn lại trong hàng
+        đợi thì đó là năm mươi phút im lặng sau khi thợ vẽ đã chết."""
         while True:
-            if self.queue.get() is None:
+            job = self.queue.get()
+            if job is None:
                 return
+            if job[0] == "measure":
+                job[-1]["done"].set()
 
 
 def _draw(out: Path) -> None:
@@ -1783,11 +2150,16 @@ def broken(index: int, error: BaseException) -> dict:
         "tokens_in": 0, "tokens_out": 0, "tokens_per_second": 0.0,
         "mended": {}, "orphan_runs": 0, "runs": 0, "orphan_share": 0.0,
         "brief": "", "stamped": 0, "signed": 0,
+        "attempt": 1, "diversify_hinted": False,
     }
 
 
 def run(want: int, out: Path, *, concurrency: int, seed: int,
-        lang: str = "en", no_draw: bool = False) -> int:
+        lang: str = "en", no_draw: bool = False,
+        diversity: bool = True, steer: bool = True,
+        window: int = GD.WINDOW,
+        ceiling: float = GD.JACCARD_CEILING,
+        attempts: int = DIV.MAX_ATTEMPTS) -> int:
     # Sáu trăm giây cho MỘT tờ. Viết một trang HTML là việc dài nhất kho này
     # nhờ model làm: đo được 5 400 token ở 15 tok/s khi bốn request chạy cùng
     # lúc, tức 360 giây -- vượt hạn mặc định 120 giây, và `_post` thử lại ba
@@ -1825,11 +2197,91 @@ def run(want: int, out: Path, *, concurrency: int, seed: int,
     # chung giữa các luồng nên có khoá -- danh sách này đọc ở mỗi lần hỏi.
     kinds_made: list[str] = []
     lock = threading.Lock()
+    # Lời gọi đã VỨT vì tờ trùng bố cục. Giữ giá của chúng (giây, token) để
+    # báo cáo không nói dối về chi phí: `made` chỉ còn tờ cuối cùng của mỗi
+    # chỉ số, nên cộng token trên `made` một mình là bỏ quên đúng phần mà
+    # phép chống trùng lặp bắt lượt chạy trả thêm.
+    discarded: list[dict] = []
+
+    # TRÍ NHỚ ĐA DẠNG CỦA CẢ LÔ, không của một luồng.
+    #
+    # `agent/coverage.py` + `agent/fingerprint.py` viết xong từ Phase 4, có
+    # test, và cho tới đây KHÔNG CHỖ NÀO GỌI: `one()` rút plan bằng
+    # `DP.sample()` trần trên một RNG riêng cho mỗi `index`, nên mỗi tờ là
+    # một lần bốc độc lập và không gì trong lượt chạy nhớ những tờ trước đã
+    # dùng cấu hình nào. `agent/diversity.py` là người gọi còn thiếu ấy.
+    warden = DIV.DiversityWarden(enabled=diversity, steer=steer, window=window,
+                                ceiling=ceiling)
+    if not diversity or not steer:
+        print(f"[đa dạng] rút có trí nhớ: {'BẬT' if steer else 'TẮT'}  ·  "
+              f"loại tờ trùng: {'BẬT' if diversity else 'TẮT'}  -- vẫn ĐO đủ "
+              "mọi con số (nhánh đối chứng của phép thử A/B)")
+    if no_draw:
+        print("[đa dạng] `--no-draw`: không có thợ vẽ nên không đo được hình "
+              "học; chỉ còn tầng plan (coverage + fingerprint) gác")
+
+    def measure_geometry(html: str, stem: str, archetype: str):
+        """Dấu vân hình học của tờ vừa viết, hoặc `None` khi chưa đo được.
+
+        `None` KHÔNG phải "không trùng" -- xem `Artist.measure`. Caller nhận
+        tờ giấy khi chưa đo được, và `metrics()` đếm riêng ở
+        `geometry_unavailable` để con số ấy không lẫn vào tỉ lệ trùng."""
+        if artist is None or not html:
+            return None
+        record = artist.measure(html, stem, archetype)
+        if not record:
+            return None
+        return geometry_fingerprint(record.get("layout_annotations") or [])
 
     def work(index: int) -> dict:
-        with lock:
-            seen = list(kinds_made)
-        got = one(client, index, seen, seed, lang)
+        family = family_of(index)
+        grammar = G.FAMILIES[family]
+        # MỘT RNG cho cả chuỗi lượt của tờ này, không một RNG mỗi lượt: lượt
+        # sinh lại phải rút được một plan KHÁC, và một RNG dựng lại từ cùng
+        # `seed + index` thì rút lại đúng cái vừa bị loại.
+        rng = random.Random(seed + index)
+        avoid = ""
+        got: dict = {}
+        for attempt in range(1, max(1, attempts) + 1):
+            with lock:
+                seen = list(kinds_made)
+            plan, plan_fp = warden.draw(grammar, rng)
+            got = one(client, index, seen, seed, lang, plan=plan,
+                     avoid=avoid, attempt=attempt)
+            if not got["ok"]:
+                # Trượt cổng chữ thì chưa bao giờ tới phép đo hình học, nên
+                # không ghi vào trí nhớ nào: một tờ không vào bộ không được
+                # quyền chiếm một chỗ trong cửa sổ so trùng.
+                break
+            stem = f"llm_{got['archetype']}_{index:04d}"
+            geo = measure_geometry(got.get("html") or "", stem, got["archetype"])
+            # XEM VÀ GHI TRONG MỘT NHỊP. Hỏi rồi mới ghi là chỗ hai tờ xong
+            # cùng lúc cùng nhìn một cửa sổ chưa có tờ kia -- xem
+            # `DiversityWarden.judge`. Lượt cuối thì `force`: vẫn đo, vẫn ghi
+            # lại là trùng, nhưng nhận -- một lô thiếu trang vì quá khó chiều
+            # là một lô hỏng theo cách khác.
+            collision, taken = warden.judge(
+                plan_fp, geo, key=index, attempt=attempt,
+                force=attempt >= max(1, attempts))
+            if collision is not None:
+                got["collision"] = collision.as_dict()
+            if not taken:
+                avoid = collision.hint
+                print(f"  ↻ {index:3d}  {got['archetype']:22s} trùng bố cục "
+                      f"tờ {collision.against} (J={collision.jaccard:.2f}, "
+                      f"H={collision.hamming:.2f}) -- sinh lại", flush=True)
+                with lock:
+                    discarded.append({
+                        "index": index, "attempt": attempt,
+                        "archetype": got["archetype"],
+                        "seconds": got.get("seconds", 0.0),
+                        "tokens_in": got.get("tokens_in", 0),
+                        "tokens_out": got.get("tokens_out", 0),
+                        "jaccard": round(collision.jaccard, 4),
+                        "hamming": round(collision.hamming, 4),
+                        "against": collision.against})
+                continue
+            break
         with lock:
             if got.get("loai_tai_lieu"):
                 kinds_made.append(got["loai_tai_lieu"])
@@ -1964,6 +2416,13 @@ def run(want: int, out: Path, *, concurrency: int, seed: int,
     kept = [m for m in made if m["ok"]]
     wrong = sum(m.get("rows_wrong", 0) for m in made)
     total = sum(m.get("rows_total", 0) for m in made)
+    # TOKEN CỦA CẢ NHỮNG LỜI GỌI ĐÃ VỨT. `made` chỉ giữ lượt cuối của mỗi
+    # chỉ số, nên cộng riêng nó là báo cáo một cái giá rẻ hơn cái giá đã trả
+    # -- và đúng con số ấy đi thẳng vào phép suy "20 000 tờ ≈ N giờ".
+    out_tokens = (sum(m.get("tokens_out", 0) for m in made)
+                 + sum(d["tokens_out"] for d in discarded))
+    in_tokens = (sum(m.get("tokens_in", 0) for m in made)
+                + sum(d["tokens_in"] for d in discarded))
     report = {
         "asked": want, "kept": len(kept),
         "seconds": round(spent, 1),
@@ -1971,12 +2430,13 @@ def run(want: int, out: Path, *, concurrency: int, seed: int,
         # TOKEN, không chỉ giây. Giây một mình không ước lượng được một lượt
         # hai mươi nghìn trang: cùng một khoảng thời gian che cả một trang ngắn
         # lúc server rảnh lẫn một trang dài lúc server bận. Token thì không.
-        "tokens_out": sum(m.get("tokens_out", 0) for m in made),
-        "tokens_in": sum(m.get("tokens_in", 0) for m in made),
-        "tokens_out_per_page": round(
-            sum(m.get("tokens_out", 0) for m in made) / max(len(made), 1)),
-        "tokens_per_second": round(
-            sum(m.get("tokens_out", 0) for m in made) / max(spent, 1e-6), 1),
+        "tokens_out": out_tokens,
+        "tokens_in": in_tokens,
+        # Mẫu số là số tờ GIAO RA, không số lời gọi: câu hỏi "20 000 tờ mất
+        # bao lâu" hỏi về tờ giao ra, và một tờ tốn hai lời gọi thì nó tốn
+        # gấp đôi -- đúng cái con số này phải nói.
+        "tokens_out_per_page": round(out_tokens / max(len(made), 1)),
+        "tokens_per_second": round(out_tokens / max(spent, 1e-6), 1),
         "concurrency": concurrency,
         "model": client.model, "url": client.url,
         "rows_wrong": wrong, "rows_total": total,
@@ -2016,6 +2476,20 @@ def run(want: int, out: Path, *, concurrency: int, seed: int,
     # `why_tally`.
     report["failure_codes"] = failures.tally(
         [why for m in made for why in (m.get("why") or [])])
+    # ĐA DẠNG, đo trên tờ ĐÃ QUA CỔNG. Một tờ trượt cổng không vào bộ, nên nó
+    # không nằm trong mẫu số của "bao nhiêu phần trăm bị loại vì trùng" --
+    # trộn hai loại loại-bỏ vào một tỉ lệ là làm cả hai con số hết đọc được.
+    report["diversity"] = warden.metrics(pages=len(kept))
+    report["diversity"]["regeneration"] = {
+        "calls": len(discarded),
+        "seconds": round(sum(d["seconds"] for d in discarded), 1),
+        "tokens_out": sum(d["tokens_out"] for d in discarded),
+        "share_of_seconds": round(
+            sum(d["seconds"] for d in discarded)
+            / max(sum(m.get("seconds", 0.0) for m in made)
+                 + sum(d["seconds"] for d in discarded), 1e-6), 4),
+        "discarded": discarded,
+    }
     # BA TẦNG, cộng lại cả bộ -- và trường bị giữ lại ghi ra một file RIÊNG.
     #
     # Riêng, vì `staging/` là hàng đợi soát của người, không phải một mục
@@ -2081,6 +2555,22 @@ def run(want: int, out: Path, *, concurrency: int, seed: int,
         print("[trang] lý do bị loại:")
         for line, n in sorted(why.items(), key=lambda kv: -kv[1]):
             print(f"    {n:3d}  {line}")
+    div = report["diversity"]
+    near = (div.get("geometry") or {}).get("nearest_jaccard") or {}
+    print(f"[đa dạng] {div['rejected_for_collision']} tờ sinh lại vì trùng bố "
+          f"cục ({100 * div['rejected_share']:.1f}% số lượt), "
+          f"{div['kept_despite_collision']} nhận dù trùng, "
+          f"{div['geometry_unavailable']} chưa đo được")
+    print(f"[đa dạng] tờ gần nhất trong cửa sổ {div['window']}: trung vị "
+          f"J={near.get('median')}, p90={near.get('p90')}, "
+          f"còn {(div.get('geometry') or {}).get('over_ceiling')} tờ vượt "
+          f"ngưỡng {div['jaccard_ceiling']}")
+    if div["geometry_unavailable"] and not no_draw:
+        # KÊU. Một lượt mà phần lớn tờ không đo được hình học là một lượt
+        # KHÔNG có tầng gác thứ hai, và nó vẫn in ra "0 tờ trùng" y như một
+        # lượt sạch thật -- đúng kiểu lỗi lặng lẽ AGENTS.md luật 6 nói tới.
+        print(f"[đa dạng] CẢNH BÁO: {div['geometry_unavailable']} tờ không dàn "
+              "ra được để đo, nên chúng chưa từng qua tầng gác hình học")
     print(f"[trang] -> {out}")
     # VẼ LUÔN. Người dùng phải xem được chất lượng ngay sau lượt chạy, không
     # phải nhớ chạy thêm một lệnh nữa -- và cái cần xem là ẢNH: hộp bố cục
@@ -2103,7 +2593,7 @@ def run(want: int, out: Path, *, concurrency: int, seed: int,
                   f"requirements.txt\n"
                   f"  rồi vẽ lại: .venv/bin/python -m synthgen.draw_llm {out}")
         elif artist.rows:
-            from synthgen import draw_llm                    # noqa: PLC0415
+            from synthgen import draw_llm  # noqa: PLC0415
 
             print(f"[trang] {len(artist.rows)} tờ đã vẽ; gộp json và KIE...")
             draw_llm.finish(out, artist.rows)
@@ -2125,9 +2615,33 @@ def main() -> int:
     # `--lang vi` vẫn còn để so, và chỉ phép đo mới nói được bản nào hơn.
     parser.add_argument("--no-draw", action="store_true",
                         help="chỉ sinh HTML, không vẽ ảnh hộp bố cục và KIE")
+    # ĐỐI CHỨNG, không phải công tắc tiện tay. `--no-diversity` vẫn ĐO đủ mọi
+    # con số và chỉ bỏ quyền loại tờ, nên hai lượt chạy A/B so được với nhau
+    # bằng cùng một thước -- xem `agent/diversity.py::DiversityWarden`.
+    parser.add_argument("--no-diversity", action="store_true",
+                        help="ĐỐI CHỨNG: rút plan như trước khi nối dây (bốc "
+                             "độc lập) và không sinh lại tờ trùng -- vẫn đo đủ")
+    parser.add_argument("--no-coverage-steer", action="store_true",
+                        help="chỉ tắt phần rút có trí nhớ, vẫn loại tờ trùng "
+                             "-- để tách đóng góp của hai tầng")
+    parser.add_argument("--diversity-window", type=int, default=GD.WINDOW,
+                        help=f"so với mấy tờ gần nhất (mặc định {GD.WINDOW})")
+    parser.add_argument("--diversity-jaccard", type=float,
+                        default=GD.JACCARD_CEILING,
+                        help="Jaccard từ mức này trở lên là trùng "
+                             f"(mặc định {GD.JACCARD_CEILING})")
+    parser.add_argument("--attempts", type=int, default=DIV.MAX_ATTEMPTS,
+                        help="tối đa mấy lời gọi model cho một tờ "
+                             f"(mặc định {DIV.MAX_ATTEMPTS})")
     args = parser.parse_args()
     return run(args.want, args.out.resolve(),
-               concurrency=args.concurrency, seed=args.seed,                no_draw=args.no_draw)
+               concurrency=args.concurrency, seed=args.seed,
+               no_draw=args.no_draw,
+               diversity=not args.no_diversity,
+               steer=not (args.no_diversity or args.no_coverage_steer),
+               window=args.diversity_window,
+               ceiling=args.diversity_jaccard,
+               attempts=args.attempts)
 
 
 if __name__ == "__main__":

@@ -488,6 +488,15 @@ từ `agent/compose_page.py::one()` — track 3 vẫn chạy y nguyên như trư
 Phase 1, LLM vẫn tự nghĩ cấu trúc dưới `page.md`. Nối `DocumentPlan` vào
 brief thật là việc của Phase 5.
 
+> **Cập nhật 24-09.** Câu "chưa có gì được GỌI" ở trên đúng tới Phase 5:
+> Phase 5 nối `document_plan.py` + `rate_match.py` vào `one()`, nhưng
+> `fingerprint.py` và `coverage.py` thì **vẫn** không ai gọi — `one()` rút
+> plan bằng `DP.sample()` trần trên một RNG riêng cho từng `index`, tức mỗi
+> tờ vẫn là một lần bốc độc lập không nhớ gì. `agent/diversity.py` (mục 7.4
+> dưới) là người gọi còn thiếu ấy, và nó nối cả hai vào `run()` chứ không
+> vào `one()`: trí nhớ phải dùng chung cho cả lô, mà `one()` chạy trong một
+> luồng của `ThreadPoolExecutor`.
+
 ---
 
 ## Phase 5 — LLM Context động & giao thức Planner → LLM
@@ -625,6 +634,87 @@ track 1, không chạy được trên track 3 — xác nhận từ audit).
   không áp dụng cho track 3 (dressing diversity) là thật sự ngoài script
   này. Test: `tests/test_document_distance.py` (10 test), `tests/
   test_corpus_stats.py` (+6 test cho hai bảng mới).
+
+---
+
+### 7.4 — Nối coverage + fingerprint vào lượt sinh, và thêm tầng hình học (24-09)
+
+Hai file của Phase 4.2/4.3 viết xong, có test, và **không chỗ nào gọi**.
+Mục này là người gọi, cộng một tầng dấu vân thứ hai mà Phase 4 nói là "chưa
+có nguồn thật để gộp" (`render_extra`).
+
+| file | việc |
+| --- | --- |
+| `agent/fingerprint.py` | thêm `geometry_fingerprint()` — lưới 8×12 trên `layout_annotations` ĐÃ VẼ |
+| `agent/geometry_distance.py` | mới — Jaccard (quyết) + Hamming (ghi), cửa sổ trượt, `corpus_geometry()` |
+| `agent/diversity.py` | mới — `DiversityWarden`: trí nhớ dùng chung cả lô, an toàn nhiều luồng |
+| `synthgen/draw_llm.py` | `Drawer.measure()` — dàn trang chỉ để đo, không ghi tệp nào |
+| `agent/compose_page.py` | `Artist` nhận thêm việc ĐO; `run()` rút plan qua warden và sinh lại tờ trùng |
+| `tools/llm/diversity_report.py` | mới — đo lại từ `records/` trên đĩa, so hai lô |
+
+**Vì sao cần tầng hình học, đo được:** trên 94 tài liệu `data/pilot16` +
+`data/pilot17` (4 371 cặp), ba cặp trang giống nhau nhất là
+
+    J=0.895  handover_record_0010   vs  invoice_detailed_0023
+    J=0.891  form_roster_0007       vs  invoice_detailed_0023
+    J=0.858  form_roster_0007       vs  handover_record_0010
+
+và `agent/document_distance.py::distance` chấm cả ba là **1.000 — khác nhau
+tối đa**, vì chúng thuộc ba family khác nhau. Dấu vân plan mù với chuyện này
+theo đúng thiết kế (7.2: "không đọc hình học"), nên câu trả lời là một dấu
+vân thứ hai với trí nhớ riêng, **không** phải nhét hình học vào `fine` qua
+`render_extra` — làm thế thì mọi fingerprint đã quan sát không bao giờ khớp
+`fine` của một ứng viên (ứng viên rút TRƯỚC khi vẽ), và phép phá hoà
+coarse/mid/fine của `coverage.py` chết lặng lẽ.
+
+**Ngưỡng:** Jaccard ≥ 0,60 trong cửa sổ 24 tờ. Đo trên cùng 94 tài liệu:
+ngưỡng 0,70 chỉ bắt 4/94 (4,3%), 0,50 bắt 24/94 (25,5%), 0,60 bắt 14/94
+(14,9%). Hamming **không gác**: cả 38 cặp vượt ngưỡng Jaccard đều đã có
+Hamming ≤ 0,240, còn 30,7% số cặp KHÔNG trùng cũng có Hamming ≤ 0,25 — một
+điều kiện chưa bao giờ đổi được quyết định thì không được viết như thể nó
+đổi (AGENTS.md mục 5).
+
+**Đo thật, A/B 24-09.** Hai lô 40 tờ, cùng seed 24, cùng 8 request song song,
+cùng model `Qwen/Qwen3.8-27B-FP8`. Khác đúng một thứ: `--no-diversity` (rút
+độc lập như trước khi nối dây, không loại tờ nào) so với mặc định. Cả hai
+nhánh ĐO bằng cùng một mã, nên số so được với nhau.
+
+| | `data/24-09-div-before` | `data/24-09-div-after` | giảm |
+| --- | --- | --- | --- |
+| tờ tới được cổng hình học | 29 | 29 | — |
+| **vượt ngưỡng J≥0,60** | **6 (20,7%)** | **1 (3,45%)** | **−83,3%** |
+| láng giềng gần nhất, trung vị | 0,4333 | 0,3836 | −11,5% |
+| láng giềng gần nhất, p90 | 0,7227 | 0,5548 | −23,2% |
+| láng giềng gần nhất, lớn nhất | 0,8328 | 0,6548 | −21,4% |
+| `mid` khác nhau / 29 tờ | 18 | 25 | +39% |
+| `coarse` khác nhau / 29 tờ | 27 | 29 | +7% |
+
+Giá phải trả: **2 lời gọi bị vứt**, 1 454 giây và 25 679 token ra — 3,8%
+tổng thời gian model làm việc, 4,1% token ra. Một tờ vẫn được NHẬN dù trùng
+vì hết lượt (`kept_despite_collision`), đúng như luật đã đặt.
+
+**Hai điều con số này KHÔNG nói, và phải nói ra:**
+
+1. **Đồng hồ treo tường tăng 2 185s → 6 193s, và gần hết phần tăng ấy KHÔNG
+   phải do sinh lại.** Rút có trí nhớ đổi chính bộ giấy: `density` từ
+   9 dense / 10 medium / 14 sparse sang 13 / 14 / 12 (+1 `very_dense`), và
+   số tờ xin bảng từ 15 lên 22. Trang dày hơn thì chữ nhiều hơn — trung vị
+   ký tự HTML 11 181 → 18 054 (+61%), token ra 386k → 634k (+64%) — và tốc
+   độ server trong lượt sau cũng tụt (176,8 → 102,3 tk/s). Phép chống trùng
+   làm bộ giấy ĐẮT HƠN vì nó làm bộ giấy ĐỀU HƠN, không vì nó sinh lại.
+2. **Đo trên MỌI tờ đã vẽ (kể cả tờ trượt cổng chữ) thì mức giảm nhỏ hơn
+   nhiều: 5/32 (15,6%) → 4/40 (10,0%), −36%.** Đúng như phải thế: tờ trượt
+   cổng chữ chưa bao giờ đi qua cổng hình học, nên gộp chúng vào là pha
+   loãng bằng đúng những tờ mà luật này không được phép chạm tới. Ở phép đo
+   ấy trung vị còn NHÍCH LÊN (0,400 → 0,441) trong khi p90 và lớn nhất đều
+   giảm — hợp với lời giải thích ở điểm 1: giấy dày hơn thì lấp nhiều ô lưới
+   hơn nên nền giống nhau nhỉnh lên, còn cái đuôi trùng thật thì bị cắt.
+
+Tỉ lệ qua cổng 8/40 → 11/40 KHÔNG tính là công của thay đổi này: lượt trước
+có 7 lần model trả về không phải JSON, lượt sau không lần nào. Đó là server,
+không phải luật.
+
+Đo lại bất cứ lúc nào: `python -m tools.llm.diversity_report data/24-09-div-before data/24-09-div-after`.
 
 ---
 

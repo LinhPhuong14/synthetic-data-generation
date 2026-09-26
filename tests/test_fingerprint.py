@@ -76,3 +76,43 @@ def test_fingerprint_is_hashable_for_use_as_a_counter_key():
                         assignment={"table": "simple", "density": "medium"})
     fp = fingerprint(plan)
     {fp.coarse: 1, fp.mid: 1, fp.fine: 1}  # raises if any tier is unhashable
+
+
+def test_two_families_drawing_the_same_assignment_are_not_fine_identical():
+    """`fine` PHẢI mang `family`, và đây là hồi quy cho lúc nó không mang.
+
+    28 trong 30 family dựng từ `agent/grammar.py::_family` chia cùng bộ tên
+    nhánh và cùng danh sách lựa chọn, nên hai family rút trúng cùng một
+    assignment là chuyện thường. Đo trước khi sửa: trên 200 lô mô phỏng x 40
+    tờ quay vòng (8 000 plan), 138 tờ (1,73%) có `fine` trùng một tờ KHÁC
+    family trong cửa sổ 24 tờ, và 0 tờ trùng một tờ CÙNG family -- nghĩa là
+    một caller dùng `fine` để chặn cấu hình lặp (`agent/diversity.py`) chặn
+    nhầm 100% số lần nó chặn."""
+    same = {"density": "medium", "table": "simple", "header": "compact"}
+    a = DocumentPlan(family="hospital_bill", assignment=dict(same))
+    b = DocumentPlan(family="handover_record", assignment=dict(same))
+    fp_a, fp_b = fingerprint(a), fingerprint(b)
+    assert fp_a.coarse != fp_b.coarse
+    assert fp_a.fine != fp_b.fine
+    # `mid` thì CỐ Ý vẫn bằng nhau: nó tả HÌNH DẠNG, và "bao nhiêu tài liệu
+    # ở bất cứ đâu trong bộ cũng ra hình này" là đúng câu mà phép phá hoà
+    # của `agent/coverage.py` muốn hỏi.
+    assert fp_a.mid == fp_b.mid
+
+
+def test_same_fine_implies_same_coarse():
+    """Bất biến `fine` xác định một plan: không có hai plan nào trùng `fine`
+    mà khác `coarse`."""
+    import random
+
+    from agent.document_plan import sample
+    from agent.grammar import FAMILIES
+
+    seen: dict = {}
+    rng = random.Random(0)
+    for name in sorted(FAMILIES):
+        for _ in range(40):
+            fp = fingerprint(sample(FAMILIES[name], rng))
+            if fp.fine in seen:
+                assert seen[fp.fine] == fp.coarse, name
+            seen[fp.fine] = fp.coarse

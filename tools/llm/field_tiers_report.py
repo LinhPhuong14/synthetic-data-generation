@@ -47,6 +47,58 @@ def _pct(part: int, whole: int) -> str:
     return f"{part / whole:6.1%}" if whole else "     -"
 
 
+def diversity_gate() -> tuple[float, int]:
+    """`(trần tỉ lệ, sàn số lượt)` -- ĐỌC từ `rulebase/synthgen/_kie_gates.yaml`.
+
+    Không viết cứng ở đây: cùng file ấy đã giữ mọi trần khác của mô tả KIE, và
+    một con số thứ hai nằm trong mã là thứ sẽ lệch khỏi nó khi ai đó siết
+    cổng. Thiếu file thì trả `(0.0, 0)` -- báo cáo vẫn in tỉ lệ, chỉ không
+    cảnh báo, vì cái thiếu là một phép chấm ĐIỂM chứ không phải một phép đo."""
+    import yaml  # noqa: PLC0415
+
+    try:
+        raw = yaml.safe_load(
+            (REPO_ROOT / "rulebase" / "synthgen" / "_kie_gates.yaml")
+            .read_text(encoding="utf-8")) or {}
+    except (OSError, ValueError):
+        return 0.0, 0
+    limit = raw.get("thresholds") or {}
+    return (float(limit.get("description_diversity") or 0.0),
+            int(limit.get("description_diversity_floor") or 0))
+
+
+def diversity(rows) -> list[dict]:
+    """Đa dạng CÂU TẢ cho từng cặp `(loại giấy, kind)`: duy nhất / tổng lượt.
+
+    Vì sao đo ở mức cặp chứ không ở mức bộ: một con số cho cả bộ trộn lẫn hai
+    chuyện khác hẳn nhau. `store.name` lặp một câu trên hai trăm tờ là ĐÚNG --
+    tên đơn vị phát hành nghĩa như nhau ở mọi tờ. `store.tax_code` lặp một câu
+    trong khi nó in HAI LẦN trên cùng một tờ là sai, vì hai lần ấy là hai bên
+    khác nhau. Chỉ khi tách theo cặp thì hai chuyện ấy mới nằm ở hai dòng.
+
+    Đo lúc viết (24-09-2026, 785 tệp `data/*/declared`, 11.847 lượt): tỉ lệ
+    toàn cục 0,3785 -- và nó giấu mất `authorisation_letter/meta.value` 1/55
+    = 0,018 nằm bên trong. Đó là cùng hình dạng lỗi mà
+    `data/review100d/kie_descriptions.json` mang: 63.060 cặp khoá→câu tả gom
+    lại còn 247 câu khác nhau."""
+    per: dict[tuple[str, str], dict] = {}
+    for doc_type, key, text in rows:
+        cell = per.setdefault((doc_type, key), {"n": 0, "said": set()})
+        cell["n"] += 1
+        cell["said"].add(text)
+    ceiling, floor = diversity_gate()
+    out = []
+    for (doc_type, key), cell in per.items():
+        uniq, total = len(cell["said"]), cell["n"]
+        out.append({"doc_type": doc_type, "kind": key, "unique": uniq,
+                    "total": total, "ratio": round(uniq / total, 4),
+                    "scored": total >= floor,
+                    "under": bool(floor and total >= floor
+                                  and ceiling and uniq / total < ceiling)})
+    out.sort(key=lambda r: (r["ratio"], -r["total"]))
+    return out
+
+
 def measure(docs) -> dict:
     """Đếm theo tầng cho cả hai không gian tên, cộng phần 'trước'."""
     generic = {space: set(FT.registry().generic.get(space) or ())
@@ -56,6 +108,8 @@ def measure(docs) -> dict:
     staged = {space: collections.Counter() for space in FT.SPACES}
     families = {space: collections.Counter() for space in FT.SPACES}
     groups = collections.Counter()
+    said: list[tuple[str, str, str]] = []
+    catchall = collections.Counter()
     for _path, doc in docs:
         kind = str(doc.get("archetype") or "")
         title = str(doc.get("doc_title") or "")
@@ -66,6 +120,12 @@ def measure(docs) -> dict:
             + FT.classify_data(doc.get("data"), doc_type=kind, doc_title=title))
         for got in decisions:
             counts[got.space][got.tier] += 1
+            if got.space == FT.KIND:
+                # CÂU TẢ ĐÃ GHÉP HAI LỚP, không câu của sổ: đây là chuỗi thật
+                # sự đi ra bộ huấn luyện, nên nó mới là thứ đáng đo đa dạng.
+                said.append((kind, got.key, got.description))
+                if got.leaves:
+                    catchall[f"{got.key} ({kind})"] += 1
             before[got.space]["generic" if got.key in generic[got.space]
                               else "named"] += 1
             if got.tier == FT.STAGING:
@@ -89,7 +149,8 @@ def measure(docs) -> dict:
                 if got.family:
                     families[got.space][got.family] += 1
     return {"counts": counts, "before": before, "staged": staged,
-            "families": families, "groups": groups, "docs": len(docs)}
+            "families": families, "groups": groups, "docs": len(docs),
+            "diversity": diversity(said), "catchall": catchall}
 
 
 def report(got: dict) -> str:
@@ -135,6 +196,53 @@ def report(got: dict) -> str:
     lines += ["## Nhóm loại chứng từ của mẫu này", "",
               "| nhóm | tài liệu |", "| --- | ---: |"]
     lines += [f"| `{name}` | {n} |" for name, n in got["groups"].most_common()]
+
+    # ------------------------------------------- đa dạng câu tả, theo cặp
+    rows = got["diversity"]
+    ceiling, floor = diversity_gate()
+    scored = [r for r in rows if r["scored"]]
+    under = [r for r in rows if r["under"]]
+    total_n = sum(r["total"] for r in rows)
+    total_u = sum(r["unique"] for r in rows)
+    lines += ["", "## Đa dạng câu tả -- câu duy nhất / lượt trường", "",
+              f"Toàn cục **{total_u}/{total_n} = "
+              f"{(total_u / total_n if total_n else 0):.4f}** trên "
+              f"{len(rows)} cặp `(loại giấy, kind)`. Chấm điểm "
+              f"{len(scored)} cặp có từ {floor} lượt (trần {ceiling:.2f}); "
+              f"phần còn lại quá ít lượt để tỉ lệ nói được gì -- xem "
+              "`description_diversity_floor` trong `_kie_gates.yaml`.", ""]
+    if under:
+        # CẢNH BÁO, một dòng một cặp. Không gộp thành một con số: cái phải
+        # sửa là một cặp cụ thể, và một tỉ lệ trung bình thì không sửa được.
+        lines += [f"**{len(under)} cặp dưới trần {ceiling:.2f}** -- câu tả sập "
+                  "về khuôn dù nội dung tờ giấy đổi:", ""]
+        for r in under:
+            lines.append(
+                f"- ⚠ `{r['doc_type']}/{r['kind']}` -- {r['unique']} câu cho "
+                f"{r['total']} lượt ({r['ratio']:.4f})")
+        lines.append("")
+    else:
+        lines += [f"Không cặp nào dưới trần {ceiling:.2f}.", ""]
+    worst = [r for r in scored][:12]
+    if worst:
+        lines += ["Thấp nhất trước, trong các cặp được chấm:", "",
+                  "| loại giấy | kind | duy nhất | lượt | tỉ lệ |",
+                  "| --- | --- | ---: | ---: | ---: |"]
+        lines += [f"| `{r['doc_type']}` | `{r['kind']}` | {r['unique']} | "
+                  f"{r['total']} | {r['ratio']:.4f} |" for r in worst]
+        lines.append("")
+
+    # ------------------------------------------------ khoá hứng chung còn lại
+    catch = got["catchall"].most_common(10)
+    if catch:
+        lines += ["## Khoá hứng chung kèm câu tả riêng -- ca nên tách", "",
+                  "Mỗi dòng là một chỗ model đã BIẾT trường ấy là gì (nó viết "
+                  "được câu tả) mà vẫn gọi tên bằng thùng hứng. Lá thay thế "
+                  "nằm ở `generic.leaves` trong `rulebase/field_tiers.json`; "
+                  "tầng `semi_open` nhận chúng sẵn, không cần mã mới.", "",
+                  "| khoá (loại giấy) | lượt |", "| --- | ---: |"]
+        lines += [f"| `{name}` | {n} |" for name, n in catch]
+        lines.append("")
     return "\n".join(lines) + "\n"
 
 
@@ -160,7 +268,9 @@ def main() -> int:
             {"docs": got["docs"],
              "counts": {s: dict(c) for s, c in got["counts"].items()},
              "before": {s: dict(c) for s, c in got["before"].items()},
-             "groups": dict(got["groups"])}, ensure_ascii=False, indent=1))
+             "groups": dict(got["groups"]),
+             "diversity": got["diversity"],
+             "catchall": dict(got["catchall"])}, ensure_ascii=False, indent=1))
     else:
         print(report(got))
     return 0

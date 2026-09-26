@@ -493,11 +493,52 @@ region_alias:
 # `rows` là số dòng bảng MỖI TỜ, không phải cả tài liệu: lời nhờ nhân với số
 # tờ đã xin. Đó là cách duy nhất "xin 8 tờ" ra được tám tờ -- bảng phải dài
 # gấp tám, chứ không phải chữ phải dày gấp tám.
+#
+# ---------------------------------------------------------------------------
+# ĐO LẠI TRÊN CHÍNH NHÁNH LLM (`data/pilot17`, 60 tờ, 24-09-2026)
+#
+# Những con số trên ĐO TỪ NHÁNH LUẬT, và đó là chỗ sai. Ở nhánh luật, engine
+# tự viết CSS và mỗi `.sheet` là đúng một tờ giấy -- "1 175 ký tự mỗi tờ" là
+# số ký tự engine CHỌN đặt lên một tờ. Ở nhánh LLM thì ngược hẳn: model viết
+# đúng MỘT `.sheet` (mục 40 của `agent/prompts/page.md`) kèm CSS của chính
+# nó, rồi Chromium cắt khối ấy theo chiều cao A4 thật. Nên con số phải trả
+# lời một câu KHÁC: một tờ A4 CHỨA ĐƯỢC bao nhiêu ký tự, không phải engine
+# thích đặt lên đó bao nhiêu. Cùng một cái tên, hai đại lượng.
+#
+# Đo trên pilot17, `visible_chars()` chia cho SỐ TỜ CHROMIUM CẮT RA THẬT:
+#
+#   sức chứa thật một tờ A4 : sparse 1 527 · medium 1 852 · dense 2 002
+#   dòng `<tr>` một tờ A4   : sparse 14    · medium 32
+#
+# Tức lời nhờ đang xin ÍT HƠN sức chứa của chính tờ giấy: medium xin 1 200
+# cho một tờ chứa được 1 852. Một model tuân thủ HOÀN HẢO cũng chỉ dàn ra
+# 1 200/1 852 = 0,65 tờ cho mỗi tờ đã xin -- đã dưới ngưỡng 0,6 của
+# `SHEET_SHORTFALL_RATIO` trước khi model kịp viết thiếu một chữ nào.
+#
+# Và model viết thiếu thật: giao được 57% số ký tự đã xin (trung vị, 42 lời
+# gọi trả lời được). Nhân hai hiệu ứng: 0,65 x 0,57 = 0,37 tờ cho mỗi tờ xin.
+# Đo được trên 23 tờ trượt vì "xin N tờ, dàn ra M tờ": trung vị 0,41, và
+# KHÔNG MỘT TỜ NÀO chạm quá 0,50. Mô hình khớp với thực đo ở cả ba mức
+# (dự đoán 0,32/0,37/0,47 -- đo được 0,45/0,41/0,33).
+#
+# Nên số mới = sức chứa thật / tỉ lệ tuân thủ (0,57), làm tròn. `rows` nhân
+# cùng hệ số của mức ấy, để hai lời dặn trong cùng một brief không cãi nhau:
+# "viết 3 250 ký tự" đứng cạnh "11 dòng bảng" là hai con số chỏi nhau, và đo
+# trên `data/23-09-llm-e` thì model nghe con số NHỎ.
+#
+# Sức chứa trên là CẬN DƯỚI: một tài liệu cắt ra đúng 1 tờ có thể mới đầy
+# nửa tờ, nên phép chia cho số tờ thật nói thấp đi chứ không nói cao lên.
+# Số dưới đây vì thế là lựa chọn dè dặt, không phải nới tay.
+# `very_dense` KHÔNG có tờ nào trong pilot17 để đo (n=0). Sức chứa của nó
+# ngoại suy theo bước đang thu nhỏ dần của ba mức đo được (1 527 -> 1 852:
+# +325; 1 852 -> 2 002: +150; nên +150 nữa ~ 2 150), rồi chia cùng một tỉ lệ
+# tuân thủ. Ghi rõ ra đây vì đó là con số DUY NHẤT dưới đây không có phép đo
+# đứng sau -- lượt chạy nào có tờ `very_dense` thì đo lại và sửa.
 llm_density:
-  sparse:     {chars: 850,  rows: 5}
-  medium:     {chars: 1200, rows: 11}
-  dense:      {chars: 1650, rows: 19}
-  very_dense: {chars: 2200, rows: 26}
+  sparse:     {chars: 2700, rows: 16}
+  medium:     {chars: 3300, rows: 30}
+  dense:      {chars: 3550, rows: 40}
+  very_dense: {chars: 3800, rows: 45}
 
 kie:
   description_lang: vi
@@ -505,6 +546,34 @@ kie:
 gate:
   orphan_share: 0.99
   plan_drop_share: 0.9
+
+# ĐƯỜNG SINH NÀO CHẠY KHI KHÔNG AI NÓI RÕ.
+#
+# Ba đường cùng tồn tại, cùng đổ về một bản ghi (`pipeline/record.py`), và
+# không đường nào thay đường nào:
+#
+#   rule      `synthgen/run.py`             0 lời gọi model
+#   page      `agent/compose_page.py`       1 lời gọi cho MỖI trang
+#   template  `agent/compose_template.py`   1 lời gọi cho mỗi PHÔI, rồi
+#             + `synthgen/run_fill.py`      N trang mỗi phôi, 0 lời gọi
+#
+# Con số ở `docs/duong-sinh-phoi.md`. Tóm tắt: sinh 10 000 ảnh tốn 45 455 lời
+# gọi ở `page` và 909 ở `template` -- 50 lần ít hơn, cùng tỉ lệ đạt cổng.
+#
+# Vì sao là CẤU HÌNH chứ không phải một `if` trong mã: `page` đo được và còn
+# giữ, vì nó là đường duy nhất cho một trang mà cấu trúc chưa có phôi nào tả
+# được. Ai muốn so hai đường trên cùng một lượt chỉ đổi một dòng ở đây, hoặc
+# truyền `--path` cho `tasks.py` -- không ai phải sửa Python để chạy phép thử
+# đối chứng, và một phép thử phải sửa mã mới chạy được là một phép thử không
+# ai chạy.
+#
+# `per_template` là số tờ mỗi phôi khi `path: template`. 50 là chỗ đo được ở
+# `docs/duong-sinh-phoi.md`: dưới 20 thì cái giá viết phôi chưa trả hết, trên
+# 200 thì tổ hợp giá trị của một phôi bắt đầu cạn (`exact_collisions` trong
+# `fill_report.json` là con số nói lúc nào).
+llm_path:
+  path: page
+  per_template: 50
 
 # Ô NÀO ĐƯỢC ĐIỀN TAY, theo từng loại giấy.
 #

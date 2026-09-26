@@ -115,7 +115,8 @@ import re as _re
 
 
 def _brief(sheets: int, index: int = 0):
-    from agent import document_plan as DP, grammar as G
+    from agent import document_plan as DP
+    from agent import grammar as G
     from agent.compose_page import ask_for
 
     family = sorted(G.FAMILIES)[index % len(G.FAMILIES)]
@@ -153,11 +154,24 @@ def test_a_longer_document_asks_for_a_longer_table():
         f"1 tờ xin {one} dòng, 8 tờ xin {eight} -- không co giãn theo số tờ")
 
 
-def test_the_character_target_matches_a_real_sheet_not_a_guess():
-    """`sheets * 8000` là con số chưa ai đo. Nhánh luật -- thứ đã chạy và đã
-    được soi bằng mắt -- có trung vị 1 175 ký tự chữ mỗi tờ, và p75 là 1 661.
-    Một mục tiêu gấp bảy lần thực tế không dạy model viết dày hơn; nó dạy
-    model rằng mục tiêu ấy không nghiêm túc."""
+def test_the_character_target_fills_a_real_sheet_not_a_rule_branch_sheet():
+    """Mục tiêu ký tự phải ĐỦ LẤP một tờ A4 THẬT của nhánh LLM.
+
+    Bản trước kẹp khoảng này vào `700..2600` -- khoảng đo được của NHÁNH
+    LUẬT (p25 854, trung vị 1 175, p75 1 661). Đó chính là lỗi: ở nhánh luật
+    engine tự đặt mỗi `.sheet` là một tờ, nên 1 175 là số ký tự engine CHỌN
+    đặt lên một tờ. Ở nhánh LLM, model viết một `.sheet` duy nhất rồi
+    Chromium cắt theo chiều cao A4 thật, nên con số phải trả lời câu khác:
+    một tờ A4 CHỨA ĐƯỢC bao nhiêu.
+
+    Đo trên `data/pilot17` (`visible_chars()` chia cho số tờ Chromium cắt ra
+    thật): sparse 1 527 · medium 1 852 · dense 2 002 ký tự mỗi tờ. Xin ít hơn
+    con số ấy thì một model tuân thủ HOÀN HẢO vẫn dàn ra thiếu tờ -- và 23
+    trên 60 tờ pilot17 trượt đúng vì thế, không tờ nào chạm quá 0,50 số tờ đã
+    xin. Nên cận dưới ở đây là SỨC CHỨA, không phải thói quen của nhánh kia.
+
+    Xem ghi chú đo đạc đầy đủ tại `rulebase/synthgen/_blocks.yaml::
+    llm_density`."""
     for sheets in (2, 4, 8):
         _, brief = _brief(sheets, 0)
         # Lời nhờ nói THẲNG số mỗi tờ (con số đầu) rồi mới tới tổng. Đọc con
@@ -167,9 +181,14 @@ def test_the_character_target_matches_a_real_sheet_not_a_guess():
                    _re.findall(r"\*\*([\d,]+) characters", brief)]
         assert numbers, brief[:200]
         per_sheet = numbers[0]
-        assert 700 <= per_sheet <= 2600, (
-            f"{per_sheet} ký tự/tờ nằm ngoài khoảng đo được của nhánh luật "
-            f"(p25 854, trung vị 1 175, p75 1 661)")
+        assert per_sheet >= 2002, (
+            f"{per_sheet} ký tự/tờ THẤP HƠN sức chứa đo được của một tờ A4 "
+            "thật (dense 2 002) -- tuân thủ hoàn hảo vẫn ra thiếu tờ")
+        # Trần: 8 000 là con số chưa ai đo của bản cũ, gấp bốn lần sức chứa
+        # thật. Giữ một trần để mục tiêu không trôi về lại đó.
+        assert per_sheet <= 6000, (
+            f"{per_sheet} ký tự/tờ gấp ba lần sức chứa đo được -- một mục "
+            "tiêu model không có cớ để viết ra thì nó bỏ qua")
 
 
 def test_every_density_level_is_declared_in_the_rule_base():
