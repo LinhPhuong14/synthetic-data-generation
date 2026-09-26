@@ -59,10 +59,12 @@ import threading
 from collections import Counter
 
 from agent.coverage import CoverageMemory, sample_with_coverage
-from agent.document_distance import corpus_diversity
 from agent.document_plan import DocumentPlan, sample
-from agent.fingerprint import GRID_ROWS, Fingerprint, GeometryFingerprint, fingerprint
-from agent.geometry_distance import JACCARD_CEILING, WINDOW, corpus_geometry, nearest
+from agent.fingerprint import (GRID_ROWS, Fingerprint, GeometryFingerprint,
+                              fingerprint)
+from agent.document_distance import corpus_diversity
+from agent.geometry_distance import (JACCARD_CEILING, WINDOW, corpus_geometry,
+                                    nearest)
 from agent.grammar import Grammar
 
 # Bao nhiêu plan độc lập được rút ra rồi giữ lại cái ít gặp nhất. 8 là mặc

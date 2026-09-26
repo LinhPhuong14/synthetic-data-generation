@@ -45,13 +45,9 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from agent.fingerprint import geometry_fingerprint  # noqa: E402
-from agent.geometry_distance import (  # noqa: E402
-    JACCARD_CEILING,
-    WINDOW,
-    corpus_geometry,
-    nearest,
-)
+from agent.fingerprint import geometry_fingerprint          # noqa: E402
+from agent.geometry_distance import (JACCARD_CEILING,       # noqa: E402
+                                     WINDOW, corpus_geometry, nearest)
 
 
 def _document(stem: str) -> str:

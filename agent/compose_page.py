@@ -75,14 +75,14 @@ from pathlib import Path
 if __package__ in (None, ""):                   # `python compose_page.py`
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from agent.client import LLMError, from_env
+from agent.promptbook import prompt
 from agent import diversity as DIV
 from agent import document_plan as DP
 from agent import geometry_distance as GD
 from agent import grammar as G
 from agent import rate_match
-from agent.client import LLMError, from_env
 from agent.fingerprint import geometry_fingerprint
-from agent.promptbook import prompt
 from pipeline import failures
 from synthgen import design as D
 from synthgen import field_tier as FT
@@ -1609,8 +1609,6 @@ def one(client, index: int, made: list[str], seed: int,
     # lại mực là sửa một nửa.
     ink_seed = seed + index + 100003 * (attempt - 1)
     brief = ask_for(index, made, plan, sheets, lang, avoid=avoid)
-    # Mức dày đọc từ CHÍNH `plan` mà `ask_for()` vừa đọc -- xem `budget()`.
-    density = str(plan.assignment.get("density") or "medium")
     try:
         answer, usage = client.decide_with_usage(
             system_prompt(),

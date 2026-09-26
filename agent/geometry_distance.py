@@ -69,12 +69,8 @@ round-robin minus a few -- roughly "do not repeat a layout inside one lap".
 
 from __future__ import annotations
 
-from agent.fingerprint import (
-    GRID_COLS,
-    GRID_ROWS,
-    GeometryFingerprint,
-    geometry_fingerprint,
-)
+from agent.fingerprint import (GRID_COLS, GRID_ROWS, GeometryFingerprint,
+                              geometry_fingerprint)
 
 # Jaccard từ mức này trở lên là TRÙNG. Chọn 0,60 từ bảng đo trong docstring
 # (cửa sổ 24): 0,70 chỉ bắt 4/94 tờ (4,3%) -- bỏ sót cả cặp J=0,66 mà mắt đọc

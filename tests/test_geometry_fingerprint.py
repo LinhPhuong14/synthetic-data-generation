@@ -7,15 +7,10 @@ không cần thư viện -- cùng luật với `tests/test_fingerprint.py`.
 
 from __future__ import annotations
 
-from agent.fingerprint import GRID_COLS, GRID_ROWS, geometry_fingerprint
-from agent.geometry_distance import (
-    JACCARD_CEILING,
-    collides,
-    corpus_geometry,
-    hamming,
-    jaccard,
-    nearest,
-)
+from agent.fingerprint import (GRID_COLS, GRID_ROWS, geometry_fingerprint)
+from agent.geometry_distance import (JACCARD_CEILING, collides,
+                                     corpus_geometry, hamming, jaccard,
+                                     nearest)
 
 
 def box(label, x0, y0, x1, y1, page=1):
