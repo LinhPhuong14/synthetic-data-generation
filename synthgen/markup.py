@@ -625,9 +625,10 @@ def _decor_layer(d: Design) -> str:
     một vùng hình."""
     parts = []
     if d.frame != "khong":
-        parts.append('<i class="fr"></i>')
-        if d.frame in ("an_ninh", "bo_tron", "doi"):
-            parts.append('<i class="fr2"></i>')
+        # Luôn hai nét: kiểu nào không cần nét trong thì `.fr2` không có CSS
+        # nào và không vẽ gì. Một luật "kiểu nào có nét trong" ở đây sẽ là
+        # bản sao thứ hai của `_frame_css`, và hai bản sẽ lệch nhau.
+        parts.append('<i class="fr"></i><i class="fr2"></i>')
     if d.band in ("tren", "tren_duoi", "tren_song"):
         parts.append('<i class="bt"></i><i class="bt2"></i>')
     if d.band == "tren_song":
@@ -639,6 +640,178 @@ def _decor_layer(d: Design) -> str:
     if not parts:
         return ""
     return f'<div class="deco" aria-hidden="true">{"".join(parts)}</div>'
+
+
+def _frame_css(d: Design) -> str:
+    """CSS của khung trang: KIỂU (`d.frame`) cộng bốn tham số bốc riêng.
+
+    Kiểu nói khung gồm những nét gì; `frame_inset` nói nó lùi vào bao nhiêu
+    phần lề, `frame_weight` nhân độ dày nét, `frame_tone` chọn màu (nhấn, màu
+    kẻ bảng, hay nhấn pha nhạt), `frame_variant` là biến thể riêng của từng
+    kiểu -- góc nghiêng hoa văn, độ dài cánh góc, bán kính bo, khoảng giữa
+    hai nét. Bản đầu mỗi kiểu một bộ số cố định, và hai tờ cùng kiểu là hai
+    bản in của cùng một khung.
+
+    `depth` là bề dày cả khung tính từ mép ngoài vào mép trong. Khoảng lùi bị
+    kẹp để mép trong còn cách chữ ít nhất 2,5 mm: bộ lề hẹp nhất là 12 mm, và
+    một khung an ninh 4 mm lùi 58% lề thì mép trong đã chạm chữ."""
+    if d.frame == "khong":
+        return ""
+    pal = d.palette
+    v = d.frame_variant % D.FRAME_VARIANTS
+    w = max(d.rule_px, 0.3) * d.frame_weight
+    c = {"nhan": pal.accent, "ke": pal.rule,
+         "nhat": _mix(pal.accent, pal.paper, 0.5)}.get(d.frame_tone)
+    if c is None:
+        raise ValueError(f"frame_tone lạ: {d.frame_tone!r}")
+    soft = _mix(c, pal.paper, 0.25)
+    room = min(d.margins)
+
+    def at(depth: float) -> float:
+        want = room * d.frame_inset
+        return round(max(min(want, room - 2.5 - depth), 1.5), 2)
+
+    def box(inset: float, rule: str) -> str:
+        return f"inset:{inset:.2f}mm;{rule}"
+
+    style, inner = d.frame, ""
+    if style == "don":
+        radius = (0, 0, 1.0, 2.5)[v]
+        i = at(w)
+        outer = box(i, f"border:{w:.2f}mm solid {c};border-radius:{radius}mm;")
+    elif style == "doi":
+        gap = (1.0, 1.5, 2.2, 3.0)[v]
+        thick, thin = (w * 1.8, w * 0.6) if v % 2 == 0 else (w * 0.6, w * 1.8)
+        i = at(gap + thick + thin)
+        outer = box(i, f"border:{thick:.2f}mm solid {c};")
+        inner = box(i + thick + gap, f"border:{thin:.2f}mm solid {c};")
+    elif style == "an_ninh":
+        # Khung hoá đơn điện tử: dải rộng in hoa văn nhạt, một nét mảnh bên
+        # trong. Góc nghiêng hoa văn là biến thể; bề rộng dải theo độ dày nét.
+        band = 2.0 + d.frame_weight * 1.1
+        angle = (45, -45, 90, 0)[v]
+        deep = _mix(c, pal.paper, 0.45)
+        light = _mix(c, pal.paper, 0.18)
+        i = at(band + 0.8 + w)
+        outer = box(i, f"border:{band:.1f}mm solid {light};"
+                       f"border-image:repeating-linear-gradient({angle}deg,"
+                       f"{light} 0 0.7mm,{deep} 0.7mm 0.9mm,{light} 0.9mm 1.6mm) 12;")
+        inner = box(i + band + 0.8, f"border:{w * 0.7:.2f}mm solid {c};")
+    elif style == "goc":
+        # Bốn góc chữ L, vẽ bằng tám dải gradient trên MỘT phần tử. Biến thể
+        # lẻ thêm một đường mảnh chạy quanh, nối bốn góc lại.
+        arm, t = (7, 11, 16, 22)[v], max(w * 1.6, 0.5)
+        g = f"linear-gradient({c},{c})"
+        i = at(t + 1.2)
+        outer = box(i, "background:" + ",".join(
+            f"{g} {x} {y}/{a}"
+            for x, y in (("left", "top"), ("right", "top"),
+                         ("left", "bottom"), ("right", "bottom"))
+            for a in (f"{arm}mm {t:.2f}mm", f"{t:.2f}mm {arm}mm"))
+            + ";background-repeat:no-repeat;")
+        if v % 2:
+            inner = box(i + 1.2, f"border:{w * 0.4:.2f}mm solid {soft};")
+    elif style == "bo_tron":
+        radius = (2.0, 3.5, 5.0, 7.0)[v]
+        i = at(1.2 + w * 1.9)
+        outer = box(i, f"border-radius:{radius}mm;"
+                       f"border:{w * 1.4:.2f}mm solid {c};")
+        inner = box(i + 1.2, f"border-radius:{max(radius - 1, 0.8)}mm;"
+                             f"border:{w * 0.5:.2f}mm solid {soft};")
+    elif style == "ba_vien":
+        # Ba nét: một nét đậm ngoài, một nét đôi trong -- khung bằng khen,
+        # giấy chứng nhận in sẵn. `double` cần ít nhất ba điểm ảnh mới tách
+        # được hai nét, nên sàn 0,8 mm.
+        gap = (0.8, 1.2, 1.6, 2.2)[v]
+        dbl = max(w * 1.3, 0.8)
+        i = at(w * 2 + gap + dbl)
+        outer = box(i, f"border:{w * 2:.2f}mm solid {c};")
+        inner = box(i + w * 2 + gap, f"border:{dbl:.2f}mm double {c};")
+    elif style in ("cham", "gach"):
+        kind = "dotted" if style == "cham" else "dashed"
+        t = max(w * (1.6 if style == "cham" else 1.0), 0.45)
+        i = at(t + 1.6)
+        outer = box(i, f"border:{t:.2f}mm {kind} {c};"
+                       f"border-radius:{(0, 1.5, 0, 3)[v]}mm;")
+        if v % 2:
+            inner = box(i + t + 1.4, f"border:{w * 0.4:.2f}mm solid {soft};"
+                                     f"border-radius:{(0, 1.5, 0, 3)[v]}mm;")
+    elif style == "chuoi_hat":
+        # Chuỗi hạt: chấm tròn lặp dọc bốn cạnh, bốn lớp gradient trên một
+        # phần tử -- viền của phiếu quà tặng, thiệp, giấy khen.
+        r = (0.45, 0.6, 0.8, 1.0)[v] * d.frame_weight ** 0.5
+        step = r * 3.4
+        dot = f"radial-gradient(circle,{c} 0 {r:.2f}mm,transparent {r + 0.06:.2f}mm)"
+        i = at(step)
+        outer = box(i, "background:"
+                       f"{dot} left top/{step:.2f}mm {step:.2f}mm repeat-x,"
+                       f"{dot} left bottom/{step:.2f}mm {step:.2f}mm repeat-x,"
+                       f"{dot} left top/{step:.2f}mm {step:.2f}mm repeat-y,"
+                       f"{dot} right top/{step:.2f}mm {step:.2f}mm repeat-y;")
+    elif style == "rang_cua":
+        # Răng cưa trên và dưới, hai cạnh bên là nét mảnh -- mép vé, mép
+        # phiếu xé. Bốn nửa-tam giác trên mỗi ô lặp.
+        step = (2.0, 2.6, 3.2, 4.0)[v]
+        tile = f"{step:.1f}mm {step:.1f}mm"
+        i = at(step / 2 + 0.5)
+        outer = box(i, "background:"
+                       f"linear-gradient(135deg,{c} 25%,transparent 25%) left top/{tile} repeat-x,"
+                       f"linear-gradient(225deg,{c} 25%,transparent 25%) left top/{tile} repeat-x,"
+                       f"linear-gradient(45deg,{c} 25%,transparent 25%) left bottom/{tile} repeat-x,"
+                       f"linear-gradient(-45deg,{c} 25%,transparent 25%) left bottom/{tile} repeat-x;"
+                       f"border-left:{w * 0.6:.2f}mm solid {c};"
+                       f"border-right:{w * 0.6:.2f}mm solid {c};")
+    elif style == "goc_tron":
+        # Nét mảnh quanh trang, bốn góc có cung phần tư -- khung giấy chứng
+        # nhận kiểu cổ điển. Cung nằm TRÊN hai cạnh của khung, nên nó không
+        # vào sâu hơn khung một li nào.
+        radius, t = (5, 7, 9, 12)[v], max(w, 0.35)
+        i = at(t * 2)
+        ring = (f"transparent {radius - t * 2:.2f}mm,{c} {radius - t * 2:.2f}mm "
+                f"{radius - t:.2f}mm,transparent {radius - t:.2f}mm")
+        outer = box(i, f"border:{t * 0.6:.2f}mm solid {c};")
+        inner = box(i, "background:" + ",".join(
+            f"radial-gradient(circle at {cx} {cy},{ring}) {x} {y}/{radius}mm {radius}mm no-repeat"
+            for cx, cy, x, y in (("0", "0", "left", "top"),
+                                 ("100%", "0", "right", "top"),
+                                 ("0", "100%", "left", "bottom"),
+                                 ("100%", "100%", "right", "bottom"))) + ";")
+    elif style == "vat_goc":
+        # Nét mảnh, bốn ô vuông đặc ĐÈ lên bốn góc -- kiểu khung của thẻ,
+        # phiếu bảo hành. Ô vuông tâm nằm đúng trên góc khung.
+        side, t = (2.0, 2.8, 3.6, 4.4)[v], max(w * 0.7, 0.3)
+        i = at(side / 2 + t) + side / 2
+        g = f"linear-gradient({c},{c})"
+        outer = box(i, f"border:{t:.2f}mm solid {c};")
+        inner = box(i - side / 2, "background:" + ",".join(
+            f"{g} {x} {y}/{side}mm {side}mm no-repeat"
+            for x, y in (("left", "top"), ("right", "top"),
+                         ("left", "bottom"), ("right", "bottom"))) + ";")
+    elif style == "tem_thu":
+        # Viền sọc chéo hai màu -- phong bì thư máy bay, tem, phiếu gửi.
+        band = (2.0, 2.4, 2.8, 3.2)[v]
+        other = _mix(pal.rule if c != pal.rule else pal.accent, pal.paper, 0.85)
+        angle = -45 if v % 2 else 45
+        i = at(band)
+        outer = box(i, f"border:{band:.1f}mm solid {c};"
+                       f"border-image:repeating-linear-gradient({angle}deg,"
+                       f"{c} 0 2mm,{pal.paper} 2mm 3mm,{other} 3mm 5mm,"
+                       f"{pal.paper} 5mm 6mm) 18;")
+    elif style == "tren_duoi_ke":
+        # Chỉ kẻ trên và dưới, không kẻ cạnh: một đậm một mảnh ở mỗi đầu --
+        # báo cáo, tờ trình in theo mẫu.
+        gap = (0.8, 1.2, 1.8, 2.6)[v]
+        i = at(w * 2.6 + gap)
+        outer = box(i, f"border-top:{w * 2:.2f}mm solid {c};"
+                       f"border-bottom:{w * 2:.2f}mm solid {c};")
+        inner = box(i + w * 2 + gap, f"border-top:{w * 0.6:.2f}mm solid {c};"
+                                     f"border-bottom:{w * 0.6:.2f}mm solid {c};")
+    else:
+        raise ValueError(f"kiểu khung lạ: {style!r}")
+    css = f".deco .fr{{{outer}}}"
+    if inner:
+        css += f".deco .fr2{{{inner}}}"
+    return css
 
 
 def _decor_css(d: Design, base_pt: float) -> str:
@@ -662,45 +835,8 @@ def _decor_css(d: Design, base_pt: float) -> str:
                # hay nền hoa văn không chạy qua các ô mã.
                f".markcorner{{background:{pal.paper};padding:0.8mm;}}")
 
-    inset = round(min(d.margins) * 0.42, 1)
-    line = max(d.rule_px, 0.3)
     tint = _mix(pal.accent, pal.paper, 0.22)
-    if d.frame == "don":
-        out.append(f".deco .fr{{inset:{inset}mm;"
-                   f"border:{line:.2f}mm solid {pal.rule};}}")
-    elif d.frame == "doi":
-        out.append(f".deco .fr{{inset:{inset}mm;"
-                   f"border:{line * 1.8:.2f}mm solid {pal.accent};}}"
-                   f".deco .fr2{{inset:{inset + 1.4:.1f}mm;"
-                   f"border:{line * 0.6:.2f}mm solid {pal.accent};}}")
-    elif d.frame == "an_ninh":
-        # Khung hoá đơn điện tử: dải rộng in hoa văn chéo nhạt, một đường
-        # mảnh bên trong. Hoa văn là `border-image`, nên nó chỉ nằm trên viền.
-        band = min(3.2, inset * 0.7)
-        deep = _mix(pal.accent, pal.paper, 0.38)
-        out.append(f".deco .fr{{inset:{inset - band / 2:.1f}mm;"
-                   f"border:{band:.1f}mm solid {tint};"
-                   f"border-image:repeating-linear-gradient(45deg,{tint} 0 0.7mm,"
-                   f"{deep} 0.7mm 0.9mm,{tint} 0.9mm 1.6mm) 12;}}"
-                   f".deco .fr2{{inset:{inset + band / 2 + 0.8:.1f}mm;"
-                   f"border:{line * 0.7:.2f}mm solid {pal.accent};}}")
-    elif d.frame == "goc":
-        # Bốn góc chữ L, vẽ bằng tám dải gradient trên MỘT phần tử.
-        arm, w = 11, max(line * 1.6, 0.5)
-        c = pal.accent
-        g = f"linear-gradient({c},{c})"
-        out.append(
-            f".deco .fr{{inset:{inset}mm;background:"
-            f"{g} left top/{arm}mm {w:.2f}mm,{g} left top/{w:.2f}mm {arm}mm,"
-            f"{g} right top/{arm}mm {w:.2f}mm,{g} right top/{w:.2f}mm {arm}mm,"
-            f"{g} left bottom/{arm}mm {w:.2f}mm,{g} left bottom/{w:.2f}mm {arm}mm,"
-            f"{g} right bottom/{arm}mm {w:.2f}mm,{g} right bottom/{w:.2f}mm {arm}mm;"
-            f"background-repeat:no-repeat;}}")
-    elif d.frame == "bo_tron":
-        out.append(f".deco .fr{{inset:{inset}mm;border-radius:4mm;"
-                   f"border:{line * 1.4:.2f}mm solid {pal.accent};}}"
-                   f".deco .fr2{{inset:{inset + 1.2:.1f}mm;border-radius:3mm;"
-                   f"border:{line * 0.5:.2f}mm solid {tint};}}")
+    out.append(_frame_css(d))
 
     high = round(top * 0.36, 1)
     if d.band in ("tren", "tren_duoi", "tren_song"):

@@ -23,7 +23,8 @@ if str(REPO_ROOT) not in sys.path:
 from synthgen import design as D  # noqa: E402
 from synthgen import markup as M  # noqa: E402
 
-DECOR_FIELDS = ("frame", "band", "ground", "logo_style", "accents")
+DECOR_FIELDS = ("frame", "band", "ground", "logo_style", "accents",
+                "frame_inset", "frame_weight", "frame_tone", "frame_variant")
 
 
 def _without_decor(d) -> tuple:
@@ -76,3 +77,22 @@ def test_monogram_is_a_picture_not_dom_text():
     assert uri.startswith("data:image/png;base64,")
     assert M._initials("CÔNG TY CỔ PHẦN ĐIỆN MÁY HỒNG HÀ") == "HH"
     assert M._initials("") == "VN"
+
+
+def test_every_frame_style_draws_something():
+    """Mỗi kiểu khung trong `PAGE_FRAMES` phải ra CSS cho `.fr`, với mọi biến
+    thể và cả bộ lề hẹp nhất -- một kiểu thêm vào tuple mà quên nhánh CSS thì
+    `_frame_css` ném, không lặng lẽ ra tờ trơn."""
+    for style in D.PAGE_FRAMES[1:]:
+        for variant in range(D.FRAME_VARIANTS):
+            d = D.draw(random.Random(3), 3)
+            d.frame, d.frame_variant = style, variant
+            d.margins = min(D.MARGINS, key=min)
+            assert ".deco .fr{" in M._frame_css(d), style
+
+
+def test_frame_params_vary():
+    """Khung không được là một bộ số cố định: bốn tham số phải thật sự đổi."""
+    seen = {(x["frame_inset"], x["frame_weight"], x["frame_tone"], x["frame_variant"])
+            for x in (D.draw_decor(s) for s in range(400))}
+    assert len(seen) > 100

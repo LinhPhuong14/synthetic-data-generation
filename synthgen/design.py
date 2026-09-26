@@ -230,7 +230,20 @@ ORNAMENTS = ('khong', 'dau_tron', 'dau_vuong', 'ma_vach', 'ma_qr', 'dau_tron_va_
 # `khong` đứng ĐẦU mỗi trục vì nó là giá trị của mọi tờ dựng trước khi có
 # trục ấy -- `Design` mặc định về đó, nên `agent/redesign.py` và mọi chỗ khác
 # dựng `Design` bằng tay không đổi dáng.
-PAGE_FRAMES = ('khong', 'don', 'doi', 'an_ninh', 'goc', 'bo_tron')
+PAGE_FRAMES = ('khong', 'don', 'doi', 'an_ninh', 'goc', 'bo_tron',
+               'ba_vien', 'cham', 'gach', 'chuoi_hat', 'rang_cua',
+               'goc_tron', 'vat_goc', 'tem_thu', 'tren_duoi_ke')
+
+# THAM SỐ của khung, bốc riêng khỏi KIỂU khung. Bản đầu chỉ có năm kiểu và
+# mỗi kiểu một bộ số cố định -- cùng khoảng lùi 42% lề, cùng nét, cùng màu
+# nhấn -- nên hai tờ `doi` là hai bản in của cùng một khung, nhìn qua hai mươi
+# tờ là thấy lặp. Kiểu nói khung GỒM những nét gì; bốn tham số dưới đây nói
+# nét ấy nằm đâu, dày bao nhiêu, màu gì, và biến thể riêng của từng kiểu (góc
+# nghiêng hoa văn, độ dài cánh góc, bán kính bo...).
+FRAME_INSETS = (0.3, 0.36, 0.42, 0.5, 0.58)
+FRAME_WEIGHTS = (0.6, 0.8, 1.0, 1.3, 1.7)
+FRAME_TONES = ('nhan', 'nhan', 'ke', 'nhat')
+FRAME_VARIANTS = 4
 
 # Dải màu ở MÉP giấy, nằm trọn trong lề: cao/rộng chỉ bằng một phần lề, nên
 # không đè lên chữ nào. Loại trừ với khung trang -- khung đứng ở giữa lề, dải
@@ -440,6 +453,10 @@ class Design:
     # Trang trí -- xem `PAGE_FRAMES` và các trục cạnh nó. Mặc định là "không
     # trang trí", đúng dáng mọi tờ dựng trước khi có các trục này.
     frame: str = 'khong'
+    frame_inset: float = 0.42
+    frame_weight: float = 1.0
+    frame_tone: str = 'nhan'
+    frame_variant: int = 0
     band: str = 'khong'
     ground: str = 'khong'
     logo_style: str = 'mo'
@@ -461,7 +478,9 @@ class Design:
             tuple(sorted(self.blocks)), self.photo_box, self.watermark,
             self.reverse_title_band, self.lang_en, self.national,
             self.flow, self.mark_place,
-            self.frame, self.band, self.ground, self.logo_style,
+            self.frame, self.frame_inset, self.frame_weight,
+            self.frame_tone, self.frame_variant,
+            self.band, self.ground, self.logo_style,
             tuple(sorted(self.accents)),
         )
 
@@ -1530,8 +1549,17 @@ def draw_decor(seed: int) -> dict:
     logo = pick_weighted(rng, LOGO_STYLES, "decor_logo")
     accents = frozenset(name for name in ACCENTS
                         if rng.random() < float(chances.get(name, 0.0)))
+    # Tham số khung bốc SAU mọi trục đã có, và luôn bốc (kể cả khi không có
+    # khung): thêm chúng không đổi trang trí của seed nào đã vẽ, và số lần gọi
+    # `rng` không phụ thuộc kiểu khung vừa bốc.
+    inset = rng.choice(FRAME_INSETS)
+    weight = rng.choice(FRAME_WEIGHTS)
+    tone = rng.choice(FRAME_TONES)
+    variant = rng.randrange(FRAME_VARIANTS)
     return {"frame": frame, "band": band, "ground": ground,
-            "logo_style": logo, "accents": accents}
+            "logo_style": logo, "accents": accents,
+            "frame_inset": inset, "frame_weight": weight,
+            "frame_tone": tone, "frame_variant": variant}
 
 
 def draw(rng: random.Random, seed: int,

@@ -252,13 +252,26 @@ decor_band:
   tren_duoi: 1.0
   trai: 0.8
   tren_song: 0.8
+# Mười bốn kiểu khung, và mỗi kiểu còn bốn tham số bốc riêng (khoảng lùi, độ
+# dày, màu, biến thể -- `design.FRAME_*`). Bản đầu năm kiểu, mỗi kiểu một bộ số
+# cố định: nhìn hai mươi tờ là thấy cùng một khung lặp lại. Trọng số chia đều
+# cho các kiểu có khung để không kiểu nào thành "khung của cả bộ".
 decor_frame:
-  khong: 4.0
-  don: 1.0
-  doi: 1.0
-  an_ninh: 1.2
-  goc: 1.0
-  bo_tron: 0.7
+  khong: 5.0
+  don: 0.7
+  doi: 0.7
+  an_ninh: 0.8
+  goc: 0.7
+  bo_tron: 0.6
+  ba_vien: 0.6
+  cham: 0.5
+  gach: 0.5
+  chuoi_hat: 0.5
+  rang_cua: 0.4
+  goc_tron: 0.6
+  vat_goc: 0.5
+  tem_thu: 0.4
+  tren_duoi_ke: 0.6
 decor_ground:
   khong: 6.0
   hoa_van: 1.0
