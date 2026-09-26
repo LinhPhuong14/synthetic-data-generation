@@ -210,21 +210,26 @@ QUESTION_PREFIX = "questions_"
 #
 # `|` ngăn các mục BÊN TRONG một cột, `TAB` ngăn các cột -- nên một danh sách
 # lựa chọn nằm gọn trong một cột và không đụng tới số cột của dòng.
+#
+# `replies` là ĐÁP ÁN KHAI THEO TỪNG CÂU, và `follow` là dòng hỏi thêm dưới ô
+# tích. Hai cột này đứng CUỐI dòng và được bỏ trống: câu nào nhãn đã nói câu
+# trả lời là gì ("Họ và tên", "Địa chỉ") thì không cần khai. Luật đầy đủ, và
+# chỗ nó kêu khi thiếu, ở `content._check_replies`.
 QUESTION_PARAMS: dict[str, tuple[str, ...]] = {
-    "blank": (),
-    "yesno": (),
-    "options": ("options",),
+    "blank": ("replies",),
+    "yesno": ("replies", "follow"),
+    "options": ("options", "replies", "follow"),
     "boxchar": ("cells",),
     "date_boxes": (),
     "grid": ("rows", "cols"),
     "scale": ("low_label", "high_label", "levels"),
     "rank": ("items",),
-    "inline_blank": (),
-    "subquestion": ("subs",),
+    "inline_blank": ("replies",),
+    "subquestion": ("subs", "replies"),
     "table_form": ("cols", "lines"),
     "attachment": ("items",),
 }
-_LIST_PARAMS = frozenset({"options", "rows", "cols", "items", "subs"})
+_LIST_PARAMS = frozenset({"options", "rows", "cols", "items", "subs", "replies"})
 _INT_PARAMS = frozenset({"cells", "levels", "lines"})
 
 

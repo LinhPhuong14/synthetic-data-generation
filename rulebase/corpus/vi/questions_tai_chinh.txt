@@ -2,34 +2,50 @@
 #
 # Cột 1 là DẠNG, cột 2 là câu hỏi, các cột sau là tham số của chính dạng ấy:
 #
-#   blank         (không tham số) — một dòng kẻ để điền
-#   yesno         (không tham số) — hai ô Có/Không
-#   options       lựa chọn | lựa chọn | ...
+#   blank         [đáp án]       — một dòng kẻ để điền
+#   yesno         [đáp án] [hỏi thêm] — hai ô Có/Không
+#   options       lựa chọn|lựa chọn|...  [đáp án] [hỏi thêm]
 #   boxchar       số ô           — dãy ô vuông mỗi ô một ký tự (CCCD, MST)
 #   date_boxes    (không tham số) — ngày / tháng / năm, mỗi chữ số một ô
 #   grid          hàng|hàng|...  cột|cột|...   — ma trận tích chéo
 #   scale         nhãn thấp      nhãn cao      số mức
 #   rank          mục|mục|...    — xếp thứ tự ưu tiên
-#   inline_blank  (câu hỏi mang dấu … ở mỗi chỗ trống)
-#   subquestion   ý|ý|...        — câu chính rồi các ý a) b) c)
+#   inline_blank  [đáp án]       — câu hỏi mang dấu … ở mỗi chỗ trống
+#   subquestion   ý|ý|...  [đáp án]  — câu chính rồi các ý a) b) c)
 #   table_form    cột|cột|...    số dòng      — bảng người ta điền tay
 #   attachment    mục|mục|...    — danh mục hồ sơ kèm theo, mỗi mục một ô tích
-#   answer        (cột 2 là một câu trả lời tự do của chủ đề này)
+#   answer        (cột 2 là câu trả lời cho CỘT BẢNG `table_form` không tra ra loại)
+#
+# ĐÁP ÁN là của CHÍNH CÂU ẤY, các phương án ngăn bằng `|`. Mỗi phương án được
+# chứa chỗ giữ `{person}`, `{date}`, `{phone}`, `{address}`, `{relation}`,
+# `{position}`, `{org}`, `{digits}`... -- thay bằng một giá trị của loại ấy.
+#   * `blank` bắt buộc có đáp án khi nhãn không tra ra loại (xem
+#     `synthgen/content.py::COLUMN_KINDS`): "Họ và tên" thì không cần,
+#     "Mức lương đề nghị" thì cần.
+#   * `inline_blank`/`subquestion`: mỗi phương án là CẢ CÂU, các ô ngăn bằng
+#     `;` theo đúng thứ tự chỗ trống / ý. Ô để trống thì tra loại từ nhãn --
+#     "Kế toán;;" khai bộ phận, để vị trí và ngày cho nhãn tự lo.
+#   * `yesno`: đáp án ghi dưới dòng hỏi thêm (mặc định "Nếu có, vui lòng mô tả
+#     chi tiết"). Hỏi thêm bắt đầu bằng "Nếu không"/"Nếu chưa" thì người tích
+#     "Không" mới viết. Không khai đáp án thì không in dòng hỏi thêm.
+#   * `options`: không có hỏi thêm thì câu phải có ô "Khác", và đáp án chỉ
+#     được viết khi ô ấy đã tích.
+# Thiếu hoặc khai sai thì `synthgen/content.py` KÊU lúc nạp, không in câu lạc đề.
 #
 # Ra file thay vì nằm trong `synthgen/content.py`: thêm một chủ đề là thêm một
 # file, không phải sửa mã — cùng lệ `clauses_*.txt` và `rulebase/` nói chung.
 
 boxchar	Số tài khoản thanh toán	14
-options	Mục đích vay vốn	Sản xuất kinh doanh|Tiêu dùng|Mua nhà ở|Mua phương tiện|Khác
-inline_blank	Đề nghị vay số tiền … đồng, thời hạn … tháng, lãi suất …%/năm
+options	Mục đích vay vốn	Sản xuất kinh doanh|Tiêu dùng|Mua nhà ở|Mua phương tiện|Khác	sửa chữa nhà ở|chi phí du học cho con
+inline_blank	Đề nghị vay số tiền … đồng, thời hạn … tháng, lãi suất …%/năm	500.000.000;60;8,5|1.200.000.000;120;9,2|300.000.000;36;10|150.000.000;24;11,5
 grid	Nguồn thu nhập hằng tháng	Lương|Cho thuê tài sản|Kinh doanh|Nguồn khác	Dưới 10 triệu|10-30 triệu|Trên 30 triệu
-yesno	Quý khách có đang có khoản vay nào tại tổ chức tín dụng khác không?
+yesno	Quý khách có đang có khoản vay nào tại tổ chức tín dụng khác không?	vay mua xe tại Vietcombank, dư nợ 200 triệu đồng|thẻ tín dụng hạn mức 50 triệu đồng	Nếu có, ghi rõ tổ chức tín dụng và dư nợ
 table_form	Tài sản bảo đảm	Loại tài sản|Giấy tờ sở hữu|Giá trị ước tính	3
 attachment	Hồ sơ tài chính kèm theo	Sao kê lương 3 tháng|Hợp đồng lao động|Giấy phép kinh doanh|Báo cáo tài chính
 scale	Mức độ rủi ro khách hàng tự đánh giá	Thấp	Cao	5
-subquestion	Người đồng trả nợ	a) Họ và tên|b) Quan hệ|c) Thu nhập hằng tháng
+subquestion	Người đồng trả nợ	a) Họ và tên|b) Quan hệ|c) Thu nhập hằng tháng	;;12 triệu đồng|;;18.000.000 đồng|;;khoảng 25 triệu đồng
 date_boxes	Ngày đề nghị giải ngân
-blank	Phương án trả nợ dự kiến
+blank	Phương án trả nợ dự kiến	trả góp hằng tháng từ lương|trả từ doanh thu cửa hàng|trả gốc cuối kỳ từ tiền bán nông sản
 options	Hình thức trả nợ	Trả góp đều|Trả lãi trước|Trả cuối kỳ
 rank	Thứ tự ưu tiên sử dụng vốn	Nguyên vật liệu|Nhân công|Thiết bị|Dự phòng
 answer	khoảng 18 triệu đồng

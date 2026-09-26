@@ -13,15 +13,15 @@ date_boxes	Ngày đến lưu trú
 options	Mục đích chuyến đi	Du lịch|Công tác|Thăm thân|Chữa bệnh|Học tập
 table_form	Danh sách khách trong đoàn	Họ và tên|Năm sinh|Quốc tịch|Số giấy tờ
 options	Loại phòng đăng ký	Phòng đơn|Phòng đôi|Phòng ba|Phòng gia đình
-yesno	Khách có sử dụng dịch vụ đưa đón sân bay không?
-inline_blank	Đoàn gồm … khách, lưu trú … đêm, khởi hành ngày …
+yesno	Khách có sử dụng dịch vụ đưa đón sân bay không?	chuyến bay VN213, đến lúc 14h30|đón tại sân bay Nội Bài, 2 người|chuyến bay VJ135, đến lúc 21h05	Nếu có, ghi rõ chuyến bay và giờ đến
+inline_blank	Đoàn gồm … khách, lưu trú … đêm, khởi hành ngày …	4;2;|12;3;|25;4;|2;1;|8;5;
 grid	Dịch vụ khách đã sử dụng	Ăn sáng|Giặt là|Bể bơi|Phòng họp	Không dùng|Có dùng|Dùng thường xuyên
 scale	Mức độ hài lòng với chất lượng phòng nghỉ	Rất không hài lòng	Rất hài lòng	5
 attachment	Giấy tờ đăng ký lưu trú	Hộ chiếu|Thị thực|Căn cước công dân|Giấy giới thiệu của cơ quan
 subquestion	Thông tin liên hệ khi cần	a) Điện thoại|b) Thư điện tử|c) Người liên hệ tại Việt Nam
 options	Hình thức đặt phòng	Trực tiếp tại quầy|Qua điện thoại|Qua trang đặt phòng|Qua công ty lữ hành
-blank	Yêu cầu riêng của khách về phòng nghỉ
-yesno	Khách có mang theo phương tiện gửi tại bãi xe không?
+blank	Yêu cầu riêng của khách về phòng nghỉ	phòng tầng cao, không hút thuốc|thêm một giường phụ cho trẻ em|phòng gần thang máy|không có
+yesno	Khách có mang theo phương tiện gửi tại bãi xe không?	một xe máy|ô tô 7 chỗ|hai xe máy	Nếu có, ghi rõ loại xe
 rank	Xin xếp thứ tự yếu tố khách quan tâm nhất	Giá phòng|Vị trí|Sạch sẽ|Thái độ phục vụ|Bữa sáng
 date_boxes	Ngày dự kiến trả phòng
-blank	Góp ý của khách để cơ sở phục vụ tốt hơn
+blank	Góp ý của khách để cơ sở phục vụ tốt hơn	phòng sạch sẽ, nhân viên thân thiện|bữa sáng cần thêm món|wifi yếu ở tầng 4|không có

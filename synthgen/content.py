@@ -275,65 +275,105 @@ class Doc:
 # `yesno` là cặp ô Có/Không, `options` là một lưới ô tích. Trộn ba kiểu ấy
 # trong một tờ là thứ làm dáng trang "phức" -- không khối nào đoán được khối
 # sau nó cao bao nhiêu.
+#
+# Cột thứ tư là ĐÁP ÁN CỦA CHÍNH CÂU ẤY, cột thứ năm là dòng hỏi thêm -- cùng
+# luật với cột `replies`/`follow` của `questions_*.txt`, xem
+# `_check_replies`. Bản trước khai một rổ `answers` chung cho cả chủ đề, và
+# câu nào cũng bốc từ rổ ấy: đo trên `data/26-09-hand-check`, 6/13 ô viết tay
+# của khối biểu mẫu là câu lạc đề ("Mức lương đề nghị: xin bắt đầu từ đầu
+# tháng sau").
 QUESTION_THEMES: dict[str, dict] = {
     'benh_khop': {
         'items': (
-            ('Quý khách vui lòng cho biết tên chẩn đoán bệnh khớp?', 'blank', ()),
-            ('Quý khách bị ảnh hưởng các khớp nào?', 'blank', ()),
-            ('Lần đầu tiên phát hiện bệnh khớp là lúc nào?', 'blank', ()),
-            ('Triệu chứng cụ thể là gì?', 'blank', ()),
+            ('Quý khách vui lòng cho biết tên chẩn đoán bệnh khớp?', 'blank', (),
+             ('viêm khớp dạng thấp', 'thoái hoá khớp gối', 'gút mạn tính',
+              'thoái hoá cột sống thắt lưng', 'viêm quanh khớp vai')),
+            ('Quý khách bị ảnh hưởng các khớp nào?', 'blank', (),
+             ('khớp gối hai bên', 'khớp vai trái', 'cổ tay và ngón tay',
+              'khớp háng phải', 'cột sống thắt lưng')),
+            ('Lần đầu tiên phát hiện bệnh khớp là lúc nào?', 'blank', (),
+             ('cách đây 2 năm', 'cách đây khoảng 6 tháng', 'năm 2019',
+              'tháng 3/2021', 'từ năm 2015')),
+            ('Triệu chứng cụ thể là gì?', 'blank', (),
+             ('đau và cứng khớp buổi sáng', 'sưng nóng đỏ khớp gối',
+              'đau tăng khi vận động mạnh', 'tê bì tay chân', 'đau khi trở trời')),
             ('Đã thực hiện các xét nghiệm nào trong vòng 12 tháng qua?', 'options',
-             ('MRI', 'CT-scan', 'Xquang', 'Siêu âm', 'RF', 'Acid Uric', 'Khác')),
+             ('MRI', 'CT-scan', 'Xquang', 'Siêu âm', 'RF', 'Acid Uric', 'Khác'),
+             ('điện cơ', 'xét nghiệm máu tổng quát', 'đo mật độ xương')),
             ('Quý khách đang dùng nhóm thuốc nào?', 'options',
-             ('Giảm đau', 'Kháng viêm', 'Corticoid', 'Thực phẩm chức năng', 'Khác')),
+             ('Giảm đau', 'Kháng viêm', 'Corticoid', 'Thực phẩm chức năng', 'Khác'),
+             ('thuốc nam', 'thuốc giãn cơ', 'glucosamin')),
             ('Hình thức điều trị đã áp dụng', 'options',
-             ('Nội khoa', 'Vật lý trị liệu', 'Phẫu thuật', 'Đông y', 'Khác')),
-            ('Các triệu chứng này vẫn đang tồn tại?', 'yesno', ()),
-            ('Quý khách có bị hạn chế vận động hay biến chứng nào khác không?', 'yesno', ()),
-            ('Quý khách có phải sử dụng phương tiện hỗ trợ nào không?', 'yesno', ()),
-            ('Quý khách có được bác sĩ yêu cầu cân nhắc phẫu thuật không?', 'yesno', ()),
-            ('Trong gia đình có ai mắc bệnh tương tự không?', 'yesno', ()),
+             ('Nội khoa', 'Vật lý trị liệu', 'Phẫu thuật', 'Đông y', 'Khác'),
+             ('châm cứu', 'tiêm khớp', 'xoa bóp bấm huyệt')),
+            ('Các triệu chứng này vẫn đang tồn tại?', 'yesno', (),
+             ('đau âm ỉ khớp gối về đêm', 'còn cứng khớp buổi sáng',
+              'thỉnh thoảng sưng khi trở trời')),
+            ('Quý khách có bị hạn chế vận động hay biến chứng nào khác không?', 'yesno', (),
+             ('khó leo cầu thang', 'không ngồi xổm được', 'hạn chế giơ tay trái')),
+            ('Quý khách có phải sử dụng phương tiện hỗ trợ nào không?', 'yesno', (),
+             ('dùng gậy khi đi xa', 'đeo đai lưng', 'dùng nạng một bên')),
+            ('Quý khách có được bác sĩ yêu cầu cân nhắc phẫu thuật không?', 'yesno', (),
+             ('thay khớp gối phải', 'nội soi khớp gối', 'chưa hẹn lịch mổ')),
+            ('Trong gia đình có ai mắc bệnh tương tự không?', 'yesno', (),
+             ('mẹ bị thoái hoá khớp gối', 'bố bị gút',
+              'chị gái bị viêm khớp dạng thấp')),
         ),
-        'answers': ('đau nhẹ khớp gối', 'viêm khớp dạng thấp', 'hoàn toàn bình thường',
-                    'không có', 'thoái hoá cột sống thắt lưng', 'đau vai trái khi trở trời',
-                    'chưa rõ nguyên nhân', 'đã khỏi sau 2 tháng', 'thỉnh thoảng tê tay',
-                    'đau khi vận động mạnh'),
     },
     'tien_su_benh': {
         'items': (
-            ('Quý khách đã từng nằm viện trong 5 năm gần đây chưa?', 'yesno', ()),
-            ('Quý khách có đang dùng thuốc theo đơn dài ngày không?', 'yesno', ()),
-            ('Quý khách có dị ứng thuốc hoặc thức ăn nào không?', 'blank', ()),
-            ('Tên bệnh đã được chẩn đoán (nếu có)', 'blank', ()),
-            ('Nơi khám và điều trị gần nhất', 'blank', ()),
-            ('Quý khách đã từng phẫu thuật chưa?', 'yesno', ()),
+            ('Quý khách đã từng nằm viện trong 5 năm gần đây chưa?', 'yesno', (),
+             ('nằm viện 5 ngày vì viêm phổi năm 2022',
+              'mổ ruột thừa tại Bệnh viện tỉnh',
+              'điều trị sốt xuất huyết năm 2023')),
+            ('Quý khách có đang dùng thuốc theo đơn dài ngày không?', 'yesno', (),
+             ('thuốc huyết áp amlodipin', 'metformin hằng ngày', 'thuốc chống đông')),
+            ('Quý khách có dị ứng thuốc hoặc thức ăn nào không?', 'blank', (),
+             ('không có', 'dị ứng penicillin', 'dị ứng hải sản',
+              'dị ứng thuốc giảm đau nhóm NSAID')),
+            ('Tên bệnh đã được chẩn đoán (nếu có)', 'blank', (),
+             ('tăng huyết áp độ 1', 'đái tháo đường type 2', 'viêm dạ dày mạn',
+              'không có')),
+            ('Nơi khám và điều trị gần nhất', 'blank', (),
+             ('Bệnh viện Đa khoa tỉnh, tháng 3/2025', 'Trạm y tế phường',
+              'Bệnh viện Bạch Mai', 'Phòng khám đa khoa khu vực')),
+            ('Quý khách đã từng phẫu thuật chưa?', 'yesno', (),
+             ('mổ ruột thừa năm 2019', 'mổ lấy thai năm 2020',
+              'nội soi cắt túi mật')),
             ('Bệnh lý nền hiện có', 'options',
              ('Tăng huyết áp', 'Đái tháo đường', 'Tim mạch', 'Hô hấp', 'Không có')),
             ('Thói quen sinh hoạt', 'options',
              ('Hút thuốc', 'Uống rượu bia', 'Tập thể dục đều', 'Không có thói quen nào')),
-            ('Quý khách có đang mang thai không?', 'yesno', ()),
-            ('Chiều cao, cân nặng hiện tại', 'blank', ()),
+            ('Quý khách có đang mang thai không?', 'yesno', (),
+             ('thai 12 tuần', 'thai 24 tuần', 'thai 8 tuần'),
+             'Nếu có, ghi rõ tuổi thai'),
+            ('Chiều cao, cân nặng hiện tại', 'blank', (),
+             ('1m65, 58kg', '1m70, 65kg', '1m58, 52kg', '1m72, 70kg')),
         ),
-        'answers': ('không có', 'dị ứng kháng sinh nhóm beta-lactam', 'viêm dạ dày',
-                    'Bệnh viện Đa khoa tỉnh, tháng 3/2025', '1m65, 58kg',
-                    'huyết áp cao nhẹ', 'đã mổ ruột thừa năm 2019', 'bình thường'),
     },
     'dich_te': {
         'items': (
-            ('Trong 14 ngày qua Quý khách có đến vùng có dịch không?', 'yesno', ()),
-            ('Quý khách có tiếp xúc với người mắc bệnh truyền nhiễm không?', 'yesno', ()),
+            ('Trong 14 ngày qua Quý khách có đến vùng có dịch không?', 'yesno', (),
+             ('đi Đà Nẵng từ 02/8 đến 05/8', 'về quê tại Bắc Giang',
+              'công tác TP. Hồ Chí Minh 3 ngày'),
+             'Nếu có, ghi rõ nơi đến và thời gian'),
+            ('Quý khách có tiếp xúc với người mắc bệnh truyền nhiễm không?', 'yesno', (),
+             ('đồng nghiệp cùng phòng', 'người thân trong gia đình'),
+             'Nếu có, ghi rõ người tiếp xúc'),
             ('Triệu chứng hiện có', 'options',
              ('Sốt', 'Ho', 'Khó thở', 'Đau họng', 'Mất vị giác', 'Không có')),
-            ('Quý khách đã tiêm đủ mũi vắc xin chưa?', 'yesno', ()),
-            ('Loại vắc xin và ngày tiêm gần nhất', 'blank', ()),
+            ('Quý khách đã tiêm đủ mũi vắc xin chưa?', 'yesno', (),
+             ('đang theo dõi sau điều trị', 'đang mang thai', 'chưa đến lịch tiêm'),
+             'Nếu chưa, vui lòng nêu lý do'),
+            ('Loại vắc xin và ngày tiêm gần nhất', 'blank', (),
+             ('Vero Cell, {date}', 'Pfizer, {date}', 'AstraZeneca, {date}')),
             ('Phương tiện di chuyển đã sử dụng', 'options',
-             ('Máy bay', 'Tàu hoả', 'Ô tô khách', 'Xe cá nhân', 'Khác')),
-            ('Địa chỉ lưu trú trong 14 ngày tới', 'blank', ()),
-            ('Quý khách có đang cách ly theo yêu cầu y tế không?', 'yesno', ()),
+             ('Máy bay', 'Tàu hoả', 'Ô tô khách', 'Xe cá nhân', 'Khác'),
+             ('tàu thuỷ', 'xe buýt', 'xe ôm công nghệ')),
+            ('Địa chỉ lưu trú trong 14 ngày tới', 'blank', (), ('{address}',)),
+            ('Quý khách có đang cách ly theo yêu cầu y tế không?', 'yesno', (),
+             ('cách ly tại nhà 7 ngày', 'cách ly tập trung tại ký túc xá')),
         ),
-        'answers': ('không', 'sốt nhẹ hai hôm trước', 'đã tiêm đủ ba mũi',
-                    'Vero Cell, tháng 8/2024', 'số 12 Nguyễn Trãi, Thanh Xuân, Hà Nội',
-                    'hoàn toàn bình thường', 'ho khan về đêm'),
     },
     'dich_vu': {
         'items': (
@@ -341,20 +381,27 @@ QUESTION_THEMES: dict[str, dict] = {
              ('Rất hài lòng', 'Hài lòng', 'Bình thường', 'Chưa hài lòng')),
             ('Thời gian xử lý hồ sơ', 'options', ('Nhanh', 'Đúng hẹn', 'Chậm')),
             ('Quý khách biết đến dịch vụ qua kênh nào?', 'options',
-             ('Người quen giới thiệu', 'Mạng xã hội', 'Website', 'Báo chí', 'Khác')),
-            ('Quý khách có hài lòng với kết quả nhận được không?', 'yesno', ()),
+             ('Người quen giới thiệu', 'Mạng xã hội', 'Website', 'Báo chí', 'Khác'),
+             ('qua cán bộ tổ dân phố', 'loa phát thanh phường')),
+            ('Quý khách có hài lòng với kết quả nhận được không?', 'yesno', (),
+             ('hồ sơ bị trả lại hai lần', 'chưa nhận được kết quả đúng hẹn',
+              'thiếu hướng dẫn cụ thể'),
+             'Nếu không, vui lòng nêu lý do'),
             ('Quý khách có muốn tiếp tục sử dụng dịch vụ không?', 'yesno', ()),
-            ('Ý kiến đóng góp để chúng tôi phục vụ tốt hơn', 'blank', ()),
-            ('Điều gì khiến Quý khách chưa hài lòng nhất?', 'blank', ()),
+            ('Ý kiến đóng góp để chúng tôi phục vụ tốt hơn', 'blank', (),
+             ('nhân viên nhiệt tình', 'mong có thêm quầy tiếp nhận',
+              'cần thêm chỗ ngồi chờ', 'không có ý kiến gì thêm')),
+            ('Điều gì khiến Quý khách chưa hài lòng nhất?', 'blank', (),
+             ('chờ hơi lâu', 'thủ tục còn rườm rà', 'phải đi lại nhiều lần',
+              'không có')),
             ('Cơ sở vật chất tại nơi tiếp nhận', 'options',
              ('Tốt', 'Khá', 'Trung bình', 'Cần cải thiện')),
-            ('Quý khách có phải chờ quá thời gian hẹn không?', 'yesno', ()),
+            ('Quý khách có phải chờ quá thời gian hẹn không?', 'yesno', (),
+             ('chờ thêm khoảng 30 phút', 'hẹn lại sang ngày hôm sau',
+              'trễ hẹn 3 ngày làm việc')),
             ('Hình thức nhận kết quả mong muốn', 'options',
              ('Nhận trực tiếp', 'Qua bưu điện', 'Nhận bản điện tử')),
         ),
-        'answers': ('nhân viên nhiệt tình', 'chờ hơi lâu', 'không có ý kiến gì thêm',
-                    'rất tốt', 'mong có thêm quầy tiếp nhận', 'thủ tục còn rườm rà',
-                    'hài lòng', 'cần thêm chỗ ngồi chờ'),
     },
     'nhan_su': {
         'items': (
@@ -362,55 +409,80 @@ QUESTION_THEMES: dict[str, dict] = {
              ('Xuất sắc', 'Tốt', 'Đạt yêu cầu', 'Chưa đạt')),
             ('Tinh thần phối hợp với đồng nghiệp', 'options',
              ('Tốt', 'Khá', 'Trung bình', 'Cần cải thiện')),
-            ('Nhân sự có tham gia đầy đủ các khoá đào tạo không?', 'yesno', ()),
-            ('Nhiệm vụ nổi bật đã thực hiện trong kỳ', 'blank', ()),
-            ('Khó khăn gặp phải trong quá trình công tác', 'blank', ()),
-            ('Đề xuất của cá nhân cho kỳ tiếp theo', 'blank', ()),
-            ('Nhân sự có vi phạm nội quy trong kỳ không?', 'yesno', ()),
+            ('Nhân sự có tham gia đầy đủ các khoá đào tạo không?', 'yesno', (),
+             ('trùng lịch công tác', 'nghỉ ốm một buổi'),
+             'Nếu không, vui lòng nêu lý do'),
+            ('Nhiệm vụ nổi bật đã thực hiện trong kỳ', 'blank', (),
+             ('phụ trách dự án mở rộng kho',
+              'hoàn thành quyết toán năm trước thời hạn',
+              'xây dựng quy trình lưu trữ hồ sơ điện tử')),
+            ('Khó khăn gặp phải trong quá trình công tác', 'blank', (),
+             ('thiếu nhân lực hỗ trợ', 'khối lượng việc tăng vào cuối năm',
+              'thiết bị văn phòng xuống cấp', 'không có')),
+            ('Đề xuất của cá nhân cho kỳ tiếp theo', 'blank', (),
+             ('đề nghị bổ sung thiết bị', 'được tham gia khoá bồi dưỡng nghiệp vụ',
+              'cần thêm thời gian bàn giao')),
+            ('Nhân sự có vi phạm nội quy trong kỳ không?', 'yesno', (),
+             ('đi muộn hai buổi, đã nhắc nhở', 'không đeo thẻ nhân viên một lần')),
             ('Đề nghị hình thức khen thưởng', 'options',
              ('Giấy khen', 'Thưởng tiền', 'Nâng lương trước hạn', 'Chưa đề nghị')),
-            ('Nhân sự có nguyện vọng luân chuyển vị trí không?', 'yesno', ()),
+            ('Nhân sự có nguyện vọng luân chuyển vị trí không?', 'yesno', (),
+             ('mong chuyển sang Phòng Kế hoạch',
+              'muốn về làm việc tại chi nhánh gần nhà')),
         ),
-        'answers': ('hoàn thành đúng tiến độ', 'không có', 'thiếu nhân lực hỗ trợ',
-                    'đề nghị bổ sung thiết bị', 'phụ trách dự án mở rộng kho',
-                    'cần thêm thời gian bàn giao', 'tốt'),
     },
     'bao_hiem': {
         'items': (
-            ('Quý khách có tham gia hợp đồng bảo hiểm nào khác không?', 'yesno', ()),
-            ('Nghề nghiệp hiện tại và tính chất công việc', 'blank', ()),
-            ('Quý khách có thường xuyên làm việc trên cao hoặc dưới nước không?', 'yesno', ()),
+            ('Quý khách có tham gia hợp đồng bảo hiểm nào khác không?', 'yesno', (),
+             ('Bảo Việt Nhân thọ, hợp đồng số {digits}',
+              'Prudential, số tiền bảo hiểm 500 triệu đồng'),
+             'Nếu có, ghi rõ công ty và số hợp đồng'),
+            ('Nghề nghiệp hiện tại và tính chất công việc', 'blank', (),
+             ('nhân viên văn phòng', 'kỹ sư xây dựng, làm việc tại công trường',
+              'giáo viên tiểu học', 'lái xe tải đường dài', 'kinh doanh tự do')),
+            ('Quý khách có thường xuyên làm việc trên cao hoặc dưới nước không?', 'yesno', (),
+             ('lắp đặt thiết bị trên cao 10 m', 'thợ lặn nuôi trồng thuỷ sản')),
             ('Môn thể thao hoặc hoạt động rủi ro đang tham gia', 'options',
              ('Leo núi', 'Lặn biển', 'Mô tô thể thao', 'Không có')),
-            ('Thu nhập bình quân tháng', 'blank', ()),
-            ('Quý khách đã từng bị từ chối bảo hiểm chưa?', 'yesno', ()),
+            ('Thu nhập bình quân tháng', 'blank', (),
+             ('khoảng 18 triệu đồng', '12 triệu đồng', '25 triệu đồng',
+              'khoảng 30 triệu đồng')),
+            ('Quý khách đã từng bị từ chối bảo hiểm chưa?', 'yesno', (),
+             ('năm 2020 do tiền sử tăng huyết áp',
+              'năm 2022, chưa rõ lý do')),
             ('Mục đích tham gia bảo hiểm', 'options',
-             ('Bảo vệ thu nhập', 'Tích luỹ', 'Chăm sóc sức khoẻ', 'Hưu trí', 'Khác')),
-            ('Người thụ hưởng và quan hệ với người được bảo hiểm', 'blank', ()),
-            ('Quý khách có hút thuốc lá không?', 'yesno', ()),
+             ('Bảo vệ thu nhập', 'Tích luỹ', 'Chăm sóc sức khoẻ', 'Hưu trí', 'Khác'),
+             ('bảo đảm khoản vay', 'quỹ học vấn cho con')),
+            ('Người thụ hưởng và quan hệ với người được bảo hiểm', 'blank', (),
+             ('{person} - {relation}',)),
+            ('Quý khách có hút thuốc lá không?', 'yesno', (),
+             ('khoảng nửa bao mỗi ngày', 'thỉnh thoảng, khi giao tiếp')),
         ),
-        'answers': ('nhân viên văn phòng', 'không có', 'khoảng 18 triệu đồng',
-                    'vợ - Nguyễn Thị Lan', 'kỹ sư xây dựng, làm việc tại công trường',
-                    'con trai - Trần Minh Khôi', 'đã ngừng hút từ 2021'),
     },
     'dao_tao': {
         'items': (
-            ('Học viên đã từng tham gia khoá đào tạo nào của đơn vị chưa?', 'yesno', ()),
+            ('Học viên đã từng tham gia khoá đào tạo nào của đơn vị chưa?', 'yesno', (),
+             ('khoá an toàn lao động năm 2023', 'khoá kỹ năng quản lý cấp phòng'),
+             'Nếu có, ghi rõ tên khoá học'),
             ('Trình độ chuyên môn hiện tại', 'options',
              ('Trung cấp', 'Cao đẳng', 'Đại học', 'Sau đại học')),
-            ('Nội dung mong muốn được đào tạo thêm', 'blank', ()),
+            ('Nội dung mong muốn được đào tạo thêm', 'blank', (),
+             ('nghiệp vụ kế toán nâng cao', 'đấu thầu qua mạng',
+              'an toàn lao động', 'kỹ năng soạn thảo văn bản')),
             ('Học viên có nhu cầu cấp chứng chỉ không?', 'yesno', ()),
             ('Thời gian học phù hợp', 'options',
              ('Trong giờ hành chính', 'Buổi tối', 'Cuối tuần', 'Trực tuyến')),
-            ('Đơn vị công tác và vị trí đảm nhiệm', 'blank', ()),
-            ('Học viên có cần bố trí chỗ ở không?', 'yesno', ()),
+            ('Đơn vị công tác và vị trí đảm nhiệm', 'blank', (),
+             ('Phòng Kỹ thuật, {position}', 'Phòng Hành chính - Tổng hợp, {position}',
+              'Phòng Tài chính - Kế toán, {position}')),
+            ('Học viên có cần bố trí chỗ ở không?', 'yesno', (),
+             ('ở ký túc xá 5 ngày', 'phòng đôi, từ ngày khai giảng')),
             ('Hình thức thanh toán học phí', 'options',
              ('Đơn vị chi trả', 'Cá nhân tự túc', 'Hỗ trợ một phần')),
         ),
-        'answers': ('nghiệp vụ kế toán nâng cao', 'không có', 'Phòng Kỹ thuật, chuyên viên',
-                    'an toàn lao động', 'có, ở ký túc xá', 'đấu thầu qua mạng'),
     },
 }
+
 
 # TÊN của tài liệu nói nó hỏi về chuyện gì, nên chủ đề đọc từ chính `titles`
 # trước. `profile` chỉ là lưới hứng: ba phôi hành chính đều `admin`, nên bốc
@@ -428,16 +500,21 @@ def _as_item(entry) -> dict:
     """Một câu hỏi, MỘT hình dạng dữ liệu.
 
     Bảy chủ đề viết trong file này khai câu hỏi bằng tuple
-    `(câu, dạng, lựa chọn)`; chủ đề khai bằng corpus khai bằng dict, vì mười
-    hai dạng mới mang tham số khác nhau và một tuple ba ô không chở nổi. Quy
-    về dict ngay lúc gộp: để hai hình dạng chạy song song thì mọi hàm phía
-    sau phải biết cả hai, và cái quên biết sẽ là cái viết sau."""
+    `(câu, dạng, lựa chọn[, đáp án[, hỏi thêm]])`; chủ đề khai bằng corpus
+    khai bằng dict, vì mười hai dạng mới mang tham số khác nhau và một tuple
+    không chở nổi. Quy về dict ngay lúc gộp: để hai hình dạng chạy song song
+    thì mọi hàm phía sau phải biết cả hai, và cái quên biết sẽ là cái viết
+    sau."""
     if isinstance(entry, dict):
         return dict(entry)
-    prompt, shape, options = entry
+    prompt, shape, options, *rest = entry
     item = {"shape": shape, "prompt": prompt}
     if options:
         item["options"] = tuple(options)
+    if rest:
+        item["replies"] = tuple(rest[0])
+    if len(rest) > 1:
+        item["follow"] = rest[1]
     return item
 
 
@@ -538,11 +615,16 @@ THEMES_BY_PROFILE: dict[str, tuple[str, ...]] = {
 }
 
 
-OPTION_FOLLOWS: tuple[str, ...] = (
-    'Xin cho biết ngày thực hiện và kết quả',
-    'Nếu có, vui lòng ghi rõ chi tiết',
-    'Vui lòng cho biết thời gian và nơi thực hiện',
-)
+# Dòng hỏi thêm MẶC ĐỊNH, chỉ in khi câu hỏi có đáp án khai kèm.
+#
+# Bản trước bốc một trong ba câu cố định cho MỌI câu `options`, bất kể câu hỏi
+# là gì, nên "Ca làm việc đăng ký: ☒ Ca đêm" in tiếp "Vui lòng cho biết thời
+# gian và nơi thực hiện", và "Nơi nộp hồ sơ: ☒ Bưu điện" in "Nếu có, ...".
+# Giờ câu hỏi thêm là của chính câu ấy (cột `follow`); hai câu dưới đây chỉ
+# là chỗ đỡ cho hai trường hợp mà câu chữ đúng với mọi câu hỏi: câu Có/Không
+# hỏi chi tiết khi "Có", và câu nhiều lựa chọn có ô "Khác".
+YES_FOLLOW = 'Nếu có, vui lòng mô tả chi tiết'
+OTHER_FOLLOW = 'Nếu chọn "Khác", vui lòng ghi rõ'
 
 
 # Căn cứ pháp lý: đầu mọi quyết định, công văn, tờ trình của cơ quan nhà nước.
@@ -1107,16 +1189,6 @@ def questions_of(seed: int, design: Design, count: int) -> list[dict]:
     return out
 
 
-def _spread(rng: random.Random, free: list[str], count: int) -> list[str]:
-    """`count` câu trả lời KHÁC NHAU khi kho đủ dài, lặp lại khi không."""
-    pool = [x for x in free if x]
-    if not pool or count <= 0:
-        return [''] * max(count, 0)
-    if count <= len(pool):
-        return rng.sample(pool, count)
-    return [rng.choice(pool) for _ in range(count)]
-
-
 # Tên cột nói CỘT ẤY CHỨA GÌ. Bảng điền tay trên giấy thật có cột "Họ tên",
 # "Năm sinh", "Số điện thoại" -- đổ một chuỗi bất kỳ vào mọi cột thì ra những
 # ô như `Chức danh: 3853`, đo được trên một trang vẽ thật.
@@ -1126,6 +1198,10 @@ def _spread(rng: random.Random, free: list[str], count: int) -> list[str]:
 # đúng thứ một cột "Ghi chú" hay "Nội dung" chứa.
 COLUMN_KINDS: tuple[tuple[tuple[str, ...], str], ...] = (
     (('họ tên', 'họ và tên', 'người', 'chủ hộ', 'tôi tên'), 'person'),
+    # TRƯỚC `ngày`: "sinh ngày" mà bốc năm 2018--2026 như mọi ngày khác thì
+    # ra người làm đơn xin việc "sinh ngày 26/01/2025", đo được trên
+    # `data/26-09-hand-check/don_xin_viec_00003`.
+    (('sinh ngày', 'ngày sinh', 'ngày, tháng, năm sinh'), 'birthdate'),
     (('năm sinh',), 'year'),
     (('lúc',), 'time'),
     (('ngày', 'thời gian', 'thời hạn'), 'date'),
@@ -1158,11 +1234,18 @@ def _column_kind(name: str) -> str:
 
 def _column_value(name: str, rng: random.Random, free: list[str]) -> str:
     """Giá trị hợp với CỘT `name` trong một bảng người ta điền tay."""
-    kind = _column_kind(name)
+    return _kind_value(_column_kind(name), rng, free)
+
+
+def _kind_value(kind: str, rng: random.Random, free: list[str]) -> str:
+    """Một giá trị của LOẠI `kind` -- loại tra từ nhãn, hoặc loại mà một đáp
+    án khai ra bằng chỗ giữ `{kind}` (xem `_reply`)."""
     if kind == 'person':
         return rng.choice(corpus.people() or ('Nguyễn Văn An',))
     if kind == 'year':
         return str(rng.randint(1955, 2020))
+    if kind == 'birthdate':
+        return f'{rng.randint(1, 28):02d}/{rng.randint(1, 12):02d}/{rng.randint(1955, 2005)}'
     if kind == 'time':
         return f'{rng.randint(0, 23)}h{rng.randint(0, 59):02d}'
     if kind == 'date':
@@ -1211,20 +1294,36 @@ def _filled(spec: dict, rng: random.Random, free: list[str]) -> dict:
     item = dict(spec)
     shape = item.get('shape', 'blank')
 
+    # Câu trả lời lấy từ ĐÁP ÁN CỦA CHÍNH CÂU ẤY (`replies`), rồi mới tới loại
+    # tra từ nhãn -- không bao giờ từ rổ `free` của cả chủ đề. Xem
+    # `_check_replies` về việc câu nào thiếu cả hai thì kêu lúc nạp mô-đun.
+    replies = tuple(item.get('replies') or ())
+
     if shape == 'blank':
-        item['answer'] = rng.choice(free)
+        item['answer'] = (_reply(rng.choice(replies), rng) if replies
+                          else _kind_value(_column_kind(item['prompt']), rng, []))
         item.setdefault('options', ())
     elif shape == 'yesno':
         ticked = rng.choice(('Có', 'Không'))
-        follow = rng.random() < 0.65
+        # Không có đáp án thì không có dòng hỏi thêm: một dòng "Nếu có, vui
+        # lòng mô tả chi tiết" mà không ai có gì để viết vào là một dòng
+        # không tờ khai nào cần.
+        follow = bool(replies) and rng.random() < 0.65
+        prompt = item.get('follow') or YES_FOLLOW
         item.update(ticked=ticked, options=('Có', 'Không'),
-                    sub='Nếu có, vui lòng mô tả chi tiết' if follow else '',
-                    answer=rng.choice(free) if follow and ticked == 'Có' else '')
+                    sub=prompt if follow else '',
+                    answer=_reply(rng.choice(replies), rng)
+                    if follow and ticked == _follow_trigger(prompt) else '')
     elif shape == 'options':
         options = list(item.get('options') or ())
         item['picked'] = set(rng.sample(options, min(rng.randint(1, 2), len(options)))) if options else set()
-        item['sub'] = rng.choice(OPTION_FOLLOWS)
-        item['answer'] = rng.choice(free)
+        item['sub'], item['answer'] = '', ''
+        if replies:
+            # Hỏi thêm kiểu "Khác" chỉ được viết khi ô "Khác" ĐÃ tích: người
+            # ta ghi rõ cái mình chọn, không ghi rõ cái mình bỏ.
+            item['sub'] = item.get('follow') or OTHER_FOLLOW
+            if item.get('follow') or OTHER_OPTION in item['picked']:
+                item['answer'] = _reply(rng.choice(replies), rng)
     elif shape == 'boxchar':
         cells = max(int(item.get('cells') or 0), 1)
         # Điền THIẾU đôi khi, không phải luôn đầy: tờ khai thật in đủ số ô mà
@@ -1250,40 +1349,18 @@ def _filled(spec: dict, rng: random.Random, free: list[str]) -> dict:
         rng.shuffle(order)
         item['order'] = order
     elif shape == 'inline_blank':
-        # ĐOẠN CHỮ NGAY TRƯỚC MỖI DẤU … LÀ NHÃN của chỗ trống ấy, cùng lệ
-        # `_column_value` đã đặt cho cột bảng và cho `subquestion` ở trên.
-        # Trước dòng này, "Tôi tên là …, sinh ngày …, hiện thường trú tại …"
-        # bốc cả ba chỗ trống từ CÙNG một rổ `free` -- rổ câu than phiền của
-        # cả tài liệu -- nên câu tự giới thiệu in ra "Tôi tên là hồ sơ đã nộp
-        # ngày 12/3, sinh ngày đề nghị cấp lại do mất". `split('…')` cắt
-        # đúng N đoạn cho N chỗ trống; đoạn CUỐI (sau dấu … cuối) không phải
-        # nhãn của chỗ nào nên bỏ.
-        #
-        # KHÔNG lặp lại ở phần còn rơi về `free`: ba chỗ trống trong một câu
-        # mà điền cùng một chuỗi là một câu không ai viết ra. Hết kho thì mới
-        # cho lặp.
+        # ĐOẠN CHỮ NGAY TRƯỚC MỖI DẤU … LÀ NHÃN của chỗ trống ấy. Bản trước
+        # bốc chỗ trống không tra ra loại từ rổ `free` của cả tài liệu, nên
+        # "Tôi đề nghị được bố trí tại bộ phận …" in ra "xin bắt đầu từ đầu
+        # tháng sau". Giờ mỗi câu khai đáp án CẢ CÂU một lượt (`_slots`), nên
+        # các chỗ trống cũng khớp với nhau -- "vốn điều lệ 5.000.000.000 đồng,
+        # bằng chữ năm tỉ đồng" -- điều mà bốc từng ô riêng không làm được.
         labels = str(item.get('prompt') or '').split('…')[:-1]
-        kinds = [_column_kind(label) for label in labels]
-        generic = iter(_spread(rng, free, sum(k in ('free', 'noun') for k in kinds)))
-        item['answers'] = [next(generic) if k in ('free', 'noun')
-                            else _column_value(label, rng, free)
-                            for label, k in zip(labels, kinds)]
+        item['answers'] = _slot_values(labels, replies, rng)
     elif shape == 'subquestion':
+        # Cùng luật với `inline_blank`: nhãn a) b) c) là nhãn của từng ô.
         labels = list(item.get('subs') or ())
-        # NHÃN NÓI CÂU TRẢ LỜI PHẢI LÀ GÌ, cùng lệ `_column_value` đã đặt cho
-        # cột bảng. Trước dòng này, cả `len(labels)` câu trả lời đều bốc
-        # chung từ `free` -- rổ câu than phiền của cả tài liệu -- nên
-        # "a) Điện thoại" in ra "hồ sơ đã nộp ngày 12/3" và "b) Thư điện tử"
-        # in ra "đề nghị cấp lại do mất", đo được trên `don_xin_viec_00003`.
-        # Chỉ những nhãn KHÔNG tra ra loại nào (`free`/`noun`, đúng nghĩa
-        # "trả lời tự do") mới còn bốc từ `free`, và `_spread` vẫn giữ
-        # nguyên tắc không lặp cho riêng đám ấy.
-        kinds = [_column_kind(label) for label in labels]
-        generic = iter(_spread(rng, free, sum(k in ('free', 'noun') for k in kinds)))
-        values = [next(generic) if k in ('free', 'noun')
-                  else _column_value(label, rng, free)
-                  for label, k in zip(labels, kinds)]
-        item['subs'] = list(zip(labels, values))
+        item['subs'] = list(zip(labels, _slot_values(labels, replies, rng)))
     elif shape == 'table_form':
         cols = list(item.get('cols') or ())
         lines = max(int(item.get('lines') or 2), 1)
@@ -1301,6 +1378,107 @@ def _filled(spec: dict, rng: random.Random, free: list[str]) -> dict:
         want = rng.randint(1, len(items)) if items else 0
         item['picked'] = set(rng.sample(items, want)) if items else set()
     return item
+
+
+# Ô lựa chọn mà ghi rõ thêm là việc của người điền -- đọc từ chính chữ in trên
+# ô, nên một câu nhiều lựa chọn mới có ô "Khác" tự có dòng hỏi thêm.
+OTHER_OPTION = 'Khác'
+
+# Loại mà một nhãn tra ra được, và cũng là tên chỗ giữ `{...}` được phép trong
+# một đáp án. `noun` không nằm trong: "Tên ..." nói ô ấy chứa MỘT cái tên,
+# không nói tên gì, nên nó cần đáp án khai như một câu trả lời tự do.
+TYPED_KINDS = frozenset(kind for _, kind in COLUMN_KINDS) - {'noun'}
+_PLACEHOLDER = re.compile(r'\{(\w+)\}')
+
+
+def _follow_trigger(prompt: str) -> str:
+    """Ô nào phải tích thì dòng hỏi thêm mới được điền.
+
+    Đọc từ chính câu hỏi thêm in trên giấy: "Nếu không, vui lòng nêu lý do"
+    thì người tích "Không" mới viết, "Nếu có, ..." thì người tích "Có"."""
+    low = prompt.strip().lower()
+    return 'Không' if low.startswith(('nếu không', 'nếu chưa')) else 'Có'
+
+
+def _reply(template: str, rng: random.Random) -> str:
+    """Một đáp án khai sẵn, với mỗi `{loại}` thay bằng một giá trị của loại ấy.
+
+    Chỗ giữ để đáp án khai không phải chép tay một danh sách tên người hay
+    ngày tháng: "{person} - {relation}" cho "Người thụ hưởng và quan hệ" vẫn
+    bốc tên từ `corpus.people()` như mọi ô tên khác."""
+    return _PLACEHOLDER.sub(lambda m: _kind_value(m.group(1), rng, []), template)
+
+
+def _slots(reply: str) -> list[str]:
+    """Một đáp án CẢ CÂU của `inline_blank`/`subquestion`, tách theo ô bằng `;`.
+
+    Ô để trống nghĩa là "tra loại từ nhãn" -- "Tôi đề nghị được bố trí tại bộ
+    phận Kế toán;;" khai bộ phận, còn vị trí và ngày để nhãn tự lo."""
+    return [part.strip() for part in reply.split(';')]
+
+
+def _slot_values(labels: list[str], replies: tuple[str, ...],
+                 rng: random.Random) -> list[str]:
+    """Giá trị cho từng ô: ô có đáp án khai thì dùng nó, ô trống thì tra nhãn."""
+    slots = _slots(rng.choice(replies)) if replies else [''] * len(labels)
+    return [_reply(value, rng) if value
+            else _kind_value(_column_kind(label), rng, [])
+            for label, value in zip(labels, slots)]
+
+
+def _check_replies(themes: dict[str, dict]) -> list[str]:
+    """Mọi câu hỏi mà câu trả lời không có nguồn, hoặc khai sai. Rỗng là đúng.
+
+    Luật: câu trả lời tự do phải có đáp án KHAI THEO CÂU. Không còn rổ chung
+    nào để rơi về -- rổ ấy chính là nguồn của mọi câu lạc đề -- nên một câu
+    thiếu đáp án là một câu không điền được, và nó phải kêu ngay lúc nạp mô-đun
+    chứ không im lặng in ra một dòng trống hay một câu của câu hỏi khác."""
+    problems: list[str] = []
+    for theme, data in themes.items():
+        for item in data['items']:
+            shape, prompt = item.get('shape', 'blank'), item.get('prompt', '')
+            replies = tuple(item.get('replies') or ())
+            follow = str(item.get('follow') or '')
+            where = f'{theme}: {shape} "{prompt}"'
+            for reply in replies:
+                for kind in _PLACEHOLDER.findall(reply):
+                    if kind not in TYPED_KINDS:
+                        problems.append(f'{where}: chỗ giữ lạ {{{kind}}}')
+            if shape == 'blank':
+                if not replies and _column_kind(prompt) not in TYPED_KINDS:
+                    problems.append(f'{where}: nhãn không tra ra loại mà không khai đáp án')
+            elif shape == 'yesno':
+                if follow and not replies:
+                    problems.append(f'{where}: có câu hỏi thêm mà không có đáp án')
+            elif shape == 'options':
+                if follow and not replies:
+                    problems.append(f'{where}: có câu hỏi thêm mà không có đáp án')
+                if replies and not follow and OTHER_OPTION not in (item.get('options') or ()):
+                    problems.append(f'{where}: có đáp án mà không có ô "{OTHER_OPTION}" '
+                                    f'hay câu hỏi thêm để ghi nó vào')
+            elif shape in ('inline_blank', 'subquestion'):
+                labels = (prompt.split('…')[:-1] if shape == 'inline_blank'
+                          else list(item.get('subs') or ()))
+                rows = [_slots(reply) for reply in replies] or [[''] * len(labels)]
+                for reply, row in zip(replies, rows):
+                    if len(row) != len(labels):
+                        problems.append(f'{where}: đáp án "{reply}" có {len(row)} ô, '
+                                        f'câu có {len(labels)} chỗ trống')
+                for index, label in enumerate(labels):
+                    empty = any(index >= len(row) or not row[index] for row in rows)
+                    if empty and _column_kind(label) not in TYPED_KINDS:
+                        problems.append(f'{where}: ô "{label.strip()}" không tra ra '
+                                        f'loại mà có đáp án để trống')
+            elif replies or follow:
+                problems.append(f'{where}: dạng này không nhận đáp án hay câu hỏi thêm')
+    return problems
+
+
+_REPLY_PROBLEMS = _check_replies(QUESTION_THEMES)
+if _REPLY_PROBLEMS:
+    raise ValueError('câu hỏi thiếu hoặc khai sai đáp án (rulebase/corpus/vi/'
+                     'questions_*.txt, hoặc QUESTION_THEMES):\n  '
+                     + '\n  '.join(_REPLY_PROBLEMS))
 
 
 def _regroup(doc: Doc) -> None:
