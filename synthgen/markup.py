@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import html as _html
 import random
+import unicodedata
 from pathlib import Path
 
 from synthgen import design as D
@@ -517,7 +518,426 @@ table.items tbody td.tightest,table.items tfoot td.tightest{{
 .pgnum{{clear:both;text-align:right;padding-top:2.2mm;
   font-size:{_px(base_pt * 0.8)};color:{pal.soft};}}
 .clr{{clear:both;}}
+{_decor_css(d, base_pt)}
 """
+
+
+# ------------------------------------------------------------------ trang trí
+
+
+def _mix(color: str, paper: str, share: float) -> str:
+    """`share` phần `color` pha vào `paper`, ra một mã hex.
+
+    Tính ở đây chứ không dùng `color-mix()` của CSS: màu nhạt của khung và nền
+    hoa văn phải là MỘT con số ghi được trong markup đã lưu, không phải một
+    phép tính mà trình duyệt khác có thể làm khác đi."""
+    def rgb(code: str) -> tuple[int, int, int]:
+        code = code.lstrip("#")
+        if len(code) != 6:
+            raise ValueError(f"màu phải là #rrggbb, nhận {code!r}")
+        return tuple(int(code[i:i + 2], 16) for i in (0, 2, 4))
+
+    a, b = rgb(color), rgb(paper)
+    return "#" + "".join(f"{round(x * share + y * (1 - share)):02x}"
+                         for x, y in zip(a, b))
+
+
+def _initials(name: str) -> str:
+    """Hai chữ cái cho logo chữ lồng, lấy từ mấy chữ CUỐI của tên đơn vị.
+
+    Cùng luật với `generators/html/sheets/base.py::initials` -- "CÔNG TY CỔ
+    PHẦN ĐIỆN MÁY HỒNG HÀ" ra "HH", vì mấy chữ đầu chỉ nói đó là một công ty.
+    Chép chứ không import: `sheets/base.py` kéo theo `components.table` và chỉ
+    nạp được khi `generators/html` nằm trong `sys.path`, còn `markup.py` phải
+    nạp được ở mọi chỗ `design.py` nạp được (lượt `--dry-run` không mở trình
+    duyệt nào)."""
+    skip = {"CONG", "TY", "CO", "PHAN", "TNHH", "MTV", "DOANH", "NGHIEP",
+            "TAP", "DOAN", "CHI", "NHANH", "VA", "-", "TONG", "UY", "BAN",
+            "NHAN", "DAN", "SO", "PHONG", "TRUONG", "BENH", "VIEN"}
+    words = []
+    for word in str(name or "").replace("-", " ").split():
+        plain = "".join(c for c in unicodedata.normalize("NFD", word)
+                        if not unicodedata.combining(c)).upper()
+        plain = plain.replace("Đ", "D")
+        if plain and plain not in skip and plain[0].isalpha():
+            words.append(word)
+    picked = words[-2:] if len(words) >= 2 else words
+    return "".join(word[0] for word in picked).upper()[:2] or "VN"
+
+
+_MONOGRAM_CACHE: dict[tuple[str, str, str], str] = {}
+
+
+def monogram_art(letters: str, color: str, font: str) -> str:
+    """Chữ lồng của logo, vẽ thành ẢNH PNG cắt sát nét, trả về data URI.
+
+    Ảnh chứ không phải chữ DOM, vì hai lời hứa của kho này kéo về hai phía:
+    `tests/test_synthgen_regions.py` giữ "mọi chữ DOM nằm trong một
+    `data-kind`" ở con số 0, còn logo thì là một cái HÌNH -- bọc nó vào
+    `data-kind` là khai "HL" thành một dòng chữ của tài liệu, lọt vào markdown
+    và KIE. Con dấu đã giải đúng bài này theo cùng cách: vành chữ "CÔNG TY
+    ..." nằm trong ảnh (`seal_art`), và cả tấm được đo thành vùng `Stamp`. Ở
+    đây `<img>` nằm trong `.logo`, và `page.py::GRAPHIC_RECTS_JS` đo `.logo`
+    thành vùng `Image`.
+
+    Cắt sát nét mực vì cùng lý do với `seal_art`: hộp đo được phải là hộp của
+    mực, không phải của khoảng trong suốt quanh nó."""
+    key = (letters, color, font)
+    if key in _MONOGRAM_CACHE:
+        return _MONOGRAM_CACHE[key]
+    import base64  # noqa: PLC0415 -- chỉ cần khi trang có logo chữ lồng
+    import io  # noqa: PLC0415
+
+    from PIL import Image, ImageDraw, ImageFont  # noqa: PLC0415
+
+    path = REPO_ROOT / "fonts" / font
+    face = ImageFont.truetype(str(path), 180)
+    canvas = Image.new("RGBA", (600, 320), (0, 0, 0, 0))
+    ImageDraw.Draw(canvas).text((20, 60), letters, font=face, fill=color)
+    box = canvas.getbbox()
+    if box is None:
+        # Phông không có nét nào cho mấy chữ này: in một logo rỗng là khai
+        # một vùng `Image` không có mực -- luật 3 theo chiều ngược lại.
+        raise ValueError(f"chữ lồng {letters!r} không ra nét nào với {font}")
+    buffer = io.BytesIO()
+    canvas.crop(box).save(buffer, format="PNG", optimize=True)
+    uri = "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode()
+    _MONOGRAM_CACHE[key] = uri
+    return uri
+
+
+def _logo(doc: Doc, d: Design) -> str:
+    """Logo của letterhead. `mo` là hình tròn mờ cũ; ba kiểu kia in chữ lồng
+    -- xem `monogram_art` về vì sao chữ lồng là ảnh."""
+    square = " sq" if d.ornament == "dau_vuong" else ""
+    if d.logo_style == "mo":
+        return f'<span class="logo{square}"></span>'
+    # Nét chữ lồng theo phông TIÊU ĐỀ của tờ: serif thì chữ chân, còn lại
+    # chữ không chân. Cả hai tệp đều phủ tiếng Việt (`tools/check_fonts.py`).
+    serif = "serif" in d.face.head.lower() and "sans" not in d.face.head.lower()
+    font = "serif/DejaVuSerif-Bold.ttf" if serif else "sans/DejaVuSans-Bold.ttf"
+    ink = "#ffffff" if d.logo_style == "o_chu" else d.palette.accent
+    art = monogram_art(_initials(doc.org_name), ink, font)
+    return (f'<span class="logo {d.logo_style}{square}">'
+            f'<img src="{art}" alt=""></span>')
+
+
+def _decor_layer(d: Design) -> str:
+    """Lớp trang trí nằm DƯỚI chữ: khung trang và dải màu mép giấy.
+
+    `position:absolute`, nên `draw.py::MEASURE_JS` bỏ qua nó khi đo tờ giấy
+    đã đầy tới đâu -- đúng như với dấu và chữ chìm. Không phần tử nào ở đây
+    mang chữ, không cái nào khớp selector của `GRAPHIC_RECTS_JS`: một khung
+    viền in trên giấy là đường kẻ, cùng loại với đường kẻ bảng, không phải
+    một vùng hình."""
+    parts = []
+    if d.frame != "khong":
+        # Luôn hai nét: kiểu nào không cần nét trong thì `.fr2` không có CSS
+        # nào và không vẽ gì. Một luật "kiểu nào có nét trong" ở đây sẽ là
+        # bản sao thứ hai của `_frame_css`, và hai bản sẽ lệch nhau.
+        parts.append('<i class="fr"></i><i class="fr2"></i>')
+    if d.band in ("tren", "tren_duoi", "tren_song"):
+        parts.append('<i class="bt"></i><i class="bt2"></i>')
+    if d.band == "tren_song":
+        parts.append('<i class="bw"></i>')
+    if d.band == "tren_duoi":
+        parts.append('<i class="bb"></i><i class="bb2"></i>')
+    if d.band == "trai":
+        parts.append('<i class="bl"></i><i class="bl2"></i>')
+    if not parts:
+        return ""
+    return f'<div class="deco" aria-hidden="true">{"".join(parts)}</div>'
+
+
+def _frame_css(d: Design) -> str:
+    """CSS của khung trang: KIỂU (`d.frame`) cộng bốn tham số bốc riêng.
+
+    Kiểu nói khung gồm những nét gì; `frame_inset` nói nó lùi vào bao nhiêu
+    phần lề, `frame_weight` nhân độ dày nét, `frame_tone` chọn màu (nhấn, màu
+    kẻ bảng, hay nhấn pha nhạt), `frame_variant` là biến thể riêng của từng
+    kiểu -- góc nghiêng hoa văn, độ dài cánh góc, bán kính bo, khoảng giữa
+    hai nét. Bản đầu mỗi kiểu một bộ số cố định, và hai tờ cùng kiểu là hai
+    bản in của cùng một khung.
+
+    `depth` là bề dày cả khung tính từ mép ngoài vào mép trong. Khoảng lùi bị
+    kẹp để mép trong còn cách chữ ít nhất 2,5 mm: bộ lề hẹp nhất là 12 mm, và
+    một khung an ninh 4 mm lùi 58% lề thì mép trong đã chạm chữ."""
+    if d.frame == "khong":
+        return ""
+    pal = d.palette
+    v = d.frame_variant % D.FRAME_VARIANTS
+    w = max(d.rule_px, 0.3) * d.frame_weight
+    c = {"nhan": pal.accent, "ke": pal.rule,
+         "nhat": _mix(pal.accent, pal.paper, 0.5)}.get(d.frame_tone)
+    if c is None:
+        raise ValueError(f"frame_tone lạ: {d.frame_tone!r}")
+    soft = _mix(c, pal.paper, 0.25)
+    room = min(d.margins)
+
+    def at(depth: float) -> float:
+        want = room * d.frame_inset
+        return round(max(min(want, room - 2.5 - depth), 1.5), 2)
+
+    def box(inset: float, rule: str) -> str:
+        return f"inset:{inset:.2f}mm;{rule}"
+
+    style, inner = d.frame, ""
+    if style == "don":
+        radius = (0, 0, 1.0, 2.5)[v]
+        i = at(w)
+        outer = box(i, f"border:{w:.2f}mm solid {c};border-radius:{radius}mm;")
+    elif style == "doi":
+        gap = (1.0, 1.5, 2.2, 3.0)[v]
+        thick, thin = (w * 1.8, w * 0.6) if v % 2 == 0 else (w * 0.6, w * 1.8)
+        i = at(gap + thick + thin)
+        outer = box(i, f"border:{thick:.2f}mm solid {c};")
+        inner = box(i + thick + gap, f"border:{thin:.2f}mm solid {c};")
+    elif style == "an_ninh":
+        # Khung hoá đơn điện tử: dải rộng in hoa văn nhạt, một nét mảnh bên
+        # trong. Góc nghiêng hoa văn là biến thể; bề rộng dải theo độ dày nét.
+        band = 2.0 + d.frame_weight * 1.1
+        angle = (45, -45, 90, 0)[v]
+        deep = _mix(c, pal.paper, 0.45)
+        light = _mix(c, pal.paper, 0.18)
+        i = at(band + 0.8 + w)
+        outer = box(i, f"border:{band:.1f}mm solid {light};"
+                       f"border-image:repeating-linear-gradient({angle}deg,"
+                       f"{light} 0 0.7mm,{deep} 0.7mm 0.9mm,{light} 0.9mm 1.6mm) 12;")
+        inner = box(i + band + 0.8, f"border:{w * 0.7:.2f}mm solid {c};")
+    elif style == "goc":
+        # Bốn góc chữ L, vẽ bằng tám dải gradient trên MỘT phần tử. Biến thể
+        # lẻ thêm một đường mảnh chạy quanh, nối bốn góc lại.
+        arm, t = (7, 11, 16, 22)[v], max(w * 1.6, 0.5)
+        g = f"linear-gradient({c},{c})"
+        i = at(t + 1.2)
+        outer = box(i, "background:" + ",".join(
+            f"{g} {x} {y}/{a}"
+            for x, y in (("left", "top"), ("right", "top"),
+                         ("left", "bottom"), ("right", "bottom"))
+            for a in (f"{arm}mm {t:.2f}mm", f"{t:.2f}mm {arm}mm"))
+            + ";background-repeat:no-repeat;")
+        if v % 2:
+            inner = box(i + 1.2, f"border:{w * 0.4:.2f}mm solid {soft};")
+    elif style == "bo_tron":
+        radius = (2.0, 3.5, 5.0, 7.0)[v]
+        i = at(1.2 + w * 1.9)
+        outer = box(i, f"border-radius:{radius}mm;"
+                       f"border:{w * 1.4:.2f}mm solid {c};")
+        inner = box(i + 1.2, f"border-radius:{max(radius - 1, 0.8)}mm;"
+                             f"border:{w * 0.5:.2f}mm solid {soft};")
+    elif style == "ba_vien":
+        # Ba nét: một nét đậm ngoài, một nét đôi trong -- khung bằng khen,
+        # giấy chứng nhận in sẵn. `double` cần ít nhất ba điểm ảnh mới tách
+        # được hai nét, nên sàn 0,8 mm.
+        gap = (0.8, 1.2, 1.6, 2.2)[v]
+        dbl = max(w * 1.3, 0.8)
+        i = at(w * 2 + gap + dbl)
+        outer = box(i, f"border:{w * 2:.2f}mm solid {c};")
+        inner = box(i + w * 2 + gap, f"border:{dbl:.2f}mm double {c};")
+    elif style in ("cham", "gach"):
+        kind = "dotted" if style == "cham" else "dashed"
+        t = max(w * (1.6 if style == "cham" else 1.0), 0.45)
+        i = at(t + 1.6)
+        outer = box(i, f"border:{t:.2f}mm {kind} {c};"
+                       f"border-radius:{(0, 1.5, 0, 3)[v]}mm;")
+        if v % 2:
+            inner = box(i + t + 1.4, f"border:{w * 0.4:.2f}mm solid {soft};"
+                                     f"border-radius:{(0, 1.5, 0, 3)[v]}mm;")
+    elif style == "chuoi_hat":
+        # Chuỗi hạt: chấm tròn lặp dọc bốn cạnh, bốn lớp gradient trên một
+        # phần tử -- viền của phiếu quà tặng, thiệp, giấy khen.
+        r = (0.45, 0.6, 0.8, 1.0)[v] * d.frame_weight ** 0.5
+        step = r * 3.4
+        dot = f"radial-gradient(circle,{c} 0 {r:.2f}mm,transparent {r + 0.06:.2f}mm)"
+        i = at(step)
+        outer = box(i, "background:"
+                       f"{dot} left top/{step:.2f}mm {step:.2f}mm repeat-x,"
+                       f"{dot} left bottom/{step:.2f}mm {step:.2f}mm repeat-x,"
+                       f"{dot} left top/{step:.2f}mm {step:.2f}mm repeat-y,"
+                       f"{dot} right top/{step:.2f}mm {step:.2f}mm repeat-y;")
+    elif style == "rang_cua":
+        # Răng cưa trên và dưới, hai cạnh bên là nét mảnh -- mép vé, mép
+        # phiếu xé. Bốn nửa-tam giác trên mỗi ô lặp.
+        step = (2.0, 2.6, 3.2, 4.0)[v]
+        tile = f"{step:.1f}mm {step:.1f}mm"
+        i = at(step / 2 + 0.5)
+        outer = box(i, "background:"
+                       f"linear-gradient(135deg,{c} 25%,transparent 25%) left top/{tile} repeat-x,"
+                       f"linear-gradient(225deg,{c} 25%,transparent 25%) left top/{tile} repeat-x,"
+                       f"linear-gradient(45deg,{c} 25%,transparent 25%) left bottom/{tile} repeat-x,"
+                       f"linear-gradient(-45deg,{c} 25%,transparent 25%) left bottom/{tile} repeat-x;"
+                       f"border-left:{w * 0.6:.2f}mm solid {c};"
+                       f"border-right:{w * 0.6:.2f}mm solid {c};")
+    elif style == "goc_tron":
+        # Nét mảnh quanh trang, bốn góc có cung phần tư -- khung giấy chứng
+        # nhận kiểu cổ điển. Cung nằm TRÊN hai cạnh của khung, nên nó không
+        # vào sâu hơn khung một li nào.
+        radius, t = (5, 7, 9, 12)[v], max(w, 0.35)
+        i = at(t * 2)
+        ring = (f"transparent {radius - t * 2:.2f}mm,{c} {radius - t * 2:.2f}mm "
+                f"{radius - t:.2f}mm,transparent {radius - t:.2f}mm")
+        outer = box(i, f"border:{t * 0.6:.2f}mm solid {c};")
+        inner = box(i, "background:" + ",".join(
+            f"radial-gradient(circle at {cx} {cy},{ring}) {x} {y}/{radius}mm {radius}mm no-repeat"
+            for cx, cy, x, y in (("0", "0", "left", "top"),
+                                 ("100%", "0", "right", "top"),
+                                 ("0", "100%", "left", "bottom"),
+                                 ("100%", "100%", "right", "bottom"))) + ";")
+    elif style == "vat_goc":
+        # Nét mảnh, bốn ô vuông đặc ĐÈ lên bốn góc -- kiểu khung của thẻ,
+        # phiếu bảo hành. Ô vuông tâm nằm đúng trên góc khung.
+        side, t = (2.0, 2.8, 3.6, 4.4)[v], max(w * 0.7, 0.3)
+        i = at(side / 2 + t) + side / 2
+        g = f"linear-gradient({c},{c})"
+        outer = box(i, f"border:{t:.2f}mm solid {c};")
+        inner = box(i - side / 2, "background:" + ",".join(
+            f"{g} {x} {y}/{side}mm {side}mm no-repeat"
+            for x, y in (("left", "top"), ("right", "top"),
+                         ("left", "bottom"), ("right", "bottom"))) + ";")
+    elif style == "tem_thu":
+        # Viền sọc chéo hai màu -- phong bì thư máy bay, tem, phiếu gửi.
+        band = (2.0, 2.4, 2.8, 3.2)[v]
+        other = _mix(pal.rule if c != pal.rule else pal.accent, pal.paper, 0.85)
+        angle = -45 if v % 2 else 45
+        i = at(band)
+        outer = box(i, f"border:{band:.1f}mm solid {c};"
+                       f"border-image:repeating-linear-gradient({angle}deg,"
+                       f"{c} 0 2mm,{pal.paper} 2mm 3mm,{other} 3mm 5mm,"
+                       f"{pal.paper} 5mm 6mm) 18;")
+    elif style == "tren_duoi_ke":
+        # Chỉ kẻ trên và dưới, không kẻ cạnh: một đậm một mảnh ở mỗi đầu --
+        # báo cáo, tờ trình in theo mẫu.
+        gap = (0.8, 1.2, 1.8, 2.6)[v]
+        i = at(w * 2.6 + gap)
+        outer = box(i, f"border-top:{w * 2:.2f}mm solid {c};"
+                       f"border-bottom:{w * 2:.2f}mm solid {c};")
+        inner = box(i + w * 2 + gap, f"border-top:{w * 0.6:.2f}mm solid {c};"
+                                     f"border-bottom:{w * 0.6:.2f}mm solid {c};")
+    else:
+        raise ValueError(f"kiểu khung lạ: {style!r}")
+    css = f".deco .fr{{{outer}}}"
+    if inner:
+        css += f".deco .fr2{{{inner}}}"
+    return css
+
+
+def _decor_css(d: Design, base_pt: float) -> str:
+    """CSS của năm trục trang trí -- xem `design.PAGE_FRAMES`.
+
+    Mọi kích thước đọc từ LỀ của chính tờ giấy: khung đứng ở 42% lề, dải màu
+    cao 36% lề trên. Một con số mm cố định sẽ đè lên chữ ở bộ lề hẹp nhất
+    `(14, 12, 12, 18)` trong khi lọt thỏm ở bộ lề rộng nhất."""
+    pal = d.palette
+    top, right, bottom, left = d.margins
+    out = []
+
+    # `isolation:isolate` cho `.sheet` một ngữ cảnh xếp lớp riêng, để lớp
+    # trang trí `z-index:-1` nằm TRÊN nền giấy mà DƯỚI chữ. Không có nó thì
+    # `z-index:-1` chui xuống dưới cả nền `.sheet` và không thấy gì, còn
+    # `z-index` dương thì khung phủ lên chữ.
+    out.append(".sheet{isolation:isolate;}"
+               ".deco{position:absolute;inset:0;z-index:-1;pointer-events:none;}"
+               ".deco i{position:absolute;display:block;}"
+               # Mã QR/mã vạch góc phải đứng trên nền giấy riêng, để dải màu
+               # hay nền hoa văn không chạy qua các ô mã.
+               f".markcorner{{background:{pal.paper};padding:0.8mm;}}")
+
+    tint = _mix(pal.accent, pal.paper, 0.22)
+    out.append(_frame_css(d))
+
+    high = round(top * 0.36, 1)
+    if d.band in ("tren", "tren_duoi", "tren_song"):
+        tall = high * (0.8 if d.band == "tren_song" else 1.0)
+        out.append(f".deco .bt{{top:0;left:0;right:0;height:{tall:.1f}mm;"
+                   f"background:{pal.accent};}}"
+                   f".deco .bt2{{top:{tall + 1.0:.1f}mm;left:0;right:0;"
+                   f"height:0.6mm;background:{tint};}}")
+        if d.band == "tren_song":
+            # Mép dưới lượn sóng: nửa hình tròn treo dưới dải, lặp theo chiều
+            # ngang -- dải "wave" dưới tiêu đề hoá đơn khách sạn.
+            out.append(f".deco .bw{{top:{tall - 0.1:.1f}mm;left:0;right:0;height:2.4mm;"
+                       f"background:radial-gradient(circle at 50% 0,{pal.accent} 0 1.2mm,"
+                       f"transparent 1.25mm) 0 0/4.8mm 2.4mm repeat-x;}}"
+                       f".deco .bt2{{top:{tall + 2.8:.1f}mm;}}")
+    if d.band == "tren_duoi":
+        low = round(bottom * 0.28, 1)
+        out.append(f".deco .bb{{bottom:0;left:0;right:0;height:{low:.1f}mm;"
+                   f"background:{pal.accent};}}"
+                   f".deco .bb2{{bottom:{low + 1.0:.1f}mm;left:0;right:0;"
+                   f"height:0.6mm;background:{tint};}}")
+    if d.band == "trai":
+        wide = round(left * 0.3, 1)
+        fade = _mix(pal.accent, pal.paper, 0.55)
+        out.append(f".deco .bl{{top:0;bottom:0;left:0;width:{wide:.1f}mm;"
+                   f"background:linear-gradient(180deg,{pal.accent},{fade});}}"
+                   f".deco .bl2{{top:0;bottom:0;left:{wide + 1.0:.1f}mm;"
+                   f"width:0.6mm;background:{tint};}}")
+
+    # Nền hoa văn: pha 7-10% màu nhấn vào màu giấy. Nhạt có chủ đích -- nó
+    # nằm DƯỚI mọi nét chữ, và một nền đủ đậm để thấy rõ trên ảnh thu nhỏ là
+    # một nền đủ đậm để ăn vào nét chữ nhỏ nhất.
+    faint = _mix(pal.accent, pal.paper, 0.10)
+    if d.ground == "hoa_van":
+        ring = (f"{faint} 0 0.18mm,transparent 0.18mm 1.5mm")
+        out.append(f".sheet{{background-image:"
+                   f"repeating-radial-gradient(circle at 22% 28%,{ring}),"
+                   f"repeating-radial-gradient(circle at 78% 72%,{ring});}}")
+    elif d.ground == "ke_cheo":
+        out.append(f".sheet{{background-image:repeating-linear-gradient(45deg,"
+                   f"{_mix(pal.accent, pal.paper, 0.08)} 0 0.2mm,"
+                   f"transparent 0.2mm 2.4mm);}}")
+    elif d.ground == "cham_luoi":
+        out.append(f".sheet{{background-image:radial-gradient("
+                   f"{_mix(pal.accent, pal.paper, 0.14)} 0.28mm,transparent 0.34mm);"
+                   f"background-size:3mm 3mm;}}")
+
+    # Logo chữ lồng. `opacity:1` phải có: `.logo` gốc mờ 14%, và một ô màu
+    # mờ 14% với chữ trắng trên nó là chữ không đọc được.
+    out.append(
+        ".logo.o_chu,.logo.vong_chu,.logo.chu_mau{opacity:1;"
+        "display:inline-flex;align-items:center;justify-content:center;"
+        "width:14mm;height:14mm;}"
+        ".logo img{display:block;max-width:72%;max-height:46%;}"
+        f".logo.o_chu{{background:{pal.accent};border-radius:1.8mm;}}"
+        f".logo.vong_chu{{background:transparent;"
+        f"border:0.7mm solid {pal.accent};}}"
+        ".logo.vong_chu.sq{border-radius:1.2mm;}"
+        ".logo.vong_chu img{max-width:62%;max-height:40%;}"
+        ".logo.chu_mau{background:transparent;width:auto;height:auto;"
+        "border-radius:0;}"
+        f".logo.chu_mau img{{max-width:none;max-height:none;"
+        f"height:{_px(base_pt * 1.9)};}}")
+
+    # Điểm nhấn trên khối có sẵn.
+    if "tieu_de_mau" in d.accents and not d.reverse_title_band:
+        # Tiêu đề đã nằm trên dải màu nhấn thì tô chữ màu nhấn là xoá chữ.
+        out.append(f".title .t{{color:{pal.accent};}}")
+    if "ghi_chu_the" in d.accents:
+        # Ghi chú thành một "thẻ": nền nhạt, vạch màu bên trái -- khung "Hỗ trợ
+        # khẩn cấp" của giấy chứng nhận bảo hiểm du lịch ở pipeline chính.
+        out.append(f".notes,.notes.boxed{{background:{_mix(pal.accent, pal.paper, 0.08)};"
+                   f"border:none;border-left:1.1mm solid {pal.accent};"
+                   f"padding:2mm 3mm;border-radius:0 1.2mm 1.2mm 0;}}"
+                   f".shead{{color:{pal.accent};}}"
+                   f".shead.vach_mau{{border-left-color:{pal.accent};}}"
+                   f".shead.trong_khung{{border-color:{pal.accent};"
+                   f"background:{_mix(pal.accent, pal.paper, 0.1)};}}")
+    if "tong_noi_bat" in d.accents:
+        # Dòng tổng cộng thành một dải màu nhấn, chữ trắng -- hộp "TỔNG TIỀN
+        # THANH TOÁN" của hoá đơn khách sạn. Mọi màu nhấn trong
+        # `design.PALETTES` đủ đậm cho chữ trắng.
+        out.append(f".totals .grand{{background:{pal.accent};border-top:none;"
+                   f"padding:1.6mm 2.4mm;}}"
+                   f".totals .grand .tk,.totals .grand .tv{{color:#ffffff;}}"
+                   f".items tfoot tr.grand td{{background:{pal.accent};"
+                   f"color:#ffffff;}}")
+    if "nhan_mau" in d.accents:
+        # Nhãn trường màu nhấn, cột nhãn của bảng tóm tắt tô nền -- cột "Chủ xe
+        # cơ giới / Biển số xe" của giấy chứng nhận bảo hiểm xe.
+        out.append(f".fields .k,.fields .stack .k,.meta .k{{color:{pal.accent};}}"
+                   f".summary td.k{{background:{_mix(pal.accent, pal.paper, 0.1)};"
+                   f"color:{pal.strong};}}")
+    return "\n".join(out)
 
 
 # ------------------------------------------------------------------ khối
@@ -526,7 +946,10 @@ table.items tbody td.tightest,table.items tfoot td.tightest{{
 def _letterhead(doc: Doc, d: Design) -> str:
     if d.head_layout == "khong_letterhead":
         return ""
-    logo = d.head_layout.endswith("co_logo")
+    # `logo_phai` CŨNG có logo -- tên nó nói thế, và nhánh của nó bên dưới dành
+    # hẳn một ô 22% bề ngang cho logo. Bản trước chỉ nhận `*co_logo`, nên ô ấy
+    # luôn rỗng: một cột trắng bên phải letterhead trên 1/11 số tờ.
+    logo = d.head_layout.endswith("co_logo") or d.head_layout == "logo_phai"
     lines = []
     if doc.parent_org:
         lines.append(_span("store.branch", doc.parent_org, "parent"))
@@ -552,7 +975,7 @@ def _letterhead(doc: Doc, d: Design) -> str:
     if doc.org_website:
         lines.append(_span("store.website", doc.org_website, "line"))
     body = "".join(lines)
-    logo_html = f'<span class="logo{"" if d.ornament != "dau_vuong" else " sq"}"></span>' if logo else ""
+    logo_html = _logo(doc, d) if logo else ""
 
     cls = "head"
     if d.head_layout in ("giua", "giua_co_logo"):
@@ -2295,7 +2718,7 @@ def markup(doc: Doc, slices: list[tuple[int, int]], faces: str = "") -> str:
             # Không làm gì -- `body` đã là một cột. Nhánh viết ra để câu
             # `sheet_columns` ở trên đọc được là có chủ đích, không phải sót.
             pass
-        sheets.append(f'<div class="sheet">{water}{body}{page_no}'
+        sheets.append(f'<div class="sheet">{_decor_layer(d)}{water}{body}{page_no}'
                       f'<div class="clr"></div></div>')
 
 

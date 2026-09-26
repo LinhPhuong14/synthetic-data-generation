@@ -231,6 +231,65 @@ mark_place:
   goc_phai: 0.4
   moi_to: 0.25
 
+# TRANG TRÍ — phần không mang chữ: khung trang, dải màu mép giấy, nền hoa văn,
+# kiểu logo, điểm nhấn màu. Lấy từ ảnh pipeline chính (`data/layouts_all/`):
+# khung an ninh của hoá đơn GTGT điện tử, dải màu của hoá đơn khách sạn, logo
+# chữ lồng và cột nhãn tô nền của giấy chứng nhận bảo hiểm. Xem
+# `design.PAGE_FRAMES` và mấy trục cạnh nó.
+#
+# Khoá lạ thì `design.draw_decor` NÉM — gõ sai một tên ở đây không được phép
+# lặng lẽ thành trọng số mặc định.
+#
+# `khong` giữ trọng số lớn nhất ở mỗi trục: văn bản hành chính thật phần lớn
+# vẫn trơn. Nhưng các trục bốc độc lập, nên tờ trơn trên CẢ năm trục chỉ còn
+# chừng 5% — phần còn lại có ít nhất một thứ trang trí.
+#
+# Dải mép giấy và khung trang loại trừ nhau (dải thắng), nên tỉ lệ khung thật
+# ra thấp hơn con số ở đây gợi ý: ~0.55 × phần của khung.
+decor_band:
+  khong: 5.0
+  tren: 1.0
+  tren_duoi: 1.0
+  trai: 0.8
+  tren_song: 0.8
+# Mười bốn kiểu khung, và mỗi kiểu còn bốn tham số bốc riêng (khoảng lùi, độ
+# dày, màu, biến thể -- `design.FRAME_*`). Bản đầu năm kiểu, mỗi kiểu một bộ số
+# cố định: nhìn hai mươi tờ là thấy cùng một khung lặp lại. Trọng số chia đều
+# cho các kiểu có khung để không kiểu nào thành "khung của cả bộ".
+decor_frame:
+  khong: 5.0
+  don: 0.7
+  doi: 0.7
+  an_ninh: 0.8
+  goc: 0.7
+  bo_tron: 0.6
+  ba_vien: 0.6
+  cham: 0.5
+  gach: 0.5
+  chuoi_hat: 0.5
+  rang_cua: 0.4
+  goc_tron: 0.6
+  vat_goc: 0.5
+  tem_thu: 0.4
+  tren_duoi_ke: 0.6
+decor_ground:
+  khong: 6.0
+  hoa_van: 1.0
+  ke_cheo: 0.6
+  cham_luoi: 0.6
+# Chỉ có tác dụng khi `head_layout` có logo (`*_co_logo`, `logo_phai`).
+decor_logo:
+  mo: 1.0
+  o_chu: 1.3
+  vong_chu: 1.0
+  chu_mau: 0.8
+# XÁC SUẤT, không phải trọng số: mỗi điểm nhấn bốc độc lập.
+decor_accent:
+  tieu_de_mau: 0.35
+  ghi_chu_the: 0.3
+  tong_noi_bat: 0.3
+  nhan_mau: 0.25
+
 # BẢNG CỦA PHÔI NÀY LIỆT KÊ CÁI GÌ — tra theo TÊN tài liệu, không theo ngành.
 #
 # Vì sao cần: `corpus.catalogue()` chọn kho hàng theo `profile`. Học bạ, bảng
