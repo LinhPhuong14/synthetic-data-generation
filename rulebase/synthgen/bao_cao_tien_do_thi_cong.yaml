@@ -1,0 +1,70 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+# loại giấy lấy từ trang model viết: data/pilot9 bao_cao_tien_do_thi_cong, pilot14 construction_progress_report, pilot15 weekly_progress_report
+id: bao_cao_tien_do_thi_cong
+profile: admin
+org_kind: company
+national: 0.55
+titles:
+- BÁO CÁO TIẾN ĐỘ THI CÔNG CÔNG TRÌNH
+- BÁO CÁO TIẾN ĐỘ THI CÔNG HÀNG TUẦN
+- BÁO CÁO TIẾN ĐỘ THỰC HIỆN HẠNG MỤC CÔNG TRÌNH
+subtitles:
+- '(Kỳ báo cáo: tháng ..../....)'
+- (Tuần .... - Giai đoạn hoàn thiện)
+- ''
+fields:
+- contract_no
+- party_a
+- party_b
+- value
+- term
+- period
+field_span:
+- 3
+- 6
+columns:
+- - stt
+  - name
+  - qty
+  - note
+- - stt
+  - ref
+  - name
+  - qty
+  - note
+- - stt
+  - date
+  - name
+  - qty
+  - note
+totals: none
+words: false
+sign_sets:
+- - NGƯỜI LẬP BÁO CÁO
+  - GIÁM ĐỐC
+- - CHỈ HUY TRƯỞNG CÔNG TRÌNH
+  - TƯ VẤN GIÁM SÁT
+- - TRƯỞNG BAN QUẢN LÝ DỰ ÁN
+  - GIÁM ĐỐC CÔNG TY
+notes:
+- Khối lượng tính đến hết ngày báo cáo, chưa gồm phần phát sinh chờ phê duyệt.
+- Hạng mục chậm tiến độ đã có biện pháp tăng ca và bổ sung nhân lực.
+- Không xảy ra tai nạn lao động trong kỳ báo cáo.
+rows:
+- 4
+- 30
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- signatures
+optional:
+- meta
+- notes
+- sections
+- legal_basis
+- figure
+- footer
+- footnote
+en_ok: false

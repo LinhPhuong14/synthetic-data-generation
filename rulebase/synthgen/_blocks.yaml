@@ -259,6 +259,40 @@ items:
   items_dao_tao:
     title_any: [học viên, đào tạo, khoá học, tập huấn, bồi dưỡng]
 
+  # Mười ba kho dưới đây đi cùng các phôi dựng từ trang model viết ở
+  # `data/pilot7..18` -- loại giấy synthgen chưa có, và bảng của chúng liệt
+  # kê thứ không kho theo ngành nào chứa: hạng mục thi công, chỉ tiêu dư nợ,
+  # tuyến vận chuyển, khoản nộp ngân sách. Mỗi mẫu đã soát trên mọi tên phôi
+  # đang có: không mẫu nào khớp một phôi cũ, nên bảng của phôi cũ không đổi.
+  items_cong_trinh:
+    title_any: [tiến độ thi công, tiến độ công trình, tiến độ thực hiện hạng mục,
+                khối lượng hoàn thành, quyết toán hợp đồng xây dựng]
+  items_tin_dung:
+    title_any: [dư nợ, nợ quá hạn, chất lượng tín dụng, tình hình cho vay]
+  items_tiet_kiem:
+    title_any: [tiền gửi tiết kiệm, tiền gửi có kỳ hạn]
+  items_ngan_sach:
+    title_any: [vào ngân sách, nộp ngân sách, nghĩa vụ tài chính]
+  items_van_tai:
+    title_any: [cước vận tải, cước vận chuyển, hoạt động phương tiện, nhật trình xe]
+  items_an_pham:
+    title_any: [ấn phẩm, phát hành báo, in ấn, bản quyền tác phẩm, đối soát bản quyền]
+  items_don_vi:
+    title_any: [xếp loại viên chức, xếp loại công chức, xếp loại cán bộ]
+  items_lop_hoc:
+    title_any: [xếp loại học sinh, tình hình tuyển sinh, kết quả tuyển sinh]
+  items_vi_tri_tuyen_dung:
+    title_any: [thi tuyển viên chức, thi tuyển công chức, kết quả tuyển dụng,
+                chấm điểm thi tuyển]
+  items_chi_tieu_y_te:
+    title_any: [trạm y tế, thống kê khám chữa bệnh, hoạt động y tế]
+  items_thu_chi_quy:
+    title_any: [thu chi quỹ, thu chi ngân sách, quyết toán thu chi]
+  items_dich_vu_chung_cu:
+    title_any: [vận hành nhà chung cư, vận hành toà nhà, dịch vụ chung cư]
+  items_boi_thuong:
+    title_any: [tình hình bồi thường, hồ sơ bồi thường]
+
 # ---------------------------------------------------------------------------
 # region: KHỐI NÀY MANG NHÃN VÙNG BỐ CỤC NÀO
 #

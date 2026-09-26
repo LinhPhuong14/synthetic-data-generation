@@ -1,0 +1,30 @@
+# ITEMS_LOP_HOC — cột `name` của bảng cho những tờ giấy nói về HỌC SINH, TUYỂN SINH theo lớp: báo cáo xếp loại học sinh, báo cáo tuyển sinh.
+#
+# Dựng từ trang do model viết ở data/pilot9 (bao_cao_tuyen_sinh_hoc_ky), pilot13, pilot14: đó là những loại giấy synthgen
+# chưa có phôi nào, và bảng của chúng liệt kê thứ mà không kho theo ngành nào
+# chứa -- mỗi dòng là một lớp hay một ngành, và cột số lượng là sĩ số. Luật ghép theo TÊN tài liệu ở
+# `rulebase/synthgen/_blocks.yaml::items`, cùng lối các kho `items_*` khác.
+#
+# Định dạng `priced`: tên, giá tối thiểu, giá tối đa (đồng). `amount` = giá x
+# số lượng, nên khoảng giá ở đây là giá của MỘT đơn vị.
+
+Lớp 6A1	1	1
+Lớp 6A2	1	1
+Lớp 7A1	1	1
+Lớp 7A3	1	1
+Lớp 8A2	1	1
+Lớp 9A1	1	1
+Lớp 10A1	1	1
+Lớp 10A5	1	1
+Lớp 11A2	1	1
+Lớp 11B1	1	1
+Lớp 12A1	1	1
+Lớp 12C3	1	1
+Ngành Kế toán doanh nghiệp	1	1
+Ngành Công nghệ thông tin	1	1
+Ngành Điện công nghiệp	1	1
+Ngành Điều dưỡng	1	1
+Ngành Quản trị khách sạn	1	1
+Ngành Công nghệ ô tô	1	1
+Lớp bồi dưỡng nghiệp vụ sư phạm	1	1
+Lớp trung cấp lý luận chính trị	1	1

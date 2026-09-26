@@ -1,0 +1,34 @@
+# ITEMS_VAN_TAI — cột `name` của bảng cho những tờ giấy nói về VẬN TẢI: giấy báo cước, bảng kê cước vận chuyển, báo cáo hoạt động phương tiện.
+#
+# Dựng từ trang do model viết ở data/pilot11 (freight_invoice), pilot13 (monthly_fleet_activity_report): đó là những loại giấy synthgen
+# chưa có phôi nào, và bảng của chúng liệt kê thứ mà không kho theo ngành nào
+# chứa -- mỗi dòng là một chuyến hay một tuyến vận chuyển. Luật ghép theo TÊN tài liệu ở
+# `rulebase/synthgen/_blocks.yaml::items`, cùng lối các kho `items_*` khác.
+#
+# Định dạng `priced`: tên, giá tối thiểu, giá tối đa (đồng). `amount` = giá x
+# số lượng, nên khoảng giá ở đây là giá của MỘT đơn vị.
+
+Tuyến Hà Nội - Hải Phòng, xe tải 8 tấn	2500000	4500000
+Tuyến Hà Nội - Bắc Ninh, xe tải 2,5 tấn	900000	1600000
+Tuyến Hà Nội - Thanh Hoá, xe tải 10 tấn	4000000	7000000
+Tuyến Hải Phòng - Quảng Ninh, container 20 feet	3000000	5500000
+Tuyến Đà Nẵng - Quảng Nam, xe tải 5 tấn	1200000	2200000
+Tuyến Đà Nẵng - Quảng Ngãi, xe tải 8 tấn	2200000	3800000
+Tuyến Đà Nẵng - Huế, xe tải 3,5 tấn	1500000	2600000
+Tuyến TP. Hồ Chí Minh - Bình Dương, xe tải 5 tấn	1000000	1900000
+Tuyến TP. Hồ Chí Minh - Đồng Nai, xe tải 8 tấn	1400000	2500000
+Tuyến TP. Hồ Chí Minh - Cần Thơ, container 40 feet	6000000	9500000
+Tuyến TP. Hồ Chí Minh - Vũng Tàu, xe tải 3,5 tấn	1600000	2800000
+Tuyến Cát Lái - KCN Tân Tạo, container 20 feet	2200000	3600000
+Tuyến Hà Nội - Lạng Sơn, xe đầu kéo	6500000	11000000
+Tuyến Hà Nội - TP. Hồ Chí Minh, xe tải 15 tấn	22000000	35000000
+Chuyến giao hàng nội thành, xe tải 1,25 tấn	350000	800000
+Phí bốc xếp hàng hoá hai đầu	300000	1200000
+Phí lưu container tại cảng	400000	1500000
+Phí nâng hạ container	350000	900000
+Phụ phí nhiên liệu	150000	900000
+Phí cầu đường, trạm BOT	80000	1200000
+Phí chờ xe quá giờ	200000	600000
+Phí giao hàng ngoài giờ hành chính	250000	700000
+Cước vận chuyển hàng lạnh, xe 5 tấn	2500000	4800000
+Cước chuyển phát nhanh hàng nặng	150000	900000

@@ -1,0 +1,28 @@
+# ITEMS_CHI_TIEU_Y_TE — cột `name` của bảng cho những tờ giấy nói về HOẠT ĐỘNG Y TẾ: báo cáo hoạt động trạm y tế, thống kê khám chữa bệnh bảo hiểm y tế.
+#
+# Dựng từ trang do model viết ở data/pilot13 (bhyt_statistics_report), pilot14 (annual_health_station_report), pilot15: đó là những loại giấy synthgen
+# chưa có phôi nào, và bảng của chúng liệt kê thứ mà không kho theo ngành nào
+# chứa -- mỗi dòng là một chỉ tiêu chuyên môn, và cột số lượng là số lượt. Luật ghép theo TÊN tài liệu ở
+# `rulebase/synthgen/_blocks.yaml::items`, cùng lối các kho `items_*` khác.
+#
+# Định dạng `priced`: tên, giá tối thiểu, giá tối đa (đồng). `amount` = giá x
+# số lượng, nên khoảng giá ở đây là giá của MỘT đơn vị.
+
+Tổng số lượt khám bệnh	1	1
+Số lượt khám bệnh có thẻ bảo hiểm y tế	1	1
+Số lượt khám trẻ em dưới 6 tuổi	1	1
+Số lượt điều trị ngoại trú	1	1
+Số lượt điều trị nội trú	1	1
+Số ca chuyển tuyến trên	1	1
+Số trẻ được tiêm chủng đầy đủ	1	1
+Số phụ nữ có thai được khám thai	1	1
+Số ca đẻ tại cơ sở y tế	1	1
+Số người được khám sức khoẻ định kỳ	1	1
+Số người tăng huyết áp được quản lý	1	1
+Số người đái tháo đường được quản lý	1	1
+Số ca sốt xuất huyết được phát hiện	1	1
+Số buổi truyền thông giáo dục sức khoẻ	1	1
+Số lượt xét nghiệm cận lâm sàng	1	1
+Số lượt chụp X-quang, siêu âm	1	1
+Số đơn thuốc cấp phát	1	1
+Số hộ gia đình được giám sát vệ sinh	1	1

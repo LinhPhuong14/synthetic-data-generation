@@ -1,0 +1,28 @@
+# ITEMS_THU_CHI_QUY — cột `name` của bảng cho những tờ giấy nói về THU CHI QUỸ, NGÂN SÁCH ĐỊA PHƯƠNG: báo cáo thu chi quỹ, quyết toán ngân sách xã.
+#
+# Dựng từ trang do model viết ở data/pilot14 (county_fund_financial_report): đó là những loại giấy synthgen
+# chưa có phôi nào, và bảng của chúng liệt kê thứ mà không kho theo ngành nào
+# chứa -- mỗi dòng là một khoản thu hay khoản chi theo mục lục ngân sách. Luật ghép theo TÊN tài liệu ở
+# `rulebase/synthgen/_blocks.yaml::items`, cùng lối các kho `items_*` khác.
+#
+# Định dạng `priced`: tên, giá tối thiểu, giá tối đa (đồng). `amount` = giá x
+# số lượng, nên khoảng giá ở đây là giá của MỘT đơn vị.
+
+Thu từ ngân sách cấp trên bổ sung cân đối	50000000	900000000
+Thu phí, lệ phí	5000000	120000000
+Thu từ quỹ đất công ích	10000000	300000000
+Thu đóng góp tự nguyện của nhân dân	5000000	150000000
+Thu kết dư ngân sách năm trước	5000000	200000000
+Chi tiền lương và phụ cấp cán bộ, công chức	40000000	600000000
+Chi hoạt động của Hội đồng nhân dân	5000000	80000000
+Chi sự nghiệp giáo dục	10000000	300000000
+Chi sự nghiệp y tế	5000000	150000000
+Chi sự nghiệp văn hoá, thông tin	3000000	90000000
+Chi đảm bảo xã hội	5000000	200000000
+Chi quốc phòng, an ninh địa phương	5000000	120000000
+Chi sửa chữa trụ sở, công trình công cộng	10000000	400000000
+Chi đầu tư xây dựng cơ bản	50000000	900000000
+Chi hỗ trợ khắc phục thiên tai	5000000	200000000
+Chi mua sắm tài sản, trang thiết bị	5000000	150000000
+Chi hoạt động quỹ phòng, chống thiên tai	3000000	90000000
+Chi dự phòng ngân sách	2000000	60000000

@@ -1,0 +1,65 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+# loại giấy lấy từ trang model viết: data/pilot13 magazine_distribution_report, pilot14 distribution_report, pilot15 printing_distribution_report, pilot7
+id: bao_cao_phat_hanh_an_pham
+profile: admin
+org_kind: company
+national: 0.25
+titles:
+- BÁO CÁO PHÂN PHỐI ẤN PHẨM THEO KỲ
+- BÁO CÁO KẾT QUẢ IN ẤN VÀ PHÁT HÀNH
+- BÁO CÁO SỐ LƯỢNG IN VÀ PHÁT HÀNH ẤN PHẨM
+subtitles:
+- (Quý .... năm ....)
+- Theo kênh bán lẻ và đặt mua dài hạn
+- ''
+fields:
+- period
+- unit
+- contract_no
+field_span:
+- 1
+- 3
+columns:
+- - stt
+  - name
+  - qty
+  - unit_price
+  - amount
+- - stt
+  - ref
+  - name
+  - qty
+  - note
+- - stt
+  - name
+  - qty
+  - discount
+  - amount
+totals: money
+words: false
+sign_sets:
+- - NGƯỜI LẬP BÁO CÁO
+  - TRƯỞNG PHÒNG PHÁT HÀNH
+  - TỔNG BIÊN TẬP
+- - NGƯỜI LẬP
+  - GIÁM ĐỐC
+notes:
+- Số lượng tồn trả về được trừ vào kỳ phát hành tiếp theo.
+- Giá bìa đã bao gồm thuế giá trị gia tăng.
+rows:
+- 4
+- 24
+always:
+- letterhead
+- doctitle
+- table
+- totals
+- signatures
+optional:
+- meta
+- fields
+- notes
+- figure
+- sections
+- footer
+en_ok: false

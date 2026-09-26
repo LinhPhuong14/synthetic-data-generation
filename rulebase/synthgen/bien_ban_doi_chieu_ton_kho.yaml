@@ -1,0 +1,71 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+# loại giấy lấy từ trang model viết: data/pilot14 inventory_reconciliation_statement
+id: bien_ban_doi_chieu_ton_kho
+profile: invoice
+org_kind: company
+national: 0.6
+titles:
+- BIÊN BẢN ĐỐI CHIẾU TỒN KHO HÀNG HOÁ
+- BIÊN BẢN ĐỐI CHIẾU SỐ LIỆU TỒN KHO
+- BẢNG ĐỐI CHIẾU NHẬP - XUẤT - TỒN
+subtitles:
+- 'Thời điểm đối chiếu: ngày ....'
+- (Giữa kho và phòng kế toán)
+- ''
+fields:
+- party_a
+- party_b
+- rep_a
+- period
+- unit
+field_span:
+- 2
+- 5
+columns:
+- - stt
+  - ref
+  - name
+  - unit
+  - qty
+  - note
+- - stt
+  - ref
+  - name
+  - unit
+  - qty
+  - unit_price
+  - amount
+- - stt
+  - barcode
+  - name
+  - unit
+  - qty
+  - note
+totals: count
+words: false
+sign_sets:
+- - THỦ KHO
+  - KẾ TOÁN KHO
+  - TRƯỞNG BỘ PHẬN
+- - ĐẠI DIỆN BÊN A
+  - ĐẠI DIỆN BÊN B
+notes:
+- Chênh lệch giữa sổ sách và thực tế được ghi rõ ở cột ghi chú.
+- Hai bên thống nhất số liệu tồn kho như trên.
+rows:
+- 5
+- 60
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- signatures
+optional:
+- meta
+- notes
+- totals
+- checks
+- clauses
+- footer
+en_ok: false

@@ -1,0 +1,75 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+# loại giấy lấy từ trang model viết: data/pilot8 bao_cao_nghiem_thu_khoi_luong, bao_cao_thanh_quyet_toan_hop_dong_xay_dung; pilot10 completion_acceptance_minutes
+id: bang_xac_nhan_khoi_luong
+profile: admin
+org_kind: company
+national: 0.7
+titles:
+- BẢNG XÁC NHẬN KHỐI LƯỢNG HOÀN THÀNH
+- BÁO CÁO NGHIỆM THU KHỐI LƯỢNG HOÀN THÀNH CÔNG TRÌNH
+- BÁO CÁO THANH QUYẾT TOÁN HỢP ĐỒNG XÂY DỰNG
+subtitles:
+- Đề nghị thanh toán lần ....
+- (Kèm theo hợp đồng thi công xây dựng)
+- ''
+fields:
+- contract_no
+- party_a
+- party_b
+- rep_a
+- value
+- period
+field_span:
+- 3
+- 6
+columns:
+- - stt
+  - name
+  - qty
+  - unit_price
+  - amount
+- - stt
+  - ref
+  - name
+  - qty
+  - unit_price
+  - amount
+  - note
+- - stt
+  - name
+  - qty
+  - unit_price
+  - amount
+  - vat_rate
+  - amount_with_vat
+totals: money
+words: true
+sign_sets:
+- - ĐẠI DIỆN CHỦ ĐẦU TƯ
+  - ĐẠI DIỆN NHÀ THẦU
+- - TƯ VẤN GIÁM SÁT
+  - ĐẠI DIỆN CHỦ ĐẦU TƯ
+  - ĐẠI DIỆN NHÀ THẦU
+notes:
+- Khối lượng được nghiệm thu theo biên bản nghiệm thu từng hạng mục đính kèm.
+- Đơn giá áp dụng theo phụ lục đơn giá của hợp đồng đã ký.
+- Giá trị đề nghị thanh toán đã trừ tiền tạm ứng và giữ lại bảo hành.
+rows:
+- 4
+- 40
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- totals
+- signatures
+optional:
+- meta
+- words
+- notes
+- legal_basis
+- summary
+- footer
+- sections
+en_ok: false

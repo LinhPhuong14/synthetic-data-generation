@@ -1,0 +1,74 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+# loại giấy lấy từ trang model viết: data/pilot11 freight_invoice
+id: giay_bao_cuoc_van_tai
+profile: invoice
+org_kind: company
+national: 0.15
+titles:
+- GIẤY BÁO CƯỚC VẬN TẢI ĐƯỜNG BỘ
+- BẢNG KÊ CƯỚC VẬN CHUYỂN HÀNG HOÁ
+- THÔNG BÁO CƯỚC VẬN CHUYỂN
+subtitles:
+- (Chi tiết cước phí vận chuyển hàng hoá trong tháng)
+- 'Số: ..../GBC'
+- ''
+fields:
+- buyer_org
+- buyer_tax
+- buyer_addr
+- contract_no
+- period
+- payment
+field_span:
+- 3
+- 6
+columns:
+- - stt
+  - date
+  - ref
+  - name
+  - qty
+  - unit_price
+  - amount
+- - stt
+  - date
+  - name
+  - qty
+  - unit_price
+  - vat_rate
+  - amount
+- - stt
+  - ref
+  - name
+  - unit_price
+  - amount
+  - note
+totals: money
+words: true
+sign_sets:
+- - NGƯỜI LẬP PHIẾU
+  - KẾ TOÁN TRƯỞNG
+  - GIÁM ĐỐC
+- - BÊN VẬN CHUYỂN
+  - BÊN THUÊ VẬN CHUYỂN
+notes:
+- Quý khách vui lòng thanh toán trong vòng 15 ngày kể từ ngày nhận giấy báo.
+- Cước phí chưa bao gồm phí cầu đường phát sinh ngoài hợp đồng.
+- Mọi thắc mắc về cước phí xin liên hệ phòng Kế toán trong 07 ngày.
+rows:
+- 4
+- 45
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- totals
+optional:
+- meta
+- words
+- notes
+- summary
+- signatures
+- footer
+en_ok: true

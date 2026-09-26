@@ -1,0 +1,63 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+# loại giấy lấy từ trang model viết: data/pilot15 building_management_contract, pilot9 biau_phan_loai_quan_ly_chung_cu
+id: hop_dong_quan_ly_van_hanh
+profile: admin
+org_kind: company
+national: 0.95
+titles:
+- HỢP ĐỒNG DỊCH VỤ QUẢN LÝ VẬN HÀNH NHÀ CHUNG CƯ
+- HỢP ĐỒNG QUẢN LÝ VẬN HÀNH TOÀ NHÀ
+- PHỤ LỤC HỢP ĐỒNG DỊCH VỤ CHUNG CƯ
+subtitles:
+- 'Số: ..../HĐQLVH'
+- ''
+- ''
+fields:
+- party_a
+- party_b
+- rep_a
+- contract_no
+- value
+- term
+field_span:
+- 4
+- 6
+columns:
+- - stt
+  - name
+  - unit
+  - unit_price
+  - note
+- - stt
+  - name
+  - unit_price
+  - amount
+totals: money
+words: true
+sign_sets:
+- - ĐẠI DIỆN BÊN A
+  - ĐẠI DIỆN BÊN B
+- - BAN QUẢN TRỊ NHÀ CHUNG CƯ
+  - ĐƠN VỊ QUẢN LÝ VẬN HÀNH
+notes:
+- Mức phí dịch vụ được điều chỉnh khi có quyết định của hội nghị nhà chung cư.
+- Hợp đồng được lập thành 04 bản, mỗi bên giữ 02 bản.
+rows:
+- 4
+- 15
+always:
+- letterhead
+- doctitle
+- fields
+- clauses
+- signatures
+optional:
+- meta
+- table
+- totals
+- words
+- legal_basis
+- notes
+- toc
+- footer
+en_ok: false
