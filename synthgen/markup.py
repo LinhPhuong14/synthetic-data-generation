@@ -1181,6 +1181,29 @@ def _group_of(doc: Doc, index: int) -> str:
     return doc.row_group_names[which]
 
 
+def _row_number(doc: Doc, index: int, sections: bool, totals: bool) -> int:
+    """`data-row` của dòng hàng thứ `index`, chừa chỗ cho dòng nhóm.
+
+    Dòng tiêu đề nhóm và dòng cộng nhóm là những `<tr>` RIÊNG, nên chúng phải
+    có số hàng riêng. Bản trước đánh chúng cùng số với dòng hàng kề bên: dòng
+    "Vật tư phụ" và dòng hàng đầu tiên cùng `data-row="1"`, dòng "Cộng Vật tư
+    phụ" cùng số với dòng hàng cuối nhóm. `kie_full.table_pairs` gom ô theo số
+    hàng, nên ô STT của dòng đầu nhận nhãn dòng là tên NHÓM -- đo trên
+    `data/verify_inkbox_img`: `stt_r1` tả thành "Stt của “Vật tư phụ”" trong
+    khi tên hàng ở dòng ấy là "Máy quét tài liệu tốc độ cao"; và ô tiền cộng
+    nhóm mang `line_item_id` của một dòng hàng.
+
+    Tính từ CHỈ SỐ, cùng lẽ `_group_of`: mỗi nhóm đứng trước mặt mình giữ một
+    số cho dòng tiêu đề, và một số cho dòng cộng nếu bảng có cộng nhóm. Nên
+    tờ nào cắt ở đâu cũng ra cùng một con số, và số vẫn tăng dần qua các tờ.
+    Bảng không chia nhóm thì vẫn là `index + 1` như cũ."""
+    if not sections:
+        return index + 1
+    which = max(min(index // doc.row_group_size,
+                    len(doc.row_group_names) - 1), 0)
+    return index + 1 + (which + 1) + (which if totals else 0)
+
+
 def _head(doc: Doc, d: Design, keys: list[str], rail: bool) -> str:
     """Khối `<thead>`: bao nhiêu tầng cũng được, cộng hàng số cột nếu có.
 
@@ -1516,16 +1539,23 @@ def _table(doc: Doc, d: Design, low: int, high: int, part: int,
             index = end
 
     body = []
-    for r_index, row in enumerate(doc.rows[low:high], start=low + 1):
-        at = r_index - 1
+    last = low
+    for at, row in enumerate(doc.rows[low:high], start=low):
+        r_index = _row_number(doc, at, sections, totals)
+        last = r_index
         # Đầu tờ thì in lại tiêu đề nhóm; giữa tờ thì chỉ in khi nhóm ĐỔI.
         # Không đếm theo `at % size` được: nhóm cuối ôm nốt phần còn lại, nên
         # phép chia dư vẫn kêu ở giữa nó và in ra cùng một cái tên hai lần.
         if sections and (at == low
                          or _group_of(doc, at) != _group_of(doc, at - 1)):
+            # Số của tiêu đề nhóm là chỗ chừa ngay trước dòng ĐẦU nhóm, kể cả
+            # khi nó in lại ở đầu tờ sau: cùng một tiêu đề thì cùng một số.
+            first = max(min(at // doc.row_group_size,
+                            len(doc.row_group_names) - 1), 0) * doc.row_group_size
             body.append(
                 f'<tr class="grouphdr"><td colspan="{width}" data-cell="cell" '
-                f'data-row="{r_index}" data-col="0">'
+                f'data-row="{_row_number(doc, first, sections, totals) - 1}" '
+                f'data-col="0">'
                 f'{_span("colhdr", _group_of(doc, at))}</td></tr>')
         tds = []
         if rail:
@@ -1558,21 +1588,23 @@ def _table(doc: Doc, d: Design, low: int, high: int, part: int,
         after = at + 1
         ends = after >= len(doc.rows) or _group_of(doc, after) != _group_of(doc, at)
         if totals and ends:
+            # Chỗ chừa ngay sau dòng cuối nhóm -- xem `_row_number`.
+            last = r_index + 1
             which = min(at // doc.row_group_size, len(doc.row_group_names) - 1)
             value = (doc.row_group_totals[which]
                      if which < len(doc.row_group_totals) else "")
             cells = ""
             if money_col + offset > 0:
                 cells = (f'<td colspan="{money_col + offset}" class="ar" '
-                         f'data-cell="cell" data-row="{r_index}" data-col="0">'
+                         f'data-cell="cell" data-row="{last}" data-col="0">'
                          f'{_span("total.group", f"Cộng {_group_of(doc, at)}")}</td>')
             cells += (f'<td class="ar" data-cell="total.group_amount" '
-                      f'data-row="{r_index}" data-col="{money_col + offset}">'
+                      f'data-row="{last}" data-col="{money_col + offset}">'
                       f'{_span("total.group_amount", value)}</td>')
             rest = len(keys) - money_col - 1
             if rest > 0:
                 cells += (f'<td colspan="{rest}" data-cell="cell" '
-                          f'data-row="{r_index}" '
+                          f'data-row="{last}" '
                           f'data-col="{money_col + offset + 1}"></td>')
             body.append(f'<tr class="grouptot">{cells}</tr>')
 
@@ -1586,7 +1618,9 @@ def _table(doc: Doc, d: Design, low: int, high: int, part: int,
         caption = (f'<div{D.region_attr("table_caption")}>'
                    f'{_span("caption.table", doc.table_caption, "tcap")}</div>')
     money_key = keys[money_col] if money_col >= 0 else keys[-1]
-    tfoot = (_tfoot(doc, d, width, high,
+    # `last`, không `high`: dòng nhóm đã chiếm số, nên dòng tổng đếm tiếp từ
+    # số hàng CUỐI CÙNG đã in, không từ số dòng hàng.
+    tfoot = (_tfoot(doc, d, width, last,
                     money_col + offset if money_col >= 0 else -1,
                     need.get(money_key, 12.0) / total * table_chars - PAD_CHARS)
              if foot else "")
