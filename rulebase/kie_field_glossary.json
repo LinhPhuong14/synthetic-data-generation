@@ -35,6 +35,8 @@
   "section.body": "Body text belonging to one numbered section of the document.",
   "section.head": "The words naming what one numbered section covers, printed beside its number.",
   "section.number": "The numeral or roman numeral of a section heading, printed as its own run.",
+  "recipients": "One line of the distribution list printed left of the signature row (\"- Như trên;\", \"- Lưu: VT, TCHC.\"): a body the document is sent to, or where the original is filed. Nobody signs here.",
+  "recipients.label": "The printed caption \"Nơi nhận:\" that opens the distribution list left of the signature row.",
   "sidebar.label": "A field printed in the narrow rail beside the main body, where the layout puts reference data the reader scans rather than reads.",
   "sign.name": "Printed name of a person who signs, set under the ruled signature line.",
   "sign.note": "Note printed inside a signature block -- what the signer is asked to add by hand, or who keeps that copy.",

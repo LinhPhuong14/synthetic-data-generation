@@ -231,6 +231,9 @@ class Doc:
     table_caption: str
     seed: int
     unit_pool: list[str] = field(default_factory=list)
+    # Các dòng của khối "Nơi nhận" ("- Như trên;", "- Lưu: VT, TCHC."), rỗng khi
+    # tờ không in khối ấy. Xem `recipients_of`.
+    recipients: list[str] = field(default_factory=list)
     # TIÊU ĐỀ NHIỀU TẦNG, xếp NGOÀI CÙNG TRƯỚC: `col_bands[0]` là tầng trên
     # cùng, `col_bands[-1]` là tầng sát hàng tên cột. Mỗi dải là `(chữ, cột
     # đầu, số cột nó phủ)`. Rỗng nghĩa là bảng một tầng như cũ.
@@ -1502,6 +1505,25 @@ def _regroup(doc: Doc) -> None:
     doc.row_group_totals = [money(value, suffix='') for value in sums]
 
 
+RECIPIENT_LINES_SALT = 0x4E4E4844
+
+
+def recipients_of(design: Design) -> list[str]:
+    """Các dòng của khối "Nơi nhận", theo dáng Nghị định 30/2020/NĐ-CP.
+
+    Một dòng đầu trỏ về người nhận chính, 0--2 nơi nhận thêm, và dòng lưu
+    luôn ở cuối; mỗi dòng mở bằng "-", đóng bằng ";", dòng cuối đóng bằng ".".
+    Hạt giống riêng theo `design.seed`, không bốc từ `rng` của `build()`:
+    thêm lần bốc vào chuỗi ấy thì mọi chữ sau nó đổi theo, và mọi tờ cũ -- kể
+    cả tờ không có khối này -- ra nội dung khác."""
+    pool = corpus.recipients()
+    rng = random.Random(design.seed ^ RECIPIENT_LINES_SALT)
+    lines = [rng.choice(pool['dau'])]
+    lines += rng.sample(pool['giua'], min(rng.randint(0, 2), len(pool['giua'])))
+    body = [f'- {line};' for line in lines]
+    return body + [f'- Lưu: VT, {rng.choice(pool["luu"])}.']
+
+
 def build(design: Design, rng: random.Random, rows_wanted: int) -> Doc:
     """Một tờ giấy đã có đủ chữ. `rows_wanted` do `paginate.py` quyết định --
     nó là số dòng cần để mỗi tờ đầy 80%, không phải một con số rút ngẫu
@@ -1695,6 +1717,8 @@ def build(design: Design, rng: random.Random, rows_wanted: int) -> Doc:
         named = rng.random() < 0.45 and bool(people)
         signatures.append((caption, rng.choice(people) if named else ''))
 
+    recipients = recipients_of(design) if design.recipients else []
+
     footer = ''
     if design.has('footer'):
         pool = corpus.footers(arch.profile)
@@ -1779,6 +1803,7 @@ def build(design: Design, rng: random.Random, rows_wanted: int) -> Doc:
         formula=formula,
         caption=figure_caption, footnotes=footnotes, toc=toc,
         signatures=signatures,
+        recipients=recipients,
         footer=footer, table_caption=caption, seed=design.seed, unit_pool=units,
         col_bands=col_bands, row_group_size=row_group_size,
         row_group_names=row_group_names,

@@ -39,11 +39,10 @@ columns:
 totals: money
 words: false
 sign_sets:
-- - NƠI NHẬN
-  - TM. THỦ TRƯỞNG ĐƠN VỊ
-- - NƠI NHẬN
-  - KT. GIÁM ĐỐC
+- - TM. THỦ TRƯỞNG ĐƠN VỊ
+- - KT. GIÁM ĐỐC
 - - TM. BAN GIÁM ĐỐC
+recipients: 0.67
 notes:
 - Hai bên cam kết thực hiện đúng nội dung đã thoả thuận.
 - Mọi sửa đổi phải lập thành văn bản có chữ ký hai bên.

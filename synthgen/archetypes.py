@@ -129,6 +129,9 @@ def schema() -> dict[str, Any]:
         # `QUYẾT ĐỊNH` dù ngắn tới đâu cũng với tới mười tờ. Đo trên kho 471
         # phôi: 69% với tới 10+ tờ, còn bậc 2-4 tờ chỉ có 7 phôi.
         "max_pages": {"type": "int"},
+        # Xác suất in khối "Nơi nhận" cạnh hàng ký -- xem
+        # `design.Archetype.recipients`. Không khai = 0.
+        "recipients": {"type": "float", "range": [0.0, 1.0]},
         "always": {"type": "list[str]", "values": blocks, "min": 1},
         "optional": {"type": "list[str]", "values": blocks},
         "en_ok": {"type": "bool"},
@@ -147,7 +150,8 @@ def problems(spec: dict, *, taken: set[str] | None = None) -> list[str]:
     name = str(spec.get("id", "?"))
 
     for key in rules:
-        if key not in spec and key not in ("optional", "subtitles", "max_pages"):
+        if key not in spec and key not in ("optional", "subtitles", "max_pages",
+                                           "recipients"):
             found.append(f"{name}: thiếu `{key}`")
     for key in spec:
         if key not in rules:
@@ -202,6 +206,20 @@ def problems(spec: dict, *, taken: set[str] | None = None) -> list[str]:
                      "một khối hoặc luôn có, hoặc thỉnh thoảng")
     if "signatures" in always + optional and not spec.get("sign_sets"):
         found.append(f"{name}: có khối `signatures` mà `sign_sets` rỗng")
+    # "NƠI NHẬN" KHÔNG PHẢI NGƯỜI KÝ. Khai nó trong `sign_sets` thì nó ra một ô
+    # ký có "(Ký, ghi rõ họ tên)" và một cái tên viết tay -- 140/439 phôi đã
+    # làm đúng thế. Đọc từ chính chữ in trên ô, như mọi luật khác của file.
+    for signs in spec.get("sign_sets") or ():
+        for caption in signs if isinstance(signs, list) else ():
+            if str(caption).strip().rstrip(":").upper() == "NƠI NHẬN":
+                found.append(f"{name}.sign_sets: \"NƠI NHẬN\" không phải người "
+                             "ký; khai `recipients: <xác suất>` để in khối nơi nhận")
+    share = spec.get("recipients")
+    if isinstance(share, (int, float)) and not 0.0 <= share <= 1.0:
+        found.append(f"{name}.recipients: {share} nằm ngoài [0, 1]")
+    if share and "signatures" not in always + optional:
+        found.append(f"{name}: khai `recipients` mà không có khối `signatures` "
+                     "để in nó bên cạnh")
     if "table" in always + optional and not spec.get("columns"):
         found.append(f"{name}: có khối `table` mà không khai `columns`")
     # KHÔNG có luật "khối `totals` mà `totals: none`": `thuc_don` khai đúng
@@ -241,6 +259,7 @@ def build(spec: dict):
         notes=tuple(spec["notes"]),
         rows=tuple(spec["rows"]),
         max_pages=int(spec.get("max_pages") or 0),
+        recipients=float(spec.get("recipients") or 0.0),
         optional=tuple(spec.get("optional") or ()),
         always=tuple(spec["always"]),
         en_ok=bool(spec["en_ok"]),
@@ -307,6 +326,7 @@ def as_spec(arch) -> dict:
         "notes": list(arch.notes),
         "rows": list(arch.rows),
         **({"max_pages": arch.max_pages} if arch.max_pages else {}),
+        **({"recipients": arch.recipients} if arch.recipients else {}),
         "always": list(arch.always),
         "optional": list(arch.optional),
         "en_ok": arch.en_ok,

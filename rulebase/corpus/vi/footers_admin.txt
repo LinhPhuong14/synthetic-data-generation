@@ -4,10 +4,12 @@
 # in "Nơi nhận" và "Lưu" — nó nói tờ giấy này đi đâu và bản gốc nằm ở đâu, chứ
 # không nói gì về tiền. Đó cũng là lý do profile này tồn tại: cùng một khối
 # `footer` ở cuối trang, nhưng nội dung thuộc một thế giới khác.
+#
+# KHÔNG còn dòng "Nơi nhận: - Như trên; - Lưu: VT." ở đây: nơi nhận giờ là một
+# khối riêng bên trái hàng ký (`recipients.txt`), đúng chỗ văn bản thật in nó.
+# Để lại thì một tờ vừa có khối ấy vừa có dòng chân trang này in nơi nhận hai
+# lần, dồn thành một dòng ở chân trang.
 
-Nơi nhận: - Như trên; - Lưu: VT.
-Nơi nhận: - Như kính gửi; - Lưu: HC-NS.
 Biên bản được lập thành 02 bản, mỗi bên giữ 01 bản có giá trị như nhau.
 Bản gốc lưu tại Văn phòng Công ty.
-Nơi nhận: - Các bộ phận liên quan; - Lưu: VT.
 (Đề nghị hoàn trả bản gốc về Phòng Hành chính sau khi hoàn thành công việc)

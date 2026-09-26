@@ -38,7 +38,7 @@
     "pay": "thanh toán", "period": "kỳ", "phone": "điện thoại",
     "photo": "ảnh", "placeholder": "chỗ trống", "price": "đơn giá",
     "prompt": "câu dẫn", "qty": "số lượng", "question": "câu hỏi",
-    "rate": "thuế suất", "recipient": "người nhận", "ref": "số tham chiếu",
+    "rate": "thuế suất", "recipient": "người nhận", "recipients": "nơi nhận", "ref": "số tham chiếu",
     "reference": "tham chiếu", "rowhdr": "tiêu đề dòng",
     "section": "mục", "self": "tự trả", "sign": "chữ ký",
     "signedat": "nơi ký", "size": "cỡ", "store": "đơn vị",

@@ -315,6 +315,9 @@ region:
   totals: Text
   words: Text
   footnote: Footnote
+  # Ô "Nơi nhận" bên trái hàng ký. Vùng RIÊNG, không nằm trong vùng của ô
+  # người ký: nó là danh sách nơi gửi, đọc như chữ chạy.
+  recipients: Text
   national: Page-Header    # quốc hiệu khi letterhead KHÔNG chia đôi; khi chia
                            # đôi nó nằm trong `.hrow` đã khai, nên không khai
                            # lại -- hai vùng lồng nhau là một vùng nói hai lần.

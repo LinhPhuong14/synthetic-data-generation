@@ -385,6 +385,8 @@ class Design:
     # dáng khác nhau mà một bộ dữ liệu chỉ có một chỗ thì không dạy được.
     mark_place: str
     seed: int
+    # Tờ này có in khối "Nơi nhận" không -- bốc theo `archetype.recipients`.
+    recipients: bool = False
 
     # `boost` là hệ số cỡ chữ, và là trường DUY NHẤT đổi được sau khi `draw()`
     # trả về: `paginate.py` chỉnh nó để ép một tờ giấy lấp đủ 80% mà không
@@ -402,7 +404,7 @@ class Design:
             self.col_numbers, self.row_groups, self.nested_detail,
             self.sign_style, self.sign_count,
             self.note_style, self.ornament, self.columns, self.page_columns,
-            self.sign_captions,
+            self.sign_captions, self.recipients,
             tuple(f.key for f in self.fields), self.order,
             tuple(sorted(self.blocks)), self.photo_box, self.watermark,
             self.reverse_title_band, self.lang_en, self.national,
@@ -580,13 +582,24 @@ class Archetype:
     en_ok: bool = False
     # Trần số tờ phôi TỰ KHAI. 0 = không khai, sức chứa khối chảy quyết.
     max_pages: int = 0
+    # XÁC SUẤT tờ giấy in khối "Nơi nhận" bên trái hàng ký. 0 = không bao giờ.
+    #
+    # Trước khoá này, 140/439 phôi khai "NƠI NHẬN" như một NGƯỜI KÝ trong
+    # `sign_sets`, nên nó ra một ô ký có "(Ký, ghi rõ họ tên)" và một cái tên
+    # viết tay -- đo trên `data/26-09-hand-check`: `cv_dao_tao_boi_duong_00010`
+    # và `ph_an_toan_lao_dong_00008` có chữ ký tay dưới "NƠI NHẬN", và KIE ghép
+    # "NƠI NHẬN" với tên người. Nơi nhận là danh sách nơi gửi văn bản đến, không
+    # ai ký vào đó; `archetypes.py` giờ từ chối nó trong `sign_sets`.
+    recipients: float = 0.0
 
+
+RECIPIENT_SALT = 0x4E4E4843
 
 _SIGN_SALES = (('NGƯỜI MUA HÀNG', 'NGƯỜI BÁN HÀNG'), ('NGƯỜI MUA HÀNG', 'NGƯỜI BÁN HÀNG', 'THỦ TRƯỞNG ĐƠN VỊ'), ('Khách hàng', 'Nhân viên bán hàng'), ('NGƯỜI LẬP PHIẾU', 'KẾ TOÁN TRƯỞNG', 'GIÁM ĐỐC'))
 
 _SIGN_STORE = (('NGƯỜI LẬP PHIẾU', 'NGƯỜI GIAO HÀNG', 'THỦ KHO', 'KẾ TOÁN TRƯỞNG'), ('NGƯỜI NHẬN HÀNG', 'THỦ KHO', 'GIÁM ĐỐC'), ('NGƯỜI LẬP', 'THỦ TRƯỞNG ĐƠN VỊ'))
 
-_SIGN_STATE = (('NGƯỜI LÀM ĐƠN', 'XÁC NHẬN CỦA ĐƠN VỊ'), ('NGƯỜI ĐỀ NGHỊ', 'PHỤ TRÁCH BỘ PHẬN', 'THỦ TRƯỞNG ĐƠN VỊ'), ('NƠI NHẬN', 'TM. ĐƠN VỊ'), ('NGƯỜI VIẾT ĐƠN',))
+_SIGN_STATE = (('NGƯỜI LÀM ĐƠN', 'XÁC NHẬN CỦA ĐƠN VỊ'), ('NGƯỜI ĐỀ NGHỊ', 'PHỤ TRÁCH BỘ PHẬN', 'THỦ TRƯỞNG ĐƠN VỊ'), ('NGƯỜI LÀM ĐƠN', 'TM. ĐƠN VỊ'), ('NGƯỜI VIẾT ĐƠN',))
 
 _SIGN_MINUTES = (('THƯ KÝ', 'CHỦ TRÌ'), ('ĐẠI DIỆN BÊN GIAO', 'ĐẠI DIỆN BÊN NHẬN'), ('THƯ KÝ CUỘC HỌP', 'CHỦ TOẠ', 'ĐẠI DIỆN CÁC BÊN'))
 
@@ -655,7 +668,7 @@ ARCHETYPES: tuple[Archetype, ...] = (
     A('bang_cham_cong', ('BẢNG CHẤM CÔNG', 'BẢNG THEO DÕI NGÀY CÔNG', 'BẢNG CHẤM CÔNG THÁNG'), ('Tháng ..../....', 'Bộ phận: ....', ''), 'admin', 'company', 0.35, SELLER_FIELDS[:1] + SUBJECT_FIELDS[8:9], (1, 3), (('stt', 'name', 'qty', 'note'), ('stt', 'ref', 'name', 'qty', 'unit', 'note'), ('stt', 'name', 'date', 'qty', 'note')), 'count', False, (('NGƯỜI CHẤM CÔNG', 'PHỤ TRÁCH BỘ PHẬN', 'THỦ TRƯỞNG ĐƠN VỊ'),), _NOTE_STATE, (8, 170), optional=('notes', 'meta', 'footer', 'fields'), always=('letterhead', 'doctitle', 'table', 'signatures')),
     A('bien_ban_ban_giao', ('BIÊN BẢN BÀN GIAO', 'BIÊN BẢN BÀN GIAO TÀI SẢN', 'BIÊN BẢN GIAO NHẬN THIẾT BỊ'), ('', 'Số: ..../BB-BG', ''), 'invoice', 'company', 0.55, CONTRACT_FIELDS[1:4] + SUBJECT_FIELDS[8:10], (3, 6), (('stt', 'name', 'unit', 'qty', 'note'), ('stt', 'ref', 'name', 'unit', 'qty', 'unit_price', 'amount'), ('stt', 'name', 'qty', 'note')), 'count', False, _SIGN_MINUTES, _NOTE_STATE, (3, 90), optional=('meta', 'footer', 'words', 'summary'), always=('letterhead', 'doctitle', 'fields', 'notes', 'table', 'signatures')),
     A('bien_ban_hop', ('BIÊN BẢN HỌP', 'BIÊN BẢN CUỘC HỌP', 'BIÊN BẢN HỌP GIAO BAN'), ('Số: ..../BB', '', 'V/v triển khai kế hoạch công tác'), 'admin', 'company', 0.6, SUBJECT_FIELDS[8:10] + CONTRACT_FIELDS[1:3], (2, 5), (('stt', 'name', 'note'), ('stt', 'name', 'unit', 'note'), ('stt', 'ref', 'name', 'note')), 'none', False, _SIGN_MINUTES, _NOTE_STATE, (3, 60), optional=('table', 'meta', 'footer'), always=('letterhead', 'doctitle', 'fields', 'notes', 'signatures')),
-    A('cong_van', ('CÔNG VĂN', 'V/v hướng dẫn thực hiện công tác chuyên môn', 'V/v đôn đốc báo cáo định kỳ'), ('Kính gửi: Các đơn vị trực thuộc', 'Kính gửi: Phòng Tài chính - Kế toán', ''), 'admin', 'state', 0.95, SUBJECT_FIELDS[8:10], (0, 2), (('stt', 'name', 'note'), ('stt', 'name', 'date', 'note')), 'none', False, (('NƠI NHẬN', 'TM. THỦ TRƯỞNG ĐƠN VỊ'), ('NƠI NHẬN', 'KT. GIÁM ĐỐC'), ('TM. BAN GIÁM ĐỐC',)), _NOTE_STATE, (0, 28), optional=('table', 'fields', 'questions', 'clauses', 'footer'), always=('letterhead', 'doctitle', 'meta', 'notes', 'signatures')),
+    A('cong_van', ('CÔNG VĂN', 'V/v hướng dẫn thực hiện công tác chuyên môn', 'V/v đôn đốc báo cáo định kỳ'), ('Kính gửi: Các đơn vị trực thuộc', 'Kính gửi: Phòng Tài chính - Kế toán', ''), 'admin', 'state', 0.95, SUBJECT_FIELDS[8:10], (0, 2), (('stt', 'name', 'note'), ('stt', 'name', 'date', 'note')), 'none', False, (('TM. THỦ TRƯỞNG ĐƠN VỊ',), ('KT. GIÁM ĐỐC',), ('TM. BAN GIÁM ĐỐC',)), _NOTE_STATE, (0, 28), optional=('table', 'fields', 'questions', 'clauses', 'footer'), always=('letterhead', 'doctitle', 'meta', 'notes', 'signatures'), recipients=0.9),
     A('to_trinh', ('TỜ TRÌNH', 'TỜ TRÌNH ĐỀ NGHỊ PHÊ DUYỆT', 'GIẤY ĐỀ NGHỊ'), ('V/v đề nghị cấp kinh phí', 'V/v đề nghị mua sắm trang thiết bị', ''), 'admin', 'state', 0.9, SUBJECT_FIELDS[8:10] + CONTRACT_FIELDS[4:5], (1, 3), (('stt', 'name', 'unit', 'qty', 'unit_price', 'amount'), ('stt', 'name', 'qty', 'amount'), ('stt', 'name', 'note')), 'money', True, (('NGƯỜI ĐỀ NGHỊ', 'THỦ TRƯỞNG ĐƠN VỊ'), ('NGƯỜI LẬP', 'PHỤ TRÁCH BỘ PHẬN', 'THỦ TRƯỞNG ĐƠN VỊ')), _NOTE_STATE, (2, 64), optional=('table', 'footer', 'words', 'summary'), always=('letterhead', 'doctitle', 'meta', 'fields', 'notes', 'signatures')),
     A('don_xin_nghi_phep', ('ĐƠN XIN NGHỈ PHÉP', 'ĐƠN XIN NGHỈ VIỆC RIÊNG', 'GIẤY XIN PHÉP'), ('Kính gửi: Ban Giám đốc', 'Kính gửi: Trưởng phòng Hành chính - Nhân sự', ''), 'admin', 'state', 0.85, SUBJECT_FIELDS[:1] + SUBJECT_FIELDS[1:2] + SUBJECT_FIELDS[6:10], (4, 7), (('stt', 'date', 'name', 'note'),), 'none', False, _SIGN_STATE, _NOTE_STATE, (0, 6), optional=('table', 'footer', 'meta'), always=('letterhead', 'doctitle', 'fields', 'notes', 'signatures')),
     A('giay_uy_quyen', ('GIẤY UỶ QUYỀN', 'GIẤY UỶ QUYỀN GIAO DỊCH', 'VĂN BẢN UỶ QUYỀN'), ('', 'Số: ..../GUQ', '(Có giá trị đến hết ngày ....)'), 'admin', 'state', 0.8, SUBJECT_FIELDS[:8], (5, 8), (('stt', 'name', 'note'),), 'none', False, (('BÊN UỶ QUYỀN', 'BÊN ĐƯỢC UỶ QUYỀN'), ('NGƯỜI UỶ QUYỀN', 'NGƯỜI ĐƯỢC UỶ QUYỀN', 'XÁC NHẬN CỦA ĐƠN VỊ')), _NOTE_STATE, (0, 16), optional=('table', 'footer', 'meta'), always=('letterhead', 'doctitle', 'fields', 'notes', 'signatures')),
@@ -1704,6 +1717,11 @@ def draw(rng: random.Random, seed: int,
         mark_place=pick_weighted(rng, MARK_PLACES, "mark_place"),
         columns=columns,
         sign_captions=sign,
+        # Hạt giống RIÊNG, không bốc từ `rng`: thêm một lần bốc vào chuỗi
+        # chung thì mọi quyết định sau nó đổi theo, và mọi seed cũ ra một dáng
+        # khác chỉ vì khoá này ra đời.
+        recipients=(random.Random(seed ^ RECIPIENT_SALT).random()
+                    < float(getattr(arch, "recipients", 0.0) or 0.0)),
         fields=chosen,
         order=order,
         blocks=frozenset(blocks),

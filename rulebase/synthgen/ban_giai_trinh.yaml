@@ -28,11 +28,10 @@ columns: []
 totals: none
 words: false
 sign_sets:
-- - NƠI NHẬN
-  - TM. THỦ TRƯỞNG ĐƠN VỊ
+- - TM. THỦ TRƯỞNG ĐƠN VỊ
 - - NGƯỜI LÀM ĐƠN
-- - NƠI NHẬN
-  - KT. GIÁM ĐỐC
+- - KT. GIÁM ĐỐC
+recipients: 0.67
 notes:
 - Các nội dung khác không nêu trong văn bản này thực hiện theo quy định hiện hành.
 - Văn bản này được lập thành 02 bản có giá trị như nhau, mỗi bên giữ 01 bản.

@@ -34,11 +34,10 @@ columns: []
 totals: none
 words: false
 sign_sets:
-- - NƠI NHẬN
-  - TM. THỦ TRƯỞNG ĐƠN VỊ
-- - NƠI NHẬN
-  - KT. GIÁM ĐỐC
+- - TM. THỦ TRƯỞNG ĐƠN VỊ
+- - KT. GIÁM ĐỐC
 - - TM. BAN GIÁM ĐỐC
+recipients: 0.67
 notes:
 - Quy chế này có hiệu lực kể từ ngày ký và thay thế các quy định trước đây trái với quy chế này.
 - Trong quá trình thực hiện, nếu có vướng mắc, các đơn vị phản ánh về bộ phận hành chính để tổng hợp.

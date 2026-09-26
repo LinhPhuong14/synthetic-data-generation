@@ -47,11 +47,10 @@ columns:
 totals: money
 words: false
 sign_sets:
-- - NƠI NHẬN
-  - TM. THỦ TRƯỞNG ĐƠN VỊ
-- - NƠI NHẬN
-  - KT. GIÁM ĐỐC
+- - TM. THỦ TRƯỞNG ĐƠN VỊ
+- - KT. GIÁM ĐỐC
 - - TM. BAN GIÁM ĐỐC
+recipients: 0.67
 notes:
 - Các nội dung khác thực hiện theo quy định hiện hành.
 - Văn bản này được lập thành 02 bản có giá trị như nhau.
