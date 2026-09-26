@@ -32,7 +32,7 @@ LAYOUT  ?=
 .DEFAULT_GOAL := help
 .PHONY: help setup setup-html setup-writevit setup-blender \
         textures patterns handwriting signatures \
-        preview-grid visualize dataset dataset-clean proof showcase \
+        preview-grid demo dataset dataset-clean proof showcase \
         synth synth-plan synth-balance synth-multipage \
         ornaments templates \
         preflight check-rules check-corpus check-boxes migrate-metadata \
@@ -102,8 +102,8 @@ showcase:        ## One before/after image per degradation into samples/degradat
 	$(TASKS) showcase
 preview-grid:    ## Print a sampled receipt as text (LAYOUT=<id> to pin one)
 	@$(TASKS) preview-grid $(if $(LAYOUT),--layout $(LAYOUT),)
-visualize:       ## Local Gradio app: sinh ảnh, thử con dấu, thử viết tay hybrid
-	$(TASKS) visualize
+demo:            ## Trang web demo: sinh một tờ, xem ảnh kèm nhãn (http://127.0.0.1:8765)
+	$(TASKS) demo
 
 # ------------------------------------------------------------- the rules
 
