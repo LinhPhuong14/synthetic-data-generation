@@ -1,0 +1,30 @@
+# RECIPIENTS — khối "Nơi nhận" in bên trái hàng ký của văn bản hành chính.
+#
+# Cột 1 là VỊ TRÍ của dòng trong danh sách, cột 2 là chữ:
+#
+#   dau   dòng đầu, trỏ về người nhận chính đã ghi ở "Kính gửi"
+#   giua  các nơi nhận thêm, bốc 0--2 dòng
+#   luu   ký hiệu nơi lưu sau "Lưu: VT," -- dòng cuối luôn là dòng lưu
+#
+# Dáng in theo Nghị định 30/2020/NĐ-CP: mỗi nơi một dòng bắt đầu bằng "-",
+# kết thúc bằng ";", dòng lưu cuối cùng kết thúc bằng ".".
+#
+# Trước file này, 140/439 phôi khai "NƠI NHẬN" như một người ký, nên nó ra một
+# ô ký có chữ ký tay -- xem `synthgen/design.py::Archetype.recipients`.
+
+dau	Như trên
+dau	Như Điều 3
+dau	Như kính gửi
+dau	Các đơn vị trực thuộc
+giua	Ban Giám đốc (để b/c)
+giua	Các phòng, ban chuyên môn
+giua	Công đoàn cơ sở
+giua	Website đơn vị
+giua	Phòng Tài chính - Kế toán
+giua	Thanh tra (để giám sát)
+luu	TCHC
+luu	HCNS
+luu	VP
+luu	TCKT
+luu	KH
+luu	P.ĐT

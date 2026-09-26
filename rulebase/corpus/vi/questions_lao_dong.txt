@@ -2,19 +2,35 @@
 #
 # Cột 1 là DẠNG, cột 2 là câu hỏi, các cột sau là tham số của chính dạng ấy:
 #
-#   blank         (không tham số) — một dòng kẻ để điền
-#   yesno         (không tham số) — hai ô Có/Không
-#   options       lựa chọn | lựa chọn | ...
+#   blank         [đáp án]       — một dòng kẻ để điền
+#   yesno         [đáp án] [hỏi thêm] — hai ô Có/Không
+#   options       lựa chọn|lựa chọn|...  [đáp án] [hỏi thêm]
 #   boxchar       số ô           — dãy ô vuông mỗi ô một ký tự (CCCD, MST)
 #   date_boxes    (không tham số) — ngày / tháng / năm, mỗi chữ số một ô
 #   grid          hàng|hàng|...  cột|cột|...   — ma trận tích chéo
 #   scale         nhãn thấp      nhãn cao      số mức
 #   rank          mục|mục|...    — xếp thứ tự ưu tiên
-#   inline_blank  (câu hỏi mang dấu … ở mỗi chỗ trống)
-#   subquestion   ý|ý|...        — câu chính rồi các ý a) b) c)
+#   inline_blank  [đáp án]       — câu hỏi mang dấu … ở mỗi chỗ trống
+#   subquestion   ý|ý|...  [đáp án]  — câu chính rồi các ý a) b) c)
 #   table_form    cột|cột|...    số dòng      — bảng người ta điền tay
 #   attachment    mục|mục|...    — danh mục hồ sơ kèm theo, mỗi mục một ô tích
-#   answer        (cột 2 là một câu trả lời tự do của chủ đề này)
+#   answer        (cột 2 là câu trả lời cho CỘT BẢNG `table_form` không tra ra loại)
+#
+# ĐÁP ÁN là của CHÍNH CÂU ẤY, các phương án ngăn bằng `|`. Mỗi phương án được
+# chứa chỗ giữ `{person}`, `{date}`, `{phone}`, `{address}`, `{relation}`,
+# `{position}`, `{org}`, `{digits}`... -- thay bằng một giá trị của loại ấy.
+#   * `blank` bắt buộc có đáp án khi nhãn không tra ra loại (xem
+#     `synthgen/content.py::COLUMN_KINDS`): "Họ và tên" thì không cần,
+#     "Mức lương đề nghị" thì cần.
+#   * `inline_blank`/`subquestion`: mỗi phương án là CẢ CÂU, các ô ngăn bằng
+#     `;` theo đúng thứ tự chỗ trống / ý. Ô để trống thì tra loại từ nhãn --
+#     "Kế toán;;" khai bộ phận, để vị trí và ngày cho nhãn tự lo.
+#   * `yesno`: đáp án ghi dưới dòng hỏi thêm (mặc định "Nếu có, vui lòng mô tả
+#     chi tiết"). Hỏi thêm bắt đầu bằng "Nếu không"/"Nếu chưa" thì người tích
+#     "Không" mới viết. Không khai đáp án thì không in dòng hỏi thêm.
+#   * `options`: không có hỏi thêm thì câu phải có ô "Khác", và đáp án chỉ
+#     được viết khi ô ấy đã tích.
+# Thiếu hoặc khai sai thì `synthgen/content.py` KÊU lúc nạp, không in câu lạc đề.
 #
 # Ra file thay vì nằm trong `synthgen/content.py`: thêm một chủ đề là thêm một
 # file, không phải sửa mã — cùng lệ `clauses_*.txt` và `rulebase/` nói chung.
@@ -25,11 +41,11 @@ options	Loại hợp đồng đề nghị ký	Không xác định thời hạn|1
 grid	Tự đánh giá năng lực	Chuyên môn|Ngoại ngữ|Tin học|Làm việc nhóm	Tốt|Khá|Trung bình
 table_form	Quá trình công tác	Thời gian|Đơn vị|Vị trí|Lý do nghỉ	3
 attachment	Hồ sơ nhân sự kèm theo	Sơ yếu lý lịch|Bằng cấp|Giấy khám sức khoẻ|Bản sao CCCD|Sổ bảo hiểm
-yesno	Anh/chị có sẵn sàng đi công tác xa không?
+yesno	Anh/chị có sẵn sàng đi công tác xa không?	đang chăm con nhỏ|sức khoẻ không bảo đảm đi xa dài ngày	Nếu không, vui lòng nêu lý do
 subquestion	Người báo tin khi khẩn cấp	a) Họ và tên|b) Quan hệ|c) Điện thoại
-inline_blank	Tôi đề nghị được bố trí tại bộ phận …, vị trí …, từ ngày …
+inline_blank	Tôi đề nghị được bố trí tại bộ phận …, vị trí …, từ ngày …	Kế toán;;|Kinh doanh;;|Kỹ thuật;;|Hành chính - Nhân sự;;|Kho vận;;
 scale	Mức độ hài lòng với môi trường làm việc	Rất thấp	Rất cao	5
-blank	Mức lương đề nghị
+blank	Mức lương đề nghị	12 triệu đồng/tháng|15.000.000 đồng|theo thoả thuận|khoảng 20 triệu đồng
 rank	Xếp thứ tự ưu tiên khi chọn nơi làm việc	Thu nhập|Cơ hội học hỏi|Khoảng cách|Đồng nghiệp
 options	Ca làm việc đăng ký	Hành chính|Ca sáng|Ca chiều|Ca đêm
 answer	mong được đào tạo thêm nghiệp vụ

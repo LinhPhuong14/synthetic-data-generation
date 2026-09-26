@@ -340,6 +340,13 @@ table.items table.sub td{{border:none;padding:0 0 0 3mm;
 .signs.right{{margin-left:auto;width:52%;}}
 .sdate{{display:block;text-align:right;font-style:italic;
   margin-bottom:1.4mm;}}
+/* NƠI NHẬN: ô trái hàng ký, căn trái, chữ nhỏ -- đúng dáng Nghị định 30.
+   Không có chỗ ký, nên không cần khoảng chừa của `.scell`. */
+.scell.rcpt{{text-align:left;padding-bottom:0;
+  font-size:{_px(base_pt * 0.84)};}}
+.rcpt .rl{{display:block;font-weight:700;font-style:italic;
+  font-size:{_px(base_pt * 0.94)};}}
+.rcpt .ri{{display:block;white-space:pre-line;}}
 
 /* ---- chân trang */
 /* Dòng tổng nằm trong `<tfoot>` của chính bảng hàng. */
@@ -2140,10 +2147,32 @@ def _signatures(doc: Doc, d: Design) -> str:
     if d.sign_style == "co_dong_ke":
         cls += " ruled"
     if d.sign_style == "chi_ben_phai":
-        cls += " right"
         cells = cells[-1:]
+        # Có nơi nhận thì ô trái ĐÃ có người đứng: hàng ký phải trải hết bề
+        # ngang để nơi nhận nằm trái, người ký nằm phải.
+        if not doc.recipients:
+            cls += " right"
+    if doc.recipients:
+        cells.insert(0, _recipients(doc))
     return (f'<div class="blk">{date_line}<div class="{cls}">'
             f'{"".join(cells)}</div></div>')
+
+
+def _recipients(doc: Doc) -> str:
+    """Ô "Nơi nhận" bên trái hàng ký: nhãn in, rồi mỗi nơi một dòng.
+
+    Không phải một ô ký -- không "(Ký, ghi rõ họ tên)", không tên người. Nhãn
+    là `recipients.label` đứng ngay trước dòng đầu `recipients`, cùng khuôn
+    `X.label` / `X` mà `kie_full.label_pairs` đọc; vùng khai riêng ở ô này
+    (`_blocks.yaml::region.recipients`), không gộp với ô người ký."""
+    # MỘT run cho cả danh sách, xuống dòng bằng `pre-line`. Mỗi dòng một run
+    # thì chỉ dòng ĐẦU ghép được với nhãn, các dòng sau thành giá trị mồ côi
+    # `implied` -- đo trên `data/26-09-noi-nhan`: "Nơi nhận:" ↔ "- Như Điều
+    # 3;", còn "- Lưu: VT, TCKT." đứng một mình. Nơi nhận là MỘT trường.
+    return (f'<div class="scell rcpt"{D.region_attr("recipients")}>'
+            f'{_span("recipients.label", "Nơi nhận:", "rl", role="key")}'
+            f'{_span("recipients", chr(10).join(doc.recipients), "ri", role="value")}'
+            f'</div>')
 
 
 def _footer(doc: Doc, d: Design) -> str:

@@ -2,33 +2,49 @@
 #
 # Cột 1 là DẠNG, cột 2 là câu hỏi, các cột sau là tham số của chính dạng ấy:
 #
-#   blank         (không tham số) — một dòng kẻ để điền
-#   yesno         (không tham số) — hai ô Có/Không
-#   options       lựa chọn | lựa chọn | ...
+#   blank         [đáp án]       — một dòng kẻ để điền
+#   yesno         [đáp án] [hỏi thêm] — hai ô Có/Không
+#   options       lựa chọn|lựa chọn|...  [đáp án] [hỏi thêm]
 #   boxchar       số ô           — dãy ô vuông mỗi ô một ký tự (CCCD, MST)
 #   date_boxes    (không tham số) — ngày / tháng / năm, mỗi chữ số một ô
 #   grid          hàng|hàng|...  cột|cột|...   — ma trận tích chéo
 #   scale         nhãn thấp      nhãn cao      số mức
 #   rank          mục|mục|...    — xếp thứ tự ưu tiên
-#   inline_blank  (câu hỏi mang dấu … ở mỗi chỗ trống)
-#   subquestion   ý|ý|...        — câu chính rồi các ý a) b) c)
+#   inline_blank  [đáp án]       — câu hỏi mang dấu … ở mỗi chỗ trống
+#   subquestion   ý|ý|...  [đáp án]  — câu chính rồi các ý a) b) c)
 #   table_form    cột|cột|...    số dòng      — bảng người ta điền tay
 #   attachment    mục|mục|...    — danh mục hồ sơ kèm theo, mỗi mục một ô tích
-#   answer        (cột 2 là một câu trả lời tự do của chủ đề này)
+#   answer        (cột 2 là câu trả lời cho CỘT BẢNG `table_form` không tra ra loại)
+#
+# ĐÁP ÁN là của CHÍNH CÂU ẤY, các phương án ngăn bằng `|`. Mỗi phương án được
+# chứa chỗ giữ `{person}`, `{date}`, `{phone}`, `{address}`, `{relation}`,
+# `{position}`, `{org}`, `{digits}`... -- thay bằng một giá trị của loại ấy.
+#   * `blank` bắt buộc có đáp án khi nhãn không tra ra loại (xem
+#     `synthgen/content.py::COLUMN_KINDS`): "Họ và tên" thì không cần,
+#     "Mức lương đề nghị" thì cần.
+#   * `inline_blank`/`subquestion`: mỗi phương án là CẢ CÂU, các ô ngăn bằng
+#     `;` theo đúng thứ tự chỗ trống / ý. Ô để trống thì tra loại từ nhãn --
+#     "Kế toán;;" khai bộ phận, để vị trí và ngày cho nhãn tự lo.
+#   * `yesno`: đáp án ghi dưới dòng hỏi thêm (mặc định "Nếu có, vui lòng mô tả
+#     chi tiết"). Hỏi thêm bắt đầu bằng "Nếu không"/"Nếu chưa" thì người tích
+#     "Không" mới viết. Không khai đáp án thì không in dòng hỏi thêm.
+#   * `options`: không có hỏi thêm thì câu phải có ô "Khác", và đáp án chỉ
+#     được viết khi ô ấy đã tích.
+# Thiếu hoặc khai sai thì `synthgen/content.py` KÊU lúc nạp, không in câu lạc đề.
 #
 # Ra file thay vì nằm trong `synthgen/content.py`: thêm một chủ đề là thêm một
 # file, không phải sửa mã — cùng lệ `clauses_*.txt` và `rulebase/` nói chung.
 
 grid	Mức độ tuân thủ an toàn tại vị trí làm việc	Trang bị bảo hộ|Biển cảnh báo|Lối thoát nạn|Phương tiện chữa cháy	Đầy đủ|Thiếu|Không có
-yesno	Đơn vị đã tổ chức huấn luyện an toàn trong 12 tháng qua chưa?
+yesno	Đơn vị đã tổ chức huấn luyện an toàn trong 12 tháng qua chưa?	huấn luyện nhóm 4 ngày 15/5, 32 người tham dự|diễn tập phòng cháy tháng 9	Nếu có, ghi rõ thời gian và số người tham dự
 date_boxes	Ngày kiểm tra
 attachment	Tài liệu kiểm tra kèm theo	Sổ theo dõi huấn luyện|Phiếu kiểm định thiết bị|Hồ sơ chất thải|Biên bản diễn tập
 table_form	Nguồn phát thải	Tên nguồn|Loại chất thải|Khối lượng/tháng	3
 options	Hình thức xử lý chất thải	Thuê đơn vị chức năng|Tự xử lý|Tái chế|Chưa xử lý
 scale	Mức độ rủi ro môi trường	Rất thấp	Rất cao	5
-subquestion	Người phụ trách an toàn	a) Họ và tên|b) Chức danh|c) Chứng chỉ
-inline_blank	Kiểm tra tại … ngày …, người kiểm tra …
-blank	Kiến nghị của đoàn kiểm tra
+subquestion	Người phụ trách an toàn	a) Họ và tên|b) Chức danh|c) Chứng chỉ	;;chứng chỉ huấn luyện an toàn nhóm 1|;;chứng chỉ an toàn vệ sinh viên|;;chưa có
+inline_blank	Kiểm tra tại … ngày …, người kiểm tra …	xưởng sản xuất số 2;;|kho hoá chất;;|khu xử lý nước thải;;|nhà ăn tập thể;;
+blank	Kiến nghị của đoàn kiểm tra	bổ sung biển cảnh báo tại khu vực máy cắt|trang bị thêm bình chữa cháy tại kho|chưa phát hiện vi phạm|lập sổ theo dõi chất thải nguy hại
 boxchar	Số giấy phép môi trường	10
 answer	đã trang bị đầy đủ bảo hộ
 answer	cần bổ sung biển cảnh báo

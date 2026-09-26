@@ -2,34 +2,50 @@
 #
 # Cột 1 là DẠNG, cột 2 là câu hỏi, các cột sau là tham số của chính dạng ấy:
 #
-#   blank         (không tham số) — một dòng kẻ để điền
-#   yesno         (không tham số) — hai ô Có/Không
-#   options       lựa chọn | lựa chọn | ...
+#   blank         [đáp án]       — một dòng kẻ để điền
+#   yesno         [đáp án] [hỏi thêm] — hai ô Có/Không
+#   options       lựa chọn|lựa chọn|...  [đáp án] [hỏi thêm]
 #   boxchar       số ô           — dãy ô vuông mỗi ô một ký tự (CCCD, MST)
 #   date_boxes    (không tham số) — ngày / tháng / năm, mỗi chữ số một ô
 #   grid          hàng|hàng|...  cột|cột|...   — ma trận tích chéo
 #   scale         nhãn thấp      nhãn cao      số mức
 #   rank          mục|mục|...    — xếp thứ tự ưu tiên
-#   inline_blank  (câu hỏi mang dấu … ở mỗi chỗ trống)
-#   subquestion   ý|ý|...        — câu chính rồi các ý a) b) c)
+#   inline_blank  [đáp án]       — câu hỏi mang dấu … ở mỗi chỗ trống
+#   subquestion   ý|ý|...  [đáp án]  — câu chính rồi các ý a) b) c)
 #   table_form    cột|cột|...    số dòng      — bảng người ta điền tay
 #   attachment    mục|mục|...    — danh mục hồ sơ kèm theo, mỗi mục một ô tích
-#   answer        (cột 2 là một câu trả lời tự do của chủ đề này)
+#   answer        (cột 2 là câu trả lời cho CỘT BẢNG `table_form` không tra ra loại)
+#
+# ĐÁP ÁN là của CHÍNH CÂU ẤY, các phương án ngăn bằng `|`. Mỗi phương án được
+# chứa chỗ giữ `{person}`, `{date}`, `{phone}`, `{address}`, `{relation}`,
+# `{position}`, `{org}`, `{digits}`... -- thay bằng một giá trị của loại ấy.
+#   * `blank` bắt buộc có đáp án khi nhãn không tra ra loại (xem
+#     `synthgen/content.py::COLUMN_KINDS`): "Họ và tên" thì không cần,
+#     "Mức lương đề nghị" thì cần.
+#   * `inline_blank`/`subquestion`: mỗi phương án là CẢ CÂU, các ô ngăn bằng
+#     `;` theo đúng thứ tự chỗ trống / ý. Ô để trống thì tra loại từ nhãn --
+#     "Kế toán;;" khai bộ phận, để vị trí và ngày cho nhãn tự lo.
+#   * `yesno`: đáp án ghi dưới dòng hỏi thêm (mặc định "Nếu có, vui lòng mô tả
+#     chi tiết"). Hỏi thêm bắt đầu bằng "Nếu không"/"Nếu chưa" thì người tích
+#     "Không" mới viết. Không khai đáp án thì không in dòng hỏi thêm.
+#   * `options`: không có hỏi thêm thì câu phải có ô "Khác", và đáp án chỉ
+#     được viết khi ô ấy đã tích.
+# Thiếu hoặc khai sai thì `synthgen/content.py` KÊU lúc nạp, không in câu lạc đề.
 #
 # Ra file thay vì nằm trong `synthgen/content.py`: thêm một chủ đề là thêm một
 # file, không phải sửa mã — cùng lệ `clauses_*.txt` và `rulebase/` nói chung.
 
 boxchar	Biển kiểm soát phương tiện	9
 date_boxes	Ngày xảy ra vụ việc
-options	Loại phương tiện	Xe máy|Ô tô con|Xe tải|Xe khách|Khác
+options	Loại phương tiện	Xe máy|Ô tô con|Xe tải|Xe khách|Khác	xe đạp điện|máy kéo|xe ba gác
 grid	Tình trạng phương tiện sau vụ việc	Thân vỏ|Động cơ|Kính|Đèn	Nguyên vẹn|Hư hỏng nhẹ|Hư hỏng nặng
 table_form	Người có mặt tại hiện trường	Họ tên|Vai trò|Điện thoại	3
 attachment	Giấy tờ kèm theo	Giấy đăng ký xe|Giấy phép lái xe|Biên bản hiện trường|Ảnh chụp hiện trường
-yesno	Có người bị thương trong vụ việc không?
-subquestion	Thông tin người điều khiển	a) Họ và tên|b) Số giấy phép|c) Hạng
-inline_blank	Vụ việc xảy ra lúc … ngày … tại …
+yesno	Có người bị thương trong vụ việc không?	một người bị xây xát nhẹ ở tay|người điều khiển xe máy gãy chân, đã đưa đi cấp cứu|hai người bị thương nhẹ	Nếu có, ghi rõ số người và tình trạng
+subquestion	Thông tin người điều khiển	a) Họ và tên|b) Số giấy phép|c) Hạng	;;A1|;;B2|;;C|;;A2
+inline_blank	Vụ việc xảy ra lúc … ngày … tại …	;;ngã tư Nguyễn Trãi - Khuất Duy Tiến|;;Km 15 Quốc lộ 1A|;;trước số nhà 45 đường Lê Lợi|;;đầu cầu Chương Dương
 scale	Mức độ thiệt hại tự đánh giá	Không đáng kể	Rất nặng	5
-blank	Diễn biến vụ việc
+blank	Diễn biến vụ việc	xe máy chuyển hướng không bật xi nhan, va chạm với ô tô đi cùng chiều|ô tô lùi xe trong ngõ, va vào xe máy đang đỗ|hai xe máy va chạm tại ngã tư, không có người bị thương
 options	Điều kiện thời tiết lúc xảy ra	Nắng|Mưa|Sương mù|Ban đêm
 answer	xe bị móp cản trước
 answer	không có người bị thương

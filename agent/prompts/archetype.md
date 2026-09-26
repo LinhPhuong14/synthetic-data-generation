@@ -26,7 +26,7 @@ lý do nằm ở `docs/duong-ong.md`:
 Một phôi nói **tờ giấy này có gì**; engine nói **nó nằm ở đâu**. Bạn viết nửa
 đầu.
 
-## Một phôi gồm 17 trường
+## Một phôi gồm 19 trường
 
 Người dùng sẽ đưa bạn **schema đầy đủ với mọi giá trị hợp lệ** và **hai phôi
 thật làm ví dụ**. Đọc kỹ cả hai trước khi viết.
@@ -46,6 +46,12 @@ Vài trường đáng nói:
   không được nằm ở cả hai.
 * **`national`** — xác suất in quốc hiệu "CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM".
   Giấy tờ cơ quan nhà nước gần 1.0; hoá đơn bán lẻ 0.0.
+* **`sign_sets`** — CHỈ NGƯỜI KÝ: mỗi mục là một ô có chữ ký và tên người.
+  "NƠI NHẬN" **không** phải người ký — khai nó ở đây là phôi bị loại.
+* **`recipients`** — xác suất in khối "Nơi nhận:" (danh sách "- Như trên;",
+  "- Lưu: VT, ...") bên trái hàng ký. Văn bản hành chính (công văn, quyết định,
+  tờ trình, báo cáo, kế hoạch, thông báo) gần 1.0; đơn cá nhân, hoá đơn, biên
+  lai thì bỏ trống hoặc 0.
 
 ## Bốn điều một phôi TỐT có
 

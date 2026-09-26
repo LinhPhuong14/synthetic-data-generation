@@ -28,11 +28,10 @@ columns: []
 totals: none
 words: false
 sign_sets:
-- - NƠI NHẬN
-  - TM. THỦ TRƯỞNG ĐƠN VỊ
+- - TM. THỦ TRƯỞNG ĐƠN VỊ
 - - NGƯỜI LÀM ĐƠN
-- - NƠI NHẬN
-  - KT. GIÁM ĐỐC
+- - KT. GIÁM ĐỐC
+recipients: 0.67
 notes:
 - Hai bên cam kết thực hiện đúng các nội dung đã thoả thuận.
 - Mọi sửa đổi phải được lập thành văn bản có chữ ký của hai bên.

@@ -8,12 +8,12 @@
 # câu rất sớm. Mười bốn chủ đề thì số cặp trùng giảm còn một nửa.
 
 boxchar	Mã số thuế của doanh nghiệp	10
-blank	Tên doanh nghiệp theo giấy chứng nhận đăng ký
+blank	Tên doanh nghiệp theo giấy chứng nhận đăng ký	Công ty TNHH Thương mại Minh Phát|Công ty Cổ phần Xây dựng Hoàng Long|Công ty TNHH Dịch vụ Vận tải An Bình|Hợp tác xã Dịch vụ Nông nghiệp Tân Tiến
 date_boxes	Ngày cấp giấy chứng nhận đăng ký doanh nghiệp
 options	Loại hình doanh nghiệp	Doanh nghiệp tư nhân|Công ty trách nhiệm hữu hạn|Công ty cổ phần|Hợp tác xã|Hộ kinh doanh
-yesno	Doanh nghiệp có kinh doanh ngành nghề có điều kiện không?
+yesno	Doanh nghiệp có kinh doanh ngành nghề có điều kiện không?	kinh doanh dịch vụ lữ hành|kinh doanh vận tải hàng hoá bằng ô tô|bán lẻ thuốc	Nếu có, ghi rõ ngành nghề
 table_form	Ngành nghề kinh doanh đăng ký	Mã ngành|Tên ngành|Ngành chính
-inline_blank	Vốn điều lệ là … đồng, bằng chữ …, do … góp
+inline_blank	Vốn điều lệ là … đồng, bằng chữ …, do … góp	5.000.000.000;năm tỉ đồng;các thành viên|1.500.000.000;một tỉ năm trăm triệu đồng;{person}|10.000.000.000;mười tỉ đồng;các cổ đông sáng lập|800.000.000;tám trăm triệu đồng;{person}
 options	Hình thức thanh toán chủ yếu	Tiền mặt|Chuyển khoản|Thẻ ngân hàng|Ví điện tử
 grid	Kênh phân phối đang sử dụng	Bán lẻ tại cửa hàng|Bán buôn|Thương mại điện tử|Xuất khẩu	Chưa có|Đang thử|Ổn định
 blank	Địa chỉ kho hàng và nơi bảo quản
@@ -24,4 +24,4 @@ options	Doanh thu năm gần nhất	Dưới ba tỉ đồng|Từ ba đến năm 
 yesno	Doanh nghiệp đã đăng ký sử dụng hoá đơn điện tử chưa?
 boxchar	Số tài khoản ngân hàng nhận thanh toán	14
 rank	Xin xếp thứ tự khó khăn lớn nhất trong kinh doanh	Vốn|Mặt bằng|Nhân lực|Thủ tục hành chính|Tiêu thụ sản phẩm
-blank	Đề xuất của doanh nghiệp với cơ quan quản lý
+blank	Đề xuất của doanh nghiệp với cơ quan quản lý	rút ngắn thời gian hoàn thuế|đơn giản hoá thủ tục kê khai|hỗ trợ đào tạo về hoá đơn điện tử

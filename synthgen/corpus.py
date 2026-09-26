@@ -200,6 +200,21 @@ def footers(profile: str) -> tuple[str, ...]:
     return lines(FOOTER_FILES.get(profile, 'footers_invoice')) or lines('footers_invoice')
 
 
+def recipients() -> dict[str, tuple[str, ...]]:
+    """`{vị trí: (dòng, ...)}` của khối "Nơi nhận", đọc từ `recipients.txt`.
+
+    Vị trí lạ thì KÊU: gõ sai `giua` thành `gua` mà lặng lẽ bỏ qua là mất cả
+    nhóm dòng ấy khỏi mọi tờ giấy, và không ai biết vì sao."""
+    out: dict[str, list[str]] = {"dau": [], "giua": [], "luu": []}
+    for row in _rows("recipients"):
+        cells = [c.strip() for c in row]
+        if len(cells) != 2 or cells[0] not in out or not cells[1]:
+            raise ValueError(f"recipients.txt: dòng sai định dạng {row!r}; "
+                             f"cần `<{'|'.join(out)}>\t<chữ>`")
+        out[cells[0]].append(cells[1])
+    return {key: tuple(lines) for key, lines in out.items()}
+
+
 # Chủ đề câu hỏi khai bằng file: `questions_<chủ đề>.txt`. Tên file LÀ tên chủ
 # đề -- thêm một file là thêm một chủ đề, không phải sửa mã. Cùng lệ
 # `clauses_*.txt`.
@@ -210,21 +225,26 @@ QUESTION_PREFIX = "questions_"
 #
 # `|` ngăn các mục BÊN TRONG một cột, `TAB` ngăn các cột -- nên một danh sách
 # lựa chọn nằm gọn trong một cột và không đụng tới số cột của dòng.
+#
+# `replies` là ĐÁP ÁN KHAI THEO TỪNG CÂU, và `follow` là dòng hỏi thêm dưới ô
+# tích. Hai cột này đứng CUỐI dòng và được bỏ trống: câu nào nhãn đã nói câu
+# trả lời là gì ("Họ và tên", "Địa chỉ") thì không cần khai. Luật đầy đủ, và
+# chỗ nó kêu khi thiếu, ở `content._check_replies`.
 QUESTION_PARAMS: dict[str, tuple[str, ...]] = {
-    "blank": (),
-    "yesno": (),
-    "options": ("options",),
+    "blank": ("replies",),
+    "yesno": ("replies", "follow"),
+    "options": ("options", "replies", "follow"),
     "boxchar": ("cells",),
     "date_boxes": (),
     "grid": ("rows", "cols"),
     "scale": ("low_label", "high_label", "levels"),
     "rank": ("items",),
-    "inline_blank": (),
-    "subquestion": ("subs",),
+    "inline_blank": ("replies",),
+    "subquestion": ("subs", "replies"),
     "table_form": ("cols", "lines"),
     "attachment": ("items",),
 }
-_LIST_PARAMS = frozenset({"options", "rows", "cols", "items", "subs"})
+_LIST_PARAMS = frozenset({"options", "rows", "cols", "items", "subs", "replies"})
 _INT_PARAMS = frozenset({"cells", "levels", "lines"})
 
 

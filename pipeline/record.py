@@ -171,6 +171,9 @@ LABELS: dict[str, str] = {
     "toc.": "Text",
     "survey.": "Text",
     "sign.": "Text",
+    # "Nơi nhận" bên trái hàng ký: danh sách nơi gửi, chữ chạy như `sign.`
+    # cạnh nó -- nhưng không cùng họ, vì không ai ký vào đó.
+    "recipients": "Text",
     # `Page-Footer` dành cho thứ THẬT SỰ ở chân trang -- số trang. Dòng ghi
     # chú cuối tờ ("Công ty chỉ trả sau khi đối chiếu chữ ký...") là một
     # câu của chứng từ, tình cờ in ở dưới; xét theo nghĩa thì nó là chữ
@@ -451,6 +454,8 @@ DOCSYNTH_LABEL_FOR_KIND: dict[str, str] = {
     "toc.": "Text",
     "survey.": "Form",
     "sign.": "Text",
+    # "Nơi nhận" bên trái hàng ký -- xem `LABELS`.
+    "recipients": "Text",
     # `Page-Footer` dành cho thứ THẬT SỰ ở chân trang -- số trang. Dòng ghi
     # chú cuối tờ ("Công ty chỉ trả sau khi đối chiếu chữ ký...") là một
     # câu của chứng từ, tình cờ in ở dưới; xét theo nghĩa thì nó là chữ
