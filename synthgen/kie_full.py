@@ -41,7 +41,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from pipeline.kie import FURNITURE, describe as say, slug  # noqa: E402
-from synthgen.phrasing import unique_says  # noqa: E402
+from synthgen.phrasing import excerpt, unique_says  # noqa: E402
 from synthgen.design import COLUMNS  # noqa: E402
 
 # `kind` của một cột KHÔNG phải cứ `menu.` + tên cột: cột `discount` in ra
@@ -763,12 +763,28 @@ def table_pairs(record: dict, markup: str) -> list[dict]:
     # được: ô "Camera quan sát ngoài trời" ở dòng đầu bảng mà câu tả ghi
     # "dòng 2". Xếp hạng các dòng của chính bảng ấy thì hai đường ra cùng một
     # con số, và đó cũng là con số mắt người đếm.
+    #
+    # DÒNG NHÃN KHÔNG ĐƯỢC ĐẾM. Dòng mở đầu bằng một ô trải nhiều cột -- tiêu
+    # đề nhóm "Vật tư phụ", dòng "Cộng Vật tư phụ", dòng tổng ở `<tfoot>` --
+    # không phải một dòng hàng, và mắt người đếm "dòng 1" là món hàng ĐẦU
+    # TIÊN. Đếm cả nó thì món đầu thành "dòng 2": đo được ngay khi
+    # `markup._row_number` tách số của dòng nhóm khỏi dòng hàng.
+    # Ô bắt đầu ở cột 0 thôi: một ô ghi chú trải hai cột giữa dòng hàng không
+    # làm dòng ấy thành dòng nhãn.
+    labelled = {(p_, c.get("table", 0), c["row"]) for p_, c, e in cells
+                if (c.get("colspan") or 1) > 1 and c["col"] == 0
+                and str(e.get("text") or "").strip()}
     order_of: dict[tuple, int] = {}
-    for key in sorted({(p_, c.get("table", 0), c["row"]) for p_, c, _ in cells}):
+    for key in sorted({(p_, c.get("table", 0), c["row"]) for p_, c, _ in cells}
+                      - labelled):
         same = [k for k in order_of if k[0] == key[0] and k[1] == key[1]]
         order_of[key] = len(same) + 1
 
     seat_of = {e["entity_index"]: s.get("under", "") for e, s in pairs}
+
+    # DÒNG NÀO CÓ SỐ LIỆU ĐI CÙNG nhãn trải cột. Xem nhánh `colspan` bên dưới.
+    figured = {(p_, c.get("table", 0), c["row"]) for p_, c, e in cells
+               if (c.get("colspan") or 1) == 1 and str(e.get("text") or "").strip()}
 
     out = []
     for page, cell, entity in cells:
@@ -793,12 +809,30 @@ def table_pairs(record: dict, markup: str) -> list[dict]:
             name = BY_KIND.get(str(entity["kind"])) or _slug_col(
                 str(entity["text"])) or "row_label"
             table_id = table_key(page, cell.get('table', 1))
+            # HAI THỨ KHÁC NHAU cùng là ô trải cột, và câu tả phải nói đúng
+            # thứ nào. Bản trước gọi mọi ô như thế là "tên của tổng các con số
+            # bên cạnh" -- đúng cho "Cộng Vật tư phụ" (tiền cộng in cùng dòng),
+            # sai cho "Vật tư phụ" (tiêu đề nhóm, cả dòng không có số nào). Đo
+            # trên `data/verify_inkbox_img`: 60 nhãn trải cột, 36 là tiêu đề
+            # nhóm mà vẫn được tả là dòng tổng.
+            #
+            # Phân biệt bằng CẤU TRÚC, không bằng chữ: dòng có ô thường mang
+            # chữ thì nhãn gọi tên số liệu cùng dòng; dòng chỉ có mình nó thì
+            # nó đặt tên cho các dòng bên dưới. Cùng lẽ `colspan` ở trên --
+            # dò "Cộng"/"TỔNG" trong chữ là đọc tiếng Việt bằng danh sách từ.
+            text = excerpt(entity["text"])
+            if (page, cell.get("table", 0), cell["row"]) in figured:
+                says = f"Nhãn của dòng “{text}”, gọi tên số liệu in cùng dòng."
+            else:
+                says = f"Tiêu đề nhóm “{text}”, đặt tên cho các dòng bên dưới."
             out.append({
                 "field": f"{name}_r{cell['row']}",
                 "column": None, "row": cell["row"],
                 "column_index": column, "column_path": [],
                 "key_text": "", "value_text": str(entity["text"]),
-                "key_bbox": None, "value_bbox": _box(entity["bbox"]),
+                "key_bbox": None, "key_bbox_px": None,
+                "value_bbox": _box(entity["bbox"]),
+                "value_bbox_px": _px_of(entity),
                 "key_entity_index": None,
                 "value_entity_index": entity["entity_index"],
                 "page_number": page, "source": "table",
@@ -811,8 +845,10 @@ def table_pairs(record: dict, markup: str) -> list[dict]:
                 # vào một dòng hàng là khai một món hàng không có thật.
                 "row_kind": "label",
                 "line_item_id": None,
-                "description": "Label that runs across the row, naming what "
-                               "the figures beside it add up to.",
+                "description": says,
+                # Mọi cặp khác đều nói câu tả từ đâu ra; thiếu khoá này thì
+                # 60 cặp trên `data/verify_inkbox_img` ra `null`.
+                "description_source": "row_label",
             })
             continue
         cover = [(h, e) for h, e in heads.get((page, cell.get("table", 0)), [])
@@ -865,13 +901,19 @@ def table_pairs(record: dict, markup: str) -> list[dict]:
             "tier": cell.get("tier", -1),
             "colspan": cell.get("colspan") or 1,
             "rowspan": cell.get("rowspan") or 1,
-            "row_kind": "data",
+            # Ô cùng dòng với một nhãn trải cột -- tiền "Cộng Vật tư phụ",
+            # số của dòng tổng -- không phải trường của một món hàng. Gắn
+            # `line_item_id` cho nó là khai một món hàng không có thật, cùng
+            # lẽ nhãn trải cột ở trên không mang id.
+            "row_kind": "label" if (page, cell.get("table", 0), cell["row"])
+            in labelled else "data",
             # LINE ITEM, theo lối DocILE (arXiv 2302.05658): mọi trường của
             # cùng một dòng hàng hoá mang cùng một id, và việc "gom trường
             # thành dòng hàng" (LIR) chấm được bằng chính id ấy. Ở đây id suy
             # ra từ chỗ ngồi -- không cần ai đặt tên, và hai bảng trên cùng
             # một trang không đụng nhau vì `table_id` đã nằm trong id.
-            "line_item_id": f"{table_key(page, cell.get('table', 1))}#r{cell['row']}",
+            "line_item_id": None if (page, cell.get("table", 0), cell["row"])
+            in labelled else f"{table_key(page, cell.get('table', 1))}#r{cell['row']}",
             "description": _detail_says(str(seat_of.get(entity["entity_index"]) or ""),
                                         str(entity["text"]))
             or _cell_says(
@@ -1287,7 +1329,7 @@ def clause_pairs(ents: list[dict], page: int,
             "key_entity_index": None,
             "value_entity_index": int(entity["entity_index"]),
             "page_number": page,
-            "description": f"{SELF_NAMED[kind]}: “{text[:80]}”." if text
+            "description": f"{SELF_NAMED[kind]}: “{excerpt(text, 80)}”." if text
                            else f"{SELF_NAMED[kind]} in trên tờ giấy.",
             "description_source": "clause",
             "source": "clause",

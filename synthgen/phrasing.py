@@ -1106,6 +1106,28 @@ def variants_of(text: str) -> tuple[str, ...]:
     return pool().get(canon) or ()
 
 
+def excerpt(text: str, limit: int = 60) -> str:
+    """Chữ trên giấy, rút gọn để TRÍCH trong câu tả -- cắt ở ranh giới từ.
+
+    Bản trước cắt cứng `[:60]`, nên câu tả dừng giữa chữ: "…chịu trách nhiệm
+    tổ chứ”". Đo trên `data/verify_inkbox_img`: 547 trên 2 719 câu có trích
+    dẫn bị cắt như thế (20%), 545 ở `unique_says` và 2 ở `clause_pairs`. Một
+    câu tả mang nửa chữ đọc như nhãn hỏng, và mô hình học nó thì học viết nửa
+    chữ.
+
+    Lùi về khoảng trắng gần nhất rồi thêm "…" để người đọc biết câu chưa hết.
+    Một "từ" dài hơn cả giới hạn (mã, đường dẫn) thì đành cắt cứng -- vẫn có
+    "…"."""
+    text = " ".join(str(text or "").split())
+    if len(text) <= limit:
+        return text
+    cut = text[:limit].rstrip()
+    space = cut.rfind(" ")
+    if space > 0 and not text[limit:limit + 1].isspace():
+        cut = cut[:space]
+    return cut.rstrip(" ,;:.-–") + "…"
+
+
 def unique_says(pairs: list[dict]) -> int:
     """Ép MỖI CÂU TẢ CHỈ TẢ MỘT CHỖ, trong phạm vi một trang. Số câu đã sửa.
 
@@ -1137,11 +1159,10 @@ def unique_says(pairs: list[dict]) -> int:
             if len(group) < 2 or not says:
                 continue
             for at, pair in enumerate(group, start=1):
-                text = " ".join(str(pair.get("value_text") or "").split())[:60]
+                text = excerpt(pair.get("value_text"))
                 tail = f" “{text}”" if text else ""
                 if sum(1 for other in group
-                       if " ".join(str(other.get("value_text") or "").split())[:60]
-                       == text) > 1:
+                       if excerpt(other.get("value_text")) == text) > 1:
                     tail += f" (thứ {at})"
                 pair["description"] = (f"{says[:-1]}:{tail}." if says.endswith(".")
                                        else f"{says}:{tail}")
@@ -1293,5 +1314,5 @@ def voice_record(record: dict, pairs: list[dict], *, stem: str = "",
     unique_says(pairs)
 
 
-__all__ = ["ADDED", "POOL", "canonical_of", "describe", "ordinal_of", "pool", "unique_says",
-           "variants_of", "voice_record"]
+__all__ = ["ADDED", "POOL", "canonical_of", "describe", "excerpt", "ordinal_of", "pool",
+           "unique_says", "variants_of", "voice_record"]
