@@ -34,7 +34,42 @@
    "1.352 lượt, 15,8% toàn bộ."
   ],
   "kind": ["meta.value", "invoice.field", "invoice.field.label"],
-  "path": []
+  "path": [],
+
+  "_leaves_about": [
+   "LÁ ỨNG VIÊN cho từng họ hứng chung. Đây là danh sách để NGƯỜI SOÁT chọn",
+   "và để lời dặn model gợi ý -- KHÔNG phải một bảng ánh xạ.",
+   "",
+   "`field_tier.classify()` không bao giờ đổi `meta.value` thành một lá ở",
+   "đây. Đổi hộ là đúng phép 'lấy khoá gần nhất' mà `_about` trên kia đã",
+   "bác: chọn sai lá thì câu tả đi theo lá sai, và nửa sau của lỗi không",
+   "nhìn thấy được. Việc của danh sách này là hai việc đo được: nói cho",
+   "model biết có những lá nào đáng viết, và đếm được bao nhiêu lượt còn",
+   "rơi vào thùng hứng.",
+   "",
+   "Cơ chế nhận lá đã có sẵn từ Task 3 và KHÔNG cần gì thêm: `meta.` là họ",
+   "quen, nên `meta.doc_date` kèm một câu tả rơi thẳng vào tầng `semi_open`",
+   "với `in_batch: True`. Đo ngày 24-09-2026: cả năm lá dưới đây đều đã",
+   "được `classify()` nhận, tầng `semi_open`. Cái thiếu chưa bao giờ là mã,",
+   "mà là model không biết chúng đáng viết.",
+   "",
+   "## Vì sao đúng năm lá này",
+   "",
+   "Đo trên toàn bộ `data/*/declared/*.json` (24-09-2026): `meta.value` 914",
+   "lượt, 270 (29,5%) kèm câu tả -- phần còn lại sinh trước khi schema có",
+   "khoá `describe`. Đọc 270 câu ấy thì chúng gom về đúng năm nghĩa: số",
+   "hiệu văn bản, ngày lập, nơi lập, hiệu lực từ, hiệu lực đến.",
+   "",
+   "Trong MỘT tờ `llm_authorisation_letter_0000` (`data/pilot17`),",
+   "`meta.value` mang cả năm nghĩa cùng lúc: `document.number`,",
+   "`document.date`, `document.location`, `auth.valid_from`,",
+   "`auth.valid_to`. Năm khái niệm, một cái tên -- một mô hình học trên đó",
+   "học rằng `meta.value` không có nghĩa gì."
+  ],
+  "leaves": {
+   "meta.": ["meta.doc_number", "meta.doc_date", "meta.doc_location",
+             "meta.valid_from", "meta.valid_to"]
+  }
  },
 
  "doc_groups": {

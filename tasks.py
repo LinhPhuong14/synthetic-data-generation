@@ -679,6 +679,12 @@ def main() -> int:
     parser.add_argument("--pages", default=None, metavar="LO-HI",
                         help="số TỜ mỗi chứng từ nhắm tới (synth, synth-plan); "
                              "mặc định 2-10")
+    # Không mặc định: thiếu cờ nghĩa là "đọc cấu hình", không phải "dùng
+    # `page`". Một mặc định ở đây là chỗ thứ hai quyết đường sinh, và hai chỗ
+    # quyết một thứ là cách cấu hình lặng lẽ không còn tác dụng.
+    parser.add_argument("--path", default=None, choices=("rule", "page", "template"),
+                        help="đè `_blocks.yaml::llm_path.path` cho một lượt "
+                             "(llm-gen)")
     args = parser.parse_args()
 
     if not args.task:

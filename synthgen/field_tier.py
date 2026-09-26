@@ -125,19 +125,28 @@ class Decision:
     tier: str
     family: str
     describe: str | None
-    source: str          # "registry" | "proposed" | ""
+    source: str          # "registry" | "proposed" | "registry+proposed" | ""
     status: str          # "" | "candidate" | "dropped" | "rejected"
     in_batch: bool
     doc_group: str
     reason: str
+    instance: str | None = None
+    leaves: tuple[str, ...] = ()
 
     def as_dict(self) -> dict:
         """Hình phẳng để ghi vào `declared/`, `staging/` và báo cáo."""
         return {"name": self.name, "key": self.key, "space": self.space,
                 "tier": self.tier, "family": self.family,
                 "describe": self.describe, "describe_source": self.source,
+                "instance": self.instance, "description": self.description,
+                "leaves": list(self.leaves),
                 "status": self.status, "in_batch": self.in_batch,
                 "doc_group": self.doc_group, "reason": self.reason}
+
+    @property
+    def description(self) -> str:
+        """HAI LỚP đã ghép -- đúng chuỗi đi ra bộ huấn luyện. Xem `compose()`."""
+        return compose(self.describe, self.instance)
 
 
 @dataclass(frozen=True)
@@ -247,6 +256,72 @@ def usable_description(text: str) -> tuple[bool, str]:
         if pat.search(said):
             return False, f"câu tả khớp mẫu chung chung `{pat.pattern}`"
     return True, ""
+
+
+def usable_instance(text: str) -> tuple[bool, str]:
+    """Câu tả RIÊNG LẦN NÀY có dùng được không. Cổng NHẸ hơn `usable_description`.
+
+    Hai cổng vì hai việc khác nhau, không vì quên thống nhất.
+    `usable_description` chấm câu sẽ ĐỨNG MỘT MÌNH làm nghĩa của một khoá mới
+    ở tầng `semi_open`: nó phải tự nói hết, nên có ngưỡng `min_useful_chars`.
+    Câu ở đây đứng CẠNH câu của sổ, nó chỉ phải nói thêm phần mà câu kia
+    không nói -- "MST bên uỷ quyền" là 16 ký tự và nói đúng cái cần nói.
+
+    Đo trên `data/pilot17` (20 trường, tệp `llm_authorisation_letter_0000`):
+    13 câu tả model viết, 5 câu dưới ngưỡng 20 ký tự (`Địa điểm ký` 11,
+    `MST bên ủy quyền` 16, `Phạm vi ủy quyền` 16, `Tên bên ủy quyền` 16,
+    `Ngày hết hiệu lực` 17). Áp ngưỡng của tầng `semi_open` vào đây là vứt
+    5/13 câu -- đúng những câu phân biệt hai `store.tax_code` với nhau.
+
+    Hai phép còn lại giữ nguyên, vì chúng chấm thứ khác: rỗng thì không có
+    lớp nào để ghép, và một câu khớp mẫu `generic:` là câu fallback -- ghép
+    nó vào chỉ làm câu của sổ dài ra mà không thêm một chữ phân biệt nào."""
+    said = " ".join(str(text or "").split())
+    if not said:
+        return False, "không có câu tả riêng"
+    pats, _floor = _describe_gate()
+    for pat in pats:
+        if pat.search(said):
+            return False, f"câu tả riêng khớp mẫu chung chung `{pat.pattern}`"
+    return True, ""
+
+
+def candidate_leaves(key: str) -> tuple[str, ...]:
+    """Lá đáng viết THAY cho một khoá hứng chung. `()` khi khoá không hứng chung.
+
+    Đọc `generic.leaves` của `rulebase/field_tiers.json`, tra theo HỌ của
+    khoá. Trả danh sách để người soát chọn và để lời dặn model gợi ý -- KHÔNG
+    để `classify()` chọn hộ: xem `_leaves_about` trong file ấy về vì sao đổi
+    hộ là đúng phép "khoá gần nhất" mà module này từ chối làm."""
+    got = policy().get("generic") or {}
+    if key not in set(got.get(KIND) or ()) | set(got.get(PATH) or ()):
+        return ()
+    return tuple((got.get("leaves") or {}).get(family_of(key)) or ())
+
+
+def compose(canonical: str | None, instance: str | None) -> str:
+    """Ghép hai lớp thành ĐÚNG MỘT chuỗi -- thứ đi ra bộ huấn luyện.
+
+    Lớp (i) là câu của sổ: cùng một khoá thì cùng một câu, ở mọi tờ. Nó là
+    thứ gom nhóm và chấm QA đọc, nên nó phải ỔN ĐỊNH.
+    Lớp (ii) là câu viết cho LẦN XUẤT HIỆN NÀY. Nó là thứ DUY NHẤT phân biệt
+    được hai trường mang cùng một khoá đóng trên cùng một tờ.
+
+    Vì sao phải ghép chứ không chọn một: đo trên 785 tệp `data/*/declared`,
+    11.847 lượt trường -- `authorisation_letter/store.tax_code` có 20 lượt và
+    ĐÚNG 1 câu tả (bên uỷ quyền và bên được uỷ quyền không phân biệt được),
+    `authorisation_letter/meta.value` có 55 lượt và cũng đúng 1 câu. Bỏ lớp
+    (i) thì mất chỗ dựa gom nhóm; bỏ lớp (ii) thì đúng hai con số trên.
+
+    Lớp (ii) trùng lớp (i) thì KHÔNG ghép hai lần: ở tầng `semi_open` câu của
+    model chính là câu của khoá, và một chuỗi lặp chính nó không thêm gì."""
+    head = " ".join(str(canonical or "").split())
+    tail = " ".join(str(instance or "").split())
+    if not tail or tail == head:
+        return head
+    if not head:
+        return tail
+    return f"{head} \u2014 {tail}"
 
 
 @lru_cache(maxsize=1)
@@ -398,10 +473,23 @@ def classify(name: str, *, space: str = KIND, describe: str = "",
              doc_type: str = "", doc_title: str = "") -> Decision:
     """Xếp MỘT cái tên vào một tầng. Không bao giờ trả về một cái tên khác.
 
-    `describe` là câu tả model đề xuất kèm trong cùng câu trả lời. Nó chỉ có
-    tác dụng ở tầng `semi_open`: khoá đóng lấy câu tả từ sổ (lời model khai
-    không ghi đè sổ), khoá `staging` không lấy câu tả nào cả -- `None`, chứ
-    không phải một câu tả mượn của khoá gần nhất."""
+    `describe` là câu tả model đề xuất kèm trong cùng câu trả lời, và nó đi
+    vào HAI chỗ khác nhau tuỳ tầng:
+
+      `closed`     `describe` = câu của SỔ (không đổi, lời model không ghi đè),
+                   `instance` = chính câu model viết. Ghép ở `.description`.
+      `semi_open`  câu model viết LÀ nghĩa của khoá mới, nên nó ở `describe`;
+                   `instance` để `None` -- `compose()` không lặp một câu.
+      `staging`    không câu nào cả. `None`, chứ không phải một câu tả mượn
+                   của khoá gần nhất.
+
+    Bản trước VỨT `describe` của model ở tầng `closed` ("lời model khai không
+    ghi đè sổ"). Luật ấy đúng phần nó nói -- sổ vẫn không bị ghi đè -- nhưng
+    nó cũng vứt luôn thứ duy nhất phân biệt được hai lần xuất hiện của cùng
+    một khoá đóng trên MỘT tờ. Đo trên `data/pilot17`, tệp
+    `llm_authorisation_letter_0000`: `store.tax_code` khai hai lần, một lần
+    cho bên uỷ quyền một lần cho bên được uỷ quyền, và cả hai ra cùng một câu
+    của sổ. Giữ cả hai lớp thì sổ vẫn là sổ mà hai trường vẫn khác nhau."""
     if space not in SPACES:
         raise ValueError(f"không gian tên lạ: {space!r}; chỉ có {SPACES}")
     raw = str(name or "").strip()
@@ -409,11 +497,13 @@ def classify(name: str, *, space: str = KIND, describe: str = "",
     group = doc_group(doc_type, doc_title)
     strict = effective_group(group) != OPEN_DOMAIN
 
-    def made(tier, *, describe_text, source, reason, status="", in_batch=False):
+    def made(tier, *, describe_text, source, reason, status="", in_batch=False,
+             instance_text=None):
         return Decision(name=raw, key=key, space=space, tier=tier,
                         family=family_of(key), describe=describe_text,
                         source=source, status=status, in_batch=in_batch,
-                        doc_group=group, reason=reason)
+                        doc_group=group, reason=reason,
+                        instance=instance_text, leaves=candidate_leaves(key))
 
     if not key:
         return made(REJECT, describe_text=None, source="", status=REJECTED,
@@ -422,9 +512,26 @@ def classify(name: str, *, space: str = KIND, describe: str = "",
     reg = registry()
     if key in (reg.closed.get(space) or {}):
         said = reg.describe(key, space) or ""
-        return made(CLOSED, describe_text=said or None,
-                    source="registry", in_batch=True,
-                    reason=("khoá có trong sổ" if said else
+        # LỚP (ii) CHO CẢ KHOÁ ĐÓNG. Cổng là `usable_instance`, không phải
+        # `usable_description`: câu này đứng cạnh câu của sổ, không thay nó.
+        fine, _why = usable_instance(describe)
+        mine = " ".join(describe.split()) if fine else None
+        # THÙNG HỨNG KÈM CÂU TẢ LÀ MỘT CA ĐÁNG TÁCH, và nói ra được.
+        #
+        # `meta.value` vẫn là khoá đóng và vẫn vào bộ chính -- hạ nó xuống
+        # `staging` là vứt 914 lượt đã đo được trên `data/*/declared` vì một
+        # cái tên, trong khi mực và hộp đều đúng. Thứ đổi là bản ghi giờ NÓI
+        # RA rằng đây là chỗ nên tách, và kèm danh sách lá để người soát
+        # chọn. `classify()` không chọn hộ: xem `candidate_leaves`.
+        leaves = candidate_leaves(key)
+        return made(CLOSED, describe_text=said or None, instance_text=mine,
+                    source=("registry+proposed" if mine else "registry"),
+                    in_batch=True,
+                    reason=(f"khoá hứng chung kèm câu tả riêng -- nên tách "
+                            f"thành một trong: {', '.join(leaves)}"
+                            if mine and leaves else
+                            "khoá có trong sổ, kèm câu tả riêng" if mine else
+                            "khoá có trong sổ" if said else
                             "khoá có trong sổ nhưng sổ chưa có câu tả"))
 
     if not _grammar_ok(key, space):
@@ -524,18 +631,70 @@ def worst(*decisions: Decision) -> Decision:
     return max(got, key=lambda d: order.get(d.tier, 3))
 
 
-def mark_pairs(pairs, *, doc_type: str = "", doc_title: str = "") -> dict:
+def instances(data) -> dict[str, str]:
+    """`{path đã gom chỉ số: câu tả riêng}` rút từ `data` model khai.
+
+    Khoá là `normalise(path)`, nên `line_items[3].name` và `line_items[7].name`
+    cùng về một khoá -- đúng ý: mọi dòng của một cột nghĩa như nhau, và một
+    bảng bốn mươi dòng không cần bốn mươi câu tả. Ô đầu tiên khai câu nào thì
+    cả cột mang câu ấy (`setdefault`).
+
+    `data` hình cũ (cây lồng, mọi `declared/*.json` trước 23-09-2026) không
+    mang `describe` ở đâu cả, nên hàm trả bản rỗng và `compose()` chỉ còn một
+    lớp. Đó là lùi ĐÚNG: bộ cũ thật sự không có lớp thứ hai, và bịa ra một
+    lớp cho nó là dựng dữ liệu không ai đo được."""
+    out: dict[str, str] = {}
+    if not isinstance(data, list):
+        return out
+    for item in data:
+        if not isinstance(item, dict):
+            continue
+        path = normalise(str(item.get("path") or ""))
+        said = " ".join(str(item.get("describe") or "").split())
+        if not path or not said:
+            continue
+        fine, _why = usable_instance(said)
+        if fine:
+            out.setdefault(path, said)
+    return out
+
+
+def mark_pairs(pairs, *, doc_type: str = "", doc_title: str = "",
+               data=None) -> dict:
     """Gắn tầng lên từng cặp KIE, SỬA TẠI CHỖ. Trả bản đếm.
 
-    Mỗi cặp nhận ba khoá mới: `tier`, `status`, `in_batch`. Không khoá nào cũ
-    bị đụng -- `description` của một cặp `staging` giữ nguyên chữ nó đang có,
-    vì xoá đi thì người soát không còn gì để đọc mà quyết. Thứ đổi là ai được
-    TIN nó: `synthgen/export.py::document` bỏ qua cặp `in_batch: False`, nên
-    câu tả ấy không vào bộ huấn luyện dù còn nằm trong bản ghi.
+    Mỗi cặp nhận ba khoá tầng (`tier`, `status`, `in_batch`) và ba khoá mô tả
+    (`description_canonical`, `description_instance`, và `description` đã
+    ghép). Không khoá nào khác bị đụng -- một cặp `staging` giữ nguyên chữ nó
+    đang có, vì xoá đi thì người soát không còn gì để đọc mà quyết. Thứ đổi là
+    ai được TIN nó: `synthgen/export.py::document` bỏ qua cặp
+    `in_batch: False`, nên câu tả ấy không vào bộ huấn luyện dù còn nằm trong
+    bản ghi.
 
-    Cặp không có `path` (`source: "implied"`, `label`) chỉ xét `role`. Cặp có
-    cả hai lấy vế nghiêm hơn -- xem `worst()`."""
+    ## Ba khoá mô tả, và vì sao ba chứ không một
+
+    `description_canonical`  câu của SỔ theo `kind`. Cùng khoá thì cùng câu, ở
+                             mọi tờ. Gom nhóm và chấm QA đọc cái này, nên nó
+                             phải đứng yên -- kể cả khi `phrasing` đổi giọng
+                             câu xuất ra.
+    `description_instance`   câu model viết cạnh `data-path` của CHÍNH ô này.
+                             Thứ duy nhất phân biệt hai trường cùng `kind`
+                             trên một tờ.
+    `description`            hai lớp đã ghép. Đây là chuỗi đi ra bộ huấn luyện.
+
+    Lớp (i) của chuỗi ghép lấy `description` SẴN CÓ của cặp, không lấy thẳng
+    câu của sổ: câu sẵn có đã đi qua `pipeline/kie.py::describe` (bốn nguồn)
+    rồi `synthgen/phrasing.py::voice_record` (mỗi tài liệu một giọng, thứ đã
+    kéo đa dạng câu tả của `data/thu1k` lên từ 2,0%). Thay nó bằng câu sổ là
+    dựng lại đúng cái vừa bỏ. `description_canonical` ghi riêng cho ai cần
+    bản đứng yên.
+
+    Cặp không có `path` (`source: "implied"`, `label`) chỉ xét `role`, và
+    không có lớp (ii) -- không path thì không nối được về câu nào, và đoán là
+    đúng thứ file này từ chối làm. Cặp có cả hai lấy vế nghiêm hơn --
+    xem `worst()`."""
     counts: dict[str, int] = {}
+    said_by_path = instances(data)
     for pair in (pairs or []):
         if not isinstance(pair, dict):
             continue
@@ -549,6 +708,14 @@ def mark_pairs(pairs, *, doc_type: str = "", doc_title: str = "") -> dict:
         pair["tier"] = pick.tier
         pair["status"] = pick.status
         pair["in_batch"] = pick.in_batch
+
+        canonical = registry().describe(
+            normalise(str(pair.get("role") or "")), KIND) or ""
+        mine = said_by_path.get(normalise(path)) if path else None
+        pair["description_canonical"] = canonical
+        pair["description_instance"] = mine
+        pair["description"] = compose(str(pair.get("description") or ""), mine)
+
         counts[pick.tier] = counts.get(pick.tier, 0) + 1
     total = sum(counts.values())
     return {"total": total, "counts": counts,
@@ -589,6 +756,8 @@ __all__ = ["CANDIDATE", "CLOSED", "CLOSED_BY_LAW", "DROPPED", "Decision",
            "KIND", "OPEN_DOMAIN", "PATH", "REJECT", "REJECTED", "Registry",
            "SEMI_OPEN", "SPACES", "STAGING", "TIERS", "UNREVIEWED",
            "classify", "classify_data", "classify_plan", "closed_enum",
-           "doc_group", "effective_group", "family_of", "mark_pairs",
-           "normalise", "policy", "registry", "staging_rows", "tally",
-           "usable_description", "worst"]
+           "candidate_leaves", "compose", "doc_group", "effective_group",
+           "family_of",
+           "instances", "mark_pairs", "normalise", "policy", "registry",
+           "staging_rows",
+           "tally", "usable_description", "usable_instance", "worst"]

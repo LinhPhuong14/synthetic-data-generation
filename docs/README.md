@@ -29,6 +29,7 @@ $ git diff --name-only f67e7d5..HEAD | grep -v '\.md$'
 | 3 | [`duong-ong.md`](duong-ong.md) | **Một tờ giấy đi qua hệ thống ra sao, và ai sở hữu toạ độ?** | 591 |
 | 4 | [`ke-hoach.md`](ke-hoach.md) | **Làm gì, theo thứ tự nào?** Mười việc, mỗi việc mô tả đủ để nhận và làm | 619 |
 | 5 | [`kiem-soat-llm.md`](kiem-soat-llm.md) | **Kiểm soát LLM sinh dữ liệu — những gì đã ĐO được.** Vì sao một tờ tốn 200s, ba nguyên nhân hỏng, và cái nào chữa được bằng máy | 197 |
+| 6 | [`duong-sinh-phoi.md`](duong-sinh-phoi.md) | **Đường sinh thứ ba: model viết PHÔI, mã điền giá trị.** Chi phí ba đường cho cùng 10 000 ảnh, và đa dạng bố cục đo bằng cùng một thước | 401 |
 
 **Thứ tự đọc: (0) → (4)** — vì sao → làm gì. Ba tài liệu ở
 giữa là thiết kế, đọc khi cần cãi lại một quyết định.

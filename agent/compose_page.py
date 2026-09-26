@@ -63,10 +63,9 @@ import concurrent.futures as cf
 import datetime as _dt
 import json
 import os
+import queue
 import random
 import re
-import queue
-import pathlib
 import sys
 import threading
 import time
@@ -87,11 +86,16 @@ from agent.fingerprint import geometry_fingerprint
 from pipeline import failures
 from synthgen import design as D
 from synthgen import field_tier as FT
-from synthgen.llm_page import (REGIONS, _rooted, acceptable_kind,
-                               declared_paths, kinds,
-                               printed_kinds, problems)
 from synthgen.adorn import hands, seals
-from synthgen.llm_page import orphan_share
+from synthgen.llm_page import (
+    REGIONS,
+    acceptable_kind,
+    declared_paths,
+    kinds,
+    orphan_share,
+    printed_kinds,
+    problems,
+)
 from synthgen.repair import repair, rows_out
 
 PROMPT = "page"
@@ -218,7 +222,7 @@ def _coined_pattern() -> str:
     vế `_COINED` từ đúng một chỗ -- chép nó lần thứ hai là mời hai nhánh lệch
     nhau, đúng lỗi "một luật, nhiều người dựng" mà `acceptable_kind()` sinh ra
     để dọn."""
-    from synthgen.llm_page import _COINED                       # noqa: PLC0415
+    from synthgen.llm_page import _COINED  # noqa: PLC0415
 
     return _COINED.pattern.lstrip("^").rstrip("$")
 
@@ -260,6 +264,36 @@ def _close(node):
 # Phẳng KHÔNG mất gì: `data-path` in trên giấy vốn đã là một chuỗi phẳng
 # (`issuer.tax_code`, `line_items[0].name`), và `data_path_mismatches` so đúng
 # chuỗi ấy. Cây lồng phải đi từng đoạn mới tra được cùng một thứ.
+def _catchall_advice() -> str:
+    """Lời khuyên về khoá HỨNG CHUNG, dựng từ `rulebase/field_tiers.json`.
+
+    Viết cứng danh sách lá vào đây là dựng người thứ hai cho một luật: ai
+    thêm một lá vào chính sách sẽ sửa một chỗ và quên chỗ này, rồi tuần sau
+    không hiểu vì sao model không bao giờ viết lá mới ấy. Đọc thẳng từ
+    `field_tier.candidate_leaves` thì lá mới có mặt trong lời dặn ngay.
+
+    Vì sao cần lời dặn này: cơ chế nhận lá đã chạy từ Task 3 -- `meta.doc_date`
+    kèm một câu tả rơi thẳng vào `semi_open`, `in_batch: True`, không cần một
+    dòng mã nào thêm. Nhưng đo trên toàn bộ `data/*/declared` (24-09-2026):
+    `meta.value` 914 lượt và các lá ấy ĐÚNG 0 lượt. Model không viết chúng vì
+    chưa ai nói chúng đáng viết, và `meta.value` thì nằm ngay trong `enum`."""
+    lines = []
+    for key in sorted(set(FT.registry().generic[FT.KIND])):
+        leaves = FT.candidate_leaves(key)
+        if leaves:
+            lines.append(f"`{key}` -> " + ", ".join(f"`{x}`" for x in leaves))
+    if not lines:
+        return ""
+    return ("\n**Catch-all keys are a last resort.** These keys are listed, so "
+            "they are accepted, but they name nothing: one authorisation "
+            "letter was measured carrying `meta.value` five times for five "
+            "different things (document number, document date, signing place, "
+            "validity start, validity end). When you know which one it is, "
+            "coin the leaf instead -- it is route (2) above, it needs only "
+            "your one sentence, and it is NOT rejected:\n"
+            + "\n".join(lines))
+
+
 DATA_ITEMS = {
     "type": "array",
     "description": "Every value printed on the sheet, keyed by the exact "
@@ -287,8 +321,41 @@ DATA_ITEMS = {
             },
             "value": {"type": "string",
                       "description": "Exactly the text the HTML prints."},
+            # CÂU TẢ ĐI CẠNH `path`, KHÔNG CẠNH `kind`.
+            #
+            # `field_plan[].describe` đã có từ Task 3, nhưng nó không nối
+            # được về ô mực nào. Đo trên `data/pilot17` (42 tờ, 966 trường),
+            # bốn cách nối `field_plan` với cặp KIE:
+            #
+            #     `kind` + bội số hai bên bằng nhau   61,3%  (còn phải đoán thứ tự)
+            #     `label` == `key_text`               12,0%
+            #     `slug(label)` == `field`             5,0%
+            #     `label` == `path`                    4,8%
+            #
+            # `label` hoá ra phần lớn là CHỮ IN trên giấy ("Mã số thuế"),
+            # không phải tên trường. Nối theo bội số rồi khớp theo thứ tự là
+            # đúng một nửa cho cặp bên uỷ quyền / bên được uỷ quyền -- đúng
+            # lỗi kép mà `synthgen/field_tier.py` từ chối phép "khoá gần
+            # nhất" để tránh.
+            #
+            # `path` thì nối 1-1 theo cấu tạo: nó LÀ `data-path` trên span,
+            # và `pipeline/record.py` đọc hộp từ chính span ấy. Hai
+            # `store.tax_code` của một giấy uỷ quyền mang hai path khác nhau
+            # (`issuer.tax_code`, `auth.seller_tax`), nên câu tả đi cạnh path
+            # là câu tả đi cạnh đúng ô mực, không qua một phép đoán nào.
+            "describe": {
+                "type": "string",
+                "description": (
+                    "One short sentence saying what THIS value is, in this "
+                    "document. It sits beside the registry's own sentence "
+                    "for the field's kind, so do not restate that: say what "
+                    "distinguishes this occurrence -- whose value, which "
+                    "party, which date. Two fields on one page can share a "
+                    "kind, and this sentence is the only thing that tells "
+                    "them apart. Do not copy the printed caption."),
+            },
         },
-        "required": ["path", "value"],
+        "required": ["path", "value", "describe"],
         "additionalProperties": False,
     },
 }
@@ -409,20 +476,33 @@ def schema() -> dict:
                                 # nó KHÔNG mượn câu tả của khoá gần nhất, vì
                                 # khoá sai cộng câu tả tra theo khoá sai là
                                 # một lỗi kép mà bản ghi không tự kêu lên
-                                # được. Để rỗng khi `kind` đã có trong sổ:
-                                # câu tả của khoá đóng lấy từ sổ, lời model
-                                # khai không ghi đè.
+                                # được.
+                                #
+                                # KHOÁ ĐÓNG CŨNG PHẢI CÓ CÂU TẢ. Bản trước
+                                # dặn "để rỗng khi `kind` đã có trong sổ", và
+                                # luật ấy đúng phần nó nói -- sổ không bị ghi
+                                # đè -- nhưng nó bỏ trống đúng thứ phân biệt
+                                # hai lần xuất hiện của một khoá trên MỘT tờ.
+                                # Đo trên 785 tệp `data/*/declared`:
+                                # `authorisation_letter/store.tax_code` 20
+                                # lượt / 1 câu tả, `meta.value` 55 lượt / 1
+                                # câu. Câu của sổ vẫn là câu của sổ; câu ở
+                                # đây ghép vào sau nó (`field_tier.compose`).
                                 "describe": {
                                     "type": "string",
-                                    "description": "Leave empty when `kind` is "
-                                                   "one of the listed field "
-                                                   "keys. When you coin a new "
-                                                   "name, say in one English "
-                                                   "sentence what the value IS "
-                                                   "-- not what the caption "
-                                                   "says. A coined name with no "
-                                                   "sentence is kept out of the "
-                                                   "training set.",
+                                    "description": "Never empty. When you coin "
+                                                   "a new name, this sentence "
+                                                   "IS its meaning. When `kind` "
+                                                   "is a listed key, say which "
+                                                   "occurrence THIS one is -- "
+                                                   "whose value, which party, "
+                                                   "which date -- because two "
+                                                   "fields sharing a listed key "
+                                                   "on one page are told apart "
+                                                   "by nothing else. Do not "
+                                                   "restate the registry "
+                                                   "sentence and do not copy "
+                                                   "the printed caption.",
                                 },
                             },
                             "required": ["label", "kind", "describe"],
@@ -725,8 +805,22 @@ def describe_plan(plan: DP.DocumentPlan) -> str:
         lines.append("- table: KHÔNG -- đừng vẽ bảng nào trên trang này")
     if "signature_count" in a:
         n = a["signature_count"]
+        # NÓI LUÔN CÁCH KHAI, không chỉ SỐ LƯỢNG.
+        #
+        # Cổng (`plan_conformance`) hỏi `"sign." in html` -- một phép tìm
+        # chuỗi. Câu cũ chỉ nói "đúng N người ký" và không nói khai bằng gì,
+        # nên model dựng khối chữ ký bằng tên class của chính nó. Đo trên
+        # `data/pilot17`: 3 tờ trượt vì "yêu cầu N chữ ký nhưng HTML không có
+        # `data-kind` nào bắt đầu bằng `sign.`", và mở HTML ra thì khối chữ ký
+        # có đủ mực -- `llm_invoice_detailed_0023` viết `<div class="role">
+        # NGƯỜI MUA HÀNG</div><div class="name">Ths. Trần Thị Mai</div>`,
+        # `llm_form_symmetric_0009` dùng `parties.receive.representative`.
+        # Mực có, nhãn không: đúng luật số ba của `AGENTS.md` bị phá.
         lines.append(f"- signatures: đúng {n} người ký"
-                     + (" (không chữ ký nào)" if n == 0 else ""))
+                     + (" (không chữ ký nào)" if n == 0 else
+                        " -- mỗi người phải mang `data-kind` họ `sign.` "
+                        "(`sign.name`, `sign.title`, `sign.date`, "
+                        "`sign.place`); tên class tự đặt KHÔNG tính"))
     if "signature_layout" in a:
         lines.append(f"- signature layout: {a['signature_layout']}")
     if plan.hard_negative_profile:
@@ -801,8 +895,11 @@ SAY = {
                "as a `label` -> `kind` pair. Three ways a name is accepted, "
                "in this order:\n"
                "1. **Use a listed key.** If one of the keys below means what "
-               "your field means, use it and leave `describe` empty -- its "
-               "meaning is already on file.\n"
+               "your field means, use it. Its general meaning is on file, but "
+               "`describe` is still required: say which occurrence THIS one "
+               "is. An authorisation letter carries `store.tax_code` twice -- "
+               "authorising party and authorised agent -- and your sentence "
+               "is the only thing that tells them apart.\n"
                "2. **Coin a name inside a listed family.** If no key fits but "
                "the family does (`store.`, `sign.`, `total.`, `menu.`, "
                "`clause.`, `survey.`, `meta.`, `section.`, `toc.`), write "
@@ -813,7 +910,8 @@ SAY = {
                "out of the training set, so prefer (2) when a family fits.\n"
                "Never stretch a listed key to cover something it does not "
                "mean. A coined name with a sentence is worth more than a "
-               "listed key used wrongly, and no choice here rejects the page.",
+               "listed key used wrongly, and no choice here rejects the page."
+               + _catchall_advice(),
         "regions": "Permitted `data-region`",
         "step3": "## Step three: write the sheet",
         "one_sheet": "This document is **one sheet**.",
@@ -825,6 +923,14 @@ SAY = {
         # mỗi tờ, đứng cạnh "8 000 mỗi tờ". Model đọc hai con số cãi nhau thì
         # nghe con số nhỏ, và viết đúng một tờ. Đo trên `data/23-09-llm-e`:
         # 8 trên 12 tờ trượt vì "xin N tờ, dàn ra 1 tờ".
+        # HAI CON SỐ, HAI ĐỘ CHÍNH XÁC KHÁC NHAU -- và câu cũ gộp chúng.
+        #
+        # Số tờ CẮT RA có dung sai: `SHEET_SHORTFALL_RATIO` cho tới 0,6 lần.
+        # Số mục `sheet_plan` thì KHÔNG: `sheet_plan_problems()` loại thẳng
+        # khi `len(sheet_plan) < n`. Câu cũ mở đầu bằng "runs to about **{n}
+        # A4 sheets**" rồi mới nhắc `sheet_plan` ở cuối, nên chữ "about" phủ
+        # lên cả hai, và model khai một `sheet_plan` "xấp xỉ". Đo trên
+        # `data/pilot17`: 3 tờ trượt vì đúng chuyện ấy -- khai 2/3, 3/8, 1/3.
         "n_sheets": "This document runs to about **{n} A4 sheets**: write "
                     "ONE `<div class=\"sheet\">` holding enough content for "
                     "that many -- the machine cuts it to A4 height. Target "
@@ -832,9 +938,12 @@ SAY = {
                     "so about **{chars} characters in total** -- a "
                     "sheet that gets cut to fewer pages than asked is "
                     "treated as a FAILURE, not a shorter valid document. "
-                    "State a `sheet_plan` that commits to writing all {n} "
-                    "sheets, not a subset. Do not open a new `.sheet`, and "
-                    "do not number the pages yourself.",
+                    "Your `sheet_plan` must list **exactly {n} entries**, "
+                    "one per sheet: that count is checked exactly, and a "
+                    "plan with fewer entries is rejected before the page is "
+                    "even drawn. \"About\" applies to how much you write, "
+                    "never to how many entries you plan. Do not open a new "
+                    "`.sheet`, and do not number the pages yourself.",
         # ĐẾM, KHÔNG MÔ TẢ.
         #
         # Câu cũ -- "This one HAS an item table, {lo}-{hi} rows." -- model đọc
@@ -1299,8 +1408,24 @@ def plan_conformance_problems(plan: DP.DocumentPlan, html: str) -> list[str]:
     return found
 
 
-def budget(sheets: int) -> int:
-    """Trần token đầu ra cho một tài liệu `sheets` tờ.
+# Bao nhiêu token đầu ra cho MỘT ký tự chữ hiển thị.
+#
+# Không phải một ký tự HTML -- một ký tự CHỮ, thứ `llm_density` đang đếm. Hai
+# đại lượng chênh nhau gần bảy lần, và nhầm chúng là cách chắc chắn nhất để
+# đặt sai trần. Đo trên `data/pilot17`, 42 lời gọi trả lời được:
+#
+#   ký tự HTML / ký tự chữ : trung vị 6,7   (mỗi run là một `<span
+#                                            data-kind=… data-path=…>`)
+#   token ra   / ký tự HTML: trung vị 0,49
+#   token ra   / ký tự chữ : trung vị 3,37  (min 0,99 · max 9,71)
+#
+# Markup nở ra gần bảy lần vì chính cái làm nên giá trị của kho này: mỗi run
+# chữ mang nhãn của nó ngay trong thẻ. Đó là chi phí bắt buộc, không phải mỡ.
+TOKENS_PER_VISIBLE_CHAR = 3.37
+
+
+def budget(sheets: int, level: str = "medium") -> int:
+    """Trần token đầu ra cho một tài liệu `sheets` tờ ở mức dày `level`.
 
     Trần CỐ ĐỊNH 9 000 không khớp với chính lời dặn của mình: prompt cho mỗi tờ
     8 000 ký tự, và đo được 2,05 ký tự mỗi token, nên một tờ tốn chừng 3 900
@@ -1308,21 +1433,52 @@ def budget(sheets: int) -> int:
     nhất trả về "reply was not JSON" là đúng hai tài liệu 4 tờ và 6 tờ, cụt
     giữa chừng vì chạm trần sau 168 giây.
 
-    2 600 token cho `plan` và `rows`, cộng 4 200 mỗi tờ. Trần trên 30 000 để
-    một lời gọi lạc lối vẫn hỏng nhanh thay vì ăn hết cửa sổ ngữ cảnh."""
-    # Trần trên 60 000, không 40 000, và 5 200/tờ, không 4 200. Đo trên
-    # pilot16 (Phase 8): KHÔNG một tờ nào trong lô chạm trần cũ -- tờ tốn
-    # nhiều token nhất (`form_checklist`, xin 6 tờ) dùng 14 173/27 800, chưa
-    # tới nửa trần -- nên "xin N tờ mà cắt ra M<N tờ" không phải do CHẠM
-    # TRẦN, mà do model tự viết ngắn hơn được phép. Trần vẫn nới thêm ở đây
-    # để không bao giờ là nguyên nhân, cả hiện tại lẫn khi lời dặn (xem
-    # `n_sheets` ở SAY) bắt đầu đẩy model viết dài hơn thật. Cửa sổ ngữ cảnh
-    # máy chủ 262 144 nên còn rất rộng; trần chỉ để một lời gọi lạc lối hỏng
-    # nhanh thay vì ăn hết cửa sổ.
-    return min(60_000, 2_600 + max(1, sheets) * 5_200)
+    ## Vì sao trần tính TỪ mục tiêu ký tự, không còn là một hằng số riêng
+
+    Bản trước là `2 600 + sheets * 5 200`, một con số ĐỘC LẬP với số ký tự lời
+    nhờ đang xin. Hai con số độc lập nói về cùng một thứ là cái bẫy `AGENTS.md`
+    gọi là "một luật, hai người dựng": khi `llm_density` được đo lại và mục
+    tiêu ký tự tăng 2,7 lần, trần token không biết gì cả.
+
+    Tính thử trước khi chạy, và nó chặn đúng một lượt sinh vô ích: mục tiêu
+    mới (medium 3 300 ký tự/tờ) cần 11 115 token cho MỘT tờ, trong khi trần cũ
+    cho một tờ là 7 800 -- và cả tám mức số tờ đều thiếu, 8 tờ cần 88 923 so
+    với trần 44 200. Tức toàn bộ lô sẽ cụt JSON: 23 tờ trượt vì thiếu tờ được
+    đổi thành 60 tờ trượt vì cụt. Nay trần đọc CÙNG `llm_density` mà
+    `ask_for()` đọc, nên hai con số không thể lệch nhau nữa."""
+    profile = D.llm_density(level) or {}
+    per_sheet = max(int(profile.get("chars") or 3300), 1)
+    need = max(1, sheets) * per_sheet * TOKENS_PER_VISIBLE_CHAR
+    # 2 600 token cho `plan` và `rows` -- phần không phải chữ trên giấy.
+    #
+    # Trần trên 150 000, không 60 000: mục tiêu mới cho 8 tờ `very_dense` cần
+    # 8 x 3 800 x 3,37 = 102 448. Cửa sổ ngữ cảnh máy chủ là 262 144 và prompt
+    # đo được ~26 500 token, nên 150 000 vẫn còn dư chỗ. Trần chỉ để một lời
+    # gọi LẠC LỐI hỏng nhanh thay vì ăn hết cửa sổ -- nó không được là thứ
+    # chặn một tài liệu viết đúng độ dài đã xin.
+    return int(min(150_000, 2_600 + need))
 
 
-def patience(sheets: int, floor: float) -> float:
+# Hạn chờ TỐI ĐA cho MỘT lần thử, dù trần token lớn tới đâu.
+#
+# Vì sao phải có trần cứng ở đây: `budget()` giờ tính từ mục tiêu ký tự, và
+# `budget(8, "very_dense")` = 105 048 token, chia 15 tok/s ra **7 003 giây một
+# lần thử**. `Client._post` thử lại `retries + 1` = 3 lần, nên một tờ giữ chỗ
+# hơn năm giờ TRƯỚC KHI bỏ cuộc.
+#
+# Đo được, và đo bằng một lượt chạy mất trắng: `data/pilot18` 24-09-2026, máy
+# chủ vLLM tắt giữa lô, và tờ thứ 20 treo **51 025,9 giây (14,2 giờ)** rồi mới
+# báo `URLError`. 19 tờ đầu đã xong, 41 tờ còn lại thành rác. Một hạn chờ rộng
+# không cứu được tờ nào khi máy chủ đã chết -- nó chỉ đổi "hỏng nhanh, biết
+# ngay" thành "treo qua đêm, sáng ra mới biết".
+#
+# 3 600 giây là 1,5 lần lời gọi CHẬM NHẤT từng đo được (pilot17 1 942s,
+# pilot18 2 344s), nên nó không cắt ngang một tờ đang viết thật, mà chặn được
+# một máy chủ không trả lời ở ba giờ thay vì mười bốn.
+PATIENCE_CEILING = 3600.0
+
+
+def patience(sheets: int, floor: float, level: str = "medium") -> float:
     """Hạn chờ cho một tài liệu `sheets` tờ, tính từ trần token.
 
     Trần co giãn thì hạn chờ phải co giãn theo, nếu không ta chỉ đổi kiểu hỏng:
@@ -1330,8 +1486,10 @@ def patience(sheets: int, floor: float) -> float:
     tok/s -- tốc độ đo được lúc máy chủ bận -- là 975 giây, vượt hạn 600.
 
     Lấy 15 tok/s làm đáy: chậm hơn mọi lượt đã đo (pilot7 24, pilot8 52), nên
-    hạn rộng mà vẫn hữu hạn. Không bao giờ ngắn hơn `floor` người dùng đặt."""
-    return max(floor, budget(sheets) / 15.0)
+    hạn rộng mà vẫn hữu hạn. Không bao giờ ngắn hơn `floor` người dùng đặt, và
+    không bao giờ dài hơn `PATIENCE_CEILING` -- xem ghi chú ở đó."""
+    want = min(budget(sheets, level) / 15.0, PATIENCE_CEILING)
+    return max(floor, want)
 
 
 def thinking(got: dict, brief: str) -> str:
@@ -1455,7 +1613,11 @@ def one(client, index: int, made: list[str], seed: int,
         answer, usage = client.decide_with_usage(
             system_prompt(),
             brief, schema(),
-            max_tokens=budget(sheets), timeout=patience(sheets, client.timeout))
+            # CÙNG mức dày mà `ask_for()` vừa dùng để xin số ký tự -- nếu hai
+            # chỗ đọc hai mức khác nhau thì trần lại lệch khỏi mục tiêu, đúng
+            # cái `budget()` vừa được sửa để không thể xảy ra nữa.
+            max_tokens=budget(sheets, density),
+            timeout=patience(sheets, client.timeout, density))
     except LLMError as error:
         spent = round(time.time() - started, 1)
         text = str(error)
@@ -1880,7 +2042,7 @@ class Artist(threading.Thread):
         self.join()
 
     def run(self) -> None:                                  # noqa: D102
-        from synthgen import draw_llm                       # noqa: PLC0415
+        from synthgen import draw_llm  # noqa: PLC0415
 
         try:
             drawer_cm = draw_llm.Drawer(self.out)
@@ -2429,7 +2591,7 @@ def run(want: int, out: Path, *, concurrency: int, seed: int,
                   f"requirements.txt\n"
                   f"  rồi vẽ lại: .venv/bin/python -m synthgen.draw_llm {out}")
         elif artist.rows:
-            from synthgen import draw_llm                    # noqa: PLC0415
+            from synthgen import draw_llm  # noqa: PLC0415
 
             print(f"[trang] {len(artist.rows)} tờ đã vẽ; gộp json và KIE...")
             draw_llm.finish(out, artist.rows)

@@ -123,14 +123,24 @@ def _palette() -> dict[str, tuple[int, int, int]]:
     và đã lệch: `S=200, V=220` ở đó so với `S=205, V=225` ở đây, nên hai tấm
     ảnh cùng nói về một lớp lại ra hai màu. Một luật mà hai chỗ dựng thì sớm
     muộn là hai luật."""
-    from pipeline.record import DOCSYNTH_LABELS               # noqa: PLC0415
+    from pipeline.record import DOCSYNTH_LABELS  # noqa: PLC0415
 
+    return _palette_for(DOCSYNTH_LABELS,
+                        [PAPER, INK, OTHER,
+                         KEY_COLOUR, VALUE_COLOUR, PLAIN_COLOUR, LINK_COLOUR])
+
+
+def _palette_for(names, avoid) -> dict[str, tuple[int, int, int]]:
+    """Lõi dùng chung của `_palette()` -- một màu cho MỖI tên trong `names`,
+    xa nhất có thể với nhau và với mọi màu trong `avoid`. Tách ra để
+    `FIELD_TYPE_COLOURS` (bảy giá trị `field_type`) dùng ĐÚNG một thuật toán
+    với `CLASS_COLOURS` (mười chín `layout_class`) thay vì hai bảng màu chọn
+    theo hai luật khác nhau mà tình cờ trông giống nhau."""
     grid = _candidates()
     lab = _lab(grid)
-    taken = _lab([PAPER, INK, OTHER,
-                  KEY_COLOUR, VALUE_COLOUR, PLAIN_COLOUR, LINK_COLOUR])
+    taken = _lab(list(avoid))
     out: dict[str, tuple[int, int, int]] = {}
-    for name in sorted(DOCSYNTH_LABELS):
+    for name in sorted(names):
         far = np.linalg.norm(lab[:, None, :] - taken[None, :, :], axis=2).min(axis=1)
         pick = int(np.argmax(far))
         out[name] = tuple(int(c) for c in grid[pick])
@@ -139,6 +149,23 @@ def _palette() -> dict[str, tuple[int, int, int]]:
 
 
 CLASS_COLOURS: dict[str, tuple[int, int, int]] = _palette()
+
+# Bảy giá trị `field_type` có thể gặp trong `fields[]`/`tables[]` của
+# `synthgen/export_v3.py` -- sáu cái đầu từ `pipeline/record.py::ENTITY_FIELD_TYPES`,
+# `presence` chỉ tổng hợp ở tầng xuất nên không nằm trong bảng ấy. `text` ĐƯỢC
+# tính màu nhưng `kie()` không tô nó -- xem docstring hàm đó -- để trang
+# không có ô tích/dãy số/chữ ký nào vẫn ra đúng tấm ảnh của bản trước.
+#
+# Mồi bằng CẢ `CLASS_COLOURS` lẫn bốn màu vai KIE: một `field_type` trùng màu
+# một `layout_class` thì một khung màu ấy trên `visualize_kie/` không nói
+# được nó đang chỉ lớp nào trong hai bảng.
+FIELD_TYPE_NAMES = frozenset({"text", "boolean_choice", "multi_choice",
+                              "digit_sequence", "data_table",
+                              "categorical_matrix", "presence"})
+FIELD_TYPE_COLOURS: dict[str, tuple[int, int, int]] = _palette_for(
+    FIELD_TYPE_NAMES,
+    [PAPER, INK, OTHER, KEY_COLOUR, VALUE_COLOUR, PLAIN_COLOUR, LINK_COLOUR]
+    + list(CLASS_COLOURS.values()))
 
 
 def _ink_on(colour: tuple[int, int, int]) -> tuple[int, int, int]:
@@ -325,7 +352,8 @@ def words(image: np.ndarray, boxes: list[dict]) -> np.ndarray:
     return out
 
 
-def kie(image: np.ndarray, pairs: list[dict], page: int = 1) -> np.ndarray:
+def kie(image: np.ndarray, pairs: list[dict], page: int = 1,
+       field_types: dict[int, str] | None = None) -> np.ndarray:
     """Từng cặp KHOÁ → GIÁ TRỊ, và đường nối giữa hai hộp của nó.
 
     `word_boxes` tô màu theo vai trò nhưng không nói hộp nào ĐI VỚI hộp nào.
@@ -335,8 +363,22 @@ def kie(image: np.ndarray, pairs: list[dict], page: int = 1) -> np.ndarray:
     Nhãn viết bằng tên trường (`dia_chi`, `ma_so_thue`): `kie.slug()` đã bỏ
     dấu sẵn, nên `cv2.putText` in được -- còn chữ tiếng Việt trên giấy thì
     đã nằm ngay trong hộp rồi, không cần in lại.
+
+    `field_types` -- tuỳ chọn, `{value_entity_index: field_type}` (đúng hình
+    `synthgen/export_v3.py` tự dựng từ `entity_annotations[].field_type`).
+    Bỏ trống thì mọi nhãn tô màu THEO VAI (cam/lam) như bản trước, không đổi
+    gì -- vá cho một trang chưa đi qua field_type vẫn ra đúng tấm ảnh cũ.
+    Có thì nhãn của field_type KHÁC `text` đổi màu nền theo
+    `FIELD_TYPE_COLOURS` và in thêm tên field_type, để `visualize_kie/` trả
+    lời được câu "ô này là loại gì" chứ không chỉ "ô này là khoá hay giá
+    trị" -- `text` CỐ Ý không đổi màu, vì nó là phần lớn mọi trang và tô
+    riêng nó chỉ làm loãng màu của những ô thật sự khác biệt.
     """
     out = image.copy()
+    # Nhóm nào đã được gọi tên field_type rồi -- một ma trận hai mươi ô chỉ
+    # cần nói "categorical_matrix" MỘT LẦN, không phải hai mươi lần chồng
+    # lên nhau tới mức không đọc được chữ nào trong hai mươi cái nhãn ấy.
+    tagged_groups: set = set()
     for pair in pairs:
         if int(pair.get("page_number", page) or page) != page:
             continue
@@ -364,12 +406,30 @@ def kie(image: np.ndarray, pairs: list[dict], page: int = 1) -> np.ndarray:
         anchor, anchor_colour = ((key, KEY_COLOUR) if key else
                                  (value, VALUE_COLOUR))
         if anchor:
+            label = str(pair.get("field", "?"))
+            # Một ô tích/ký tự BÊN TRONG một nhóm bảng hỏi (`source="survey"`)
+            # không tự đứng thành trường -- `synthgen/export_v3.py` gộp cả
+            # nhóm vào MỘT `field`/`table`, và field_type của nó là field_type
+            # của CÂU HỎI (`pair["group"]`), không phải field_type suy từ
+            # riêng `kind` của chính ô ấy. Đo được: đọc theo
+            # `value_entity_index` cho một ma trận tích ra "boolean_choice"
+            # trên từng ô -- đúng cho MỘT ô tích đứng riêng
+            # (`sheets/form.py::_checklist`), sai cho một ô NẰM TRONG ma trận.
+            group = pair.get("group") if pair.get("source") == "survey" else None
+            ftype = (field_types or {}).get(
+                group if group is not None else pair.get("value_entity_index"))
+            if ftype and ftype != "text" and ftype in FIELD_TYPE_COLOURS:
+                anchor_colour = FIELD_TYPE_COLOURS[ftype]
+                if group is None or group not in tagged_groups:
+                    label = f"{label} [{ftype}]"
+                    if group is not None:
+                        tagged_groups.add(group)
             # Cỡ chữ theo CHIỀU CAO CỦA HỘP, không theo bề ngang tấm ảnh: một
             # trường cao mười lăm pixel mà đội cái nhãn cao ba mươi thì nhãn
             # che ba dòng chữ quanh nó. Đo trên một phiếu chi: nhãn cỡ cố
             # định phủ kín cả khối letterhead.
             tall = anchor[3] - anchor[1]
-            _tag(out, str(pair.get("field", "?")), (anchor[0], anchor[1]),
+            _tag(out, label, (anchor[0], anchor[1]),
                  anchor_colour, scale=max(0.26, min(0.42, tall / 44.0)))
     return out
 

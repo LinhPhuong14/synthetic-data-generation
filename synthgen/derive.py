@@ -30,16 +30,16 @@ from collections import defaultdict
 from pathlib import Path
 
 import cv2
-import numpy as np
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from pipeline import record as R  # noqa: E402
 from synthgen import overlay as O  # noqa: E402
 from synthgen.kie_full import complete  # noqa: E402
-from synthgen.kie_schema import build as build_schema, merge as merge_schema  # noqa: E402
-from pipeline import record as R  # noqa: E402
+from synthgen.kie_schema import build as build_schema  # noqa: E402
+from synthgen.kie_schema import merge as merge_schema
 from synthgen.phrasing import ordinal_of, voice_record  # noqa: E402
 from synthgen.plain import sheet_html  # noqa: E402
 
@@ -242,7 +242,12 @@ def _one(job: dict) -> dict | None:
     image = cv2.imread(str(image_path))
     if image is None:
         return None
-    drawing = O.kie(image, pairs, page)
+    # `{value_entity_index: field_type}` -- cùng lệ tra cứu `kinds` đã dùng
+    # khắp `synthgen/export.py`, không đọc lại từ `kie.pairs` (field_type
+    # không nằm ở đó, xem `pipeline/record.py::field_type_for`'s docstring).
+    field_types = {e.get("entity_index"): str(e.get("field_type") or "")
+                  for e in record.get("entity_annotations") or []}
+    drawing = O.kie(image, pairs, page, field_types)
     ok, buffer = cv2.imencode(".jpg", drawing, [cv2.IMWRITE_JPEG_QUALITY, 88])
     if ok:
         target = root / "visualize_kie" / kind / f"{stem}.jpg"

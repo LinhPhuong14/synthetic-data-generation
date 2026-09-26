@@ -17,6 +17,7 @@ tên trường thứ hai là `dia_chi_2`, nên mỗi khoá được viết kèm 
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -303,19 +304,86 @@ def table() -> dict[str, str]:
     return _shared()
 
 
+SCHEMA = 2
+
+_SUFFIX = re.compile(r'_(?:' + '|'.join(x.lstrip('_') for x in SUFFIXES if x)
+                     + r')$')
+
+
+def base_key(field: str) -> str:
+    """Tên trường đã bỏ hậu tố lần xuất hiện: `dia_chi_3` -> `dia_chi`.
+
+    Hậu tố ấy do `pipeline/kie.py::pair_fields` đặt khi một nhãn in nhiều
+    lần trên một trang. Nó nói LẦN THỨ MẤY, không nói NGHĨA KHÁC -- cả sáu
+    biến thể tra về cùng một câu. Giữ sáu bản sao của một câu là 83,3% số
+    dòng của bảng cũ (đo trên `data/review100d`: 52.550 trên 63.060)."""
+    return _SUFFIX.sub('', str(field or ''))
+
+
+def canonical() -> dict:
+    """Bảng HAI TẦNG, hình `SCHEMA = 2` -- thứ `write()` ghi ra.
+
+        {"_schema": 2,
+         "_shared":  {khoá gốc: câu},          # câu dùng ở >= 2 phôi
+         "layouts":  {phôi: {khoá gốc: câu}}}  # chỉ khoá KHÁC `_shared`
+
+    Hình cũ (`tables()`) là `{phôi: {khoá: câu}}` với khoá mang đủ sáu hậu tố
+    và toàn bộ nền dùng chung chép lại vào từng phôi. Đo trên
+    `data/review100d/kie_descriptions.json`:
+
+        hiện tại            63.060 dòng, 171 phôi
+        bỏ hậu tố `_2.._6`  10.510 dòng   -83,3%
+        tách `_shared`         780 dòng   -98,8%   (247 chung + 533 riêng)
+
+    Không mất một câu nào: 247 câu của `_shared` đúng bằng số câu KHÁC NHAU
+    đo được trong cả bảng cũ. Thứ mất đi là 62.280 bản sao.
+
+    Vì sao đáng: một bảng 63.060 dòng cho 247 câu là một bảng mà người đọc
+    không thể soát, và một câu sai trong đó phải sửa ở tới sáu trăm chỗ. Nó
+    cũng là đúng hình dạng mà `AGENTS.md` mục 5 cấm -- một bảng phẳng mà loại
+    giấy thứ 172 sẽ thiếu khỏi, im lặng."""
+    grown = tables()
+    base: dict[str, dict] = {}
+    for archetype, fields in grown.items():
+        mine: dict[str, object] = {}
+        for field, text in fields.items():
+            mine.setdefault(base_key(field), text)
+        base[archetype] = mine
+
+    seen: dict[tuple[str, str], int] = {}
+    for fields in base.values():
+        for field, text in fields.items():
+            seen[(field, json.dumps(text, ensure_ascii=False,
+                                    sort_keys=True))] = \
+                seen.get((field, json.dumps(text, ensure_ascii=False,
+                                            sort_keys=True)), 0) + 1
+    shared = {field: json.loads(blob)
+              for (field, blob), times in seen.items() if times >= 2}
+
+    layouts = {}
+    for archetype, fields in base.items():
+        mine = {f: t for f, t in fields.items()
+                if not (f in shared and shared[f] == t)}
+        if mine:
+            layouts[archetype] = mine
+    return {"_schema": SCHEMA, "_shared": shared, "layouts": layouts}
+
+
 def write(path: Path) -> int:
-    """Viết file `VLM_KIE_DESCRIPTIONS`, MỘT BẢNG MỖI PHÔI. Trả về số trường
-    của bảng lớn nhất.
+    """Viết file `VLM_KIE_DESCRIPTIONS`, hình `SCHEMA = 2`. Trả về số dòng.
 
     Giá trị của một trường là một câu (`str`), hoặc -- ở ca một nhãn bị hai
     vai cùng đòi -- một dict `{description, guidelines}`. `pipeline/kie.py::
-    describe` đọc được cả hai dạng."""
-    payload = tables()
+    describe` đọc được cả hai dạng, và đọc được CẢ HAI HÌNH bảng: file cũ
+    trên đĩa vẫn dùng được, không phải sinh lại 40 GB dữ liệu để đọc một câu
+    tả. Xem `canonical()` về vì sao đổi hình."""
+    payload = canonical()
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=1) + '\n',
                     encoding='utf-8')
-    return max((len(one) for one in payload.values()), default=0)
+    return (len(payload["_shared"])
+            + sum(len(one) for one in payload["layouts"].values()))
 
 
 if __name__ == '__main__':
     target = Path(sys.argv[1] if len(sys.argv) > 1 else 'kie_descriptions.json')
-    print(f'{write(target)} trường -> {target}')
+    print(f'{write(target)} dòng -> {target}')

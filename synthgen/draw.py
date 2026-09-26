@@ -54,10 +54,10 @@ from pipeline import record as R  # noqa: E402
 from synthgen import content as C  # noqa: E402
 from synthgen import design as D  # noqa: E402
 from synthgen import markup as M  # noqa: E402
-from synthgen.kie_full import complete as kie_complete  # noqa: E402
-from synthgen.phrasing import voice_record  # noqa: E402
 from synthgen import overlay as O  # noqa: E402
 from synthgen import paginate as P  # noqa: E402
+from synthgen.kie_full import complete as kie_complete  # noqa: E402
+from synthgen.phrasing import voice_record  # noqa: E402
 
 # Bù trừ giữa hai dòng ngẫu nhiên. Dáng rút từ `Random(seed)`, nội dung rút
 # từ `Random(seed ^ CONTENT_SALT)`, nên chữ ký dáng là hàm THUẦN của seed và
@@ -713,9 +713,13 @@ def write(drawn: Drawn, out: Path, *, indent: int | None = None) -> list[dict]:
         # chúng lệch nhau, và `derive.py` chạy sau sẽ ghi đè bằng đúng ảnh ấy.
         kie_pairs = [pair for pair in (record.get("kie") or {}).get("pairs") or []
                      if int(pair.get("page_number", 1) or 1) == number]
+        # Cùng lệ tra cứu `kinds` của `synthgen/export.py` -- field_type
+        # không nằm trên `kie.pairs`, xem `pipeline/record.py::field_type_for`.
+        field_types = {e.get("entity_index"): str(e.get("field_type") or "")
+                      for e in record.get("entity_annotations") or []}
         drawings = (("layout_boxes", O.layout(page, layout_boxes)),
                     ("word_boxes", O.words(page, word_boxes)),
-                    ("visualize_kie", O.kie(page, kie_pairs, number)))
+                    ("visualize_kie", O.kie(page, kie_pairs, number, field_types)))
         for folder, drawing in drawings:
             ok, buffer = cv2.imencode(".jpg", drawing,
                                       [cv2.IMWRITE_JPEG_QUALITY, 88])

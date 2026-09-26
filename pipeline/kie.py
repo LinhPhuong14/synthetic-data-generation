@@ -104,6 +104,49 @@ def _all_descriptions() -> dict[str, dict[str, str]]:
         return {}
 
 
+_OCCURRENCE = re.compile(r"_([2-6])$")
+
+
+def _base_key(field: str) -> str:
+    """`dia_chi_3` -> `dia_chi`. The suffix says WHICH occurrence, not a
+    different meaning -- see `synthgen/descriptions.py::base_key`."""
+    return _OCCURRENCE.sub("", str(field or ""))
+
+
+def occurrence(field: str) -> int:
+    """Which printing of this caption the field is: 1 for the first.
+
+    `pair_fields` numbers repeats of one caption on one page, so the number
+    is measured off the page, not guessed. It is the only thing separating
+    two fields that share a caption -- the seller's "Mã số thuế" from the
+    buyer's -- and on the rule-based path it is the whole of layer (ii)."""
+    found = _OCCURRENCE.search(str(field or ""))
+    return int(found.group(1)) if found else 1
+
+
+def _table_for(layout: str) -> dict:
+    """One layout's `{field: entry}`, from EITHER ledger shape.
+
+    Shape 1 (before 24-09-2026) is `{layout: {field: entry}}` with every
+    field carried through six suffixes and the shared base copied into all
+    171 layouts -- 63 060 rows for 247 distinct sentences, measured on
+    `data/review100d`. Shape 2 is `{_schema: 2, _shared, layouts}`, the same
+    247 sentences kept once (780 rows, -98.8%).
+
+    Both are read, and that is not politeness: `data/` holds directories in
+    the tens of gigabytes whose ledger was written in shape 1, and making a
+    sentence unreadable there would mean regenerating them to read one
+    string. Shape is detected by `_schema`, not by guessing at keys."""
+    whole = _all_descriptions()
+    if not isinstance(whole, dict):
+        return {}
+    if whole.get("_schema") != 2:
+        return whole.get(layout) or {}
+    shared = whole.get("_shared") or {}
+    mine = (whole.get("layouts") or {}).get(layout) or {}
+    return {**shared, **mine}
+
+
 def _written_entry(field: str, layout: str) -> Any:
     """The raw `VLM_KIE_DESCRIPTIONS` entry for one field, str or dict.
 
@@ -117,10 +160,16 @@ def _written_entry(field: str, layout: str) -> Any:
     guard below and land on the caption fallback, silently -- the value was
     there and unread. Unknown keys are refused instead: a ledger shape
     nobody reads is the failure this repository has been bitten by before.
+
+    The lookup falls back to the base key, so `dia_chi_3` finds `dia_chi`
+    even in a shape-2 ledger that no longer stores the six copies.
     """
     if not layout:
         return None
-    entry = _all_descriptions().get(layout, {}).get(field)
+    table = _table_for(layout)
+    entry = table.get(field)
+    if entry is None:
+        entry = table.get(_base_key(field))
     if entry is None or isinstance(entry, str):
         return entry
     if isinstance(entry, dict):
@@ -238,6 +287,28 @@ def _fallback_description(key_text: str) -> str:
 DESCRIPTION_SOURCES = ("llm", "caption", "kind", "label", "fallback")
 
 
+_ORDINALS = {2: "second", 3: "third", 4: "fourth", 5: "fifth", 6: "sixth"}
+
+
+def _occurrence_note(field: str, caption: str) -> str:
+    """Layer (ii) for the rule-based path: which printing of the caption.
+
+    Empty for the first (and usually only) occurrence -- there is nothing to
+    tell apart, and a sentence saying "the first one" on a page that prints
+    it once is noise that every field would carry.
+
+    This is context MEASURED off the page, not invented: `pair_fields`
+    numbers the repeats it actually found in the DOM, so a `_3` exists only
+    because the caption was printed three times."""
+    nth = occurrence(field)
+    if nth < 2:
+        return ""
+    said = str(caption or "").strip().rstrip(":").strip()
+    where = _ORDINALS.get(nth, f"{nth}th")
+    return (f"The {where} \u201c{said}\u201d printed on this page."
+            if said else f"The {where} occurrence of this field on the page.")
+
+
 def describe(field: str, *, caption: str = "", kind: str = "",
              layout_class: str = "", layout: str = "") -> tuple[str, str]:
     """`(description, source)` for one field. Four sources, best first.
@@ -266,7 +337,25 @@ def describe(field: str, *, caption: str = "", kind: str = "",
     if isinstance(written, dict):
         written = written.get("description")
     if isinstance(written, str) and written.strip():
-        return written.strip(), "llm"
+        # TWO LAYERS, the same two the LLM path composes.
+        #
+        # Layer (i) is the canonical sentence for this key -- one per key,
+        # stable across every sheet, the thing grouping and QA read. Layer
+        # (ii) says which printing of the caption this field is, and on this
+        # path it is the whole of what distinguishes two fields that share a
+        # caption: the seller's "Mã số thuế" from the buyer's.
+        #
+        # Measured on `data/review100d/kie_descriptions.json`: 63 060
+        # key->sentence pairs collapse to 247 distinct sentences, because the
+        # ledger is keyed by (document type, field) and not composed per
+        # document. Layer (ii) is what the ledger cannot hold.
+        #
+        # `compose` is imported rather than rewritten here: the same function
+        # joins the layers on the LLM path, and two copies of one rule is the
+        # failure this repository has measured three times.
+        from synthgen.field_tier import compose  # noqa: PLC0415
+
+        return compose(written.strip(), _occurrence_note(field, caption)), "llm"
     # `rulebase/kie_glossary.py`: bảng nghĩa tiếng Anh viết sẵn, tra theo slug
     # rồi theo `kind`. Nó không phải "bảng chuỗi cho từng loại chứng từ" mà
     # docstring trên cấm -- tầng dưới của nó khoá theo `data-kind`, thứ chính

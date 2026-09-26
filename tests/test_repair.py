@@ -17,6 +17,7 @@ trong lúc thêm phép chữa.
 
 from __future__ import annotations
 
+from synthgen import repair as R
 from synthgen.llm_page import problems
 from synthgen.repair import repair, unnest
 
@@ -147,3 +148,55 @@ def test_the_same_value_repeated_verbatim_is_never_touched():
     assert mended.get("data-path đụng nhau đã bỏ", 0) == 0
     assert fixed.count('data-path="issuer.name"') == 2
     assert not any("giá trị khác nhau" in line for line in problems(fixed))
+
+
+# ------------------------------------------------- nhãn trên thẻ không phải span
+
+def test_a_label_on_a_div_is_moved_into_an_inner_span():
+    """`CELL_RECTS_JS` chọn `.sheet span[data-kind]` -- đúng `span`, không thẻ
+    nào khác. Một `<div data-kind>` in mực ra giấy và KHÔNG có hộp nào: mực
+    có, nhãn không, đúng luật 3 của AGENTS.md bị phá.
+
+    Đo trên lượt phôi đầu tiên (`data/24-09-phoi-v1`, model Qwen3.8-27B-FP8):
+    8 trên 12 phôi trượt đầu lượt là đúng hình này."""
+    html = ('<div class="sig-value" data-kind="sign.name" '
+            'data-path="signers[].name">Nguyễn Văn An</div>')
+    out, moved = R.runify(html)
+    assert moved == 1
+    assert '<span data-kind="sign.name" data-path="signers[].name">' in out
+    assert "Nguyễn Văn An</span></div>" in out
+
+
+def test_runify_keeps_the_outer_tag_and_its_class():
+    """Đổi `<div>` thành `<span>` là đổi `display: block` thành `inline`, và
+    tờ giấy dàn ra khác hẳn. Bọc vào TRONG thì chỗ mực không dời một điểm
+    ảnh."""
+    out, _n = R.runify('<div class="sig-value" data-kind="sign.name">A</div>')
+    assert out.startswith('<div class="sig-value">')
+    assert "<span" in out
+
+
+def test_runify_does_not_touch_a_span():
+    html = '<span data-kind="store.name">CÔNG TY A</span>'
+    assert R.runify(html) == (html, 0)
+
+
+def test_runify_does_not_touch_an_element_with_a_child_tag():
+    """Bọc một thẻ có thẻ con là dựng một run CÓ THẺ LỒNG -- chữa một lỗi
+    bằng cách tạo đúng cái lỗi mà `unnest` và cổng sinh ra để bắt."""
+    html = '<div data-kind="x.y">chữ <b>đậm</b></div>'
+    assert R.runify(html) == (html, 0)
+
+
+def test_runify_does_not_touch_an_element_with_no_label():
+    html = '<div class="row">chữ thường</div>'
+    assert R.runify(html) == (html, 0)
+
+
+def test_repair_reports_runify_separately():
+    """Con số phải đọc được: nếu nó về 0 sau một lần sửa `agent/prompts/
+    template.md` thì lời dặn đã ăn và luật chữa thành thừa."""
+    out, mended = R.repair('<div class="sheet">'
+                           '<div data-kind="sign.name">A</div></div>')
+    assert mended["nhãn chuyển vào span bên trong"] == 1
+    assert '<span data-kind="sign.name">A</span>' in out

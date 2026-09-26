@@ -27,13 +27,13 @@ cái hộp không có. Thứ ấy để cổng gác loại, và để `enum` tro
 
 from __future__ import annotations
 
-from pipeline.tags import kind_by_tag as _kind_by_tag
+import re
+
 from pipeline.tags import OPEN_CLOSE as _OPEN_CLOSE
 from pipeline.tags import VOID_TAGS as _VOID_TAGS
 from pipeline.tags import declared_region as _declared_region
+from pipeline.tags import kind_by_tag as _kind_by_tag
 from pipeline.tags import region_by_tag as _region_by_tag
-
-import re
 
 # `<td>`/`<th>` chưa có `data-cell`. Bắt cả thẻ không thuộc tính (`<td>`) lẫn
 # thẻ có thuộc tính khác (`<td class="lbl">`), nhưng không bắt thẻ đã đúng.
@@ -262,8 +262,8 @@ def zones(html: str) -> tuple[str, int]:
     KHÔNG đoán ngoài bảng: tên lạ không có trong bí danh thì để nguyên, và
     cổng loại tờ ấy. Đúng nguyên tắc đầu file -- chỉ chữa thứ có đúng một
     cách chữa."""
-    from synthgen.design import region_alias                   # noqa: PLC0415
-    from synthgen.llm_page import REGIONS                      # noqa: PLC0415
+    from synthgen.design import region_alias  # noqa: PLC0415
+    from synthgen.llm_page import REGIONS  # noqa: PLC0415
 
     table = dict(region_alias())
     # Nhãn THẬT cũng vào bảng, để phép nắn hoa thường chạy cho chúng.
@@ -597,11 +597,18 @@ def rows_out(html: str, rows) -> tuple[str, int]:
 
 def repair(html: str) -> tuple[str, dict[str, int]]:
     """Chữa hết những gì chữa được. `(html mới, {việc: số lần})`."""
-    from synthgen.llm_page import kinds                        # noqa: PLC0415
+    from synthgen.llm_page import kinds  # noqa: PLC0415
 
     # BỌC TRƯỚC, rồi mới chữa. `tagged` dựng run từ thẻ ngữ nghĩa, và những run
     # ấy phải có mặt trước khi `dress` bóc thẻ trang trí và `vocabulary` ánh xạ
     # tên lạ -- ngược thứ tự thì hai bước sau không thấy chúng.
+    # `runify` TRƯỚC `tagged`: `tagged` bỏ qua thẻ nào đã có `data-kind` bên
+    # trong ("thẻ model đã gắn nhãn thì để nguyên"), và sau `runify` thì đúng
+    # những thẻ ấy CÓ một span nhãn bên trong -- nên hai bước không giẫm nhau.
+    # Ngược thứ tự thì `tagged` thấy một `<div data-kind>` chữ thuần chưa có
+    # span con và bọc thêm một span KHÔNG nhãn vào, rồi `runify` không còn
+    # chữ thuần để chạm.
+    html, n_runify = runify(html)
     html, n_tagged = tagged(html)
     html, n_zoned = zoned(html)
     # NẮN TÊN VÙNG TRƯỚC khi đếm vùng: `zoned` chỉ thêm vùng cho thẻ
@@ -639,6 +646,7 @@ def repair(html: str) -> tuple[str, dict[str, int]]:
     html, n_air = breathe(html)
     html, n_gap = airy(html)
     return html, {"khoảng trắng trả lại giữa hai thẻ dính": n_air,
+                  "nhãn chuyển vào span bên trong": n_runify,
                   "khe tối thiểu giữa hai run": n_gap,"run dựng từ thẻ HTML": n_tagged,
                   "vùng khai từ thẻ HTML": n_zoned,
                   "tên vùng nắn lại": n_zones, "data-cell thêm": n_cells, "span tách khỏi <br>": n_breaks,
@@ -692,7 +700,7 @@ def settle(kind: str, known: frozenset[str]) -> str:
     Thứ tự: tên thật giữ nguyên; tên có gốc thật (`_rooted`, ví dụ
     `sign.name2`) giữ nguyên để cổng tự nhận; tên tự đặt đọc được thì giữ
     nguyên hình đã chuẩn hoá; còn lại về một trong hai."""
-    from synthgen.llm_page import _COINED, _rooted              # noqa: PLC0415
+    from synthgen.llm_page import _COINED, _rooted  # noqa: PLC0415
 
     name = str(kind or "").strip()
     if not name or name in known or _rooted(name, known):
@@ -888,6 +896,67 @@ BY_TAG = _kind_by_tag()
 _BARE = {tag: re.compile(
     rf"<{tag}(?![a-z])((?:[^>\"']|\"[^\"]*\"|'[^']*')*)>((?:(?!<{tag}[\s>])[^<]|<(?!/{tag}>))*?)</{tag}>",
     re.IGNORECASE | re.DOTALL) for tag in BY_TAG}
+
+
+# Thẻ KHÔNG PHẢI `<span>` mang `data-kind`, chỉ chứa chữ (không thẻ con).
+# Bắt cả `data-path` để chuyển nó đi cùng -- hai thuộc tính ấy nói về cùng một
+# run, và để lại một cái trên thẻ ngoài là chia đôi một lời khai.
+_RUNLIKE = re.compile(
+    r"<(div|p|td|th|li|h[1-6]|strong|b|em|i)"
+    r"((?:[^>\"']|\"[^\"]*\"|'[^']*')*\bdata-kind\s*=(?:[^>\"']|\"[^\"]*\"|'[^']*')*)>"
+    r"([^<]*)"
+    r"</\1>", re.IGNORECASE | re.DOTALL)
+
+_ATTR_KIND = re.compile(r"\sdata-kind\s*=\s*(\"[^\"]*\"|'[^']*'|[^\s>]+)", re.IGNORECASE)
+_ATTR_PATH = re.compile(r"\sdata-path\s*=\s*(\"[^\"]*\"|'[^']*'|[^\s>]+)", re.IGNORECASE)
+
+
+def runify(html: str) -> tuple[str, int]:
+    """`<div data-kind>chữ</div>` -> `<div><span data-kind>chữ</span></div>`.
+
+    ## Vì sao cần, và nó KHÔNG phải nới cổng
+
+    `generators/html/page.py::CELL_RECTS_JS` chọn `.sheet span[data-kind]` --
+    đúng `span`, không thẻ nào khác. Một `<div data-kind="sign.name">` in mực
+    ra giấy và **không có hộp nào**: mực có, nhãn không, đúng luật 3 của
+    `AGENTS.md` bị phá. Cổng loại nó là cổng ĐÚNG.
+
+    Nhưng loại cả tờ vì một thứ mười dòng mã chữa được đúng mọi lần là trả giá
+    cao nhất cho lỗi rẻ nhất -- cùng câu `repair()` đã viết ra cho chính nó.
+    Đo trên lượt phôi đầu tiên (`data/24-09-phoi-v1`, 60 phôi, model
+    Qwen3.8-27B-FP8): **8 trên 12 phôi trượt** đầu lượt là đúng hình này, và
+    không hình nào khác chiếm quá 1.
+
+    ## Vì sao BỌC TRONG chứ không ĐỔI thẻ
+
+    Đổi `<div>` thành `<span>` là đổi `display: block` thành `inline`, và tờ
+    giấy dàn ra khác hẳn -- một khối chữ ký đang chiếm một dòng riêng bỗng
+    chảy vào dòng trước. Bọc một `<span>` vào TRONG thì thẻ ngoài giữ nguyên
+    kiểu dáng và lớp CSS của nó, chỗ mực không dời một điểm ảnh, và phép đo có
+    đúng cái nó cần.
+
+    Chỉ chạm thẻ chứa CHỮ THUẦN. Một `<div data-kind>` có thẻ con là một ca
+    khác (`unnest` và cổng "run có thẻ lồng" lo), và bọc nó ở đây là dựng một
+    run có thẻ lồng -- chữa một lỗi bằng cách tạo lỗi kia."""
+    moved = 0
+
+    def fix(m: re.Match) -> str:
+        nonlocal moved
+        tag, attrs, inner = m.group(1), m.group(2), m.group(3)
+        if not inner.strip():
+            return m.group(0)
+        kind = _ATTR_KIND.search(attrs)
+        if not kind:
+            return m.group(0)
+        path = _ATTR_PATH.search(attrs)
+        outer = _ATTR_PATH.sub("", _ATTR_KIND.sub("", attrs))
+        carried = f" data-kind={kind.group(1)}"
+        if path:
+            carried += f" data-path={path.group(1)}"
+        moved += 1
+        return f"<{tag}{outer}><span{carried}>{inner}</span></{tag}>"
+
+    return _RUNLIKE.sub(fix, html), moved
 
 
 def tagged(html: str) -> tuple[str, int]:
