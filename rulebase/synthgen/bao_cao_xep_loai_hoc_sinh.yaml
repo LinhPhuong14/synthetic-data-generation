@@ -1,0 +1,58 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+# loại giấy lấy từ trang model viết: data/pilot13 annual_student_classification_report, pilot9 bao_cao_tuyen_sinh_hoc_ky
+id: bao_cao_xep_loai_hoc_sinh
+profile: admin
+org_kind: state
+national: 0.9
+titles:
+- BÁO CÁO TỔNG KẾT XẾP LOẠI HỌC SINH
+- BÁO CÁO TÌNH HÌNH TUYỂN SINH
+- BÁO CÁO KẾT QUẢ TUYỂN SINH NĂM HỌC
+subtitles:
+- Năm học .... - ....
+- (Học kỳ ....)
+- ''
+fields:
+- unit
+- period
+- position
+field_span:
+- 1
+- 3
+columns:
+- - stt
+  - name
+  - qty
+  - note
+- - stt
+  - ref
+  - name
+  - qty
+  - note
+totals: count
+words: false
+sign_sets:
+- - NGƯỜI LẬP BÁO CÁO
+  - HIỆU TRƯỞNG
+- - PHÓ HIỆU TRƯỞNG
+  - HIỆU TRƯỞNG
+notes:
+- Số liệu tổng hợp từ sổ điểm điện tử tại thời điểm kết thúc học kỳ.
+- Học sinh chuyển trường trong kỳ được tính tại trường mới.
+rows:
+- 5
+- 20
+always:
+- letterhead
+- doctitle
+- table
+- signatures
+optional:
+- meta
+- fields
+- notes
+- sections
+- figure
+- totals
+- footer
+en_ok: false

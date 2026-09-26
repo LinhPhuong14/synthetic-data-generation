@@ -1,0 +1,67 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+# loại giấy lấy từ trang model viết: data/pilot15 warehouse_damage_report
+id: bao_cao_hang_hu_hong
+profile: invoice
+org_kind: company
+national: 0.5
+titles:
+- BÁO CÁO KẾT QUẢ XỬ LÝ HÀNG HOÁ HƯ HỎNG TRONG KHO
+- BIÊN BẢN XÁC NHẬN HÀNG HOÁ HƯ HỎNG
+- BIÊN BẢN HUỶ HÀNG HOÁ KÉM CHẤT LƯỢNG
+subtitles:
+- (Đợt kiểm tra tháng ....)
+- ''
+- ''
+fields:
+- unit
+- rep_a
+- period
+- seller_addr
+field_span:
+- 2
+- 4
+columns:
+- - stt
+  - ref
+  - name
+  - unit
+  - qty
+  - unit_price
+  - amount
+  - note
+- - stt
+  - name
+  - unit
+  - qty
+  - amount
+  - note
+totals: money
+words: true
+sign_sets:
+- - THỦ KHO
+  - KẾ TOÁN
+  - GIÁM ĐỐC
+- - NGƯỜI LẬP BIÊN BẢN
+  - HỘI ĐỒNG XỬ LÝ
+notes:
+- Hàng hư hỏng do ẩm mốc, vỡ bao bì trong quá trình lưu kho.
+- Giá trị tổn thất được hạch toán vào chi phí trong kỳ.
+- Hàng không còn giá trị sử dụng được tiêu huỷ có sự chứng kiến của hội đồng.
+rows:
+- 3
+- 30
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- totals
+- signatures
+optional:
+- meta
+- words
+- notes
+- sections
+- figure
+- footer
+en_ok: false

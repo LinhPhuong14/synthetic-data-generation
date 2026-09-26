@@ -1,0 +1,61 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+# loại giấy lấy từ trang model viết: data/pilot13 monthly_fleet_activity_report
+id: bao_cao_hoat_dong_phuong_tien
+profile: admin
+org_kind: company
+national: 0.3
+titles:
+- BÁO CÁO HOẠT ĐỘNG PHƯƠNG TIỆN VẬN TẢI THEO THÁNG
+- NHẬT TRÌNH XE THÁNG
+- BÁO CÁO HOẠT ĐỘNG PHƯƠNG TIỆN VẬN CHUYỂN HÀNG
+subtitles:
+- (Tháng .... năm ....)
+- 'Biển số xe: ....'
+- ''
+fields:
+- unit
+- position
+- full_name
+- period
+field_span:
+- 2
+- 4
+columns:
+- - stt
+  - date
+  - ref
+  - name
+  - qty
+  - note
+- - stt
+  - date
+  - name
+  - qty
+  - note
+totals: count
+words: false
+sign_sets:
+- - LÁI XE
+  - ĐỘI TRƯỞNG ĐỘI XE
+- - NGƯỜI LẬP
+  - TRƯỞNG PHÒNG ĐIỀU ĐỘ
+  - GIÁM ĐỐC
+notes:
+- Số chuyến tính theo lệnh điều động đã được xác nhận.
+- Phương tiện bảo dưỡng định kỳ theo kế hoạch, không phát sinh sự cố.
+rows:
+- 6
+- 31
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- signatures
+optional:
+- meta
+- notes
+- totals
+- footer
+- figure
+en_ok: false

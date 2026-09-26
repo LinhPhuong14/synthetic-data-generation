@@ -1,0 +1,48 @@
+# ITEMS_CONG_TRINH — cột `name` của bảng cho những tờ giấy nói về THI CÔNG: báo cáo tiến độ, nghiệm thu khối lượng, quyết toán hợp đồng xây dựng.
+#
+# Dựng từ trang do model viết ở data/pilot7, pilot8, pilot9, pilot14, pilot15: đó là những loại giấy synthgen
+# chưa có phôi nào, và bảng của chúng liệt kê thứ mà không kho theo ngành nào
+# chứa -- một báo cáo tiến độ thi công liệt kê hạng mục công trình, không phải hàng hoá. Luật ghép theo TÊN tài liệu ở
+# `rulebase/synthgen/_blocks.yaml::items`, cùng lối các kho `items_*` khác.
+#
+# Định dạng `priced`: tên, giá tối thiểu, giá tối đa (đồng). `amount` = giá x
+# số lượng, nên khoảng giá ở đây là giá của MỘT đơn vị.
+
+Đào đất hố móng bằng máy	45000	120000
+Đắp đất nền đầm chặt K95	60000	150000
+Bê tông lót móng mác 100	900000	1400000
+Bê tông móng mác 250	1300000	1900000
+Cốt thép móng đường kính dưới 18mm	18000000	24000000
+Ván khuôn móng	120000	220000
+Ép cọc bê tông cốt thép 250x250	180000	320000
+Bê tông cột tầng 1 mác 300	1500000	2100000
+Bê tông dầm sàn tầng 2	1450000	2050000
+Xây tường gạch đặc dày 220	1100000	1600000
+Xây tường gạch rỗng dày 110	950000	1400000
+Trát tường trong vữa mác 75	70000	130000
+Trát tường ngoài vữa mác 75	85000	150000
+Láng nền sàn không đánh màu	60000	110000
+Lát gạch ceramic 600x600	180000	320000
+Ốp gạch khu vệ sinh	220000	380000
+Sơn tường trong nhà một lớp lót hai lớp phủ	55000	95000
+Sơn tường ngoài nhà chống thấm	75000	140000
+Chống thấm sàn mái	160000	290000
+Lợp mái tôn sóng vuông dày 0,45mm	190000	310000
+Lắp dựng kèo thép mái	25000000	38000000
+Lắp đặt cửa nhôm kính hệ	1600000	2800000
+Lắp đặt cửa gỗ công nghiệp	2500000	4500000
+Lắp đặt lan can inox cầu thang	900000	1700000
+Lắp đặt ống cấp nước PPR D25	45000	90000
+Lắp đặt ống thoát nước uPVC D110	110000	210000
+Kéo dây điện âm tường 2x2,5mm2	25000	55000
+Lắp đặt tủ điện tổng tầng	6500000	12000000
+Lắp đặt đèn LED âm trần	180000	420000
+Lắp đặt hệ thống báo cháy tự động	45000000	90000000
+Thi công trần thạch cao khung chìm	160000	260000
+Hoàn thiện mặt tiền đá granite	950000	1700000
+Thi công đường nội bộ bê tông nhựa	220000	380000
+Lắp đặt hệ thống thu lôi chống sét	18000000	35000000
+Vệ sinh công nghiệp bàn giao	15000	35000
+Thí nghiệm nén mẫu bê tông	350000	650000
+Lắp dựng giàn giáo bao che	35000	70000
+Trồng cây xanh và thảm cỏ	80000	160000

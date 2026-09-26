@@ -1,0 +1,35 @@
+# ITEMS_TIN_DUNG — cột `name` của bảng cho những tờ giấy nói về TÍN DỤNG NGÂN HÀNG: báo cáo dư nợ, nợ quá hạn, chất lượng tín dụng.
+#
+# Dựng từ trang do model viết ở data/pilot9 (bao_cao_tinh_hinh_no_vay_tin_dung_thang), pilot15: đó là những loại giấy synthgen
+# chưa có phôi nào, và bảng của chúng liệt kê thứ mà không kho theo ngành nào
+# chứa -- dòng của báo cáo tín dụng là chỉ tiêu dư nợ, không phải mặt hàng. Luật ghép theo TÊN tài liệu ở
+# `rulebase/synthgen/_blocks.yaml::items`, cùng lối các kho `items_*` khác.
+#
+# Định dạng `priced`: tên, giá tối thiểu, giá tối đa (đồng). `amount` = giá x
+# số lượng, nên khoảng giá ở đây là giá của MỘT đơn vị.
+
+Tổng dư nợ cho vay	800000000	5000000000
+Dư nợ cho vay ngắn hạn	300000000	2500000000
+Dư nợ cho vay trung hạn	200000000	1800000000
+Dư nợ cho vay dài hạn	150000000	1500000000
+Nợ nhóm 1 - Nợ đủ tiêu chuẩn	500000000	4000000000
+Nợ nhóm 2 - Nợ cần chú ý	20000000	300000000
+Nợ nhóm 3 - Nợ dưới tiêu chuẩn	5000000	120000000
+Nợ nhóm 4 - Nợ nghi ngờ	3000000	90000000
+Nợ nhóm 5 - Nợ có khả năng mất vốn	2000000	80000000
+Dư nợ cho vay hộ kinh doanh	80000000	900000000
+Dư nợ cho vay tiêu dùng có tài sản bảo đảm	60000000	700000000
+Dư nợ cho vay mua nhà ở	100000000	1200000000
+Dư nợ cho vay mua ô tô	40000000	500000000
+Dư nợ thẻ tín dụng	10000000	150000000
+Dư nợ cho vay doanh nghiệp nhỏ và vừa	150000000	2000000000
+Dư nợ cho vay nông nghiệp nông thôn	50000000	800000000
+Nợ quá hạn dưới 90 ngày	5000000	150000000
+Nợ quá hạn từ 90 đến 180 ngày	3000000	100000000
+Nợ quá hạn trên 360 ngày	2000000	60000000
+Dự phòng rủi ro tín dụng đã trích lập	10000000	200000000
+Nợ đã xử lý rủi ro theo dõi ngoại bảng	5000000	150000000
+Thu hồi nợ đã xử lý rủi ro	1000000	50000000
+Giải ngân mới trong kỳ	50000000	900000000
+Thu nợ gốc trong kỳ	40000000	800000000
+Thu lãi cho vay trong kỳ	5000000	120000000

@@ -1,0 +1,30 @@
+# ITEMS_NGAN_SACH — cột `name` của bảng cho những tờ giấy nói về NỘP NGÂN SÁCH NHÀ NƯỚC: chứng từ, giấy nộp tiền vào ngân sách, bảng kê nộp thuế.
+#
+# Dựng từ trang do model viết ở data/pilot14 (budget_payment_voucher): đó là những loại giấy synthgen
+# chưa có phôi nào, và bảng của chúng liệt kê thứ mà không kho theo ngành nào
+# chứa -- mỗi dòng là một khoản thu ngân sách theo nội dung kinh tế. Luật ghép theo TÊN tài liệu ở
+# `rulebase/synthgen/_blocks.yaml::items`, cùng lối các kho `items_*` khác.
+#
+# Định dạng `priced`: tên, giá tối thiểu, giá tối đa (đồng). `amount` = giá x
+# số lượng, nên khoảng giá ở đây là giá của MỘT đơn vị.
+
+Thuế giá trị gia tăng hàng sản xuất, kinh doanh trong nước	1000000	80000000
+Thuế thu nhập doanh nghiệp	2000000	150000000
+Thuế thu nhập cá nhân từ tiền lương, tiền công	500000	40000000
+Thuế thu nhập cá nhân từ chuyển nhượng bất động sản	2000000	90000000
+Lệ phí môn bài	1000000	3000000
+Lệ phí trước bạ nhà, đất	1000000	60000000
+Lệ phí trước bạ ô tô, xe máy	500000	80000000
+Tiền sử dụng đất	10000000	900000000
+Tiền thuê đất nộp hằng năm	2000000	200000000
+Thuế sử dụng đất phi nông nghiệp	100000	5000000
+Phí bảo vệ môi trường đối với nước thải	200000	10000000
+Tiền chậm nộp thuế giá trị gia tăng	50000	5000000
+Tiền phạt vi phạm hành chính lĩnh vực thuế	500000	30000000
+Thuế tài nguyên	1000000	50000000
+Thuế tiêu thụ đặc biệt hàng nhập khẩu	5000000	200000000
+Thuế xuất khẩu	2000000	150000000
+Lệ phí cấp giấy phép xây dựng	75000	150000
+Phí thẩm định hồ sơ cấp giấy chứng nhận	100000	2000000
+Lệ phí đăng ký doanh nghiệp	50000	300000
+Phí sử dụng đường bộ	1500000	12000000

@@ -1,0 +1,64 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+# loại giấy lấy từ trang model viết: data/pilot14 budget_payment_voucher
+id: chung_tu_nop_ngan_sach
+profile: invoice
+org_kind: state
+national: 0.6
+titles:
+- CHỨNG TỪ NỘP TIỀN VÀO NGÂN SÁCH NHÀ NƯỚC
+- GIẤY NỘP TIỀN VÀO NGÂN SÁCH NHÀ NƯỚC
+- BẢNG KÊ NỘP NGÂN SÁCH NHÀ NƯỚC
+subtitles:
+- Mẫu số C1-02/NS
+- Tiền mặt  [ ]    Chuyển khoản  [ ]
+- ''
+fields:
+- buyer_name
+- buyer_tax
+- buyer_addr
+- seller_bank
+- period
+- payment
+field_span:
+- 3
+- 6
+columns:
+- - stt
+  - ref
+  - name
+  - amount
+- - stt
+  - ref
+  - name
+  - amount
+  - note
+totals: money
+words: true
+sign_sets:
+- - NGƯỜI NỘP TIỀN
+  - KẾ TOÁN TRƯỞNG
+  - THỦ TRƯỞNG ĐƠN VỊ
+- - NGƯỜI NỘP TIỀN
+  - KHO BẠC NHÀ NƯỚC
+- - KẾ TOÁN
+  - KẾ TOÁN TRƯỞNG
+notes:
+- Chứng từ lập thành 04 liên; liên 1 lưu tại Kho bạc Nhà nước.
+- Người nộp ghi đúng mã số thuế, chương và tiểu mục của khoản nộp.
+rows:
+- 1
+- 8
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- totals
+- signatures
+optional:
+- meta
+- words
+- notes
+- checks
+- footer
+en_ok: false

@@ -509,13 +509,11 @@ def preview_grid(args) -> None:
     run(command)
 
 
-@task("visualize", "local Gradio app: sinh ảnh, thử con dấu, thử viết tay hybrid")
-def visualize(args) -> None:
-    # The html backend's interpreter: the live-gallery tab drives
-    # `pipeline.run.execute()` in-process, and the handwriting tab imports
-    # `generators/html/handwriting.py` directly -- both need what that venv
-    # already has.
-    run([venv_python(VENVS["html"]), REPO_ROOT / "tools" / "visualize" / "app.py"])
+@task("demo", "trang web demo: sinh một tờ, xem ảnh kèm nhãn phủ lên (http://127.0.0.1:8765)")
+def demo(args) -> None:
+    # Interpreter của renderer html: trang vẽ trong tiến trình, giữ Chromium
+    # ấm giữa các lần bấm -- xem tools/demo/server.py.
+    run([venv_python(VENVS["html"]), REPO_ROOT / "tools" / "demo" / "server.py"])
 
 
 # -------------------------------------------------------------- the rules
@@ -643,6 +641,7 @@ def clean(args) -> None:
         REPO_ROOT / ".ruff_cache",
         REPO_ROOT / ".pytest_cache",
         REPO_ROOT / "data" / "visualize_runs",
+        REPO_ROOT / "data" / "demo",
     ]
     targets += [
         path for path in REPO_ROOT.rglob("__pycache__")

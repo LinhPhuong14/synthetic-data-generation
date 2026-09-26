@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo sinh chứng từ</title>
+<style>
+  :root {
+    --bg: #f4f2ee; --panel: #fff; --ink: #1d1d1f; --muted: #6b6b70; --line: #dedbd4;
+    --accent: #2f5bd3; --accent-ink: #fff; --danger: #b3261e; --key: #2f5bd3; --val: #1a8f4e;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--panel);
+           display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  header h1 { font-size: 17px; margin: 0; }
+  header p { margin: 0; color: var(--muted); }
+  main { display: grid; grid-template-columns: 290px minmax(0, 1fr) 360px; gap: 14px;
+         padding: 14px 20px; align-items: start; }
+  @media (max-width: 1200px) { main { grid-template-columns: 270px minmax(0, 1fr); }
+                               #side { grid-column: 1 / -1; } }
+  @media (max-width: 760px) { main { grid-template-columns: 1fr; padding: 10px; } }
+  main > section { min-width: 0; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+  .card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+             margin: 0 0 10px; }
+  .card + .card { margin-top: 14px; }
+  label.field { display: block; margin-bottom: 9px; }
+  label.field span { display: block; font-size: 12px; color: var(--muted); margin-bottom: 3px; }
+  select, input[type=number] { width: 100%; padding: 6px 8px; border: 1px solid var(--line);
+    border-radius: 6px; background: #fff; font: inherit; }
+  .row { display: flex; gap: 6px; align-items: center; }
+  button { font: inherit; border: 1px solid var(--line); background: #fff; border-radius: 6px;
+           padding: 6px 10px; cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent);
+                   width: 100%; padding: 9px; font-weight: 600; }
+  button:disabled { opacity: .55; cursor: progress; }
+  .check { display: flex; gap: 6px; align-items: center; margin: 6px 0 10px; }
+  #status { margin-top: 10px; font-size: 13px; color: var(--muted); min-height: 1.4em; white-space: pre-wrap; }
+  #status.error { color: var(--danger); }
+  .attrs { font-size: 12px; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; }
+  .attrs dt { color: var(--muted); } .attrs dd { margin: 0; font-family: var(--mono); word-break: break-all; }
+  #history { list-style: none; padding: 0; margin: 0; max-height: 260px; overflow: auto; }
+  #history li { padding: 5px 6px; border-radius: 5px; cursor: pointer; font-size: 12px; }
+  #history li:hover { background: #f1efe9; }
+  #history li.on { background: #e6ecfb; }
+  #history small { color: var(--muted); display: block; font-family: var(--mono); }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-bottom: 10px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; padding: 5px 10px; }
+  .seg button.on { background: var(--ink); color: #fff; }
+  .layers { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; }
+  .layers label { display: inline-flex; gap: 4px; align-items: center; cursor: pointer; }
+  .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  #stage { position: relative; background: #e9e6df; border-radius: 8px; overflow: auto; max-height: 82vh; }
+  #frame { position: relative; margin: 0 auto; }
+  #frame img { display: block; width: 100%; height: auto; user-select: none; }
+  #frame svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #frame svg .box { fill: transparent; stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+  #frame svg .box:hover { fill: rgba(255, 214, 0, .25); }
+  #frame svg .hl { stroke-width: 3; }
+  #empty { padding: 80px 20px; text-align: center; color: var(--muted); }
+  #tip { position: fixed; pointer-events: none; background: rgba(20,20,22,.92); color: #fff;
+         padding: 6px 8px; border-radius: 6px; font-size: 12px; max-width: 360px; z-index: 10; }
+  #tip b { color: #ffd84d; font-weight: 600; }
+  .zoom { display: inline-flex; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
+
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: -4px 0 10px; }
+  .tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none;
+                 padding: 6px 8px; color: var(--muted); }
+  .tabs button.on { color: var(--ink); border-bottom-color: var(--accent); }
+  .pane { max-height: 76vh; overflow: auto; }
+  .pair { padding: 7px 8px; border: 1px solid var(--line); border-radius: 7px; margin-bottom: 6px; cursor: pointer; }
+  .pair:hover, .pair.on { border-color: var(--accent); background: #f5f7fe; }
+  .pair .f { font-family: var(--mono); font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+  .pair .k { color: var(--key); } .pair .v { color: var(--val); font-weight: 600; }
+  .pair .d { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .tag { font-size: 11px; padding: 0 5px; border-radius: 4px; background: #eee; color: #444; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; margin-bottom: 10px; }
+  .stat { border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px; }
+  .stat b { display: block; font-size: 18px; } .stat span { font-size: 11px; color: var(--muted); }
+  pre { font-family: var(--mono); font-size: 12px; white-space: pre-wrap; word-break: break-word; margin: 0; }
+  table.list { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.list td { border-bottom: 1px solid #eee; padding: 4px 4px; vertical-align: top; }
+  table.list tr { cursor: pointer; } table.list tr:hover { background: #f5f7fe; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Demo sinh chứng từ</h1>
+  <p>Đường luật: bốc 8 thuộc tính → Chromium vẽ → hộp đọc từ DOM → làm cũ. Nhãn phủ lên ảnh là đúng bản ghi xuất ra.</p>
+</header>
+
+<main>
+  <!-- cột trái: ghim & sinh -->
+  <section>
+    <div class="card">
+      <h2>Sinh một tờ</h2>
+      <label class="field"><span>Seed (để trống = ngẫu nhiên)</span>
+        <div class="row"><input type="number" id="seed" min="0" placeholder="ngẫu nhiên">
+          <button id="dice" title="seed ngẫu nhiên">🎲</button></div>
+      </label>
+      <div id="pins"></div>
+      <label class="check"><input type="checkbox" id="compare" checked> Vẽ kèm bản sạch (pristine) để so</label>
+      <button class="primary" id="go">Sinh ảnh</button>
+      <div id="status"></div>
+    </div>
+    <div class="card" id="recipeCard" hidden>
+      <h2>Công thức đã bốc</h2>
+      <dl class="attrs" id="recipe"></dl>
+    </div>
+    <div class="card">
+      <h2>Lịch sử <small style="text-transform:none;letter-spacing:0">(data/demo/)</small></h2>
+      <ul id="history"></ul>
+    </div>
+  </section>
+
+  <!-- giữa: ảnh + lớp nhãn -->
+  <section class="card">
+    <div class="toolbar">
+      <div class="seg" id="variantSeg"></div>
+      <div class="seg" id="pageSeg"></div>
+      <div class="layers" id="layers"></div>
+      <span class="zoom">cỡ <input type="range" id="zoom" min="30" max="200" value="100"> <span id="zoomVal">100%</span></span>
+    </div>
+    <div id="stage">
+      <div id="empty">Chọn ghim (hoặc để ngẫu nhiên) rồi bấm <b>Sinh ảnh</b>.<br>Lần đầu chậm hơn vì phải mở Chromium.</div>
+      <div id="frame" hidden><img id="img" alt="ảnh vừa sinh"><svg id="svg" viewBox="0 0 1000 1000" preserveAspectRatio="none"></svg></div>
+    </div>
+  </section>
+
+  <!-- phải: nhãn dạng danh sách -->
+  <section class="card" id="side">
+    <div class="tabs" id="tabs"></div>
+    <div class="pane" id="pane"><p style="color:var(--muted)">Chưa có tờ nào.</p></div>
+  </section>
+</main>
+<div id="tip" hidden></div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// Bốn hạt nhãn cho cùng một chỗ mực (AGENTS.md §4) + cặp KIE.
+const LAYERS = [
+  {key: "layout", name: "Vùng", color: "#e0662f", on: true},
+  {key: "blocks", name: "Dòng", color: "#8a4fd6", on: false},
+  {key: "words",  name: "Từ",   color: "#1f8fb3", on: false},
+  {key: "entities", name: "Trường", color: "#1a8f4e", on: false},
+  {key: "kie",    name: "Cặp KIE", color: "#2f5bd3", on: false},
+];
+const state = {options: null, run: null, variant: 0, page: 1, record: null, cache: {},
+               highlight: null, tab: "kie", runs: []};
+
+// Toạ độ trong bản ghi là phần nghìn; hộp có khi là mảng, có khi là {x1..}.
+function box(b) {
+  if (!b) return null;
+  if (Array.isArray(b)) return b.length === 4 ? b : null;
+  if ("x1" in b) return [b.x1, b.y1, b.x2, b.y2];
+  return null;
+}
+
+// Màu theo lớp vùng: băm tên lớp ra hue, nên lớp mới tự có màu, không cần bảng.
+function hue(name) { let h = 0; for (const c of String(name)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
+const classColor = (name) => `hsl(${hue(name)} 70% 42%)`;
+
+// ------------------------------------------------------------ ghim
+async function loadOptions() {
+  state.options = await (await fetch("/api/options")).json();
+  const pins = $("pins");
+  for (const [attr, opts] of Object.entries(state.options.attributes)) {
+    const lab = document.createElement("label");
+    lab.className = "field";
+    lab.innerHTML = `<span>${esc(attr)}</span><select data-attr="${esc(attr)}"></select>`;
+    pins.appendChild(lab);
+  }
+  $("pins").querySelector('[data-attr="document"]').addEventListener("change", fillSelects);
+  fillSelects();
+}
+
+function fillSelects() {
+  const doc = document.querySelector('[data-attr="document"]')?.value || "";
+  for (const sel of document.querySelectorAll("#pins select")) {
+    const attr = sel.dataset.attr, keep = sel.value;
+    let opts = state.options.attributes[attr];
+    // Bố cục chỉ đưa ra thứ loại giấy đã chọn cho phép (tag luật, server tính).
+    if (attr === "layout" && doc) {
+      const ok = new Set(state.options.layouts_by_document[doc] || []);
+      opts = opts.filter((o) => ok.has(o.id));
+    }
+    sel.innerHTML = `<option value="">— ngẫu nhiên (${opts.length}) —</option>` + opts.map((o) =>
+      `<option value="${esc(o.id)}">${esc(o.id)}${o.title ? " · " + esc(o.title) : ""}${o.enabled ? "" : " (tắt)"}</option>`).join("");
+    if ([...sel.options].some((o) => o.value === keep)) sel.value = keep;
+  }
+}
+
+$("dice").onclick = () => { $("seed").value = Math.floor(Math.random() * 1e6); };
+
+$("go").onclick = async () => {
+  const force = {};
+  for (const sel of document.querySelectorAll("#pins select")) if (sel.value) force[sel.dataset.attr] = sel.value;
+  const body = {seed: $("seed").value, force, compare: $("compare").checked};
+  $("go").disabled = true;
+  setStatus("Đang vẽ…" + (state.runs.length ? "" : " (lần đầu phải mở Chromium)"));
+  const t0 = performance.now();
+  try {
+    const res = await fetch("/api/generate", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+    const data = await res.json();
+    if (!res.ok) { setStatus(data.error + (data.trace ? "\n\n" + data.trace.split("\n").slice(-6).join("\n") : ""), true); return; }
+    setStatus(`Xong: ${data.run} — ${((performance.now() - t0) / 1000).toFixed(1)} s (vẽ ${data.seconds} s)`);
+    await loadHistory();
+    await openRun(data);
+  } catch (e) {
+    setStatus("Không gọi được server: " + e, true);
+  } finally {
+    $("go").disabled = false;
+  }
+};
+
+function setStatus(text, error = false) { $("status").textContent = text; $("status").className = error ? "error" : ""; }
+
+// ------------------------------------------------------------ lịch sử
+async function loadHistory() {
+  state.runs = await (await fetch("/api/runs")).json();
+  $("history").innerHTML = state.runs.map((r, i) => {
+    const a = r.variants[0].attributes;
+    return `<li data-i="${i}" class="${state.run && state.run.run === r.run ? "on" : ""}">${esc(a.document)} · ${esc(a.layout)}
+      <small>${esc(r.run)} · ${esc(a.augmentation)}</small></li>`;
+  }).join("") || `<li style="cursor:default;color:var(--muted)">chưa có</li>`;
+  for (const li of $("history").querySelectorAll("li[data-i]")) li.onclick = () => openRun(state.runs[+li.dataset.i]);
+}
+
+async function openRun(run) {
+  state.run = run; state.variant = 0; state.page = 1; state.highlight = null;
+  for (const li of $("history").querySelectorAll("li")) li.classList.toggle("on", state.runs[+li.dataset.i]?.run === run.run);
+  $("seed").value = run.seed;
+  $("variantSeg").innerHTML = run.variants.map((v, i) =>
+    `<button data-i="${i}">${v.key === "clean" ? "Bản sạch" : "Đã làm cũ"}</button>`).join("");
+  for (const b of $("variantSeg").querySelectorAll("button")) b.onclick = () => { state.variant = +b.dataset.i; showVariant(); };
+  await showVariant();
+}
+
+async function showVariant() {
+  const v = state.run.variants[state.variant];
+  for (const b of $("variantSeg").querySelectorAll("button")) b.classList.toggle("on", +b.dataset.i === state.variant);
+  const url = `/runs/${state.run.run}/${v.record}`;
+  state.record = state.cache[url] || (state.cache[url] = await (await fetch(url)).json());
+  const a = v.attributes;
+  $("recipeCard").hidden = false;
+  $("recipe").innerHTML = `<dt>seed</dt><dd>${esc(state.run.seed)}</dd>` + Object.entries(a).map(([k, val]) =>
+    `<dt>${esc(k)}</dt><dd>${esc(val)}${state.run.force[k] ? " 📌" : ""}</dd>`).join("") +
+    `<dt>tệp</dt><dd><a href="/runs/${state.run.run}/${v.record}" target="_blank">json</a> ·
+      <a href="/runs/${state.run.run}/${v.html}" target="_blank">html</a> ·
+      <a href="/runs/${state.run.run}/${v.images[0]}" target="_blank">ảnh</a></dd>`;
+  const pages = v.images.length;
+  $("pageSeg").innerHTML = pages > 1 ? v.images.map((_, i) => `<button data-p="${i + 1}">trang ${i + 1}</button>`).join("") : "";
+  for (const b of $("pageSeg").querySelectorAll("button")) b.onclick = () => { state.page = +b.dataset.p; showPage(); };
+  if (state.page > pages) state.page = 1;
+  showPage();
+  renderSide();
+}
+
+function showPage() {
+  const v = state.run.variants[state.variant];
+  for (const b of $("pageSeg").querySelectorAll("button")) b.classList.toggle("on", +b.dataset.p === state.page);
+  $("empty").hidden = true; $("frame").hidden = false;
+  $("img").src = `/runs/${state.run.run}/${v.images[state.page - 1]}`;
+  applyZoom();
+  drawOverlay();
+}
+
+// ------------------------------------------------------------ lớp nhãn
+function buildLayers() {
+  $("layers").innerHTML = LAYERS.map((l) =>
+    `<label><input type="checkbox" data-k="${l.key}" ${l.on ? "checked" : ""}><i class="swatch" style="background:${l.color}"></i>${l.name}</label>`).join("");
+  for (const c of $("layers").querySelectorAll("input")) c.onchange = () => {
+    LAYERS.find((l) => l.key === c.dataset.k).on = c.checked; drawOverlay();
+  };
+}
+
+const onPage = (item) => (item.page_number ?? 1) === state.page;
+
+function shapes() {
+  const r = state.record, out = [];
+  const on = Object.fromEntries(LAYERS.map((l) => [l.key, l.on]));
+  if (on.layout) for (const a of r.layout_annotations || []) if (onPage(a))
+    out.push({b: box(a.bbox), color: classColor(a.layout_class), title: a.layout_class, text: a.text});
+  if (on.blocks) for (const a of r.blocks || []) if (onPage(a))
+    out.push({poly: a.quad, b: box(a.bbox), color: "#8a4fd6", title: `dòng · ${a.label}${a.kind ? " · " + a.kind : ""}`, text: a.text});
+  if (on.words) for (const a of r.word_annotations || []) if (onPage(a))
+    out.push({poly: a.polygon, b: box(a.bbox), color: "#1f8fb3", title: `từ · ${a.layout_class}${a.field_name ? " · " + a.field_name : ""}`, text: a.text});
+  if (on.entities) for (const a of r.entity_annotations || []) if (onPage(a))
+    for (const line of (a.lines && a.lines.length ? a.lines : [a.bbox]))
+      out.push({b: box(line), color: "#1a8f4e", title: `trường · ${a.field_name || a.kind || "?"}`, text: a.text});
+  if (on.kie) for (const [i, p] of pairs().entries()) {
+    if (p.page !== state.page) continue;
+    if (box(p.key_bbox)) out.push({b: box(p.key_bbox), color: "#2f5bd3", title: `khoá · ${p.field}`, text: p.key_text, pair: i});
+    out.push({b: box(p.value_bbox), color: "#1a8f4e", title: `giá trị · ${p.field}`, text: p.value_text, pair: i});
+  }
+  // Hộp to vẽ trước, hộp nhỏ nằm trên: rê chuột vào một từ phải trúng từ đó,
+  // không trúng cả vùng đang phủ nó.
+  const area = (s) => s.b ? (s.b[2] - s.b[0]) * (s.b[3] - s.b[1]) : 0;
+  return out.sort((a, b) => area(b) - area(a));
+}
+
+// Trang của cặp: lấy từ thực thể giá trị, vì cặp không mang page_number.
+function pairs() {
+  const ents = state.record.entity_annotations || [];
+  return ((state.record.kie || {}).pairs || []).map((p) => ({...p, page: ents[p.value_entity_index]?.page_number ?? 1}));
+}
+
+function drawOverlay() {
+  if (!state.record) return;
+  const svg = $("svg"), parts = [];
+  shapes().forEach((s, i) => {
+    const attrs = `class="box" data-i="${i}" stroke="${s.color}"`;
+    if (s.poly && s.poly.length >= 4) parts.push(`<polygon ${attrs} points="${s.poly.map((p) => p.join(",")).join(" ")}"/>`);
+    else if (s.b) parts.push(`<rect ${attrs} x="${s.b[0]}" y="${s.b[1]}" width="${s.b[2] - s.b[0]}" height="${s.b[3] - s.b[1]}"/>`);
+  });
+  // Cặp đang chọn: khoá xanh dương, giá trị xanh lá, nét đậm, vẽ sau cùng để nằm trên.
+  const h = state.highlight != null ? pairs()[state.highlight] : null;
+  if (h && h.page === state.page) {
+    for (const [b, c] of [[box(h.key_bbox), "#2f5bd3"], [box(h.value_bbox), "#1a8f4e"]]) if (b)
+      parts.push(`<rect class="box hl" stroke="${c}" fill="none" x="${b[0]}" y="${b[1]}" width="${b[2] - b[0]}" height="${b[3] - b[1]}"/>`);
+  }
+  svg.innerHTML = parts.join("");
+  const list = shapes();
+  svg.onmousemove = (e) => {
+    const el = e.target.closest(".box[data-i]");
+    if (!el) { $("tip").hidden = true; return; }
+    const s = list[+el.dataset.i];
+    $("tip").innerHTML = `<b>${esc(s.title)}</b><br>${esc(s.text || "")}`;
+    $("tip").hidden = false;
+    $("tip").style.left = Math.min(e.clientX + 14, innerWidth - 380) + "px";
+    $("tip").style.top = (e.clientY + 14) + "px";
+  };
+  svg.onmouseleave = () => { $("tip").hidden = true; };
+  svg.onclick = (e) => {
+    const el = e.target.closest(".box[data-i]");
+    const s = el && list[+el.dataset.i];
+    if (s && s.pair != null) selectPair(s.pair);
+  };
+}
+
+function applyZoom() {
+  const z = +$("zoom").value;
+  $("zoomVal").textContent = z + "%";
+  const stageW = $("stage").clientWidth - 2;
+  $("frame").style.width = Math.round(stageW * z / 100) + "px";
+}
+$("zoom").oninput = applyZoom;
+addEventListener("resize", applyZoom);
+
+// ------------------------------------------------------------ cột phải
+const TABS = [["kie", "Cặp KIE"], ["regions", "Vùng"], ["md", "Markdown"], ["json", "JSON"]];
+function buildTabs() {
+  $("tabs").innerHTML = TABS.map(([k, n]) => `<button data-t="${k}">${n}</button>`).join("");
+  for (const b of $("tabs").querySelectorAll("button")) b.onclick = () => { state.tab = b.dataset.t; renderSide(); };
+}
+
+function renderSide() {
+  for (const b of $("tabs").querySelectorAll("button")) b.classList.toggle("on", b.dataset.t === state.tab);
+  const r = state.record, pane = $("pane");
+  if (!r) return;
+  if (state.tab === "kie") {
+    const ps = pairs();
+    const count = (k) => (r[k] || []).length;
+    pane.innerHTML = `<div class="stats">
+        <div class="stat"><b>${count("layout_annotations")}</b><span>vùng</span></div>
+        <div class="stat"><b>${count("blocks")}</b><span>dòng</span></div>
+        <div class="stat"><b>${count("word_annotations")}</b><span>từ</span></div>
+        <div class="stat"><b>${count("entity_annotations")}</b><span>trường</span></div>
+        <div class="stat"><b>${ps.length}</b><span>cặp KIE</span></div>
+      </div>` + (ps.length ? ps.map((p, i) => `<div class="pair${state.highlight === i ? " on" : ""}" data-i="${i}">
+        <div class="f"><span>${esc(p.field)}</span>${p.source ? `<span class="tag">${esc(p.source)}</span>` : ""}</div>
+        <div><span class="k">${p.key_text ? esc(p.key_text) : "<i>(không nhãn in)</i>"}</span> → <span class="v">${esc(p.value_text)}</span></div>
+        ${p.description ? `<div class="d">${esc(p.description)}</div>` : ""}</div>`).join("")
+      : `<p style="color:var(--muted)">Tờ này không có cặp KIE.</p>`);
+    for (const el of pane.querySelectorAll(".pair")) el.onclick = () => selectPair(+el.dataset.i);
+  } else if (state.tab === "regions") {
+    pane.innerHTML = `<table class="list">` + (r.layout_annotations || []).map((a, i) =>
+      `<tr data-i="${i}"><td><i class="swatch" style="background:${classColor(a.layout_class)}"></i></td>
+        <td style="white-space:nowrap">${esc(a.layout_class)}${(a.page_number ?? 1) > 1 ? ` <span class="tag">tr ${a.page_number}</span>` : ""}</td>
+        <td>${esc((a.text || "").slice(0, 120))}</td></tr>`).join("") + `</table>`;
+  } else if (state.tab === "md") {
+    pane.innerHTML = `<pre>${esc(r.markdown || "(trống)")}</pre>`;
+  } else {
+    // Bỏ HTML trang và từng từ cho gọn; bản đầy đủ mở bằng link "json".
+    const slim = {...r, pages: (r.pages || []).map(({html, ...p}) => p), html: undefined,
+                  word_annotations: `[${(r.word_annotations || []).length} từ — xem file json]`};
+    pane.innerHTML = `<pre>${esc(JSON.stringify(slim, null, 1))}</pre>`;
+  }
+}
+
+function selectPair(i) {
+  state.highlight = state.highlight === i ? null : i;
+  const p = pairs()[i];
+  if (state.highlight != null && p.page !== state.page) { state.page = p.page; showPage(); }
+  state.tab = "kie"; renderSide(); drawOverlay();
+  $("pane").querySelector(`.pair[data-i="${i}"]`)?.scrollIntoView({block: "nearest"});
+}
+
+// ------------------------------------------------------------ khởi động
+buildLayers(); buildTabs();
+loadOptions().catch((e) => setStatus("Không đọc được luật: " + e, true));
+loadHistory().then(() => { if (state.runs.length) openRun(state.runs[0]); });
+</script>
+</body>
+</html>

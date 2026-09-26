@@ -1,0 +1,57 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+# loại giấy lấy từ trang model viết: data/pilot15 annual_performance_rating_summary
+id: bang_tong_hop_xep_loai
+profile: admin
+org_kind: state
+national: 0.9
+titles:
+- BẢNG TỔNG HỢP KẾT QUẢ ĐÁNH GIÁ, XẾP LOẠI VIÊN CHỨC
+- BẢNG TỔNG HỢP ĐÁNH GIÁ, XẾP LOẠI CÔNG CHỨC NĂM
+- TỔNG HỢP KẾT QUẢ XẾP LOẠI CÁN BỘ
+subtitles:
+- (Kèm theo Quyết định số ..../QĐ ngày ....)
+- Năm ....
+- ''
+fields:
+- unit
+- period
+field_span:
+- 1
+- 2
+columns:
+- - stt
+  - name
+  - qty
+  - note
+- - stt
+  - ref
+  - name
+  - qty
+  - note
+totals: count
+words: false
+sign_sets:
+- - NGƯỜI LẬP BIỂU
+  - THỦ TRƯỞNG ĐƠN VỊ
+- - TM. HỘI ĐỒNG ĐÁNH GIÁ
+  - CHỦ TỊCH
+notes:
+- Tỷ lệ xếp loại hoàn thành xuất sắc nhiệm vụ không vượt quá 20% số được xếp loại.
+- Viên chức nghỉ thai sản được đánh giá theo thời gian công tác thực tế.
+rows:
+- 5
+- 24
+always:
+- letterhead
+- doctitle
+- table
+- signatures
+optional:
+- meta
+- fields
+- notes
+- legal_basis
+- totals
+- footer
+- footnote
+en_ok: false

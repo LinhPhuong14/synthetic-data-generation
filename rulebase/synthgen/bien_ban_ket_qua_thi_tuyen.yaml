@@ -1,0 +1,59 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+# loại giấy lấy từ trang model viết: data/pilot14 viencchuc_exam_score_sheet, pilot10 recruitment_result_confirmation, pilot13 recruitment_results_report
+id: bien_ban_ket_qua_thi_tuyen
+profile: admin
+org_kind: state
+national: 0.95
+titles:
+- BIÊN BẢN CHẤM ĐIỂM THI TUYỂN VIÊN CHỨC
+- BIÊN BẢN XÁC NHẬN KẾT QUẢ TUYỂN DỤNG
+- BÁO CÁO KẾT QUẢ THI TUYỂN CÔNG CHỨC
+subtitles:
+- Kỳ thi tuyển năm ....
+- (Vòng 2 - thi môn nghiệp vụ chuyên ngành)
+- ''
+fields:
+- unit
+- period
+- position
+field_span:
+- 1
+- 3
+columns:
+- - stt
+  - ref
+  - name
+  - qty
+  - note
+- - stt
+  - name
+  - qty
+  - note
+totals: count
+words: false
+sign_sets:
+- - THƯ KÝ HỘI ĐỒNG
+  - CHỦ TỊCH HỘI ĐỒNG
+- - TỔ TRƯỞNG TỔ CHẤM
+  - THÀNH VIÊN
+  - CHỦ TỊCH HỘI ĐỒNG
+notes:
+- Kết quả được niêm yết công khai tại trụ sở cơ quan và trên cổng thông tin điện tử.
+- Thí sinh có quyền đề nghị phúc khảo trong thời hạn 15 ngày.
+rows:
+- 4
+- 18
+always:
+- letterhead
+- doctitle
+- table
+- signatures
+optional:
+- meta
+- fields
+- notes
+- legal_basis
+- clauses
+- totals
+- footer
+en_ok: false

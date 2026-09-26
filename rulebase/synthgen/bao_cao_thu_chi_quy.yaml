@@ -1,0 +1,64 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+# loại giấy lấy từ trang model viết: data/pilot14 county_fund_financial_report
+id: bao_cao_thu_chi_quy
+profile: admin
+org_kind: state
+national: 0.95
+titles:
+- BÁO CÁO TÌNH HÌNH THU CHI QUỸ
+- BÁO CÁO QUYẾT TOÁN THU CHI NGÂN SÁCH XÃ
+- BÁO CÁO THU CHI NGÂN SÁCH NĂM
+subtitles:
+- (Từ ngày .... đến ngày ....)
+- 'Đơn vị tính: đồng'
+- ''
+fields:
+- unit
+- period
+- seller_bank
+field_span:
+- 1
+- 3
+columns:
+- - stt
+  - ref
+  - name
+  - amount
+  - note
+- - stt
+  - name
+  - amount
+- - stt
+  - ref
+  - name
+  - unit_price
+  - amount
+totals: money
+words: true
+sign_sets:
+- - KẾ TOÁN
+  - CHỦ TỊCH UBND
+- - NGƯỜI LẬP BIỂU
+  - KẾ TOÁN TRƯỞNG
+  - THỦ TRƯỞNG ĐƠN VỊ
+notes:
+- Số liệu khớp đúng với sổ kế toán và số dư tài khoản tại Kho bạc Nhà nước.
+- Báo cáo được công khai tại trụ sở theo quy định.
+rows:
+- 6
+- 30
+always:
+- letterhead
+- doctitle
+- table
+- totals
+- signatures
+optional:
+- meta
+- fields
+- words
+- notes
+- sections
+- summary
+- footer
+en_ok: false

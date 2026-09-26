@@ -1,0 +1,67 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+# loại giấy lấy từ trang model viết: data/pilot13 bank_deposit_statement
+id: bang_ke_tien_gui_tiet_kiem
+profile: invoice
+org_kind: company
+national: 0.1
+titles:
+- BẢNG KÊ TIỀN GỬI TIẾT KIỆM
+- XÁC NHẬN SỐ DƯ TIỀN GỬI CÓ KỲ HẠN
+- SAO KÊ TIỀN GỬI TIẾT KIỆM KỲ HẠN
+subtitles:
+- (Bản sao - dùng để xác minh tài chính)
+- Tính đến ngày ....
+- ''
+fields:
+- full_name
+- id_no
+- id_issue
+- address_home
+- phone_home
+- customer_no
+field_span:
+- 3
+- 6
+columns:
+- - stt
+  - ref
+  - date
+  - name
+  - amount
+  - note
+- - stt
+  - ref
+  - name
+  - amount
+- - stt
+  - date
+  - name
+  - amount
+  - note
+totals: money
+words: true
+sign_sets:
+- - GIAO DỊCH VIÊN
+  - KIỂM SOÁT
+- - GIÁM ĐỐC CHI NHÁNH
+notes:
+- Lãi luỹ kế tính đến ngày lập bảng kê, chưa bao gồm lãi phát sinh sau ngày này.
+- Bảng kê chỉ có giá trị khi có chữ ký và dấu của ngân hàng.
+- Khách hàng rút trước hạn được hưởng lãi suất không kỳ hạn.
+rows:
+- 2
+- 12
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- totals
+optional:
+- meta
+- words
+- notes
+- footnote
+- signatures
+- footer
+en_ok: true

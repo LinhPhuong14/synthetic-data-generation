@@ -1,0 +1,55 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+# loại giấy lấy từ trang model viết: data/pilot13 land_property_obligation_commitment
+id: ban_cam_ket_nghia_vu_tai_chinh
+profile: admin
+org_kind: state
+national: 1.0
+titles:
+- BẢN CAM KẾT THỰC HIỆN NGHĨA VỤ TÀI CHÍNH VỀ ĐẤT ĐAI
+- BẢN CAM KẾT NỘP TIỀN SỬ DỤNG ĐẤT
+- CAM KẾT THỰC HIỆN NGHĨA VỤ TÀI CHÍNH VỀ NHÀ Ở
+subtitles:
+- 'Kính gửi: Chi cục Thuế khu vực ....'
+- ''
+- ''
+fields:
+- full_name
+- dob
+- id_no
+- id_issue
+- id_place
+- address_home
+- phone_home
+field_span:
+- 4
+- 7
+columns:
+- - stt
+  - name
+  - amount
+  - note
+totals: money
+words: true
+sign_sets:
+- - NGƯỜI CAM KẾT
+- - NGƯỜI CAM KẾT
+  - XÁC NHẬN CỦA UBND XÃ
+notes:
+- Tôi xin chịu trách nhiệm trước pháp luật về nội dung cam kết trên.
+- Quá thời hạn nộp tiền, tôi chịu tiền chậm nộp theo quy định.
+rows:
+- 1
+- 5
+always:
+- doctitle
+- fields
+- clauses
+- signatures
+optional:
+- letterhead
+- table
+- totals
+- words
+- legal_basis
+- notes
+en_ok: false

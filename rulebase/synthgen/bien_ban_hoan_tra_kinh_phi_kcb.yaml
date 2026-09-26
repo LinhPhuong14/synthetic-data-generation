@@ -1,0 +1,65 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+# loại giấy lấy từ trang model viết: data/pilot15 medical_refund_confirmation, pilot9 giay_giam_mien_chi_phi_kham_benh
+id: bien_ban_hoan_tra_kinh_phi_kcb
+profile: medical
+org_kind: hospital
+national: 0.8
+titles:
+- BIÊN BẢN XÁC NHẬN HOÀN TRẢ KINH PHÍ KHÁM CHỮA BỆNH
+- GIẤY ĐỀ NGHỊ HOÀN TRẢ CHI PHÍ KHÁM BỆNH, CHỮA BỆNH
+- GIẤY XÁC NHẬN MIỄN, GIẢM CHI PHÍ KHÁM BỆNH, CHỮA BỆNH
+subtitles:
+- ''
+- (Dành cho người bệnh có thẻ BHYT)
+- ''
+fields:
+- patient
+- card_no
+- record_no
+- ward
+- admitted
+- discharged
+- diagnosis
+field_span:
+- 4
+- 7
+columns:
+- - stt
+  - name
+  - amount_bv
+  - fund
+  - self_pay
+- - stt
+  - name
+  - qty
+  - unit_price
+  - amount
+  - copay
+totals: money
+words: true
+sign_sets:
+- - NGƯỜI BỆNH
+  - KẾ TOÁN VIỆN PHÍ
+  - GIÁM ĐỐC BỆNH VIỆN
+- - NGƯỜI ĐỀ NGHỊ
+  - PHÒNG TÀI CHÍNH KẾ TOÁN
+notes:
+- Khoản hoàn trả được chuyển vào tài khoản người bệnh trong 10 ngày làm việc.
+- Người bệnh xuất trình thẻ BHYT và giấy tờ tuỳ thân khi nhận tiền.
+rows:
+- 2
+- 15
+always:
+- letterhead
+- doctitle
+- fields
+- table
+- totals
+- signatures
+optional:
+- meta
+- words
+- notes
+- checks
+- footer
+en_ok: false

@@ -1,0 +1,58 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+# loại giấy lấy từ trang model viết: data/pilot14 annual_health_station_report, pilot13 bhyt_statistics_report
+id: bao_cao_hoat_dong_tram_y_te
+profile: medical
+org_kind: hospital
+national: 0.9
+titles:
+- BÁO CÁO TÌNH HÌNH HOẠT ĐỘNG TRẠM Y TẾ
+- BÁO CÁO THỐNG KÊ KHÁM CHỮA BỆNH BẢO HIỂM Y TẾ
+- BÁO CÁO KẾT QUẢ HOẠT ĐỘNG Y TẾ CƠ SỞ
+subtitles:
+- Năm ....
+- (Tháng .... năm ....)
+- ''
+fields:
+- unit
+- period
+- ward
+field_span:
+- 1
+- 3
+columns:
+- - stt
+  - name
+  - unit
+  - qty
+  - note
+- - stt
+  - ref
+  - name
+  - qty
+  - note
+totals: none
+words: false
+sign_sets:
+- - NGƯỜI LẬP BÁO CÁO
+  - TRƯỞNG TRẠM Y TẾ
+- - NGƯỜI LẬP BIỂU
+  - GIÁM ĐỐC TRUNG TÂM Y TẾ
+notes:
+- Số liệu tổng hợp từ sổ khám bệnh và phần mềm quản lý khám chữa bệnh.
+- Chỉ tiêu tiêm chủng mở rộng đạt kế hoạch năm.
+rows:
+- 5
+- 18
+always:
+- letterhead
+- doctitle
+- table
+- signatures
+optional:
+- meta
+- fields
+- notes
+- sections
+- figure
+- footer
+en_ok: false

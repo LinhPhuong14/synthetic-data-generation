@@ -712,31 +712,6 @@ def _emit_page(args, name, recipe, receipt, drawn, hand_report, sign_report,
     and that split is only expressible if the second half is one call.
     """
     names = record.page_names(name, len(drawn))
-    # KIE ĐẦY ĐỦ NGAY LÚC VẼ, cùng lẽ `synthgen/draw.py` và `synthgen/draw_llm.py`.
-    #
-    # `record.build` chỉ ghép được cặp có nhãn in kề nhau -- toàn bộ ô bảng,
-    # điều khoản, bảng hỏi, khối chữ ký không có mặt. Đường phôi và đường LLM
-    # đã gọi luật đầy đủ lúc vẽ; đường luật thì chưa, nên cùng một bộ luật ra
-    # hai chất lượng nhãn tuỳ đường sinh.
-    #
-    # Gọi Ở ĐÂY chứ không trong `pipeline/record.py`: `record.py` là tầng dưới
-    # và `synthgen/kie_full.py` là tầng trên, nên để tầng dưới gọi ngược lên là
-    # đảo chiều phụ thuộc. Người GỌI thì được phép ghép hai tầng.
-    #
-    # Hỏng thì lùi về nhãn nghèo, không làm hỏng lượt vẽ: nhãn thiếu còn
-    # `derive.py` vá được, ảnh không vẽ ra thì mất hẳn.
-    try:
-        from synthgen.kie_full import complete as kie_complete  # noqa: PLC0415
-        from synthgen.phrasing import voice_record  # noqa: PLC0415
-
-        full_pairs, counts = kie_complete(item, markup)
-        voice_record(item, full_pairs, stem=Path(name).stem)
-        item.setdefault("kie", {})["pairs"] = full_pairs
-        if counts:
-            item["kie"]["coverage"] = counts
-    except Exception:                                        # noqa: BLE001
-        pass
-
     with profiling.stage("export"):
         for page_name, page in zip(names, drawn):
             cv2.imwrite(str(args.out / page_name), page["image"],
@@ -791,6 +766,38 @@ def _emit_page(args, name, recipe, receipt, drawn, hand_report, sign_report,
                      "cells": page["cells"], "graphics": page["graphics"],
                      "fields": page["fields"]}
                     for page_name, page in zip(names, drawn)])
+    # KIE ĐẦY ĐỦ NGAY LÚC VẼ, cùng lẽ `synthgen/draw.py` và `synthgen/draw_llm.py`.
+    #
+    # `record.build` chỉ ghép được cặp có nhãn in kề nhau -- toàn bộ ô bảng,
+    # điều khoản, bảng hỏi, khối chữ ký không có mặt. Đường phôi và đường LLM
+    # đã gọi luật đầy đủ lúc vẽ; đường luật thì chưa, nên cùng một bộ luật ra
+    # hai chất lượng nhãn tuỳ đường sinh.
+    #
+    # Gọi Ở ĐÂY chứ không trong `pipeline/record.py`: `record.py` là tầng dưới
+    # và `synthgen/kie_full.py` là tầng trên, nên để tầng dưới gọi ngược lên là
+    # đảo chiều phụ thuộc. Người GỌI thì được phép ghép hai tầng.
+    #
+    # SAU `record.build`, trước `write_one`. Khối này từng đứng đầu hàm, đọc
+    # `item` khi nó chưa được gán: mọi tờ đường luật ném `NameError`, bị
+    # `except: pass` nuốt, và ra nhãn nghèo mà không ai biết (seed 77, hoá đơn
+    # GTGT: 13 cặp, không cặp bảng nào).
+    #
+    # Hỏng thì lùi về nhãn nghèo, không làm hỏng lượt vẽ: nhãn thiếu còn
+    # `derive.py` vá được, ảnh không vẽ ra thì mất hẳn. Nhưng phải KÊU -- lặng
+    # lẽ lùi là đúng cách lỗi trên sống sót.
+    try:
+        from synthgen.kie_full import complete as kie_complete  # noqa: PLC0415
+        from synthgen.phrasing import voice_record  # noqa: PLC0415
+
+        full_pairs, counts = kie_complete(item, markup)
+        voice_record(item, full_pairs, stem=Path(name).stem)
+        item.setdefault("kie", {})["pairs"] = full_pairs
+        if counts:
+            item["kie"]["coverage"] = counts
+    except Exception as error:                               # noqa: BLE001
+        print(f"[kie] {name}: KIE đầy đủ hỏng, giữ cặp nhãn kề "
+              f"({type(error).__name__}: {error})", file=sys.stderr)
+
     with profiling.stage("export"):
         # The record beside its image, and the provenance streamed into the one
         # file for the set -- so a shard's memory does not grow with its size

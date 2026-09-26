@@ -1,0 +1,34 @@
+# ITEMS_AN_PHAM — cột `name` của bảng cho những tờ giấy nói về XUẤT BẢN - PHÁT HÀNH: báo cáo in ấn, phân phối ấn phẩm, đối soát bản quyền.
+#
+# Dựng từ trang do model viết ở data/pilot7, pilot9, pilot10, pilot13, pilot14, pilot15: đó là những loại giấy synthgen
+# chưa có phôi nào, và bảng của chúng liệt kê thứ mà không kho theo ngành nào
+# chứa -- mỗi dòng là một ấn phẩm, một số báo hay một tác phẩm. Luật ghép theo TÊN tài liệu ở
+# `rulebase/synthgen/_blocks.yaml::items`, cùng lối các kho `items_*` khác.
+#
+# Định dạng `priced`: tên, giá tối thiểu, giá tối đa (đồng). `amount` = giá x
+# số lượng, nên khoảng giá ở đây là giá của MỘT đơn vị.
+
+Báo in số ra thứ Hai	5000	12000
+Báo in số cuối tuần	8000	18000
+Tạp chí Kinh tế số tháng	25000	60000
+Tạp chí Khoa học và Công nghệ chuyên đề	30000	80000
+Tạp chí Văn nghệ số Tết	45000	120000
+Tập san nội bộ quý	15000	40000
+Sách giáo khoa Toán lớp 6	12000	25000
+Sách tham khảo Ngữ văn trung học	45000	95000
+Tiểu thuyết bìa mềm khổ 13x20,5	85000	180000
+Tuyển tập truyện ngắn	70000	150000
+Sách thiếu nhi khổ lớn in màu	40000	110000
+Sách chuyên khảo kinh tế	120000	280000
+Ấn phẩm lịch treo tường	35000	90000
+Phụ trương quảng cáo đính kèm báo	2000	6000
+Bản tin chuyên ngành	10000	30000
+Tác phẩm ảnh đăng báo	300000	1500000
+Bài viết chuyên mục bình luận	500000	2500000
+Bản quyền tranh minh hoạ trang bìa	1000000	6000000
+Bản quyền dịch tác phẩm nước ngoài	5000000	40000000
+Nhuận bút kỳ phát hành	800000	5000000
+Phát hành qua kênh sạp báo bán lẻ	5000	15000
+Phát hành qua kênh siêu thị	8000	20000
+Phát hành qua kênh đặt mua dài hạn	6000	16000
+Phát hành qua nền tảng thương mại điện tử	7000	18000

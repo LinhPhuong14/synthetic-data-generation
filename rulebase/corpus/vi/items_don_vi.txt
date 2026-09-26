@@ -1,0 +1,34 @@
+# ITEMS_DON_VI — cột `name` của bảng cho những tờ giấy nói về ĐÁNH GIÁ, XẾP LOẠI theo đơn vị: bảng tổng hợp xếp loại viên chức, kết quả tuyển dụng.
+#
+# Dựng từ trang do model viết ở data/pilot13 (recruitment_results_report), pilot15 (annual_performance_rating_summary): đó là những loại giấy synthgen
+# chưa có phôi nào, và bảng của chúng liệt kê thứ mà không kho theo ngành nào
+# chứa -- mỗi dòng là một phòng, khoa, đơn vị trực thuộc, và cột số lượng là số người. Luật ghép theo TÊN tài liệu ở
+# `rulebase/synthgen/_blocks.yaml::items`, cùng lối các kho `items_*` khác.
+#
+# Định dạng `priced`: tên, giá tối thiểu, giá tối đa (đồng). `amount` = giá x
+# số lượng, nên khoảng giá ở đây là giá của MỘT đơn vị.
+
+Văn phòng	1	1
+Phòng Tổ chức - Hành chính	1	1
+Phòng Kế hoạch - Tài chính	1	1
+Phòng Quản lý chất lượng	1	1
+Phòng Công tác xã hội	1	1
+Phòng Đào tạo	1	1
+Phòng Khảo thí và Đảm bảo chất lượng	1	1
+Phòng Quản trị - Thiết bị	1	1
+Khoa Khám bệnh	1	1
+Khoa Nội tổng hợp	1	1
+Khoa Ngoại	1	1
+Khoa Sản	1	1
+Khoa Nhi	1	1
+Khoa Xét nghiệm	1	1
+Khoa Dược	1	1
+Tổ Toán - Tin	1	1
+Tổ Ngữ văn	1	1
+Tổ Ngoại ngữ	1	1
+Tổ Khoa học tự nhiên	1	1
+Trung tâm Công nghệ thông tin	1	1
+Trung tâm Dịch vụ việc làm	1	1
+Đội Kiểm tra liên ngành	1	1
+Ban Quản lý dự án	1	1
+Bộ phận Một cửa	1	1

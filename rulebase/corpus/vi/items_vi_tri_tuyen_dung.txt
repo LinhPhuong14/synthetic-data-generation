@@ -1,0 +1,28 @@
+# ITEMS_VI_TRI_TUYEN_DUNG — cột `name` của bảng cho những tờ giấy nói về THI TUYỂN, XÉT TUYỂN: biên bản chấm điểm, xác nhận kết quả tuyển dụng.
+#
+# Dựng từ trang do model viết ở data/pilot10 (recruitment_result_confirmation), pilot14 (viencchuc_exam_score_sheet): đó là những loại giấy synthgen
+# chưa có phôi nào, và bảng của chúng liệt kê thứ mà không kho theo ngành nào
+# chứa -- mỗi dòng là một vị trí dự tuyển, và cột số lượng là chỉ tiêu tuyển. Luật ghép theo TÊN tài liệu ở
+# `rulebase/synthgen/_blocks.yaml::items`, cùng lối các kho `items_*` khác.
+#
+# Định dạng `priced`: tên, giá tối thiểu, giá tối đa (đồng). `amount` = giá x
+# số lượng, nên khoảng giá ở đây là giá của MỘT đơn vị.
+
+Chuyên viên hành chính tổng hợp	1	1
+Chuyên viên tổ chức cán bộ	1	1
+Kế toán viên	1	1
+Chuyên viên công nghệ thông tin	1	1
+Giáo viên Toán trung học cơ sở	1	1
+Giáo viên Tiếng Anh tiểu học	1	1
+Giáo viên mầm non hạng III	1	1
+Điều dưỡng hạng IV	1	1
+Bác sĩ đa khoa hạng III	1	1
+Dược sĩ hạng III	1	1
+Kỹ thuật viên xét nghiệm	1	1
+Văn thư viên	1	1
+Chuyên viên pháp chế	1	1
+Chuyên viên quản lý đất đai	1	1
+Kiểm soát viên thị trường	1	1
+Nhân viên kỹ thuật điện	1	1
+Công nhân vận hành máy	1	1
+Nhân viên kinh doanh	1	1

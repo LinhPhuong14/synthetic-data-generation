@@ -1,0 +1,66 @@
+# phôi khai bằng file — xem synthgen/archetypes.py
+# loại giấy lấy từ trang model viết: data/pilot11 insurance_vehicle_claim_report
+id: bao_cao_tinh_hinh_boi_thuong
+profile: insurance
+org_kind: company
+national: 0.3
+titles:
+- BÁO CÁO TÌNH HÌNH BỒI THƯỜNG BẢO HIỂM XE CƠ GIỚI
+- BẢNG KÊ HỒ SƠ BỒI THƯỜNG BẢO HIỂM
+- BÁO CÁO TÌNH HÌNH BỒI THƯỜNG THÁNG
+subtitles:
+- (Tháng .... năm ....)
+- 'Kênh khai thác: đại lý và trực tiếp'
+- ''
+fields:
+- unit
+- period
+- policy_no
+field_span:
+- 1
+- 3
+columns:
+- - stt
+  - ref
+  - date
+  - name
+  - amount
+  - note
+- - stt
+  - date
+  - name
+  - amount
+- - stt
+  - ref
+  - name
+  - amount
+  - discount
+  - note
+totals: money
+words: false
+sign_sets:
+- - CÁN BỘ GIÁM ĐỊNH
+  - TRƯỞNG PHÒNG BỒI THƯỜNG
+  - GIÁM ĐỐC
+- - NGƯỜI LẬP
+  - GIÁM ĐỐC CHI NHÁNH
+notes:
+- Số tiền bồi thường đã trừ mức khấu trừ theo quy tắc bảo hiểm.
+- Hồ sơ đang giải quyết được theo dõi tại danh sách kèm theo.
+rows:
+- 5
+- 40
+always:
+- letterhead
+- doctitle
+- table
+- totals
+- signatures
+optional:
+- meta
+- fields
+- notes
+- figure
+- summary
+- footer
+en_ok: false

@@ -1,0 +1,26 @@
+# ITEMS_TIET_KIEM — cột `name` của bảng cho những tờ giấy nói về TIỀN GỬI: bảng kê tiền gửi tiết kiệm, xác nhận số dư tiền gửi có kỳ hạn.
+#
+# Dựng từ trang do model viết ở data/pilot13 (bank_deposit_statement): đó là những loại giấy synthgen
+# chưa có phôi nào, và bảng của chúng liệt kê thứ mà không kho theo ngành nào
+# chứa -- mỗi dòng là một sổ tiền gửi theo kỳ hạn. Luật ghép theo TÊN tài liệu ở
+# `rulebase/synthgen/_blocks.yaml::items`, cùng lối các kho `items_*` khác.
+#
+# Định dạng `priced`: tên, giá tối thiểu, giá tối đa (đồng). `amount` = giá x
+# số lượng, nên khoảng giá ở đây là giá của MỘT đơn vị.
+
+Tiền gửi tiết kiệm không kỳ hạn	1000000	50000000
+Tiền gửi tiết kiệm kỳ hạn 1 tháng	5000000	100000000
+Tiền gửi tiết kiệm kỳ hạn 3 tháng	10000000	200000000
+Tiền gửi tiết kiệm kỳ hạn 6 tháng	10000000	300000000
+Tiền gửi tiết kiệm kỳ hạn 9 tháng	10000000	300000000
+Tiền gửi tiết kiệm kỳ hạn 12 tháng	20000000	500000000
+Tiền gửi tiết kiệm kỳ hạn 18 tháng	20000000	500000000
+Tiền gửi tiết kiệm kỳ hạn 24 tháng	20000000	500000000
+Tiền gửi tiết kiệm kỳ hạn 36 tháng	30000000	800000000
+Tiết kiệm lĩnh lãi hàng tháng kỳ hạn 12 tháng	20000000	400000000
+Tiết kiệm lĩnh lãi trước kỳ hạn 6 tháng	10000000	300000000
+Tiết kiệm tích luỹ định kỳ	1000000	20000000
+Tiền gửi có kỳ hạn trực tuyến 6 tháng	5000000	200000000
+Chứng chỉ tiền gửi kỳ hạn 12 tháng	50000000	1000000000
+Tiền gửi tiết kiệm bậc thang theo số dư	50000000	900000000
+Tiền gửi ký quỹ bảo lãnh	10000000	300000000
