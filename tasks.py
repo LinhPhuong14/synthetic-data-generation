@@ -458,6 +458,124 @@ def check_boxes(args) -> None:
     run([first_available_python(), REPO_ROOT / "tools" / "check_boxes.py", args.dataset])
 
 
+@task("check-regions", "hai vùng một hộp, đầu mục trông như nhãn trường -- đọc records/ của một bộ")
+def check_regions(args) -> None:
+    """Đo trên pilot18: ba đầu mục mỗi cái hai vùng trong một tờ, và "Họ và
+    tên:" mang nhãn `Section-Header`. Cả hai lọt qua mọi cổng vì cổng không
+    nhìn hộp đã xuất. Mã thoát 1 khi còn vùng trùng hộp; đầu mục đáng ngờ chỉ
+    liệt kê. Nhiều bộ một lần thì gọi thẳng `tools/check_regions.py a b c`."""
+    run([first_available_python(), REPO_ROOT / "tools" / "check_regions.py", args.dataset])
+
+
+@task("diversity-report", "lô LLM có tự lặp bố cục không — đo trên ảnh đã vẽ")
+def diversity_report(args) -> None:
+    """Đo trùng bố cục trên `records/` của một lô `agent/compose_page.py`.
+
+    Chạy SAU mỗi lô, và chạy lại khi đổi ngưỡng trong `agent/
+    geometry_distance.py`. Con số cần theo là `vượt ngưỡng` -- tỉ lệ tờ có
+    một tờ gần như y hệt trong 24 tờ liền trước.
+
+    So HAI lô với nhau (trước/sau một thay đổi) thì gọi thẳng module, vì
+    `tasks.py` chỉ cầm được một thư mục:
+
+        python -m tools.llm.diversity_report data/lo-truoc data/lo-sau
+    """
+    run([first_available_python(), "-m", "tools.llm.diversity_report",
+         args.dataset], cwd=REPO_ROOT)
+
+
+@task("llm-templates", "pha 1: model soạn PHÔI `{{chỗ.trống}}` (1 lời gọi mỗi phôi)")
+def llm_templates(args) -> None:
+    """Xin model viết N phôi dùng lại được, không phải N trang.
+
+        make llm-templates N=200 SYNTH=data/phoi-v1
+
+    Cần server model chạy (`VLM_LLM_URL`). Một phôi là một tờ giấy mang
+    `{{issuer.tax_code}}` thay cho giá trị; `llm-fill` điền chúng, không gọi
+    model lần nào. Đường dẫn trong phôi ép bằng `enum` lấy từ sổ đóng của
+    `synthgen/field_tier.py` — một tên lạ trong phôi là cùng một lỗi nhân
+    lên bằng số tờ sẽ điền từ nó."""
+    run([first_available_python(), "-m", "agent.compose_template",
+         "--want", str(args.count or 200), "-o", args.out], cwd=REPO_ROOT)
+
+
+@task("llm-fill", "pha 2: phôi -> ảnh, KHÔNG lời gọi model nào")
+def llm_fill(args) -> None:
+    """Điền giá trị thật vào từng phôi nhiều lần rồi vẽ.
+
+        make llm-fill SYNTH=data/phoi-v1
+
+    Trình thông dịch của backend html: bước này mở chính Chromium ấy để đo
+    hộp trên trang ĐÃ ĐIỀN (hộp của phôi không dùng được — giá trị thật dài
+    ngắn khác chỗ trống). Số tờ mỗi phôi đọc từ
+    `rulebase/synthgen/_blocks.yaml::llm_path.per_template`."""
+    from synthgen import design as D  # noqa: PLC0415
+
+    run([venv_python(VENVS["html"]), "-m", "synthgen.run_fill", args.out,
+         "--per-template", str(args.count or D.per_template())], cwd=REPO_ROOT)
+
+
+@task("llm-gen", "sinh theo đường đã chốt trong _blocks.yaml::llm_path (--path để đè)")
+def llm_gen(args) -> None:
+    """MỘT lệnh cho cả ba đường sinh. Đường nào là CẤU HÌNH, không phải code.
+
+        make llm-gen N=200 SYNTH=data/lo-moi        # đường trong _blocks.yaml
+        python tasks.py llm-gen --path template -o data/lo-moi
+        python tasks.py llm-gen --path rule -o data/lo-moi
+
+    Đây là chỗ cờ `llm_path.path` thật sự đổi được hành vi. Không có task này
+    thì cờ ấy là một dòng YAML không ai đọc — và một cấu hình không ai đọc còn
+    tệ hơn không có cấu hình, vì người sửa nó tin là mình vừa đổi được gì đó.
+
+    `--path` đè cấu hình cho một lượt, để chạy phép thử đối chứng mà không
+    phải sửa file rồi nhớ sửa lại.
+
+    Đường `template` chạy CẢ HAI pha: xin phôi (cần model), rồi điền (không
+    cần). Dừng ngay nếu pha 1 không ra phôi nào — điền một thư mục rỗng thì
+    chỉ ra một báo cáo rỗng, và nó trông y hệt một lượt chạy xong."""
+    from synthgen import design as D  # noqa: PLC0415
+
+    path = args.path or D.llm_path()
+    out = Path(args.out)
+    print(f"[sinh] đường `{path}`"
+          + ("" if args.path else " (từ rulebase/synthgen/_blocks.yaml)"))
+    if path == "rule":
+        run([venv_python(VENVS["html"]), REPO_ROOT / "synthgen" / "run.py",
+             "-o", out, "-n", str(args.count or 5000),
+             "--pages", args.pages or "2-10", "--augment", "fast"])
+        return
+    if path == "page":
+        run([first_available_python(), "-m", "agent.compose_page",
+             "--want", str(args.count or 30), "-o", out], cwd=REPO_ROOT)
+        return
+    # template: hai pha, và pha 2 chỉ chạy khi pha 1 để lại phôi.
+    run([first_available_python(), "-m", "agent.compose_template",
+         "--want", str(args.count or 200), "-o", out], cwd=REPO_ROOT)
+    made = sorted((out / "templates").glob("*.json"))
+    if not made:
+        print(f"[sinh] pha 1 không để lại phôi nào trong {out / 'templates'}; "
+              "không chạy pha 2")
+        return
+    print(f"[sinh] {len(made)} phôi -> pha 2 (không lời gọi model nào)")
+    run([venv_python(VENVS["html"]), "-m", "synthgen.run_fill", out,
+         "--per-template", str(D.per_template())], cwd=REPO_ROOT)
+
+
+@task("llm-cost", "ba đường sinh: bao nhiêu lời gọi, giây, token cho cùng N ảnh")
+def llm_cost(args) -> None:
+    """Bảng chi phí ba đường, đo từ báo cáo THẬT trên đĩa.
+
+        make llm-cost                       # cho 10 000 ảnh
+        make llm-cost N=50000
+
+    Không có con số viết tay trong bảng ấy: mỗi ô đọc từ `compose_report.
+    json` / `template_report.json` / `fill_report.json` của những lượt đã
+    chạy, và ô nào chưa có lượt nào đo được thì nó nói ra là chưa đo được
+    chứ không điền một ước lượng."""
+    run([first_available_python(), "-m", "tools.llm.path_cost",
+         "--images", str(args.count or 10000)], cwd=REPO_ROOT)
+
+
 @task("showcase", "one before/after image per degradation model")
 def showcase(args) -> None:
     run([first_available_python(), REPO_ROOT / "tools" / "degradation_showcase.py"])
@@ -662,6 +780,12 @@ def main() -> int:
     parser.add_argument("--pages", default=None, metavar="LO-HI",
                         help="số TỜ mỗi chứng từ nhắm tới (synth, synth-plan); "
                              "mặc định 2-10")
+    # Không mặc định: thiếu cờ nghĩa là "đọc cấu hình", không phải "dùng
+    # `page`". Một mặc định ở đây là chỗ thứ hai quyết đường sinh, và hai chỗ
+    # quyết một thứ là cách cấu hình lặng lẽ không còn tác dụng.
+    parser.add_argument("--path", default=None, choices=("rule", "page", "template"),
+                        help="đè `_blocks.yaml::llm_path.path` cho một lượt "
+                             "(llm-gen)")
     args = parser.parse_args()
 
     if not args.task:

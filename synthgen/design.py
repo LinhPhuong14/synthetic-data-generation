@@ -1060,6 +1060,34 @@ def gate_ceiling(name: str, default: float) -> float:
         return default
 
 
+LLM_PATHS = ("rule", "page", "template")
+
+
+def llm_path(default: str = "page") -> str:
+    """Đường sinh mặc định, đọc `_blocks.yaml::llm_path`. Xem ghi chú ở đó.
+
+    TÊN LẠ THÌ NÉM, không lặng lẽ về mặc định. Đây đúng chỗ AGENTS.md mục 6
+    nói tới: một `path: templates` gõ thừa chữ `s` mà rơi về `page` là một
+    lượt chạy hai mươi nghìn ảnh đi hết đường cũ trong khi báo cáo ghi tên
+    đường mới, và không ai biết cho tới lúc đọc `llm_calls` trong báo cáo."""
+    value = str((_blocks_yaml().get("llm_path") or {}).get("path", default)
+                or default)
+    if value not in LLM_PATHS:
+        raise ValueError(
+            f"`_blocks.yaml::llm_path.path` = {value!r} không phải một đường "
+            f"sinh; nhận {', '.join(LLM_PATHS)}")
+    return value
+
+
+def per_template(default: int = 50) -> int:
+    """Số tờ mỗi phôi khi chạy đường `template`."""
+    try:
+        return max(1, int((_blocks_yaml().get("llm_path") or {})
+                          .get("per_template", default)))
+    except (TypeError, ValueError):
+        return default
+
+
 def region_attr(name: str) -> str:
     """` data-region="..."` cho khối `name`, hoặc chuỗi rỗng.
 

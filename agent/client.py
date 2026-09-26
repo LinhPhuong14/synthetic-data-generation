@@ -24,11 +24,11 @@ the only mechanism that makes that true by construction rather than by hope.
 
 from __future__ import annotations
 
+import http.client
 import json
 import os
 import re
 import time
-import http.client
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
@@ -48,6 +48,69 @@ class LLMError(RuntimeError):
 # Đọc con số ra, không hardcode bảng trần theo tên model (mỗi model một
 # trần khác nhau, và bảng ấy cũ đi ngay khi OpenAI thêm model mới).
 _MAX_TOKENS_RE = re.compile(r"supports at most (\d+) completion tokens")
+
+# CỤT VÌ CHẠM TRẦN, nới trần rồi viết lại.
+#
+# Backend ép schema bằng ngữ pháp (vLLM/xgrammar, `strict: true`) thì reply
+# KHÔNG thể sai hình JSON -- từng token đã bị ngữ pháp ép. Nên một reply
+# `json.loads` không nổi chỉ còn đúng một nguyên nhân: nó bị CẮT giữa câu vì
+# chạm `max_tokens`. Đo trên `data/pilot17` (60 tờ, `Qwen3.8-27B-FP8`): 18 tờ
+# -- 30% cả lô, lý do trượt LỚN NHẤT -- chết với đúng một câu "reply was not
+# JSON", và cả 18 đều mang tiền tố hợp lệ `'{\n  "plan": {\n    "doc_kind":
+# …'` rồi đứt. Dò lại trên chính server ấy với `max_tokens=120` và `=400`:
+# `finish_reason='length'`, `json.loads` ném "Unterminated string", tiền tố
+# giống hệt từng byte. Và nếu 18 tờ ấy chạy đúng tới `budget(sheets)` thì tốc
+# độ suy ra là 22--46 tok/s (trung vị 40,0) -- nằm trong khoảng 10,9--47,9
+# tok/s đo được trên 42 lời gọi trả lời được của cùng lô. 18/18 tờ khớp.
+#
+# ## Vì sao NỚI THEO TỪNG LỜI GỌI, không phải chọn một hằng số to hơn
+#
+# Vì con số đo được đã bị CHẶT ĐUÔI. Ta chỉ thấy `tokens_out` của những tờ
+# LỌT được dưới trần, nên "cao nhất đo được" không phải cao nhất model muốn
+# viết. Đo trên pilot17, trần so với cao nhất đo được chỉ hở 1,01x (5 tờ:
+# 28 368 / 28 600) tới 1,52x (2 tờ) -- mà 30% lô vẫn vượt. Chênh lệch TRONG
+# cùng một số tờ còn lớn hơn chênh lệch GIỮA các số tờ (5 tờ: 4 468--28 368,
+# gấp 6,3 lần), nên không có một con số nào theo số tờ đúng cho cả hai đầu.
+# Chọn hằng số mới từ dữ liệu bị chặt đuôi là chọn lại một trần vẫn thấp.
+#
+# `finish_reason` thì nói thẳng, từng lời gọi một, rằng CHÍNH tờ này đã cụt.
+# Trần đầu vẫn là `budget()` -- nó đủ cho 70% lô và `max_tokens` là cái TRẦN
+# chứ không phải chỗ đã đặt cọc, nên tờ ngắn không trả giá gì cho lần nới.
+_STRETCH_TRIES = 2
+_STRETCH_FACTOR = 1.8
+# Trần cứng của phép nới. `agent/compose_page.py::budget()` tự kẹp ở 150 000
+# để "một lời gọi lạc lối vẫn hỏng nhanh thay vì ăn hết cửa sổ ngữ cảnh" --
+# phép nới phải giữ đúng lời hứa ấy, chỉ nới rộng hơn một bậc. 220 000 vẫn nằm
+# trong cửa sổ 262 144 token của server sau khi trừ prompt (~26 500 token đo
+# trên pilot17). Vượt con số này thì model đang lặp, không phải đang viết dài.
+#
+# Phải LỚN HƠN trần của `budget()`: nếu nó nhỏ hơn thì `wider > cap` sai ngay
+# từ lần nới đầu, và cơ chế nới lặng lẽ không bao giờ chạy cho đúng những tài
+# liệu dài nhất -- tức đúng những tài liệu cần nó.
+_STRETCH_CEILING = 220_000
+# Trần hạn chờ một lần thử. Cùng con số và cùng lý do như `agent/compose_page
+# .py::PATIENCE_CEILING` -- viết lại ở đây để `client.py` không phải import
+# ngược lên `compose_page.py` (vòng import), nhưng hai chỗ nói cùng một luật
+# và `tests/test_client_truncation.py` khoá chúng bằng nhau.
+_PATIENCE_CEILING = 3600.0
+
+
+def _finish_reason(answer: dict) -> str:
+    """`finish_reason` của lựa chọn đầu, hoặc `""` nếu server không nói."""
+    try:
+        return str(answer["choices"][0].get("finish_reason") or "")
+    except (KeyError, IndexError, TypeError):
+        return ""
+
+
+def _cut_short(answer: dict) -> bool:
+    """Server có nói thẳng là nó đã CẮT câu trả lời vì chạm trần token không.
+
+    Hỏi `finish_reason`, không đoán từ hình dạng chuỗi. Trước bản này không
+    một chỗ nào trong kho đọc tới trường ấy, nên "cụt vì chạm trần" và "JSON
+    sai hình" -- hai lỗi chữa bằng hai cách trái nhau -- đổ chung vào một câu
+    `reply was not JSON`, và 18 tờ pilot17 trượt mà không để lại dấu nào."""
+    return _finish_reason(answer) == "length"
 
 
 @dataclass
@@ -275,13 +338,23 @@ class Client:
         # luồng khác dùng chung `self` (`agent/compose_page.py::run()` share
         # đúng một `Client` cho cả `ThreadPoolExecutor`), đọc lại đúng cờ đã
         # học -- chỉ lần ĐẦU TIÊN trên một server mới trả giá một request hỏng.
-        caller = self if not timeout else _replace(self, timeout=timeout)
         tried_downgrade = False
         tried_token_cap = False
+        # Trần và hạn chờ của LẦN THỬ này -- cả hai nới cùng một nhịp khi
+        # reply bị cắt cụt. Nới trần mà không nới hạn chờ thì chỉ đổi kiểu
+        # hỏng: tờ vừa đủ chỗ viết lại hết hạn chờ giữa đường.
+        cap = max_tokens
+        patience = timeout
+        stretches = 0
+        # `wasted` là token của những lần thử BỊ BỎ. Cộng vào `usage` dưới
+        # dạng khoá riêng: `completion_tokens` phải giữ đúng kích thước tờ
+        # được giữ (`tokens_out` mỗi tờ đọc từ đó), còn cái giá thật của lượt
+        # chạy thì vẫn phải đếm được, nếu không báo cáo chi phí nói thấp đi.
+        wasted = 0
         while True:
+            caller = self if not patience else _replace(self, timeout=patience)
             try:
-                answer = caller._post(self._payload(system, user, schema, max_tokens))
-                break
+                answer = caller._post(self._payload(system, user, schema, cap))
             except LLMError as error:
                 text = str(error)
                 # Hai chữ ký lỗi đã đo được thật trên OpenAI (2026-09-21) --
@@ -312,15 +385,48 @@ class Client:
                     tried_token_cap = True
                     continue
                 raise
-        try:
-            content = answer["choices"][0]["message"]["content"]
-        except (KeyError, IndexError, TypeError) as error:
-            raise LLMError(f"no content in the reply: {answer}") from error
-        usage = dict(answer.get("usage") or {})
-        try:
-            return json.loads(content), usage
-        except json.JSONDecodeError as error:
-            raise LLMError(f"reply was not JSON: {content[:300]!r}") from error
+            try:
+                content = answer["choices"][0]["message"]["content"]
+            except (KeyError, IndexError, TypeError) as error:
+                raise LLMError(f"no content in the reply: {answer}") from error
+            usage = dict(answer.get("usage") or {})
+            try:
+                got = json.loads(content)
+            except json.JSONDecodeError as error:
+                spent = int(usage.get("completion_tokens") or 0)
+                # Trần THẬT của server (đã dò được) là giới hạn trên cuối
+                # cùng: nới quá nó thì `_max_tokens_field` kẹp lại, và ta chỉ
+                # sinh lại y nguyên một reply cụt y như cũ.
+                roof = min(_STRETCH_CEILING, self._max_output_tokens
+                           or _STRETCH_CEILING)
+                wider = min(int((cap or spent or 1) * _STRETCH_FACTOR), roof)
+                if _cut_short(answer) and stretches < _STRETCH_TRIES \
+                        and wider > (cap or 0):
+                    wasted += spent
+                    stretches += 1
+                    cap = wider
+                    # Hạn chờ nới cùng nhịp, nhưng KHÔNG quá trần của chính
+                    # nó. Nhân tự do thì một máy chủ không trả lời giữ chỗ
+                    # 1,8^2 lần hạn gốc -- đúng cách `data/pilot18` mất một
+                    # tờ trong 14,2 giờ; xem `compose_page.PATIENCE_CEILING`.
+                    if patience:
+                        patience = min(patience * _STRETCH_FACTOR,
+                                      _PATIENCE_CEILING)
+                    continue
+                if _cut_short(answer):
+                    raise LLMError(
+                        "reply cụt vì chạm trần token "
+                        f"(max_tokens={cap}, đã nới {stretches} lần, "
+                        f"completion_tokens={spent}): "
+                        f"{content[-160:]!r}") from error
+                raise LLMError(f"reply was not JSON "
+                               f"(finish_reason="
+                               f"{_finish_reason(answer)!r}): "
+                               f"{content[:300]!r}") from error
+            if wasted:
+                usage["discarded_completion_tokens"] = wasted
+                usage["stretches"] = stretches
+            return got, usage
 
     def alive(self) -> bool:
         try:

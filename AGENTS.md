@@ -163,6 +163,7 @@ dùng chạy**, không tự kết luận "không có server" khi gọi không t�
 | [`docs/duong-ong.md`](docs/duong-ong.md) | một tờ giấy đi qua hệ thống ra sao, ai sở hữu toạ độ |
 | [`docs/huong-dan-va-giai-thich.md`](docs/huong-dan-va-giai-thich.md) | renderer, từng hàm một |
 | [`docs/ba-tang-ten-truong.md`](docs/ba-tang-ten-truong.md) | tên trường nào được nhận, vì sao không ánh xạ về khoá gần nhất |
+| [`docs/duong-sinh-phoi.md`](docs/duong-sinh-phoi.md) | đường sinh thứ ba — model viết phôi, mã điền giá trị; chi phí ba đường |
 | [`rulebase/README.md`](rulebase/README.md) | ngữ pháp của luật |
 | [`degradation/README.md`](degradation/README.md) | 26 mô hình làm cũ |
 

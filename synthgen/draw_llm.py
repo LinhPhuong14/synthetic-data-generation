@@ -45,10 +45,17 @@ for extra in (REPO_ROOT, REPO_ROOT / "generators" / "html"):
         sys.path.insert(0, str(extra))
 
 from page import (  # noqa: E402
-    CELL_RECTS_JS, CELL_REGIONS_JS, GRAPHIC_RECTS_JS, ZONE_REGIONS_JS, served,
+    CELL_RECTS_JS,
+    CELL_REGIONS_JS,
+    GRAPHIC_RECTS_JS,
+    ZONE_REGIONS_JS,
+    served,
 )
 from render import (  # noqa: E402
-    clip_to_page, graphics_from_rects, quads_from_rects, regions_from_rects,
+    clip_to_page,
+    graphics_from_rects,
+    quads_from_rects,
+    regions_from_rects,
     zones_from_rects,
 )
 
@@ -57,7 +64,6 @@ from synthgen import field_tier as FT  # noqa: E402
 from synthgen import overlay as O  # noqa: E402
 from synthgen.kie_full import complete as kie_complete  # noqa: E402
 from synthgen.phrasing import voice_record  # noqa: E402
-from synthgen.llm_page import problems  # noqa: E402
 
 JPEG_QUALITY = 92
 SCALE = 2.0
@@ -668,7 +674,7 @@ class Drawer:
             (root / name).mkdir(parents=True, exist_ok=True)
 
     def __enter__(self) -> "Drawer":
-        from playwright.sync_api import sync_playwright   # noqa: PLC0415
+        from playwright.sync_api import sync_playwright  # noqa: PLC0415
 
         self._play = sync_playwright().start()
         self._browser = self._play.chromium.launch(
@@ -685,6 +691,30 @@ class Drawer:
                     closer()
             except Exception:                               # noqa: BLE001
                 pass
+
+    def measure(self, html: str, stem: str, archetype: str = "llm") -> dict | None:
+        """Dàn trang CHỈ ĐỂ ĐO. Không ghi một tệp nào, không dựng KIE.
+
+        `agent/compose_page.py` cần `layout_annotations` -- chỗ mực THẬT rơi
+        xuống -- để biết tờ vừa sinh có trùng bố cục với một tờ gần đây
+        không, và nó cần biết điều ấy TRƯỚC khi nhận tờ giấy. `draw()` dưới
+        đây trả lời đúng câu hỏi ấy nhưng kèm theo mười hai tệp trên đĩa:
+        gọi nó để đo rồi xoá là ghi ảnh của một tờ sắp bị loại vào chính thư
+        mục người ta sẽ đưa vào tập huấn luyện.
+
+        Nên tách phần ĐO ra khỏi phần GHI. `draw_one()` đã là phần đo -- nó
+        dựng bản ghi rồi trả về, không chạm đĩa; hàm này chỉ là tên gọi cho
+        việc dùng nó một mình. Không có luật nào mới ở đây, và đặc biệt
+        không có phép đo hộp thứ hai: hộp vẫn do đúng Chromium ấy sinh ra,
+        một lần, qua đúng `draw_one()` ấy (AGENTS.md luật 1).
+
+        `None` khi trang không dàn ra được -- caller phải đọc nó là "chưa
+        biết", không phải "không trùng"."""
+        try:
+            got = draw_one(self._page, html, stem, {"archetype": archetype})
+        except Exception:                                   # noqa: BLE001
+            return None
+        return got["record"] if got else None
 
     def draw(self, path: Path, passed: bool) -> tuple[str, bool]:
         """Vẽ một tài liệu. `(dòng tóm tắt để in, vẽ được hay không)`.
@@ -758,9 +788,15 @@ class Drawer:
         # `export.py` chỉ việc ĐỌC dấu và bỏ qua, không xếp tầng lại -- xếp
         # hai lần là hai người dựng một luật.
         try:
+            # `data` VÀO ĐÂY, vì lớp (ii) của câu tả đi cạnh `data-path`.
+            # Không truyền thì mọi cặp chỉ còn một lớp, và hai trường cùng
+            # `kind` trên một tờ lại không phân biệt được -- xem
+            # `field_tier.mark_pairs` về vì sao nối theo path chứ không theo
+            # `field_plan`.
             record["kie_tiers"] = FT.mark_pairs(
                 full_pairs, doc_type=str(declared.get("archetype") or ""),
-                doc_title=str(declared.get("doc_title") or ""))
+                doc_title=str(declared.get("doc_title") or ""),
+                data=declared.get("data"))
         except Exception as error:                           # noqa: BLE001
             # KÊU, không nuốt. Bản ghi thiếu dấu tầng vẫn vẽ ra được, nhưng
             # nó sẽ đi vào bộ chính với mọi cặp không ai duyệt -- đúng thứ
@@ -769,6 +805,37 @@ class Drawer:
         record.setdefault("kie", {})["pairs"] = full_pairs
         if kie_counts:
             record["kie"]["coverage"] = kie_counts
+        # SCHEMA PHẢI DỰNG LẠI SAU KHI `pairs` BỊ GHI ĐÈ.
+        #
+        # `pipeline/kie.py` dựng `kie.schema` từ `pair_entities()` -- nhãn in
+        # KỀ giá trị. Dòng trên vừa thay `kie.pairs` bằng `full_pairs` của
+        # đường khai (`data-path` model viết), một tập khác hẳn. Không dựng
+        # lại thì schema nằm lại với kết quả của tập cũ, và khi tập cũ rỗng
+        # thì `properties` rỗng -- im lặng, trong khi `pairs` và `coverage`
+        # bên cạnh vẫn đầy.
+        #
+        # Đo trên `data/pilot18` (50 bản ghi, 16 loại giấy): đúng 2 tài liệu
+        # hỏng, và cả hai vì cùng một lẽ -- chúng không in nhãn kề giá trị ở
+        # đâu cả. `form_checklist_0005` là một checklist (ô tích, không nhãn
+        # kề): 34 cặp, `coverage` 1.0, `schema.properties` 0.
+        # `dispatch_letter_0002` là công văn (đoạn văn): 26 cặp, 0 thuộc
+        # tính. Mười bốn loại giấy còn lại có nhãn kề nên không lộ ra.
+        #
+        # Dựng bằng chính hàm `synthgen/derive.py` dùng, không viết phép thứ
+        # hai: `build_schema(record)` trên cùng hai file ấy cho 21 và 9 thuộc
+        # tính. `derive.py` vốn đã chữa đúng chỗ này -- nhưng nó chỉ chạy khi
+        # được gọi, và bản ghi của một lượt không chạy nó (mọi bản ghi
+        # `pilot18` thiếu hẳn `kie.value`) nằm lại với schema rỗng.
+        try:
+            from synthgen.kie_schema import build as build_schema  # noqa: PLC0415
+
+            schema, value = build_schema(record)
+            record["kie"]["schema"] = schema
+            record["kie"]["value"] = value
+        except Exception as error:                           # noqa: BLE001
+            # KÊU, không nuốt -- cùng lẽ nhánh xếp tầng ngay trên. Một schema
+            # rỗng đi qua im lặng là đúng cái lỗi khối này sinh ra để chặn.
+            print(f"[schema] {stem}: không dựng lại được schema -- {error}")
         for num, img in enumerate(got["images"], start=1):
             name = stem if num == 1 else f"{stem}_p{num}"
             cv2.imwrite(str(root / "images" / kind / f"{name}.jpg"), img,
@@ -799,6 +866,10 @@ class Drawer:
 
         layout = record.get("layout_annotations") or []
         words = record.get("word_annotations") or []
+        # Cùng lệ tra cứu `kinds` của `synthgen/export.py` -- field_type
+        # không nằm trên `kie.pairs`, xem `pipeline/record.py::field_type_for`.
+        field_types = {e.get("entity_index"): str(e.get("field_type") or "")
+                      for e in record.get("entity_annotations") or []}
         # Trang trượt vẽ vào `rejected_boxes/`, không lẫn vào thư mục của trang
         # sạch: một thư mục lẫn trang hỏng là một thư mục không ai dám đưa vào
         # tập huấn luyện.
@@ -819,7 +890,7 @@ class Drawer:
                 [cv2.IMWRITE_JPEG_QUALITY, 88])
             cv2.imwrite(
                 str(root / "visualize_kie" / kind / f"{name}.jpg"),
-                O.kie(img.copy(), full_pairs, num),
+                O.kie(img.copy(), full_pairs, num, field_types),
                 [cv2.IMWRITE_JPEG_QUALITY, 88])
         kie_total = len(full_pairs)
         why = declared.get("why") or []
@@ -848,7 +919,7 @@ def finish(root: Path, rows: list[dict], skip_derive: bool = False) -> None:
     if not rows or skip_derive:
         return
     print()
-    from synthgen.derive import main as derive_main          # noqa: PLC0415
+    from synthgen.derive import main as derive_main  # noqa: PLC0415
 
     argv = sys.argv
     sys.argv = ["derive", str(root), "--workers", "4"]

@@ -33,6 +33,34 @@ thresholds:
   # Mô tả khớp một trong các mẫu `generic:` dưới kia.
   generic_descriptions: 0.05
 
+  # ĐA DẠNG CÂU TẢ trong MỘT cặp (loại giấy, kind): câu duy nhất / lượt trường.
+  #
+  # Cùng con số 0,05 với `collapsed_columns` ngay trên, và cố ý: hai cổng đo
+  # hai mặt của đúng một lỗi. `collapsed_columns` bắt hai cột LOGIC khác nhau
+  # dùng chung một câu; cổng này bắt cùng MỘT kind lặp lại mà chỉ có một câu.
+  # Đặt một con số thứ hai ở đây là mời hai cổng lệch nhau khi ai đó siết một
+  # cái -- kho này đã hỏng ba lần vì đúng kiểu ấy.
+  #
+  # Đo lúc viết cổng (24-09-2026, 785 tệp `data/*/declared`, 11.847 lượt
+  # trường, 4.482 cặp (doc_type, kind)): tỉ lệ toàn cục 0,3785. Mười cặp tệ
+  # nhất trong số cặp có từ 30 lượt đều nằm dưới 0,026 --
+  # `authorisation_letter/store.tax_code` 1/20 = 0,050,
+  # `authorisation_letter/meta.value` 1/55 = 0,018,
+  # `cash_receipt_voucher/sign.name` 1/82 = 0,012. Trần 0,05 tách đúng cái
+  # đuôi ấy ra khỏi phần còn lại.
+  description_diversity: 0.05
+
+  # Cặp ít lượt hơn ngần này thì KHÔNG chấm tỉ lệ -- một kind xuất hiện ba
+  # lần trên ba tờ mà có một câu là chuyện bình thường, không phải một cột
+  # sập.
+  #
+  # Đo trên cùng mẫu: 4.452/4.482 cặp (99,3%) có dưới 30 lượt, và 3.163 trong
+  # số đó (70,6% toàn bộ) có tỉ lệ đúng 1,0 chỉ vì chúng xuất hiện một hai
+  # lần. Chấm chúng là chấm nhiễu, và tệ hơn: một cổng mà 70% mẫu tự động
+  # xanh là một cổng không gác gì. Trên 30 lượt còn đúng 30 cặp, 8 trong số
+  # đó (26,7%) dưới trần -- một con số người đọc được hết trong một lần.
+  description_diversity_floor: 30
+
   # Một câu mô tả được dùng ở TỪ HAI LOẠI GIẤY trở lên.
   #
   # Không đặt 0: "Ngày lập chứng từ" đúng cho cả hoá đơn lẫn biên bản, và ép

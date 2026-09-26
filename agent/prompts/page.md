@@ -576,6 +576,45 @@ Use the closest valid region type.
 
 Do not invent new region types unless explicitly allowed.
 
+## 14.1 EVERY RUN OF INK MUST SIT INSIDE A REGION
+
+The rule above -- "do not create regions merely to satisfy a numeric
+target" -- is about not inflating the COUNT. It is not permission to ship a
+sheet with no regions at all. Both of these must hold at once:
+
+- one region per meaningful visual object, not one per line; and
+- **no `data-kind` run anywhere on the sheet is outside every region.**
+
+A run is inside a region when some ancestor declares one, in either of the
+two ways the table above lists: an explicit `data-region="..."` attribute,
+or a semantic tag that already declares that region (`<p>`, `<section>`,
+`<header>`, `<footer>`, `<ul>`, `<ol>`, `<dl>`, `<table>`, `<h1>`..`<h6>`,
+`<form>`, `<fieldset>`, `<figure>`, `<article>`, `<blockquote>`, `<pre>`).
+
+`<div>` and `<span>` declare nothing. A sheet built only from `<div>` and
+`<span>`, with no `data-region` attribute, leaves **every** run of ink
+outside every region -- and a class name like `class="field-row"` or
+`class="checklist-item"` does not help: a class name is yours to invent, so
+nothing downstream may read a region out of it.
+
+Why this is a hard requirement and not a preference: a run outside every
+region still gets a label and a box, but the region it belongs to is then
+reconstructed by grouping words on horizontal gaps -- and the gutter between
+a printed label and its value is usually wider than the grouping threshold.
+One "label ... value" block becomes two regions; an eight-line total block
+becomes eight. The ink is real, the boxes are real, and they describe
+patches nobody drew.
+
+Measured on `data/pilot17` (60 sheets): 4 sheets were rejected with **100%
+of their runs outside every region** -- 119, 36, 29 and 23 runs respectively
+-- and all four were built from `<div>` and `<span>` alone with zero
+`data-region` attributes and zero semantic tags. Every sheet that passed had
+at least one of the two.
+
+Prefer the semantic tag where one fits: writing `<ul>` says "this is a list"
+once, in the markup, and costs nothing extra. Reach for an explicit
+`data-region` when no tag carries the meaning.
+
 ---
 
 # 15. REGION VS SEMANTIC FIELD
@@ -1678,7 +1717,8 @@ Do not silently drop declared fields.
 
 Three tiers, and the whole point is that **none of them is "the nearest key"**.
 
-1. **A listed key.** Use it, leave `describe` empty. Its meaning is on file.
+1. **A listed key.** Use it. Its general meaning is on file, but you still
+   write `describe` — see "every field needs a sentence" below.
 2. **A new leaf in a listed family** — `store.`, `sign.`, `total.`, `menu.`,
    `clause.`, `survey.`, `meta.`, `section.`, `toc.` for `data-kind`;
    `issuer.`, `customer.`, `document.`, `line_items[]`, `signers[]`,
@@ -1687,6 +1727,42 @@ Three tiers, and the whole point is that **none of them is "the nearest key"**.
    No sentence means the field is held back for review.
 3. **A name in no family at all.** Allowed, and kept out of the training set
    until a person reviews it. Prefer tier 2 whenever a family fits.
+
+### Every field needs a sentence — listed keys included
+
+`describe` is never empty. For a coined name the sentence IS the field's
+meaning. For a listed key the sentence says which occurrence THIS one is, and
+it is the only thing that tells two fields apart when they share a key.
+
+An authorisation letter names both the authorising party and the authorised
+agent, and both carry `store.tax_code`. The registry holds one sentence for
+that key, so without your sentence the two fields are identical in the label
+except for where their boxes sit. With it they read:
+
+    store.tax_code  "Tax code of the authorising party"
+    store.tax_code  "Tax code of the authorised agent"
+
+Write what distinguishes this occurrence: whose value it is, which party,
+which date, which side of the page. Do not restate the registry sentence, and
+do not copy the printed caption — the caption is already in the label. Short
+is fine; four words that say "the seller's, not the buyer's" beat a long
+sentence that repeats what the key already means.
+
+When a document really does carry a key only once and there is nothing to
+distinguish, say what the value is in this document's own terms.
+
+### Catch-all keys name nothing — coin the leaf instead
+
+`meta.value`, `invoice.field` and `invoice.field.label` are listed, so they are
+accepted, and they are the worst thing you can write. One authorisation letter
+was measured carrying `meta.value` five times over: document number, document
+date, signing place, validity start, validity end. Five concepts, one name.
+
+When you know which one it is, coin the leaf — `meta.doc_number`,
+`meta.doc_date`, `meta.doc_location`, `meta.valid_from`, `meta.valid_to`. That
+is route 2 above: a listed family, your own leaf, one sentence. It is accepted
+and it goes into the training set. Reach for `meta.value` only when the value
+genuinely is some other piece of margin metadata with no better name.
 
 Never stretch a listed key over a field it does not mean. The key carries a
 sentence with it, so a wrong key silently attaches a wrong description as well,
